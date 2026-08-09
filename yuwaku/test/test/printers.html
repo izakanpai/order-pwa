@@ -75,6 +75,17 @@
         </div>
         <label class="switch"><input type="checkbox" id="receiptToggle" onchange="saveReceipt()"><span class="slider"></span></label>
       </div>
+      <div class="toggle-row" style="margin-top:14px;border-top:1px solid #e5e7eb;padding-top:14px;">
+        <div>
+          <div class="card-title" style="margin:0;">🌐 <span id="t-plang">Print language</span></div>
+          <div class="form-hint" id="t-plang-hint" style="margin-top:2px;"></div>
+        </div>
+        <select id="printLangSel" onchange="savePrintLang()" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;">
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+          <option value="both">日本語 ＋ English</option>
+        </select>
+      </div>
     </div>
 
     <div class="card">
@@ -155,7 +166,7 @@
         prform:'プリンタの追加 / 編集', prname:'プリンタ名', prmac:'MACアドレス', hintMac:'CloudPRNTプリンタのMAC。設定画面や本体ラベルで確認できます。',
         prcat:'対応カテゴリ', hintCat:'選択したカテゴリの商品のみ印刷。未選択の場合は全カテゴリを印刷します。', prenabled:'有効', save:'保存', clear2:'クリア', prlist:'登録プリンタ',
         test:'テスト印刷', edit:'編集', del:'削除', delConfirm:'このプリンタを削除しますか？', saved:'✅ 保存しました', nameReq:'プリンタ名を入力してください', err:'エラー',
-        cTime:'時刻', cPrinter:'プリンタ', cTable:'卓', cStatus:'状態', cTry:'試行', reprint:'再印刷', noJobs:'ジョブはありません', noPrinters:'プリンタ未登録', testDone:'✅ テストジョブを登録しました', reprintDone:'再印刷キューに戻しました', clearDoneMsg:'✅ 印刷済を削除しました' },
+        cTime:'時刻', cPrinter:'プリンタ', cTable:'卓', cStatus:'状態', cTry:'試行', reprint:'再印刷', noJobs:'ジョブはありません', noPrinters:'プリンタ未登録', testDone:'✅ テストジョブを登録しました', reprintDone:'再印刷キューに戻しました', clearDoneMsg:'✅ 印刷済を削除しました', plang:'印刷の言語', plangHint:'メニュー名の印刷言語（オーダ票・レシート共通）' },
       en: { title:'Printers', langBtn:'JP', enable:'Printer Output', on:'✅ On (orders print automatically)', off:'⛔ Off (no printing)', receipt:'Auto-print receipt on checkout', receiptHint:'Sends a receipt to registered printers when a bill is settled',
         url:'CloudPRNT Server URL', copy:'Copy', copied:'✅ Copied',
         urlHelp:'In each Star printer\u2019s CloudPRNT settings, set the URL below as the "Server URL" (same for all printers). Polling interval 5\u201310s recommended.',
@@ -163,7 +174,7 @@
         prform:'Add / Edit Printer', prname:'Printer Name', prmac:'MAC Address', hintMac:'The CloudPRNT printer\u2019s MAC (see its settings screen or device label).',
         prcat:'Categories', hintCat:'Prints only the selected categories. If none selected, prints all categories.', prenabled:'Enabled', save:'Save', clear2:'Clear', prlist:'Registered Printers',
         test:'Test print', edit:'Edit', del:'Delete', delConfirm:'Delete this printer?', saved:'✅ Saved', nameReq:'Please enter a printer name', err:'Error',
-        cTime:'Time', cPrinter:'Printer', cTable:'T', cStatus:'Status', cTry:'Try', reprint:'Reprint', noJobs:'No jobs', noPrinters:'No printers yet', testDone:'✅ Test job queued', reprintDone:'Requeued for printing', clearDoneMsg:'✅ Cleared printed jobs' }
+        cTime:'Time', cPrinter:'Printer', cTable:'T', cStatus:'Status', cTry:'Try', reprint:'Reprint', noJobs:'No jobs', noPrinters:'No printers yet', testDone:'✅ Test job queued', reprintDone:'Requeued for printing', clearDoneMsg:'✅ Cleared printed jobs', plang:'Print language', plangHint:'Language of menu names on tickets & receipts' }
     };
 
     function $(id){ return document.getElementById(id); }
@@ -174,6 +185,7 @@
       $('page-title').innerText=t.title; $('langToggle').innerText=t.langBtn;
       $('t-enable').innerText=t.enable; $('t-url').innerText=t.url; $('url-help').innerText=t.urlHelp; $('t-copy').innerText=t.copy;
       if($('t-receipt')) $('t-receipt').innerText=t.receipt||'会計時にレシートを自動印刷'; if($('t-receipt-hint')) $('t-receipt-hint').innerText=t.receiptHint||'';
+      if($('t-plang')) $('t-plang').innerText=t.plang||''; if($('t-plang-hint')) $('t-plang-hint').innerText=t.plangHint||'';
       $('t-queue').innerText=t.queue; $('l-pend').innerText=t.pend; $('l-prog').innerText=t.prog; $('l-done').innerText=t.done; $('l-fail').innerText=t.fail;
       $('t-reall').innerText=t.reall; $('t-clear').innerText=t.clear; $('t-prform').innerText=t.prform; $('lbl-prname').innerText=t.prname;
       $('lbl-prmac').innerText=t.prmac; $('hint-mac').innerText=t.hintMac; $('lbl-prcat').innerText=t.prcat; $('hint-cat').innerText=t.hintCat;
@@ -183,6 +195,7 @@
     function updateEnableState(){ $('enable-state').innerText = $('enableToggle').checked ? i18n[currentLang].on : i18n[currentLang].off; }
     function saveEnabled(){ updateEnableState(); rpc('saveSettings',[{ printEnabled: $('enableToggle').checked ? 'true' : 'false' }]).catch(onErr); }
     window.saveReceipt=function(){ rpc('saveSettings',[{ receiptPrintEnabled: $('receiptToggle').checked ? 'true' : 'false' }]).catch(onErr); };
+    window.savePrintLang=function(){ rpc('saveSettings',[{ printLang: $('printLangSel').value }]).catch(onErr); };
 
     function copyUrl(){
       var txt=$('cpUrl').innerText;
@@ -252,7 +265,7 @@
     // init
     updateUI();
     $('cpUrl').innerText = (window.APP_CONFIG && window.APP_CONFIG.API_URL ? window.APP_CONFIG.API_URL : '') + '?cp=1';
-    rpc('getSettings',[]).then(function(s){ $('enableToggle').checked=(s && String(s.printEnabled)==='true'); $('receiptToggle').checked=(s && String(s.receiptPrintEnabled)==='true'); updateEnableState(); }).catch(onErr);
+    rpc('getSettings',[]).then(function(s){ $('enableToggle').checked=(s && String(s.printEnabled)==='true'); $('receiptToggle').checked=(s && String(s.receiptPrintEnabled)==='true'); if($('printLangSel')) $('printLangSel').value=(s && s.printLang) || 'ja'; updateEnableState(); }).catch(onErr);
     rpc('getAllMenuForAdmin',[]).then(function(items){ var set={}; (items||[]).forEach(function(i){ if(i['カテゴリ']) set[i['カテゴリ']]=1; }); allCategories=Object.keys(set); renderCatChips(); }).catch(onErr);
     loadPrinters();
     refreshQueue();

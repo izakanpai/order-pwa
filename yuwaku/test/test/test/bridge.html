@@ -117,7 +117,7 @@ async function startLoop(){
   await requestWake();
   setStat('監視中…','run'); log('監視開始');
   tick();
-  timer=setInterval(tick, 4000);
+  timer=setInterval(tick, 2500);
 }
 function stopLoop(){
   looping=false; if(timer){ clearInterval(timer); timer=null; }
@@ -149,6 +149,7 @@ async function tick(){
       }
     }
     if(looping && writeChar) setStat('監視中…（印刷済 '+cntOk+'）','run');
+    if(jobs.length && looping) setTimeout(function(){ tick(); }, 300); // 連続ジョブは待たず即処理
   }catch(err){
     log('通信エラー: '+(err&&err.message||err));
   }finally{ busy=false; }
@@ -169,16 +170,27 @@ async function printText(text){
   var cv=buildCanvasFromText(text);
   var bytes=canvasToEscpos(cv);
   var safe=document.getElementById('safeMode').checked;
-  // 応答あり書き込み(write)が使えるなら優先＝フロー制御が効き、終盤のデータ溢れ（末尾の文字化け）を防ぐ
-  var withResp = !!writeChar.properties.write;
-  var chunk = safe ? 20 : (withResp ? 180 : 80);
-  var delay = safe ? 18 : (withResp ? 3 : 16);
-  for(var i=0;i<bytes.length;i+=chunk){
-    var slice=bytes.slice(i, Math.min(i+chunk,bytes.length));
-    if(withResp) await writeChar.writeValue(slice); else await writeChar.writeValueWithoutResponse(slice);
-    await sleep(delay);
+  var canNR = !!writeChar.properties.writeWithoutResponse;
+  if(safe){
+    // 確実性優先（低速）：応答あり書き込みを小さめチャンクで
+    var useNR0 = !writeChar.properties.write; // writeが使えなければNR
+    for(var i=0;i<bytes.length;i+=20){
+      var s0=bytes.slice(i, Math.min(i+20,bytes.length));
+      if(useNR0) await writeChar.writeValueWithoutResponse(s0); else await writeChar.writeValue(s0);
+      await sleep(14);
+    }
+  } else {
+    // 速度優先：writeWithoutResponse＋定期ドレイン（一定量ごとに少し待ってバッファ溢れ＝末尾化けを防ぐ）
+    var chunk = canNR ? 180 : 512; // 応答なしはMTU制約で180、応答ありはブラウザが自動分割
+    var acc = 0;
+    for(var j=0;j<bytes.length;j+=chunk){
+      var s=bytes.slice(j, Math.min(j+chunk,bytes.length));
+      if(canNR) await writeChar.writeValueWithoutResponse(s); else await writeChar.writeValue(s);
+      acc += s.length;
+      if(acc >= 1800){ await sleep(18); acc = 0; } else { await sleep(2); }
+    }
   }
-  await sleep(150); // 末尾まで確実に送信されるのを待つ
+  await sleep(100); // 末尾まで送信完了を待つ
 }
 function buildCanvasFromText(text){
   var cv=document.getElementById('cv'); var ctx=cv.getContext('2d');
