@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0f172a">
+<title>PT-210 Bluetooth 印刷テスト</title>
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans JP',sans-serif; background:#0f172a; color:#e2e8f0; padding:16px; }
+  h1{ font-size:17px; margin:0 0 4px; }
+  p.sub{ font-size:12.5px; color:#94a3b8; margin:0 0 14px; line-height:1.6; }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  button{ flex:1 1 auto; min-width:130px; border:0; border-radius:12px; padding:16px 14px; font-size:15px; font-weight:800; font-family:inherit; cursor:pointer; }
+  #btnConn{ background:#38bdf8; color:#082f49; }
+  #btnPrint{ background:#fbbf24; color:#3a2606; }
+  button:disabled{ opacity:.45; }
+  .opt{ display:flex; align-items:center; gap:8px; font-size:13px; color:#cbd5e1; margin-bottom:12px; }
+  .stat{ font-size:13px; font-weight:800; padding:8px 12px; border-radius:10px; background:#1e293b; margin-bottom:12px; }
+  .stat.ok{ background:#064e3b; color:#6ee7b7; }
+  .stat.err{ background:#4c0519; color:#fda4af; }
+  #log{ background:#020617; border:1px solid #1e293b; border-radius:10px; padding:10px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11.5px; white-space:pre-wrap; word-break:break-all; height:44vh; overflow:auto; }
+  canvas{ display:none; }
+  .note{ font-size:11.5px; color:#64748b; margin-top:12px; line-height:1.7; }
+</style>
+</head>
+<body>
+  <h1>🧾 PT-210 Bluetooth 印刷テスト</h1>
+  <p class="sub">Android の Chrome で開いてください（iOS/Safari は Web Bluetooth 非対応）。<br>①「プリンタに接続」→ ②「テスト印刷」の順にタップします。</p>
+
+  <div class="stat" id="stat">未接続</div>
+
+  <div class="row">
+    <button id="btnConn" onclick="connect()">🔗 プリンタに接続</button>
+    <button id="btnPrint" onclick="printTest()" disabled>🖨️ テスト印刷</button>
+  </div>
+
+  <label class="opt"><input type="checkbox" id="safeMode"> 低速安全モード（20バイト送信・化けや欠けが出る時に有効化）</label>
+
+  <div id="log"></div>
+
+  <p class="note">うまくいかない時は、この画面のログをそのまま共有してください（検出されたサービス/特性のUUIDから原因を特定します）。</p>
+
+  <canvas id="cv" width="384" height="10"></canvas>
+
+<script>
+var PRINT_WIDTH = 384;            // 58mm ≒ 384ドット（48バイト/行）
+var device = null, server = null, writeChar = null;
+
+// Web Bluetooth で access するには optionalServices に候補UUIDを列挙しておく必要がある
+var CANDIDATE_SERVICES = [
+  0x18F0, 0x18F1, 0xFF00, 0xFFE0, 0xFFF0, 0xFEE7, 0xFB00, 0xFEA0, 0xE0FF,
+  '000018f0-0000-1000-8000-00805f9b34fb',
+  '0000ff00-0000-1000-8000-00805f9b34fb',
+  '0000ffe0-0000-1000-8000-00805f9b34fb',
+  '0000fff0-0000-1000-8000-00805f9b34fb',
+  '49535343-fe7d-4ae5-8fa9-9fafd205e455',   // Microchip/ISSC 透過UART（一部の互換機）
+  '6e400001-b5a3-f393-e0a9-e50e24dcca9e',   // Nordic UART
+  'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+  '0000180a-0000-1000-8000-00805f9b34fb'    // Device Information（参考）
+];
+
+function log(m){ var el=document.getElementById('log'); el.textContent += m + "\n"; el.scrollTop = el.scrollHeight; }
+function setStat(t, cls){ var el=document.getElementById('stat'); el.textContent=t; el.className='stat'+(cls?' '+cls:''); }
+function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+async function connect(){
+  if (!navigator.bluetooth){ setStat('この端末は Web Bluetooth 非対応です', 'err'); log('navigator.bluetooth がありません（iOSや非対応ブラウザ）'); return; }
+  try{
+    setStat('デバイス選択中…');
+    log('requestDevice: プリンタを選んでください…');
+    device = await navigator.bluetooth.requestDevice({ acceptAllDevices:true, optionalServices: CANDIDATE_SERVICES });
+    log('選択: ' + (device.name || '(no name)') + ' / id=' + device.id);
+    device.addEventListener('gattserverdisconnected', function(){ setStat('切断されました。再接続してください', 'err'); document.getElementById('btnPrint').disabled=true; log('！ 切断イベント'); });
+
+    setStat('接続中…');
+    server = await device.gatt.connect();
+    log('GATT 接続 OK。サービス探索中…');
+
+    var services = await server.getPrimaryServices();
+    log('サービス数: ' + services.length);
+    writeChar = null;
+    for (var i=0;i<services.length;i++){
+      var s = services[i];
+      var chars = [];
+      try { chars = await s.getCharacteristics(); } catch(e){ log('  ' + s.uuid + ' : 特性取得不可'); continue; }
+      for (var j=0;j<chars.length;j++){
+        var c = chars[j], pr = c.properties;
+        var flags = [pr.write?'write':'', pr.writeWithoutResponse?'writeNR':'', pr.notify?'notify':'', pr.read?'read':''].filter(Boolean).join(',');
+        log('  svc ' + short(s.uuid) + ' / char ' + short(c.uuid) + ' [' + flags + ']');
+        if (!writeChar && (pr.write || pr.writeWithoutResponse)) writeChar = c;
+      }
+    }
+    if (!writeChar){ setStat('書き込み可能な特性が見つかりません', 'err'); log('！ write/writeWithoutResponse を持つ特性なし。上のUUID一覧を共有してください。'); return; }
+    log('→ 使用する書き込み特性: ' + short(writeChar.uuid) + (writeChar.properties.writeWithoutResponse?' (writeNR)':' (write)'));
+    setStat('接続完了：' + (device.name||'プリンタ'), 'ok');
+    document.getElementById('btnPrint').disabled = false;
+  }catch(err){
+    setStat('接続失敗', 'err'); log('エラー: ' + (err && err.message ? err.message : err));
+  }
+}
+function short(u){ u=String(u); var m=/0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb/.exec(u); return m? ('0x'+m[1].toUpperCase()) : u; }
+
+// テストレシートを画像に描画
+function buildCanvas(){
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var lines = [
+    {t:'*** 印刷テスト ***', c:true, b:true, s:24},
+    {t:'クリークサイドの憩いの場', c:true, s:20},
+    {t:'誘惑Bar', c:true, s:20},
+    {t:'--------------------------------'},
+    {t:'日本語の印字テストです。'},
+    {t:'あいうえお カタカナ 漢字 ①②③'},
+    {t:'生ビール          ￥600'},
+    {t:'唐揚げ            ￥480'},
+    {t:'--------------------------------'},
+    {t:'合計             ￥1,080', b:true, s:22},
+    {t:'PT-210 Bluetooth OK', c:true},
+    {t:new Date().toLocaleString('ja-JP'), c:true, s:16}
+  ];
+  // 高さ計算
+  var pad=8, y=pad, heights=[];
+  lines.forEach(function(l){ var s=l.s||18; heights.push(s+10); y+=s+10; });
+  cv.height = y + pad + 60; // 末尾に余白（紙送り分）
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.fillStyle='#000'; ctx.textBaseline='top';
+  y=pad;
+  lines.forEach(function(l){
+    var s=l.s||18;
+    ctx.font=(l.b?'bold ':'')+s+"px 'Noto Sans JP',sans-serif";
+    var x=6;
+    if(l.c){ var w=ctx.measureText(l.t).width; x=Math.max(0,(cv.width-w)/2); }
+    ctx.fillText(l.t, x, y);
+    y+=s+10;
+  });
+  return cv;
+}
+
+// canvas → ESC/POS ラスター（GS v 0）バイト列
+function canvasToEscpos(cv){
+  var ctx=cv.getContext('2d');
+  var W=cv.width, H=cv.height;
+  var img=ctx.getImageData(0,0,W,H).data;
+  var bytesPerRow=W/8;
+  var out=[0x1B,0x40]; // ESC @ 初期化
+  var BAND=100; // 100行ずつ分割送信
+  for (var y0=0; y0<H; y0+=BAND){
+    var rows=Math.min(BAND, H-y0);
+    out.push(0x1D,0x76,0x30,0x00, bytesPerRow&0xff,(bytesPerRow>>8)&0xff, rows&0xff,(rows>>8)&0xff);
+    for (var y=0;y<rows;y++){
+      for (var bx=0;bx<bytesPerRow;bx++){
+        var b=0;
+        for (var bit=0;bit<8;bit++){
+          var px=(bx*8+bit), py=(y0+y);
+          var idx=(py*W+px)*4;
+          var lum=(img[idx]*0.299+img[idx+1]*0.587+img[idx+2]*0.114);
+          var a=img[idx+3];
+          if (a>32 && lum<128) b |= (0x80>>bit); // 黒=1
+        }
+        out.push(b);
+      }
+    }
+  }
+  out.push(0x0A,0x0A,0x0A,0x0A); // 紙送り
+  return new Uint8Array(out);
+}
+
+async function printTest(){
+  if (!writeChar){ setStat('先に接続してください', 'err'); return; }
+  try{
+    document.getElementById('btnPrint').disabled=true;
+    setStat('画像生成中…');
+    var cv=buildCanvas();
+    var bytes=canvasToEscpos(cv);
+    log('送信データ: ' + bytes.length + ' バイト（画像 ' + cv.width + 'x' + cv.height + '）');
+    var chunk = document.getElementById('safeMode').checked ? 20 : 128;
+    var useNR = writeChar.properties.writeWithoutResponse;
+    setStat('送信中… 0%');
+    for (var i=0;i<bytes.length;i+=chunk){
+      var slice=bytes.slice(i, Math.min(i+chunk, bytes.length));
+      if (useNR) await writeChar.writeValueWithoutResponse(slice);
+      else await writeChar.writeValue(slice);
+      if (i % (chunk*10) === 0) setStat('送信中… ' + Math.round(i/bytes.length*100) + '%');
+      await sleep(document.getElementById('safeMode').checked ? 18 : 8);
+    }
+    setStat('送信完了。印字を確認してください', 'ok');
+    log('✅ 送信完了');
+  }catch(err){
+    setStat('印刷失敗', 'err'); log('エラー: ' + (err && err.message ? err.message : err) + '\n→ 低速安全モードをONにして再試行してみてください。');
+  }finally{
+    document.getElementById('btnPrint').disabled=false;
+  }
+}
+</script>
+</body>
+</html>

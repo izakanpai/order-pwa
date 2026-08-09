@@ -194,9 +194,9 @@ async function printText(text){
 }
 function buildCanvasFromText(text){
   var cv=document.getElementById('cv'); var ctx=cv.getContext('2d');
-  var FS=22, LH=FS+6, pad=6;
+  var FS=22, LH=FS+8, pad=8;
   ctx.font=FS+"px 'Noto Sans JP',monospace";
-  // ペソ記号(₱)など端末フォントに無い記号は化けるため安全な文字へ置換
+  // ペソ記号(₱ U+20B1)など端末フォントに無い記号は化けるため安全な文字へ置換
   text=String(text).replace(/₱/g,'P');
   // 行を幅に合わせて折り返し
   var raw=text.replace(/\r/g,'').split('\n');
@@ -211,7 +211,7 @@ function buildCanvasFromText(text){
     }
     lines.push(cur);
   });
-  cv.height = pad*2 + lines.length*LH + 8; // 末尾余白は最小（紙送りはESC Jで別途）
+  cv.height = pad*2 + lines.length*LH + 24; // 末尾に紙送り余白
   ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height);
   ctx.fillStyle='#000'; ctx.textBaseline='top'; ctx.font=FS+"px 'Noto Sans JP',monospace";
   var y=pad;
@@ -221,26 +221,16 @@ function buildCanvasFromText(text){
 function canvasToEscpos(cv){
   var ctx=cv.getContext('2d'); var W=cv.width,H=cv.height;
   var img=ctx.getImageData(0,0,W,H).data; var bpr=W/8;
-  function rowBlack(y){ var base=y*W*4; for(var x=0;x<W;x++){ var idx=base+x*4; if(img[idx+3]>32 && (img[idx]*0.299+img[idx+1]*0.587+img[idx+2]*0.114)<128) return true; } return false; }
-  var out=[0x1B,0x40]; // 初期化
-  var y=0, CAP=128;
-  while(y<H){
-    if(!rowBlack(y)){
-      // 空白行は画像化せず「紙送り(ESC J n)」で送る＝データ量激減で高速化
-      var w=0; while(y<H && !rowBlack(y)){ w++; y++; }
-      while(w>0){ var n=Math.min(w,255); out.push(0x1B,0x4A,n); w-=n; }
-    } else {
-      // 文字のある帯だけラスター化
-      var y0=y, rows=0;
-      while(y<H && rowBlack(y) && rows<CAP){ rows++; y++; }
-      out.push(0x1D,0x76,0x30,0x00, bpr&0xff,(bpr>>8)&0xff, rows&0xff,(rows>>8)&0xff);
-      for(var yy=y0; yy<y0+rows; yy++){ for(var bx=0;bx<bpr;bx++){ var b=0;
-        for(var bit=0;bit<8;bit++){ var px=bx*8+bit, idx=(yy*W+px)*4;
-          if(img[idx+3]>32 && (img[idx]*0.299+img[idx+1]*0.587+img[idx+2]*0.114)<128) b|=(0x80>>bit); }
-        out.push(b); } }
-    }
+  var out=[0x1B,0x40]; var BAND=64; // 帯分割フルラスター（PT-210で安定）
+  for(var y0=0;y0<H;y0+=BAND){
+    var rows=Math.min(BAND,H-y0);
+    out.push(0x1D,0x76,0x30,0x00, bpr&0xff,(bpr>>8)&0xff, rows&0xff,(rows>>8)&0xff);
+    for(var y=0;y<rows;y++){ for(var bx=0;bx<bpr;bx++){ var b=0;
+      for(var bit=0;bit<8;bit++){ var px=bx*8+bit, py=y0+y, idx=(py*W+px)*4;
+        if(img[idx+3]>32 && (img[idx]*0.299+img[idx+1]*0.587+img[idx+2]*0.114)<128) b|=(0x80>>bit); }
+      out.push(b); } }
   }
-  out.push(0x0A,0x0A,0x0A); // 末尾の紙送り
+  out.push(0x0A,0x0A,0x0A);
   return new Uint8Array(out);
 }
 
