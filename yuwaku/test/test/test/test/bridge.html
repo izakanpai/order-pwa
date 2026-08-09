@@ -168,13 +168,17 @@ async function apiAck(id, ok){
 async function printText(text){
   var cv=buildCanvasFromText(text);
   var bytes=canvasToEscpos(cv);
-  var chunk=document.getElementById('safeMode').checked?20:128;
-  var useNR=writeChar.properties.writeWithoutResponse;
+  var safe=document.getElementById('safeMode').checked;
+  // 応答あり書き込み(write)が使えるなら優先＝フロー制御が効き、終盤のデータ溢れ（末尾の文字化け）を防ぐ
+  var withResp = !!writeChar.properties.write;
+  var chunk = safe ? 20 : (withResp ? 180 : 80);
+  var delay = safe ? 18 : (withResp ? 3 : 16);
   for(var i=0;i<bytes.length;i+=chunk){
     var slice=bytes.slice(i, Math.min(i+chunk,bytes.length));
-    if(useNR) await writeChar.writeValueWithoutResponse(slice); else await writeChar.writeValue(slice);
-    await sleep(document.getElementById('safeMode').checked?16:7);
+    if(withResp) await writeChar.writeValue(slice); else await writeChar.writeValueWithoutResponse(slice);
+    await sleep(delay);
   }
+  await sleep(150); // 末尾まで確実に送信されるのを待つ
 }
 function buildCanvasFromText(text){
   var cv=document.getElementById('cv'); var ctx=cv.getContext('2d');
@@ -213,7 +217,7 @@ function canvasToEscpos(cv){
         if(img[idx+3]>32 && lum<128) b|=(0x80>>bit); }
       out.push(b); } }
   }
-  out.push(0x0A,0x0A,0x0A,0x0A);
+  out.push(0x0A,0x0A,0x0A,0x0A,0x0A,0x0A); // 末尾に余分な紙送り（万一末尾が乱れても本文を保護）
   return new Uint8Array(out);
 }
 

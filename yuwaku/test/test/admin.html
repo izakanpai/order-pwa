@@ -398,7 +398,7 @@
       html += '<div style="font-weight:800;margin:6px 0;">'+t().orLbl+': <b>'+esc(orNo)+'</b></div>';
       html += '<div style="font-size:20px;font-weight:900;color:var(--green);margin-bottom:6px;">'+money(bill.total)+' — '+esc(seatLabel(bill.table))+'</div>';
       if (bill.discountAmount>0) html += '<div style="font-size:13px;color:#64748b;">'+t().discLine+' '+money(bill.discountAmount)+(bill.discountId?(' / ID '+esc(bill.discountId)):'')+'</div>';
-      html += '<div style="display:flex;gap:8px;margin-top:14px;"><button class="pbtn" style="background:#334155;flex:1;margin:0;" onclick="printReceipt(\''+esc(orNo)+'\')">'+t().printBtn+'</button><button class="pbtn" style="background:var(--green);flex:1;margin:0;" onclick="closePay();load();">'+t().close+'</button></div>';
+      html += '<div style="display:flex;gap:8px;margin-top:14px;"><button class="pbtn" style="background:var(--green);flex:1;margin:0;" onclick="closePay();load();">'+t().close+'</button></div>';
       document.getElementById('ps3').innerHTML = html;
       window._lastBill = { orNo: orNo, bill: bill };
       step(3);
