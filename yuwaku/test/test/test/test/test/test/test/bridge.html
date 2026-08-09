@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Print Station">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<title>印刷ステーション（PT-210）</title>
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans JP',sans-serif; background:#0f172a; color:#e2e8f0; padding:14px; }
+  h1{ font-size:17px; margin:0 0 2px; }
+  p.sub{ font-size:12px; color:#94a3b8; margin:0 0 12px; line-height:1.6; }
+  .stat{ font-size:15px; font-weight:800; padding:12px 14px; border-radius:12px; background:#1e293b; margin-bottom:10px; display:flex; align-items:center; gap:10px; }
+  .stat.ok{ background:#064e3b; color:#6ee7b7; }
+  .stat.err{ background:#4c0519; color:#fda4af; }
+  .stat.run{ background:#0c4a6e; color:#7dd3fc; }
+  .dot{ width:10px; height:10px; border-radius:50%; background:currentColor; box-shadow:0 0 0 0 currentColor; }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  button{ flex:1 1 auto; min-width:120px; border:0; border-radius:12px; padding:15px 12px; font-size:15px; font-weight:800; font-family:inherit; cursor:pointer; }
+  #btnStart{ background:#22c55e; color:#052e16; }
+  #btnStop{ background:#ef4444; color:#450a0a; }
+  #btnConn{ background:#38bdf8; color:#082f49; }
+  button:disabled{ opacity:.4; }
+  .kv{ display:flex; gap:14px; flex-wrap:wrap; margin:4px 0 12px; font-size:13px; color:#cbd5e1; }
+  .kv b{ color:#fff; font-size:16px; }
+  .opt{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:#cbd5e1; margin-bottom:8px; }
+  input[type=text]{ background:#020617; border:1px solid #334155; color:#e2e8f0; border-radius:8px; padding:8px 10px; font-size:13px; font-family:inherit; }
+  #log{ background:#020617; border:1px solid #1e293b; border-radius:10px; padding:10px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11.5px; white-space:pre-wrap; word-break:break-all; height:34vh; overflow:auto; }
+  canvas{ display:none; }
+  .note{ font-size:11.5px; color:#64748b; margin-top:10px; line-height:1.7; }
+</style>
+</head>
+<body>
+  <h1>🖨️ 印刷ステーション（PT-210）</h1>
+  <p class="sub">Android の Chrome 専用。この端末を据え置き、電源ON・画面ON・この画面を開いたままにしてください。<br>①「プリンタに接続」→ ②「監視開始」。以降は自動でレシートを印刷します。</p>
+
+  <div class="stat" id="stat"><span class="dot"></span><span id="statText">未接続</span></div>
+
+  <div class="kv">
+    <div>印刷済 <b id="cntOk">0</b></div>
+    <div>失敗 <b id="cntErr">0</b></div>
+    <div>接続 <b id="cntPrinter">—</b></div>
+  </div>
+
+  <div class="row">
+    <button id="btnConn" onclick="connect()">🔗 プリンタに接続</button>
+    <button id="btnStart" onclick="startLoop()" disabled>▶ 監視開始</button>
+    <button id="btnStop" onclick="stopLoop()" disabled>■ 停止</button>
+  </div>
+
+  <label class="opt">キー(任意)：<input type="text" id="key" placeholder="BRIDGE_KEY を設定した場合のみ" style="flex:1;"></label>
+  <label class="opt"><input type="checkbox" id="safeMode"> 低速安全モード（20バイト送信）</label>
+
+  <div id="log"></div>
+  <p class="note">画面が消えると印刷が止まります（Wake Lockで常時点灯を試みます）。Bluetoothが切れたら「プリンタに接続」で再接続してください。困ったらこのログを共有してください。</p>
+
+  <canvas id="cv" width="384" height="10"></canvas>
+
+<script src="./config.js"></script>
+<script>
+var PRINT_WIDTH = 384;
+var API_URL = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
+var device=null, server=null, writeChar=null;
+var looping=false, busy=false, timer=null, wakeLock=null;
+var cntOk=0, cntErr=0;
+
+var CANDIDATE_SERVICES = [
+  0x18F0,0x18F1,0xFF00,0xFFE0,0xFFF0,0xFEE7,0xFB00,0xFEA0,0xE0FF,
+  '000018f0-0000-1000-8000-00805f9b34fb','0000ff00-0000-1000-8000-00805f9b34fb',
+  '0000ffe0-0000-1000-8000-00805f9b34fb','0000fff0-0000-1000-8000-00805f9b34fb',
+  '49535343-fe7d-4ae5-8fa9-9fafd205e455','6e400001-b5a3-f393-e0a9-e50e24dcca9e',
+  'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
+];
+
+function log(m){ var el=document.getElementById('log'); var t=new Date().toLocaleTimeString('ja-JP'); el.textContent += '['+t+'] '+m+"\n"; el.scrollTop=el.scrollHeight; }
+function setStat(t, cls){ document.getElementById('statText').textContent=t; document.getElementById('stat').className='stat'+(cls?' '+cls:''); }
+function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+function short(u){ u=String(u); var m=/0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb/.exec(u); return m?('0x'+m[1].toUpperCase()):u; }
+function getKey(){ return (document.getElementById('key').value||'').trim(); }
+
+// URLの ?key= を初期値に
+(function(){ try{ var k=new URLSearchParams(location.search).get('key'); if(k){ document.getElementById('key').value=k; localStorage.setItem('bridgeKey',k);} else { var s=localStorage.getItem('bridgeKey'); if(s) document.getElementById('key').value=s; } }catch(e){} })();
+
+async function connect(){
+  if(!navigator.bluetooth){ setStat('この端末は Web Bluetooth 非対応', 'err'); log('navigator.bluetooth なし（iOS不可）'); return; }
+  try{
+    setStat('デバイス選択中…','run'); log('プリンタを選択してください…');
+    device = await navigator.bluetooth.requestDevice({ acceptAllDevices:true, optionalServices:CANDIDATE_SERVICES });
+    device.addEventListener('gattserverdisconnected', onDisconnect);
+    server = await device.gatt.connect();
+    var services = await server.getPrimaryServices();
+    writeChar=null;
+    for(var i=0;i<services.length;i++){ var chs=[]; try{ chs=await services[i].getCharacteristics(); }catch(e){ continue; }
+      for(var j=0;j<chs.length;j++){ var p=chs[j].properties; if(!writeChar && (p.write||p.writeWithoutResponse)) writeChar=chs[j]; } }
+    if(!writeChar){ setStat('書き込み可能な特性なし','err'); log('！write特性が見つかりません'); return; }
+    document.getElementById('cntPrinter').textContent = device.name || 'OK';
+    log('接続OK: '+(device.name||'(no name)')+' / 特性 '+short(writeChar.uuid));
+    setStat('接続完了（監視開始できます）','ok');
+    document.getElementById('btnStart').disabled=false;
+  }catch(err){ setStat('接続失敗','err'); log('接続エラー: '+(err&&err.message||err)); }
+}
+function onDisconnect(){
+  writeChar=null; document.getElementById('cntPrinter').textContent='—';
+  log('！ プリンタ切断');
+  if(looping){ setStat('切断：再接続してください','err'); }
+}
+
+async function startLoop(){
+  if(!writeChar){ setStat('先に接続してください','err'); return; }
+  looping=true;
+  document.getElementById('btnStart').disabled=true;
+  document.getElementById('btnStop').disabled=false;
+  await requestWake();
+  setStat('監視中…','run'); log('監視開始');
+  tick();
+  timer=setInterval(tick, 4000);
+}
+function stopLoop(){
+  looping=false; if(timer){ clearInterval(timer); timer=null; }
+  document.getElementById('btnStart').disabled=false;
+  document.getElementById('btnStop').disabled=true;
+  releaseWake();
+  setStat('停止中','');
+  log('監視停止');
+}
+
+async function tick(){
+  if(!looping || busy) return;
+  if(!writeChar){ return; } // 切断中はスキップ
+  busy=true;
+  try{
+    var jobs = await apiPoll();
+    for(var i=0;i<jobs.length && looping && writeChar;i++){
+      var job=jobs[i];
+      try{
+        log('印刷: '+job.id.slice(0,8)+'…');
+        await printText(job.content||'');
+        await apiAck(job.id, true);
+        cntOk++; document.getElementById('cntOk').textContent=cntOk;
+      }catch(pe){
+        log('印刷失敗: '+(pe&&pe.message||pe)+' → 再キュー');
+        await apiAck(job.id, false);
+        cntErr++; document.getElementById('cntErr').textContent=cntErr;
+        break; // 失敗したら今サイクルは中断（次周期で再試行）
+      }
+    }
+    if(looping && writeChar) setStat('監視中…（印刷済 '+cntOk+'）','run');
+  }catch(err){
+    log('通信エラー: '+(err&&err.message||err));
+  }finally{ busy=false; }
+}
+
+async function apiPoll(){
+  var res = await fetch(API_URL+'?api=1',{ method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'bridgePoll', key:getKey() }) });
+  var j = await res.json();
+  if(!j.ok) throw new Error(j.error||'poll_ng');
+  return j.jobs||[];
+}
+async function apiAck(id, ok){
+  await fetch(API_URL+'?api=1',{ method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'bridgeAck', id:id, ok:ok, key:getKey() }) });
+}
+
+// テキスト → 58mm幅の画像 → ESC/POSラスター送信
+async function printText(text){
+  var cv=buildCanvasFromText(text);
+  var bytes=canvasToEscpos(cv);
+  var chunk=document.getElementById('safeMode').checked?20:128;
+  var useNR=writeChar.properties.writeWithoutResponse;
+  for(var i=0;i<bytes.length;i+=chunk){
+    var slice=bytes.slice(i, Math.min(i+chunk,bytes.length));
+    if(useNR) await writeChar.writeValueWithoutResponse(slice); else await writeChar.writeValue(slice);
+    await sleep(document.getElementById('safeMode').checked?16:7);
+  }
+}
+function buildCanvasFromText(text){
+  var cv=document.getElementById('cv'); var ctx=cv.getContext('2d');
+  var FS=22, LH=FS+8, pad=8;
+  ctx.font=FS+"px 'Noto Sans JP',monospace";
+  // 行を幅に合わせて折り返し
+  var raw=String(text).replace(/\r/g,'').split('\n');
+  var lines=[];
+  raw.forEach(function(ln){
+    if(ln===''){ lines.push(''); return; }
+    var cur='';
+    for(var i=0;i<ln.length;i++){
+      var test=cur+ln[i];
+      if(ctx.measureText(test).width > (PRINT_WIDTH-2*pad) && cur){ lines.push(cur); cur=ln[i]; }
+      else cur=test;
+    }
+    lines.push(cur);
+  });
+  cv.height = pad*2 + lines.length*LH + 48; // 末尾に紙送り余白
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.fillStyle='#000'; ctx.textBaseline='top'; ctx.font=FS+"px 'Noto Sans JP',monospace";
+  var y=pad;
+  lines.forEach(function(ln){ ctx.fillText(ln, pad, y); y+=LH; });
+  return cv;
+}
+function canvasToEscpos(cv){
+  var ctx=cv.getContext('2d'); var W=cv.width,H=cv.height;
+  var img=ctx.getImageData(0,0,W,H).data; var bpr=W/8;
+  var out=[0x1B,0x40]; var BAND=100;
+  for(var y0=0;y0<H;y0+=BAND){
+    var rows=Math.min(BAND,H-y0);
+    out.push(0x1D,0x76,0x30,0x00, bpr&0xff,(bpr>>8)&0xff, rows&0xff,(rows>>8)&0xff);
+    for(var y=0;y<rows;y++){ for(var bx=0;bx<bpr;bx++){ var b=0;
+      for(var bit=0;bit<8;bit++){ var px=bx*8+bit, py=y0+y, idx=(py*W+px)*4;
+        var lum=img[idx]*0.299+img[idx+1]*0.587+img[idx+2]*0.114;
+        if(img[idx+3]>32 && lum<128) b|=(0x80>>bit); }
+      out.push(b); } }
+  }
+  out.push(0x0A,0x0A,0x0A,0x0A);
+  return new Uint8Array(out);
+}
+
+async function requestWake(){ try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); log('画面常時点灯ON'); } }catch(e){ log('WakeLock不可: '+(e&&e.message||e)); } }
+function releaseWake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
+document.addEventListener('visibilitychange', async function(){ if(document.visibilityState==='visible' && looping && !wakeLock){ await requestWake(); } });
+</script>
+</body>
+</html>
