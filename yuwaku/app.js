@@ -592,14 +592,14 @@
   // 「この卓は会計済み＝このタブでの注文は終了」と判断して画面をロックする。
   var _sessionWatchStarted = false;
   function startSessionWatch() {
-    if (!state.table) return;
+    if (!state.table || state.staffMode) return;   // 店員のオーダー入力モードは会計後ロックの対象外
     API.post('getTableCheckoutStamp', { table: state.table }).then(function (r) {
       state.checkoutStamp = Number(r.data) || 0;
     }).catch(function () {});
     if (!_sessionWatchStarted) { _sessionWatchStarted = true; setInterval(checkSessionLock, 15000); }
   }
   function checkSessionLock() {
-    if (!state.table || state.sessionEnded) return;
+    if (!state.table || state.staffMode || state.sessionEnded) return;
     API.post('getTableCheckoutStamp', { table: state.table }).then(function (r) {
       var v = Number(r.data) || 0;
       if (v > state.checkoutStamp) lockSession();
@@ -794,8 +794,10 @@
   function boot() {
     state.table = qs('table');
     // QR経由（URLに?table=あり）で来た客のセッションは卓番号を固定。
-    // QR無し（店員がその場で口頭注文を入力する運用）のときのみ卓を選び直せる。
+    // QR無し（管理メニュー「オーダー入力」から店員がその場で口頭注文を入力する運用）は
+    // staffModeとして扱い、卓の選び直しを許可し、会計後ロック（ありがとうございました画面）も対象外にする。
     state.tableLocked = !!state.table;
+    state.staffMode = !state.table;
     state.lang = (localStorage.getItem('lang') || '').match(/^(ja|en)$/) ? localStorage.getItem('lang') : '';
 
     $('langBtn').addEventListener('click', function () { setLang(state.lang === 'ja' ? 'en' : 'ja'); });
