@@ -127,6 +127,7 @@
         <div id="ps3lbl" style="font-weight:800;margin:8px 0;"></div>
         <div id="ps3amt" style="font-size:20px;font-weight:900;color:var(--green);margin-bottom:16px;"></div>
         <button class="pbtn" style="background:var(--green);" onclick="finalize()" id="doneBtn">完了（会計済にする）</button>
+        <button class="cancel" onclick="closePay()" id="cxl3">キャンセル</button>
       </div>
     </div>
   </div>
@@ -361,7 +362,16 @@
       }
       var total = Math.max(0, (b.total||0) - disc);
       payTotal = total;
-      var vatBase = sub - eligible; var vat = Math.round(vatBase - vatBase/1.12);
+      // VATは設定の税率・内税/外税に従って計算する（従来は12%固定のシニア/PWD免税式を流用していたため、
+      // 設定税率と食い違い・内税時に不正確な値になる不具合があった）。
+      var taxRate = Number(SETTINGS.taxRate)||0, taxIncl = String(SETTINGS.taxInclusive)==='true';
+      var vat;
+      if (on) {
+        var vatBase = sub - eligible; // シニア/PWD免税対象額を除いた残りに対する税額
+        vat = taxIncl ? Math.round(vatBase - vatBase/(1+taxRate/100)) : Math.round(vatBase*(taxRate/100));
+      } else {
+        vat = b.tax;
+      }
       window._bill = { subtotal: sub, vat: vat, service: b.service, discountType: on?dtype:'', discountId: on?document.getElementById('dcId').value:'', discountAmount: disc, total: total };
       var html = '<div style="font-weight:900;font-size:15px;margin-bottom:8px;">🪑 '+esc(seatLabel(payTable))+'</div>';
       html += '<div class="sr"><span>'+t().sub+'</span><span>'+money(sub)+'</span></div>';
@@ -433,7 +443,8 @@
         '<div style="font-size:40px;">✅</div>'
         + '<div id="ps3lbl" style="font-weight:800;margin:8px 0;"></div>'
         + '<div id="ps3amt" style="font-size:20px;font-weight:900;color:var(--green);margin-bottom:16px;"></div>'
-        + '<button class="pbtn" style="background:var(--green);" onclick="finalize()" id="doneBtn">'+t().done+'</button>';
+        + '<button class="pbtn" style="background:var(--green);" onclick="finalize()" id="doneBtn">'+t().done+'</button>'
+        + '<button class="cancel" onclick="closePay()" id="cxl3">'+t().cancel+'</button>';
     }
 
     window.cashPay = function(){
