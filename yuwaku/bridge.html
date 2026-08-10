@@ -71,6 +71,7 @@ var device=null, server=null, writeChar=null;
 var looping=false, busy=false, timer=null, wakeLock=null;
 var cntOk=0, cntErr=0;
 var logoImg=null; // レシートロゴ（設定画面でアップロード）
+var logoScale=100; // ロゴ印字サイズ（58mm=100%）
 
 var CANDIDATE_SERVICES = [
   0x18F0,0x18F1,0xFF00,0xFFE0,0xFFF0,0xFEE7,0xFB00,0xFEA0,0xE0FF,
@@ -305,14 +306,15 @@ async function loadLogo(){
   try{
     var r=await fetch(API_URL+'?api=1',{ method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'getReceiptLogo', key:getKey() }) });
     var j=await r.json();
-    if(j.ok && j.data){ var im=new Image(); im.onload=function(){ logoImg=im; log('ロゴ読込OK'); }; im.onerror=function(){ logoImg=null; }; im.src=j.data; }
+    logoScale = Math.max(20, Math.min(100, Number(j.scale)||100));
+    if(j.ok && j.data){ var im=new Image(); im.onload=function(){ logoImg=im; log('ロゴ読込OK ('+logoScale+'%)'); }; im.onerror=function(){ logoImg=null; }; im.src=j.data; }
     else logoImg=null;
   }catch(e){ /* ロゴ無しでも印刷は継続 */ }
 }
 // ロゴを中央・58mm幅に収めてディザ印字（小バンド分割でバッファ安全）
 async function printLogo(){
   if(!logoImg) return;
-  var maxW=384, maxH=150, sc=Math.min(maxW/logoImg.width, maxH/logoImg.height, 1);
+  var maxW=Math.max(48, Math.round(384*(logoScale/100))), maxH=150, sc=Math.min(maxW/logoImg.width, maxH/logoImg.height, 1);
   var w=Math.max(1,Math.round(logoImg.width*sc)), h=Math.max(1,Math.round(logoImg.height*sc));
   var W=384, H=h, bpr=48;
   var cv=document.getElementById('cv'); var ctx=cv.getContext('2d');
