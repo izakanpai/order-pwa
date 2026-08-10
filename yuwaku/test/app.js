@@ -21,7 +21,8 @@
       fbTitle:'How was it?', fbSub:'Your rating helps us improve.', fbComment:'Comment (optional)', fbSend:'Send', fbPick:'Please tap the stars to rate.', fbThanks:'Thank you!', fbThanksMsg:'Thanks for your feedback.',
       bdayLbl:'🎂 Register your birthday for a treat', bdaySave:'Save', bdaySaved:'Saved! 🎉', bdayBad:'Enter as MM-DD (e.g. 08-15)',
       stTitle:'My orders', stTotalLbl:'Unpaid total', stRefresh:'Refresh', stEmpty:'No orders yet for this table.', stPending:'Preparing', stServed:'Served',
-      vatIncl:'Prices include VAT {v}%.', svcExtra:'A {v}% service charge applies separately.' },
+      taxInclText:'Prices include VAT {v}%.', taxExclText:'VAT {v}% will be added at checkout.',
+      svcInclText:'Prices include a {v}% service charge.', svcExclText:'A {v}% service charge applies separately.' },
     ja: { order:'ご注文', total:'合計', all:'すべて', send:'注文する', empty:'商品を選んでください',
       confirm:'この内容で注文しますか？', okTitle:'注文を送信しました', okMsg:'ご注文を承りました。',
       queuedTitle:'保留しました（オフライン）', queuedMsg:'今は接続がありません。オンライン復帰時に自動送信します。',
@@ -40,7 +41,8 @@
       fbTitle:'ご感想は？', fbSub:'評価は今後の改善に役立ちます。', fbComment:'コメント（任意）', fbSend:'送信', fbPick:'星をタップして評価してください。', fbThanks:'ありがとうございます！', fbThanksMsg:'ご意見ありがとうございました。',
       bdayLbl:'🎂 お誕生日を登録すると特典があります', bdaySave:'登録', bdaySaved:'登録しました！🎉', bdayBad:'MM-DD 形式で入力（例: 08-15）',
       stTitle:'注文状況', stTotalLbl:'未会計 合計', stRefresh:'更新', stEmpty:'この卓の注文はまだありません。', stPending:'準備中', stServed:'提供済み',
-      vatIncl:'表示価格はVAT{v}%込みです。', svcExtra:'別途サービス料{v}%を頂戴いたします。' }
+      taxInclText:'表示価格はVAT{v}%込みです。', taxExclText:'お会計時に別途VAT{v}%を頂戴いたします。',
+      svcInclText:'表示価格はサービス料{v}%込みです。', svcExclText:'別途サービス料{v}%を頂戴いたします。' }
   };
 
   var state = {
@@ -85,9 +87,14 @@
     state.optLines.forEach(function (l) { sub += (Number(l.unit) || 0) * (Number(l.qty) || 0); });
     var svcRate = Number(state.settings.serviceRate) || 0;
     var taxRate = Number(state.settings.taxRate) || 0;
-    var service = Math.round(sub * (svcRate / 100));
-    var tax = Math.round((sub + service) * (taxRate / 100));
-    var base = sub + service + tax;
+    var svcIncl = String(state.settings.serviceInclusive) === 'true';
+    var taxIncl = String(state.settings.taxInclusive) === 'true';
+    // 内税/外税：内税＝表示価格に含まれる（追加課金なし）／外税＝表示価格の上に加算
+    var service, afterService, tax, base;
+    if (svcIncl) { service = Math.round(sub - sub / (1 + svcRate / 100)); afterService = sub; }
+    else { service = Math.round(sub * (svcRate / 100)); afterService = sub + service; }
+    if (taxIncl) { tax = Math.round(sub - sub / (1 + taxRate / 100)); base = afterService; }
+    else { tax = Math.round(afterService * (taxRate / 100)); base = afterService + tax; }
     // クーポン割引（先に適用）
     var couponDiscount = 0;
     if (state.coupon && state.coupon.discount > 0) {
@@ -136,10 +143,12 @@
     var x = t();
     var vat = Number(state.settings.taxRate) || 0;
     var svc = Number(state.settings.serviceRate) || 0;
+    var vatIncl = String(state.settings.taxInclusive) === 'true';
+    var svcIncl = String(state.settings.serviceInclusive) === 'true';
     if (vat <= 0 && svc <= 0) { el.style.display = 'none'; el.textContent = ''; return; }
     var parts = [];
-    if (vat > 0) parts.push(x.vatIncl.replace('{v}', vat));
-    if (svc > 0) parts.push(x.svcExtra.replace('{v}', svc));
+    if (vat > 0) parts.push((vatIncl ? x.taxInclText : x.taxExclText).replace('{v}', vat));
+    if (svc > 0) parts.push((svcIncl ? x.svcInclText : x.svcExclText).replace('{v}', svc));
     el.textContent = parts.join(' ');
     el.style.display = 'block';
   }
