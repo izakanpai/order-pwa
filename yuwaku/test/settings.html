@@ -154,6 +154,8 @@
         <div class="fg"><label class="form-label" data-t="repHour">送信時刻（0-23時）</label><input id="reportMonthlyHour" type="number" min="0" max="23" class="fc"></div>
       </div>
 
+      <div class="fg" style="max-width:220px;margin-top:12px;"><label class="form-label" data-t="repLang">出力言語</label><select id="reportLang" class="fc"><option value="ja" data-t="repLangJa">日本語</option><option value="en" data-t="repLangEn">英語</option><option value="both" data-t="repLangBoth">日本語＋英語（両方）</option></select></div>
+
       <div class="row" style="margin-top:10px;"><button class="btn" onclick="saveReport()" data-t="repSave">💾 保存＆スケジュール</button></div>
       <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px;">
         <button class="btn sec" onclick="testReport('daily')" data-t="repTestD">✉️ 日次テスト</button>
@@ -221,7 +223,7 @@
     };
     window.saveGeo = function(){ rpc('saveSettings',[{ storeLat:$('storeLat').value, storeLng:$('storeLng').value, storeRadius:Number($('storeRadius').value)||0 }]).then(function(){ st('st-geo',I18n.t('saved'), true); }).catch(function(e){ st('st-geo',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.saveLoy = function(){ rpc('saveSettings',[{ loyaltyEnabled:$('loyaltyEnabled').checked?'on':'', loyaltyEarnRate:Number($('loyaltyEarnRate').value)||20, loyaltyRedeemValue:Number($('loyaltyRedeemValue').value)||1 }]).then(function(){ st('st-loy',I18n.t('saved'), true); }).catch(function(e){ st('st-loy',I18n.t('errPrefix')+(e.message||e), false); }); };
-    window.saveReport = function(){ var emails=($('reportEmail').value||'').split(/[\s,;]+/).map(function(x){return x.trim();}).filter(Boolean).join(','); rpc('saveReportSettings',[emails, $('reportHour').value, $('reportEnabled').checked, $('reportWeekly').checked, $('reportMonthly').checked, $('reportWeeklyDay').value, $('reportWeeklyHour').value, $('reportMonthlyDay').value, $('reportMonthlyHour').value]).then(function(r){ if(r&&r.success){ st('st-report',I18n.t('savedSched'), true); } else { st('st-report',I18n.t('errPrefix')+((r&&r.error)||I18n.t('scopeReauth')), false); } }).catch(function(e){ st('st-report',I18n.t('errPrefix')+(e.message||e), false); }); };
+    window.saveReport = function(){ var emails=($('reportEmail').value||'').split(/[\s,;]+/).map(function(x){return x.trim();}).filter(Boolean).join(','); rpc('saveReportSettings',[emails, $('reportHour').value, $('reportEnabled').checked, $('reportWeekly').checked, $('reportMonthly').checked, $('reportWeeklyDay').value, $('reportWeeklyHour').value, $('reportMonthlyDay').value, $('reportMonthlyHour').value, $('reportLang').value]).then(function(r){ if(r&&r.success){ st('st-report',I18n.t('savedSched'), true); } else { st('st-report',I18n.t('errPrefix')+((r&&r.error)||I18n.t('scopeReauth')), false); } }).catch(function(e){ st('st-report',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.testReport = function(kind){ st('st-report',I18n.t('sending'), true); rpc('sendTestReport',[kind||'daily']).then(function(r){ if(r&&r.success){ st('st-report',I18n.t('testSent'), true); } else { st('st-report',I18n.t('errPrefix')+((r&&r.error)||I18n.t('sendFail')), false); } }).catch(function(e){ st('st-report',I18n.t('errPrefix')+(e.message||e), false); }); };
     function setBadge(id, on){ var b=$(id); b.className='badge '+(on?'on':'offb'); b.innerText=on?I18n.t('set'):I18n.t('unset'); b.removeAttribute('data-t'); }
 
@@ -256,6 +258,7 @@
       $('reportWeeklyHour').value = (d.reportWeeklyHour!==undefined&&d.reportWeeklyHour!=='')?d.reportWeeklyHour:'';
       $('reportMonthlyDay').value = (d.reportMonthlyDay!==undefined&&d.reportMonthlyDay!=='')?d.reportMonthlyDay:'1';
       $('reportMonthlyHour').value = (d.reportMonthlyHour!==undefined&&d.reportMonthlyHour!=='')?d.reportMonthlyHour:'';
+      $('reportLang').value = (d.reportLang==='en'||d.reportLang==='both')?d.reportLang:'ja';
     }).catch(function(){});
     rpc('getPaymongoKeyStatus',[]).then(function(s){ if(s) setBadge('payBadge', s.configured); }).catch(function(){});
     rpc('getGeminiKeyStatus',[]).then(function(s){ if(s) setBadge('gemBadge', s.configured); }).catch(function(){});
@@ -271,6 +274,7 @@
         geoTitle:'📍 勤怠・店舗位置', lat:'緯度', lng:'経度', radius:'許容半径 (m)', getLoc:'📡 現在地を取得',
         loyTitle:'🎁 ロイヤリティ（ポイント）', loyEnable:'有効にする', loyEarn:'付与レート（何円で1pt）', loyRedeem:'利用価値（1pt=何円）',
         repTitle:'📧 定期レポート（自動メール）', repDaily:'日次日報（毎日）', repWeekly:'週次レポート', repMonthly:'月次レポート', repEmail:'送信先メール（複数可・カンマか改行区切り）', repHour:'送信時刻（0-23時）', repWeekDay:'送信曜日', repMonthDay:'送信日（1〜28）', dow0:'日曜', dow1:'月曜', dow2:'火曜', dow3:'水曜', dow4:'木曜', dow5:'金曜', dow6:'土曜', repSave:'💾 保存＆スケジュール', repTestD:'✉️ 日次テスト', repTestW:'✉️ 週次テスト', repTestM:'✉️ 月次テスト',
+        repLang:'出力言語', repLangJa:'日本語', repLangEn:'英語', repLangBoth:'日本語＋英語（両方）',
         saved:'✅ 保存しました', savedSched:'✅ 保存＆スケジュール設定しました', uploaded:'✅ アップロードしました', pickImg:'画像を選択してください', needKey:'キーを入力してください', noGeoDev:'この端末は位置情報に対応していません', gotLoc:'現在地を取得しました。「保存」を押してください。', noLoc:'位置情報を取得できませんでした。手動入力してください。', sending:'送信中…', testSent:'✅ テスト送信しました。受信箱をご確認ください', sendFail:'送信できませんでした', scopeReauth:'認証(スコープ)の再承認が必要かもしれません', errPrefix:'エラー: ' },
       en:{ title:'⚙️ Settings', back:'← Manage', save:'💾 Save', status:'Status:', unset:'Not set', set:'Set', phPaste:'Paste and save',
         shopTitle:'🏪 Store settings', shopName:'Store name', shopAddress:'Address (on receipt)', shopTin:'TIN (on receipt)', shopLogo:'Receipt logo (centered on top)', logoClear:'Clear', logoSize:'Print size (%)', logoHint:'Auto-resized & converted for B/W thermal printing. 58mm width = 100%; adjust the print size below.', tableCount:'Tables', counterCount:'Counter seats', seatHint:'On the order screen guests pick from “Table 1…” / “Counter 1…”. Set 0 to hide that type.', tableHint:'Max table number on the order screen.',
@@ -282,6 +286,7 @@
         geoTitle:'📍 Attendance / store location', lat:'Latitude', lng:'Longitude', radius:'Allowed radius (m)', getLoc:'📡 Get current location',
         loyTitle:'🎁 Loyalty (points)', loyEnable:'Enable', loyEarn:'Earn rate (amount per 1pt)', loyRedeem:'Redeem value (1pt = amount)',
         repTitle:'📧 Scheduled reports (auto email)', repDaily:'Daily report (every day)', repWeekly:'Weekly report', repMonthly:'Monthly report', repEmail:'Recipient emails (multiple, comma/newline separated)', repHour:'Send time (0-23)', repWeekDay:'Send day', repMonthDay:'Send day (1–28)', dow0:'Sun', dow1:'Mon', dow2:'Tue', dow3:'Wed', dow4:'Thu', dow5:'Fri', dow6:'Sat', repSave:'💾 Save & schedule', repTestD:'✉️ Daily test', repTestW:'✉️ Weekly test', repTestM:'✉️ Monthly test',
+        repLang:'Output language', repLangJa:'Japanese', repLangEn:'English', repLangBoth:'Japanese + English (both)',
         saved:'✅ Saved', savedSched:'✅ Saved & scheduled', uploaded:'✅ Uploaded', pickImg:'Please select an image', needKey:'Please enter a key', noGeoDev:'This device does not support location', gotLoc:'Location acquired. Please press Save.', noLoc:'Could not get location. Please enter manually.', sending:'Sending…', testSent:'✅ Test sent. Please check your inbox', sendFail:'Could not send', scopeReauth:'You may need to re-authorize (scopes)', errPrefix:'Error: ' }
     }, function(){ rpc('getPaymongoKeyStatus',[]).then(function(s){ if(s) setBadge('payBadge', s.configured); }).catch(function(){}); rpc('getGeminiKeyStatus',[]).then(function(s){ if(s) setBadge('gemBadge', s.configured); }).catch(function(){}); });
   </script>
