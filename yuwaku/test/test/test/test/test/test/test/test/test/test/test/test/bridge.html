@@ -212,29 +212,49 @@ async function printReceipt(text){
   await sendChunks(new Uint8Array([0x1B,0x40])); // 初期化
   var lines = text.replace(/\r/g,'').split('\n');
   var buf = []; // テキストモードのバイトをまとめて送る
-  for (var i=0;i<lines.length;i++){
-    var ln = lines[i], align = 0, big = false;
-    var m = ln.charCodeAt(0);
-    if (m === 1){ align=1; big=true; ln=ln.slice(1); }
-    else if (m === 2){ align=1; ln=ln.slice(1); }
-    if (ln === ''){ buf.push(0x0A); continue; }
-    if (/^[\x20-\x7E]*$/.test(ln)){
+  async function flush(){ if(buf.length){ await sendChunks(new Uint8Array(buf)); buf=[]; } }
+  async function emit(seg, align, big){
+    if (seg === ''){ buf.push(0x0A); return; }
+    if (/^[\x20-\x7E]*$/.test(seg)){
       // ASCII → テキストモード（高速）
-      buf.push(0x1B,0x61,align);                     // 整列(0左/1中央)
+      buf.push(0x1B,0x61,align);                       // 整列(0左/1中央)
       if (big) buf.push(0x1D,0x21,0x11, 0x1B,0x45,0x01); // 倍角＋太字
-      for (var c=0;c<ln.length;c++) buf.push(ln.charCodeAt(c) & 0x7F);
+      for (var c=0;c<seg.length;c++) buf.push(seg.charCodeAt(c) & 0x7F);
       buf.push(0x0A);
       if (big) buf.push(0x1D,0x21,0x00, 0x1B,0x45,0x00); // 解除
-      buf.push(0x1B,0x61,0x00);                       // 左寄せへ戻す
+      buf.push(0x1B,0x61,0x00);                         // 左寄せへ戻す
     } else {
       // 日本語を含む行 → その1行だけ画像化（小さいのでバッファ安全）
-      if (buf.length){ await sendChunks(new Uint8Array(buf)); buf=[]; }
-      await rasterLine(ln, align, big);
+      await flush();
+      await rasterLine(seg, align, big);
     }
   }
-  if (buf.length) await sendChunks(new Uint8Array(buf));
+  for (var i=0;i<lines.length;i++){
+    var ln = lines[i], align = 0, big = false, m = ln.charCodeAt(0);
+    if (m === 1){ align=1; big=true; ln=ln.slice(1); }
+    else if (m === 2){ align=1; ln=ln.slice(1); }
+    if (big){
+      // 大きい見出し（店名）は幅を取るので 半角20文字（全角10文字）で折り返す
+      var segs = wrapWidth(ln, 20);
+      for (var s=0;s<segs.length;s++) await emit(segs[s], align, true);
+    } else {
+      await emit(ln, align, false);
+    }
+  }
+  await flush();
   await sendChunks(new Uint8Array([0x0A,0x0A,0x0A]));
   await sleep(120);
+}
+// 表示幅（全角=2/半角=1）で折り返し
+function wrapWidth(str, maxHalf){
+  var out=[], cur='', w=0;
+  for (var i=0;i<str.length;i++){
+    var ch=str[i], cw=(str.charCodeAt(i)>255)?2:1;
+    if (w+cw>maxHalf && cur){ out.push(cur); cur=ch; w=cw; }
+    else { cur+=ch; w+=cw; }
+  }
+  if (cur) out.push(cur);
+  return out.length?out:[''];
 }
 // 1行だけを画像化して送る（日本語対応・中央寄せ/大に対応）
 async function rasterLine(text, align, big){
