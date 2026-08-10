@@ -15,13 +15,15 @@
   <div class="appbar">
     <div class="title" id="shopName">Order</div>
     <div class="table-chip" id="tableChip">Table —</div>
-    <button class="lang-btn" id="memberBtn" style="display:none;">🎁</button>
-    <button class="lang-btn" id="couponBtn">🎟️</button>
-    <button class="lang-btn" id="callBtn" title="Call staff">🔔</button>
-    <button class="lang-btn" id="billBtn" title="Bill">🧾</button>
-    <button class="lang-btn" id="statusBtn" title="My orders">📋</button>
-    <button class="lang-btn" id="fbBtn" title="Feedback">⭐</button>
     <button class="lang-btn" id="langBtn">JP</button>
+  </div>
+  <div class="quickbar" id="quickbar">
+    <button class="qbtn" id="memberBtn" style="display:none;"><span class="ico">🎁</span><span class="lbl" id="memberLbl"></span></button>
+    <button class="qbtn" id="couponBtn"><span class="ico">🎟️</span><span class="lbl" id="couponLbl"></span></button>
+    <button class="qbtn" id="callBtn"><span class="ico">🔔</span><span class="lbl" id="callLbl"></span></button>
+    <button class="qbtn" id="billBtn"><span class="ico">🧾</span><span class="lbl" id="billLbl"></span></button>
+    <button class="qbtn" id="statusBtn"><span class="ico">📋</span><span class="lbl" id="statusLbl"></span></button>
+    <button class="qbtn" id="fbBtn"><span class="ico">⭐</span><span class="lbl" id="fbLbl"></span></button>
   </div>
 
   <div class="net-banner offline-b" id="offlineBanner">
@@ -70,6 +72,15 @@
       <h3 id="errTitle">Error</h3>
       <p id="errMsg"></p>
       <button class="btn-send ok" id="errBtn" style="background:var(--red);">OK</button>
+    </div>
+  </div>
+
+  <!-- Session ended (checkout completed on this table) — full-screen lock -->
+  <div class="overlay" id="doneOverlay" style="z-index:999999;">
+    <div class="sheet">
+      <div class="emoji">🙏</div>
+      <h3 id="doneTitle">Thank you!</h3>
+      <p id="doneMsg"></p>
     </div>
   </div>
 

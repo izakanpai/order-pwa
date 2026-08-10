@@ -34,8 +34,26 @@ body {
 }
 .lang-btn {
   background: rgba(255,255,255,.16); color:#fff; border: none;
-  border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+  border-radius: 999px; padding: 7px 13px; font-size: 13px; font-weight: 700; cursor: pointer;
+  min-height: 34px;
 }
+
+/* Quick actions row (call staff / bill / status / feedback / coupon / member) */
+.quickbar {
+  position: sticky; top: var(--appbar-h, 52px); z-index: 25;
+  display: flex; gap: 8px; overflow-x: auto; padding: 8px 14px;
+  background: var(--accent-dk, #0b1220); -webkit-overflow-scrolling: touch;
+}
+.quickbar::-webkit-scrollbar { display: none; }
+.qbtn {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,.14); color: #fff; border: none; border-radius: 12px;
+  padding: 10px 14px; font-size: 13px; font-weight: 800; cursor: pointer;
+  min-height: 40px; white-space: nowrap;
+}
+.qbtn:active { background: rgba(255,255,255,.28); }
+.qbtn .ico { font-size: 18px; line-height: 1; }
+.qbtn .lbl { white-space: nowrap; }
 
 /* Offline banner */
 .net-banner {
@@ -54,7 +72,7 @@ body.offline .net-banner.offline-b { display: flex; }
 
 /* Category tabs */
 .cats {
-  position: sticky; top: 52px; z-index: 20;
+  position: sticky; top: var(--stack-h, 108px); z-index: 20;
   display: flex; gap: 8px; overflow-x: auto; padding: 10px 14px;
   background: var(--bg); -webkit-overflow-scrolling: touch;
 }

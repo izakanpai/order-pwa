@@ -22,7 +22,9 @@
       bdayLbl:'🎂 Register your birthday for a treat', bdaySave:'Save', bdaySaved:'Saved! 🎉', bdayBad:'Enter as MM-DD (e.g. 08-15)',
       stTitle:'My orders', stSubLbl:'Subtotal', stTotalLbl:'Unpaid total', stRefresh:'Refresh', stEmpty:'No orders yet for this table.', stPending:'Preparing', stServed:'Served',
       taxInclText:'Prices include VAT {v}%.', taxExclText:'VAT {v}% will be added at checkout.',
-      svcInclText:'Prices include a {v}% service charge.', svcExclText:'A {v}% service charge applies separately.' },
+      svcInclText:'Prices include a {v}% service charge.', svcExclText:'A {v}% service charge applies separately.',
+      btnMember:'Rewards', btnCoupon:'Coupon', btnCall:'Call', btnBill:'Bill', btnStatus:'Orders', btnFeedback:'Rate',
+      doneTitle:'Thank you!', doneMsg:'Your bill has been settled. If you\'d like to order again, please scan the table QR code once more.' },
     ja: { order:'ご注文', total:'合計', all:'すべて', send:'注文する', empty:'商品を選んでください',
       confirm:'この内容で注文しますか？', okTitle:'注文を送信しました', okMsg:'ご注文を承りました。',
       queuedTitle:'保留しました（オフライン）', queuedMsg:'今は接続がありません。オンライン復帰時に自動送信します。',
@@ -42,12 +44,17 @@
       bdayLbl:'🎂 お誕生日を登録すると特典があります', bdaySave:'登録', bdaySaved:'登録しました！🎉', bdayBad:'MM-DD 形式で入力（例: 08-15）',
       stTitle:'注文状況', stSubLbl:'小計', stTotalLbl:'未会計 合計', stRefresh:'更新', stEmpty:'この卓の注文はまだありません。', stPending:'準備中', stServed:'提供済み',
       taxInclText:'表示価格はVAT{v}%込みです。', taxExclText:'お会計時に別途VAT{v}%を頂戴いたします。',
-      svcInclText:'表示価格はサービス料{v}%込みです。', svcExclText:'別途サービス料{v}%を頂戴いたします。' }
+      svcInclText:'表示価格はサービス料{v}%込みです。', svcExclText:'別途サービス料{v}%を頂戴いたします。',
+      btnMember:'特典', btnCoupon:'クーポン', btnCall:'呼出', btnBill:'会計', btnStatus:'状況', btnFeedback:'評価',
+      doneTitle:'ご利用ありがとうございました', doneMsg:'お会計が完了しました。追加でご注文の際は、テーブルのQRコードを再度読み取ってください。' }
   };
 
   var state = {
     lang: 'en', settings: {}, menu: [], cats: [], currentCat: 'all',
-    cart: {}, optLines: [], table: '', paymongo: false, member: null, usePoints: false, coupon: null
+    cart: {}, optLines: [], table: '', paymongo: false, member: null, usePoints: false, coupon: null,
+    tableLocked: false,      // true = 卓番号はURLのQRで固定済み（客はタップで変更不可）
+    checkoutStamp: 0,        // このセッション開始時点の「最終会計時刻」基準値
+    sessionEnded: false      // 基準値より新しい会計を検知＝このセッションは終了
   };
 
   function $(id) { return document.getElementById(id); }
@@ -144,14 +151,42 @@
   function renderTexts() {
     var x = t();
     $('shopName').textContent = state.settings.shopName || x.order;
-    $('tableChip').textContent = (state.table ? seatLabel(state.table) : (x.table + ' —')) + ' ▾';
-    $('tableChip').style.cursor = 'pointer';
-    $('tableChip').title = (state.lang === 'en') ? 'Tap to change table' : '卓を選び直す';
+    // 卓番号：QR経由（URLに?table=あり）で確定した客のセッションでは変更不可にする。
+    // QR無し（店員が口頭注文を入力する運用）のときだけ従来通りタップで選び直せる。
+    if (state.tableLocked) {
+      $('tableChip').textContent = state.table ? seatLabel(state.table) : (x.table + ' —');
+      $('tableChip').style.cursor = 'default';
+      $('tableChip').title = '';
+    } else {
+      $('tableChip').textContent = (state.table ? seatLabel(state.table) : (x.table + ' —')) + ' ▾';
+      $('tableChip').style.cursor = 'pointer';
+      $('tableChip').title = (state.lang === 'en') ? 'Tap to change table' : '卓を選び直す';
+    }
     $('langBtn').textContent = x.lang;
     $('totalLbl').textContent = x.total;
     $('sendLbl').textContent = x.send;
     $('offlineText').textContent = x.offline;
+    if ($('memberLbl')) $('memberLbl').textContent = x.btnMember;
+    if ($('couponLbl')) $('couponLbl').textContent = x.btnCoupon;
+    if ($('callLbl')) $('callLbl').textContent = x.btnCall;
+    if ($('billLbl')) $('billLbl').textContent = x.btnBill;
+    if ($('statusLbl')) $('statusLbl').textContent = x.btnStatus;
+    if ($('fbLbl')) $('fbLbl').textContent = x.btnFeedback;
+    if ($('doneTitle')) $('doneTitle').textContent = x.doneTitle;
+    if ($('doneMsg')) $('doneMsg').textContent = x.doneMsg;
     renderVatNotice();
+    updateStickyOffsets();
+  }
+
+  // appbar／quickbarの実高さをCSS変数に反映し、.catsのsticky位置がズレないようにする。
+  function updateStickyOffsets() {
+    try {
+      var ab = document.querySelector('.appbar'), qb = document.querySelector('.quickbar');
+      var abH = ab ? ab.offsetHeight : 52;
+      var qbH = qb ? qb.offsetHeight : 0;
+      document.documentElement.style.setProperty('--appbar-h', abH + 'px');
+      document.documentElement.style.setProperty('--stack-h', (abH + qbH) + 'px');
+    } catch (e) {}
   }
 
   // 税・サービス料の案内（設定のtaxRate/serviceRateが未設定/0のときはその部分を省く）
@@ -458,6 +493,7 @@
 
   function send() {
     var x = t();
+    if (state.sessionEnded) { $('doneOverlay').classList.add('show'); return; }
     if (!state.table) { showErr(x.noTable); return; }
     var items = [];
     Object.keys(state.cart).forEach(function (n) { if (state.cart[n] > 0) items.push({ name: n, count: state.cart[n] }); });
@@ -550,6 +586,33 @@
   function showOk(title, msg, emoji) { $('okEmoji').textContent = emoji || '✅'; $('okTitle').textContent = title; $('okMsg').textContent = msg; $('okOverlay').classList.add('show'); }
   function showErr(msg) { $('errTitle').textContent = t().errTitle; $('errMsg').textContent = msg; $('errOverlay').classList.add('show'); }
 
+  // ---- 会計後の追加注文ブロック ----
+  // 会計（finalizeBill・卓全体）のたびにサーバ側で卓ごとの「最終会計時刻」が更新される。
+  // このセッションが開始した時点の値を基準に保持し、それより新しい値を検知したら
+  // 「この卓は会計済み＝このタブでの注文は終了」と判断して画面をロックする。
+  var _sessionWatchStarted = false;
+  function startSessionWatch() {
+    if (!state.table) return;
+    API.post('getTableCheckoutStamp', { table: state.table }).then(function (r) {
+      state.checkoutStamp = Number(r.data) || 0;
+    }).catch(function () {});
+    if (!_sessionWatchStarted) { _sessionWatchStarted = true; setInterval(checkSessionLock, 15000); }
+  }
+  function checkSessionLock() {
+    if (!state.table || state.sessionEnded) return;
+    API.post('getTableCheckoutStamp', { table: state.table }).then(function (r) {
+      var v = Number(r.data) || 0;
+      if (v > state.checkoutStamp) lockSession();
+    }).catch(function () {});
+  }
+  function lockSession() {
+    if (state.sessionEnded) return;
+    state.sessionEnded = true;
+    stopPoll();
+    $('sendBtn').disabled = true;
+    $('doneOverlay').classList.add('show');
+  }
+
   function refreshPending() {
     API.pendingCount().then(function (n) {
       var pill = $('pendingPill');
@@ -583,6 +646,11 @@
         state.cart = {}; state.optLines = []; state.coupon = null;
         updateCouponBtn(); renderMenu(); updateTotal();
       }
+      // 別卓に切り替えた場合、その卓の会計済み状態を基準に取り直す（ロック状態をリセット）
+      state.sessionEnded = false;
+      $('doneOverlay').classList.remove('show');
+      $('sendBtn').disabled = false;
+      startSessionWatch();
       $('tableOverlay').classList.remove('show');
       renderTexts();
     };
@@ -725,6 +793,9 @@
   // ---- 起動 ----
   function boot() {
     state.table = qs('table');
+    // QR経由（URLに?table=あり）で来た客のセッションは卓番号を固定。
+    // QR無し（店員がその場で口頭注文を入力する運用）のときのみ卓を選び直せる。
+    state.tableLocked = !!state.table;
     state.lang = (localStorage.getItem('lang') || '').match(/^(ja|en)$/) ? localStorage.getItem('lang') : '';
 
     $('langBtn').addEventListener('click', function () { setLang(state.lang === 'ja' ? 'en' : 'ja'); });
@@ -754,8 +825,8 @@
     $('stRefresh').addEventListener('click', loadStatus);
     $('stClose').addEventListener('click', function () { $('statusModal').classList.remove('show'); });
     $('fbBtn').addEventListener('click', openFeedback);
-    // 卓チップをタップで卓を選び直す（店員が口頭注文を別卓に入力する用）
-    $('tableChip').addEventListener('click', function () { if (state.tables && state.tables.length) showTablePicker(state.tables); });
+    // 卓チップをタップで卓を選び直す（店員が口頭注文を別卓に入力する用・QR経由の客セッションでは無効）
+    $('tableChip').addEventListener('click', function () { if (!state.tableLocked && state.tables && state.tables.length) showTablePicker(state.tables); });
     $('fbSend').addEventListener('click', sendFeedback);
     $('fbClose').addEventListener('click', function () { $('fbModal').classList.remove('show'); });
     Array.prototype.forEach.call($('fbStars').querySelectorAll('span'), function (s) {
@@ -767,7 +838,15 @@
     if (!navigator.onLine) document.body.classList.add('offline');
     // 定期再送＋タブ復帰時の再送（online イベントが発火しない環境の保険）
     setInterval(function () { if (navigator.onLine) API.flush().then(refreshPending); }, 20000);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden && navigator.onLine) API.flush().then(refreshPending); });
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && navigator.onLine) { API.flush().then(refreshPending); checkSessionLock(); }
+    });
+    var _resizeT = null;
+    window.addEventListener('resize', function () { clearTimeout(_resizeT); _resizeT = setTimeout(updateStickyOffsets, 150); });
+    updateStickyOffsets();
+
+    // 会計後の追加注文ブロック：起動時に基準スタンプを取得し、以後定期的に最新値と比較する。
+    startSessionWatch();
 
     API.post('bootstrap', {}).then(function (r) {
       try { localStorage.setItem('bootCache', JSON.stringify({ settings: r.settings, menu: r.menu, paymongo: r.paymongo, tables: r.tables })); } catch (e) {}
