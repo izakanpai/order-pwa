@@ -167,7 +167,7 @@ async function apiAck(id, ok){
 
 // テキスト → 58mm幅の画像 → ESC/POSラスター送信
 async function printText(text){
-  await printImageInParts(buildCanvasFromText(text));
+  await printReceipt(String(text).replace(/₱/g,'P'));
 }
 // BLE書き込み（1バンド分のバイト列を分割送信）
 async function sendChunks(bytes){
@@ -206,27 +206,55 @@ function buildCanvasFromText(text){
   lines.forEach(function(ln){ ctx.fillText(ln, pad, y); y+=LH; });
   return cv;
 }
-// レシートを複数の「独立した印刷ジョブ」に分割して印刷する（EPSON式）。
-// 各パートは ESC @（初期化＝受信バッファをリセット）＋そのパートのラスターで完結。
-// 1ジョブを小さく保ち、ジョブ間で印字＆バッファ排出を待つので、長いレシートでもバッファが溢れず末尾まで化けない。
-async function printImageInParts(cv){
-  var ctx=cv.getContext('2d'); var W=cv.width,H=cv.height;
-  var img=ctx.getImageData(0,0,W,H).data; var bpr=W/8;
-  var safe=document.getElementById('safeMode').checked;
-  var PART=safe?64:96; // 1ジョブ=最大96ドット行（≈4.6KB。バッファに確実に収まるサイズ）
-  for(var y0=0;y0<H;y0+=PART){
-    var rows=Math.min(PART,H-y0);
-    var job=[0x1B,0x40]; // 各パートを独立ジョブとして初期化（バッファをリセット）
-    job.push(0x1D,0x76,0x30,0x00, bpr&0xff,(bpr>>8)&0xff, rows&0xff,(rows>>8)&0xff);
-    for(var y=0;y<rows;y++){ for(var bx=0;bx<bpr;bx++){ var b=0;
-      for(var bit=0;bit<8;bit++){ var px=bx*8+bit, py=y0+y, idx=(py*W+px)*4;
-        if(img[idx+3]>32 && (img[idx]*0.299+img[idx+1]*0.587+img[idx+2]*0.114)<128) b|=(0x80>>bit); }
-      job.push(b); } }
-    await sendChunks(new Uint8Array(job));
-    await sleep(rows*(safe?8:5) + 200); // このジョブが印字＆排出されるのを待ってから次のジョブ
+// 混在印刷：ASCII行は高速なESC/POSテキストモード、日本語を含む行だけ1行画像化。
+// これでデータ量が激減し大幅に高速化。行頭の制御 (0x01=中央大 / 0x02=中央) でヘッダーを装飾。
+async function printReceipt(text){
+  await sendChunks(new Uint8Array([0x1B,0x40])); // 初期化
+  var lines = text.replace(/\r/g,'').split('\n');
+  var buf = []; // テキストモードのバイトをまとめて送る
+  for (var i=0;i<lines.length;i++){
+    var ln = lines[i], align = 0, big = false;
+    var m = ln.charCodeAt(0);
+    if (m === 1){ align=1; big=true; ln=ln.slice(1); }
+    else if (m === 2){ align=1; ln=ln.slice(1); }
+    if (ln === ''){ buf.push(0x0A); continue; }
+    if (/^[\x20-\x7E]*$/.test(ln)){
+      // ASCII → テキストモード（高速）
+      buf.push(0x1B,0x61,align);                     // 整列(0左/1中央)
+      if (big) buf.push(0x1D,0x21,0x11, 0x1B,0x45,0x01); // 倍角＋太字
+      for (var c=0;c<ln.length;c++) buf.push(ln.charCodeAt(c) & 0x7F);
+      buf.push(0x0A);
+      if (big) buf.push(0x1D,0x21,0x00, 0x1B,0x45,0x00); // 解除
+      buf.push(0x1B,0x61,0x00);                       // 左寄せへ戻す
+    } else {
+      // 日本語を含む行 → その1行だけ画像化（小さいのでバッファ安全）
+      if (buf.length){ await sendChunks(new Uint8Array(buf)); buf=[]; }
+      await rasterLine(ln, align, big);
+    }
   }
-  await sendChunks(new Uint8Array([0x0A,0x0A,0x0A,0x0A])); // 末尾の紙送り
-  await sleep(150);
+  if (buf.length) await sendChunks(new Uint8Array(buf));
+  await sendChunks(new Uint8Array([0x0A,0x0A,0x0A]));
+  await sleep(120);
+}
+// 1行だけを画像化して送る（日本語対応・中央寄せ/大に対応）
+async function rasterLine(text, align, big){
+  var cv=document.getElementById('cv'); var ctx=cv.getContext('2d');
+  var FS = big?34:24, H = FS + 12, W=384, bpr=48;
+  cv.width=W; cv.height=H;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#000'; ctx.textBaseline='top';
+  ctx.font=(big?'bold ':'')+FS+"px 'Noto Sans JP',sans-serif";
+  var w=ctx.measureText(text).width;
+  var x = (align===1) ? Math.max(0,(W-w)/2) : 6;
+  ctx.fillText(text, x, 6);
+  var img=ctx.getImageData(0,0,W,H).data;
+  var job=[0x1D,0x76,0x30,0x00, bpr&0xff,0, H&0xff,(H>>8)&0xff];
+  for(var y=0;y<H;y++){ for(var bx=0;bx<bpr;bx++){ var b=0;
+    for(var bit=0;bit<8;bit++){ var px=bx*8+bit, idx=(y*W+px)*4;
+      if(img[idx+3]>32 && (img[idx]*0.299+img[idx+1]*0.587+img[idx+2]*0.114)<128) b|=(0x80>>bit); }
+    job.push(b); } }
+  await sendChunks(new Uint8Array(job));
+  await sleep(H*2 + 20); // この行が印字されるのを待つ
 }
 
 async function requestWake(){ try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); log('画面常時点灯ON'); } }catch(e){ log('WakeLock不可: '+(e&&e.message||e)); } }
