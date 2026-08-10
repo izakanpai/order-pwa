@@ -240,6 +240,21 @@ async function printReceipt(text){
   async function flush(){ if(buf.length){ await sendChunks(new Uint8Array(buf)); buf=[]; } }
   async function emit(seg, align, big){
     if (seg === ''){ buf.push(0x0A); return; }
+    var tab = seg.indexOf('\t');
+    if (tab >= 0){
+      // ラベル\t金額の2カラム行（レシート明細・小計等）。金額を右端にピクセル単位で揃えるため
+      // プロポーショナルフォントでの画像化時は実測幅で右寄せする（文字数ベースの空白埋めはズレるため廃止）。
+      var label = seg.slice(0,tab), val = seg.slice(tab+1);
+      if (/^[\x20-\x7E]*$/.test(label) && /^[\x20-\x7E]*$/.test(val)){
+        // 全角文字を含まない行はプリンタ本体の等幅フォントで印字（文字数ベースの空白埋めで正しく揃う）
+        var pad = 20 - label.length - val.length; if (pad < 1) pad = 1;
+        seg = label + Array(pad+1).join(' ') + val;
+      } else {
+        await flush();
+        await rasterLine2Col(label, val);
+        return;
+      }
+    }
     if (/^[\x20-\x7E]*$/.test(seg)){
       // ASCII → テキストモード（高速）
       buf.push(0x1B,0x61,align);                       // 整列(0左/1中央)
@@ -300,6 +315,28 @@ async function rasterLine(text, align, big){
     job.push(b); } }
   await sendChunks(new Uint8Array(job));
   await sleep(H*2 + 20); // この行が印字されるのを待つ
+}
+// ラベル＋金額の2カラム行を画像化（金額は実測ピクセル幅で右端に揃える。プロポーショナルフォントでも
+// 文字数ベースの空白埋めのようにズレない）
+async function rasterLine2Col(label, val){
+  var cv=document.getElementById('cv'); var ctx=cv.getContext('2d');
+  var FS=24, H=FS+12, W=384, bpr=48, pad=6;
+  cv.width=W; cv.height=H;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#000'; ctx.textBaseline='top';
+  ctx.font=FS+"px 'Noto Sans JP',sans-serif";
+  var valW = ctx.measureText(val).width;
+  var valX = Math.max(0, W - pad - valW);
+  ctx.fillText(label, pad, 6);
+  ctx.fillText(val, valX, 6);
+  var img=ctx.getImageData(0,0,W,H).data;
+  var job=[0x1D,0x76,0x30,0x00, bpr&0xff,0, H&0xff,(H>>8)&0xff];
+  for(var y=0;y<H;y++){ for(var bx=0;bx<bpr;bx++){ var b=0;
+    for(var bit=0;bit<8;bit++){ var px=bx*8+bit, idx=(y*W+px)*4;
+      if(img[idx+3]>32 && (img[idx]*0.299+img[idx+1]*0.587+img[idx+2]*0.114)<128) b|=(0x80>>bit); }
+    job.push(b); } }
+  await sendChunks(new Uint8Array(job));
+  await sleep(H*2 + 20);
 }
 // サーバーからレシートロゴを取得（設定画面でアップロードされた画像）
 async function loadLogo(){
