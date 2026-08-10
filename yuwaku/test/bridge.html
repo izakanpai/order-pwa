@@ -271,6 +271,13 @@ async function printReceipt(text){
   }
   for (var i=0;i<lines.length;i++){
     var ln = lines[i], align = 0, big = false;
+    if (ln.slice(0,7) === '[[IMG]]'){
+      // 埋め込み画像（テーブルQRコード等）：dataURLを読み込み、閾値2値化してそのまま印字（誤差拡散はしない＝QRの升目を鮮明に保つ）
+      await flush();
+      try { var im = await loadImageAsync(ln.slice(7)); await printImageCentered(im, 300, 320, false); }
+      catch(e){ log('画像印字失敗: '+(e&&e.message||e)); }
+      continue;
+    }
     if (ln.slice(0,5) === '[[B]]'){ align=1; big=true; ln=ln.slice(5); }
     else if (ln.slice(0,5) === '[[C]]'){ align=1; ln=ln.slice(5); }
     if (big){
@@ -351,19 +358,29 @@ async function loadLogo(){
 // ロゴを中央・58mm幅に収めてディザ印字（小バンド分割でバッファ安全）
 async function printLogo(){
   if(!logoImg) return;
-  var maxW=Math.max(48, Math.round(384*(logoScale/100))), maxH=150, sc=Math.min(maxW/logoImg.width, maxH/logoImg.height, 1);
-  var w=Math.max(1,Math.round(logoImg.width*sc)), h=Math.max(1,Math.round(logoImg.height*sc));
+  var maxW=Math.max(48, Math.round(384*(logoScale/100)));
+  await printImageCentered(logoImg, maxW, 150, true);
+}
+// 汎用：任意の画像を中央配置して印字（小バンド分割でバッファ安全）。
+// dither=trueなら誤差拡散（写真調のロゴ向き）、falseなら単純閾値2値化（QRコード等、升目を鮮明に保つ必要がある場合向き）。
+async function printImageCentered(img, maxWpx, maxHpx, dither){
+  var sc=Math.min(maxWpx/img.width, maxHpx/img.height, 1);
+  var w=Math.max(1,Math.round(img.width*sc)), h=Math.max(1,Math.round(img.height*sc));
   var W=384, H=h, bpr=48;
   var cv=document.getElementById('cv'); var ctx=cv.getContext('2d');
   cv.width=W; cv.height=H;
   ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
-  ctx.drawImage(logoImg, Math.floor((W-w)/2), 0, w, h);
+  ctx.drawImage(img, Math.floor((W-w)/2), 0, w, h);
   var d=ctx.getImageData(0,0,W,H).data;
   var g=new Float32Array(W*H);
   for(var i=0;i<W*H;i++){ var a=d[i*4+3]; g[i]=(a>32)?(d[i*4]*0.299+d[i*4+1]*0.587+d[i*4+2]*0.114):255; }
-  for(var yy=0;yy<H;yy++){ for(var xx=0;xx<W;xx++){ var idx=yy*W+xx, old=g[idx], nw=old<128?0:255, err=old-nw; g[idx]=nw;
-    if(xx+1<W) g[idx+1]+=err*7/16;
-    if(yy+1<H){ if(xx>0) g[idx+W-1]+=err*3/16; g[idx+W]+=err*5/16; if(xx+1<W) g[idx+W+1]+=err*1/16; } } }
+  if (dither){
+    for(var yy=0;yy<H;yy++){ for(var xx=0;xx<W;xx++){ var idx=yy*W+xx, old=g[idx], nw=old<128?0:255, err=old-nw; g[idx]=nw;
+      if(xx+1<W) g[idx+1]+=err*7/16;
+      if(yy+1<H){ if(xx>0) g[idx+W-1]+=err*3/16; g[idx+W]+=err*5/16; if(xx+1<W) g[idx+W+1]+=err*1/16; } } }
+  } else {
+    for(var k=0;k<W*H;k++){ g[k]=(g[k]<128)?0:255; }
+  }
   var BAND=48;
   for(var y0=0;y0<H;y0+=BAND){
     var rows=Math.min(BAND,H-y0);
@@ -374,7 +391,16 @@ async function printLogo(){
     await sendChunks(new Uint8Array(job));
     await sleep(rows*3 + 30);
   }
-  await sendChunks(new Uint8Array([0x0A])); // ロゴ下に1行送り
+  await sendChunks(new Uint8Array([0x0A])); // 画像下に1行送り
+}
+// dataURLを<img>として非同期読み込み
+function loadImageAsync(src){
+  return new Promise(function(resolve, reject){
+    var im=new Image();
+    im.onload=function(){ resolve(im); };
+    im.onerror=function(e){ reject(new Error('image_load_failed')); };
+    im.src=src;
+  });
 }
 
 async function requestWake(){ try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); log('画面常時点灯ON'); } }catch(e){ log('WakeLock不可: '+(e&&e.message||e)); } }
