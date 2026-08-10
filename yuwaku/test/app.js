@@ -20,7 +20,7 @@
       callConfirm:'Call a staff member to your table?', billConfirm:'Request your bill?',
       fbTitle:'How was it?', fbSub:'Your rating helps us improve.', fbComment:'Comment (optional)', fbSend:'Send', fbPick:'Please tap the stars to rate.', fbThanks:'Thank you!', fbThanksMsg:'Thanks for your feedback.',
       bdayLbl:'🎂 Register your birthday for a treat', bdaySave:'Save', bdaySaved:'Saved! 🎉', bdayBad:'Enter as MM-DD (e.g. 08-15)',
-      stTitle:'My orders', stTotalLbl:'Unpaid total', stRefresh:'Refresh', stEmpty:'No orders yet for this table.', stPending:'Preparing', stServed:'Served',
+      stTitle:'My orders', stSubLbl:'Subtotal', stTotalLbl:'Unpaid total', stRefresh:'Refresh', stEmpty:'No orders yet for this table.', stPending:'Preparing', stServed:'Served',
       taxInclText:'Prices include VAT {v}%.', taxExclText:'VAT {v}% will be added at checkout.',
       svcInclText:'Prices include a {v}% service charge.', svcExclText:'A {v}% service charge applies separately.' },
     ja: { order:'ご注文', total:'合計', all:'すべて', send:'注文する', empty:'商品を選んでください',
@@ -40,7 +40,7 @@
       callConfirm:'スタッフを呼びますか？', billConfirm:'お会計を依頼しますか？',
       fbTitle:'ご感想は？', fbSub:'評価は今後の改善に役立ちます。', fbComment:'コメント（任意）', fbSend:'送信', fbPick:'星をタップして評価してください。', fbThanks:'ありがとうございます！', fbThanksMsg:'ご意見ありがとうございました。',
       bdayLbl:'🎂 お誕生日を登録すると特典があります', bdaySave:'登録', bdaySaved:'登録しました！🎉', bdayBad:'MM-DD 形式で入力（例: 08-15）',
-      stTitle:'注文状況', stTotalLbl:'未会計 合計', stRefresh:'更新', stEmpty:'この卓の注文はまだありません。', stPending:'準備中', stServed:'提供済み',
+      stTitle:'注文状況', stSubLbl:'小計', stTotalLbl:'未会計 合計', stRefresh:'更新', stEmpty:'この卓の注文はまだありません。', stPending:'準備中', stServed:'提供済み',
       taxInclText:'表示価格はVAT{v}%込みです。', taxExclText:'お会計時に別途VAT{v}%を頂戴いたします。',
       svcInclText:'表示価格はサービス料{v}%込みです。', svcExclText:'別途サービス料{v}%を頂戴いたします。' }
   };
@@ -114,6 +114,21 @@
       pointsUsed = Math.round(discount / rv);
     }
     return { sub: sub, service: service, tax: tax, couponDiscount: couponDiscount, discount: discount, pointsUsed: pointsUsed, total: afterCoupon - discount };
+  }
+
+  // 会計時の内訳を概算表示するためのヘルパー（admin.html の breakdown() と同じロジック）。
+  // 「注文状況」画面はまだ会計前なので、ここでの結果はあくまで見込み額（クーポン・ポイント・割引は未反映）。
+  function payBreakdown(sub) {
+    var svcRate = Number(state.settings.serviceRate) || 0;
+    var taxRate = Number(state.settings.taxRate) || 0;
+    var svcIncl = String(state.settings.serviceInclusive) === 'true';
+    var taxIncl = String(state.settings.taxInclusive) === 'true';
+    var svc, afterSvc, tax, total;
+    if (svcIncl) { svc = Math.round(sub - sub / (1 + svcRate / 100)); afterSvc = sub; }
+    else { svc = Math.round(sub * (svcRate / 100)); afterSvc = sub + svc; }
+    if (taxIncl) { tax = Math.round(sub - sub / (1 + taxRate / 100)); total = afterSvc; }
+    else { tax = Math.round(afterSvc * (taxRate / 100)); total = afterSvc + tax; }
+    return { sub: sub, service: svc, tax: tax, total: total };
   }
 
   // ---- 描画 ----
@@ -354,6 +369,8 @@
   function openStatus() {
     var x = t();
     $('stTitle').textContent = x.stTitle;
+    $('stSubLbl').textContent = x.stSubLbl;
+    $('stSvcLbl').textContent = x.svc;
     $('stTotalLbl').textContent = x.stTotalLbl;
     $('stRefresh').textContent = x.stRefresh;
     $('stClose').textContent = x.close;
@@ -363,11 +380,17 @@
   function loadStatus() {
     var x = t();
     $('stBody').innerHTML = '<div style="text-align:center;color:var(--text-2);padding:14px;">…</div>';
+    $('stSubVal').textContent = '—';
+    $('stSvcRow').style.display = 'none';
     $('stTotalVal').textContent = '—';
     if (!state.table) { $('stBody').innerHTML = '<div style="text-align:center;color:var(--text-2);padding:14px;">' + escHtml(x.noTable) + '</div>'; return; }
     API.post('getOrdersByTable', { table: state.table }).then(function (r) {
       var list = (r && r.data) || [];
-      if (!list.length) { $('stBody').innerHTML = '<div style="text-align:center;color:var(--text-2);padding:14px;">' + escHtml(x.stEmpty) + '</div>'; $('stTotalVal').textContent = money(0); return; }
+      if (!list.length) {
+        $('stBody').innerHTML = '<div style="text-align:center;color:var(--text-2);padding:14px;">' + escHtml(x.stEmpty) + '</div>';
+        $('stSubVal').textContent = money(0); $('stTotalVal').textContent = money(0);
+        return;
+      }
       var total = 0, html = '';
       list.forEach(function (o) {
         total += Number(o.price) || 0;
@@ -379,7 +402,13 @@
           '<div style="text-align:right;white-space:nowrap;"><div>' + money(o.price || 0) + '</div>' + badge + '</div></div>';
       });
       $('stBody').innerHTML = html;
-      $('stTotalVal').textContent = money(total);
+      // 各注文の金額（=商品価格の小計）はサービス料を含まない。会計時に加算されるサービス料はここでは
+      // 商品価格に混ぜず、別項目として概算表示する（実際の金額は会計時に確定）。
+      var b = payBreakdown(total);
+      $('stSubVal').textContent = money(b.sub);
+      if (b.service > 0) { $('stSvcRow').style.display = 'flex'; $('stSvcVal').textContent = money(b.service); }
+      else { $('stSvcRow').style.display = 'none'; }
+      $('stTotalVal').textContent = money(b.total);
     }).catch(function (e) { $('stBody').innerHTML = '<div style="text-align:center;color:var(--red);padding:14px;">' + escHtml(String(e && e.message || e)) + '</div>'; });
   }
 
