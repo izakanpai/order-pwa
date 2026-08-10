@@ -59,6 +59,10 @@
     .int-group{ display:flex; gap:6px; }
     .int-btn{ border:1px solid #cbd5e1; background:#fff; color:#334155; border-radius:9px; padding:9px 13px; font-size:14px; font-weight:800; cursor:pointer; font-family:inherit; }
     .int-btn.on{ background:#0f172a; color:#fff; border-color:#0f172a; }
+    @keyframes izspin2{ to{ transform:rotate(360deg); } }
+    .spin-once{ display:inline-block; animation:izspin2 .6s linear; }
+    #izToast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:#0f172a; color:#fff; font-size:13px; font-weight:800; padding:10px 18px; border-radius:999px; box-shadow:0 8px 24px rgba(0,0,0,.25); z-index:100000; opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; }
+    #izToast.on{ opacity:1; transform:translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
@@ -68,13 +72,13 @@
       <a class="hbtn" href="./manage.html">← 管理</a>
       <span class="cnt" id="cnt">0</span>
       <button class="hbtn" id="langBtn" onclick="toggleLang()">EN</button>
-      <button class="hbtn" onclick="load()">↻</button>
+      <button class="hbtn" id="refreshBtn" onclick="manualRefresh()">↻</button>
     </div>
   </div>
   <div class="ctlbar">
     <button id="autoBtn" class="auto-toggle" onclick="toggleAuto()">—</button>
     <div class="int-group" id="intGroup"></div>
-    <button class="int-btn" onclick="load()" id="manualBtn">↻</button>
+    <button class="int-btn" onclick="manualRefresh()" id="manualBtn">↻</button>
     <a class="int-btn" href="./receipts.html" style="text-decoration:none;display:inline-flex;align-items:center;">🧾 <span id="histLbl" style="margin-left:4px;">履歴</span></a>
   </div>
   <div class="wrap" id="callsWrap" style="display:none;"></div>
@@ -297,8 +301,25 @@
 
     window.setServed = function(id){ API.post('updateOrderStatus', { id:id, status:'提供済' }).then(load).catch(load); };
     window.load = function(){
-      API.post('getOrders', {}).then(function(r){ orders = r.data || []; render(); })
+      return API.post('getOrders', {}).then(function(r){ orders = r.data || []; render(); })
         .catch(function(){ var lm=document.getElementById('loadMsg'); if(lm) lm.innerText='接続できません（自動再試行します）'; });
+    };
+    // 手動更新ボタン：getOrders自体はポーリング用に静音（ローディング非表示）のため、
+    // 押した手応えが分かるようアイコンを一瞬回転させ、完了後トーストを出す。
+    var _toastTimer = null;
+    function showToast(msg){
+      var el = document.getElementById('izToast');
+      if(!el){ el=document.createElement('div'); el.id='izToast'; document.body.appendChild(el); }
+      el.textContent = msg; el.classList.add('on');
+      if(_toastTimer) clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(function(){ el.classList.remove('on'); }, 1400);
+    }
+    window.manualRefresh = function(){
+      ['refreshBtn','manualBtn'].forEach(function(id){
+        var b=document.getElementById(id); if(!b) return;
+        b.classList.remove('spin-once'); void b.offsetWidth; b.classList.add('spin-once');
+      });
+      load().then(function(){ showToast(lang==='en' ? '✅ Updated' : '✅ 更新しました'); });
     };
     // 明細の商品名を英語表示（メニューのEN対応。オプション括弧は原文のまま）
     function baseName(nm){ return String(nm||'').replace(/\s*[（(][^（(]*[)）]\s*$/,'').trim(); }
