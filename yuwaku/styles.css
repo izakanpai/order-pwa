@@ -46,6 +46,12 @@ body {
 .net-banner.show { display: flex; }
 body.offline .net-banner.offline-b { display: flex; }
 
+/* VAT / service charge notice */
+.vat-notice {
+  background: #f8fafc; color: var(--text-2, #64748b); border-bottom: 1px solid var(--border, #e2e8f0);
+  padding: 6px 14px; font-size: 11.5px; font-weight: 600; text-align: center;
+}
+
 /* Category tabs */
 .cats {
   position: sticky; top: 52px; z-index: 20;
