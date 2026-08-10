@@ -59,7 +59,7 @@
       <button class="kbtn" onclick="location.href='./manage.html'" data-t="back">← 管理</button>
       <span class="kcount" id="kcount">0</span>
       <button class="kbtn on" id="soundBtn" onclick="toggleSound()">🔔 音 ON</button>
-      <button class="kbtn" id="reloadBtn" onclick="load()">↻</button>
+      <button class="kbtn" id="reloadBtn" onclick="reloadAll()">↻</button>
     </div>
   </div>
   <div class="kgrid" id="grid"><div class="kempty" id="loadMsg" data-t="loading">読み込み中…</div></div>
@@ -69,15 +69,31 @@
   <script src="./i18n.js"></script>
   <script>
     var soundOn = true, lastNewIds = {}, firstPaint = true;
+    var KITCHEN_MAP = {}; // 商品名(基底名) -> true(キッチン表示)/false(非表示)。未取得/未登録の商品は常にtrue扱い（安全側）。
 
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    // オプション付き商品名（例:「コーラ (氷なし)」）から基底の商品名を取り出す
+    function baseName(nm){ return String(nm||'').replace(/\s*[（(][^（(]*[)）]\s*$/, '').trim(); }
     function parseItems(details){
-      return String(details||'').split(',').map(function(seg){
+      var items = String(details||'').split(',').map(function(seg){
         seg = seg.trim(); if(!seg) return null;
         var m = seg.match(/^(.*)x(\d+)$/);
         if (m) return { name:m[1], qty:parseInt(m[2],10)||1 };
         return { name:seg, qty:1 };
       }).filter(Boolean);
+      // ドリンク等、キッチン対応不要に設定された商品はキッチン画面の明細から除外
+      return items.filter(function(it){ return KITCHEN_MAP[baseName(it.name)] !== false; });
+    }
+    function loadMenu(){
+      API.post('getMenu', {}).then(function(r){
+        var list = (r && r.data) || [];
+        var map = {};
+        list.forEach(function(it){
+          var v = it['厨房表示'];
+          map[it['商品名']] = !(v === '0' || v === 0 || v === false);
+        });
+        KITCHEN_MAP = map;
+      }).catch(function(){});
     }
     function elapsedInfo(dateStr){
       var mins = 0;
@@ -91,10 +107,12 @@
     function render(data){
       data = data || lastData || []; lastData = data;
       var active = data.filter(function(o){ return o.status === '未対応' || o.status === '調理中'; });
-      active.sort(function(a,b){ return new Date(a.date).getTime() - new Date(b.date).getTime(); });
+      // キッチン非対象の商品のみで構成される注文はチケット自体を非表示にする
+      active = active.map(function(o){ return { o:o, items: parseItems(o.details) }; }).filter(function(x){ return x.items.length > 0; });
+      active.sort(function(a,b){ return new Date(a.o.date).getTime() - new Date(b.o.date).getTime(); });
 
       var curNew = {};
-      active.forEach(function(o){ if(o.status==='未対応') curNew[o.id]=1; });
+      active.forEach(function(x){ if(x.o.status==='未対応') curNew[x.o.id]=1; });
       if (!firstPaint && soundOn) { for (var id in curNew){ if(!lastNewIds[id]){ beep(); break; } } }
       lastNewIds = curNew; firstPaint = false;
 
@@ -102,10 +120,10 @@
       if (!active.length){ document.getElementById('grid').innerHTML = '<div class="kempty">'+I18n.t('empty')+'</div>'; return; }
 
       var html = '';
-      active.forEach(function(o){
+      active.forEach(function(x){
+        var o = x.o, items = x.items;
         var isNew = o.status === '未対応';
         var el = elapsedInfo(o.date);
-        var items = parseItems(o.details);
         html += '<div class="ticket ' + (isNew?'new':'cook') + '">';
         html += '<div class="t-head"><div class="t-table">🪑 ' + esc(o.table) + '</div>'
              +  '<div style="display:flex;gap:6px;align-items:center;">'
@@ -150,10 +168,13 @@
     function updateSoundBtn(){ var b = document.getElementById('soundBtn'); b.className = 'kbtn' + (soundOn?' on':''); b.innerText = soundOn ? I18n.t('soundOn') : I18n.t('soundOff'); }
     window.toggleSound = function(){ soundOn = !soundOn; updateSoundBtn(); if (soundOn) beep(); };
 
+    window.reloadAll = function(){ loadMenu(); load(); };
     function boot(){
+      loadMenu();
       load();
       setInterval(load, 8000);
       setInterval(load, 60000);
+      setInterval(loadMenu, 300000); // メニュー設定（厨房表示ON/OFF）の変更を数分以内に反映
       if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(function(){}); }
     }
     var __booted = false;
