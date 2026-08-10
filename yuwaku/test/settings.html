@@ -69,6 +69,13 @@
     </div>
 
     <div class="card">
+      <div class="card-title" data-t="qrCardTitle">📱 テーブルQRコード</div>
+      <p class="hint" data-t="qrCardDesc" style="margin-bottom:14px;line-height:1.7;">各テーブルのQRコードを印刷してテーブルに設置してください。お客様がスキャンするとそのテーブル専用の注文画面が開きます。</p>
+      <button class="btn" onclick="showQrModal()" data-t="qrShowBtn">📱 QRコードを表示</button>
+      <div class="st" id="st-qr"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title" data-t="imgTitle">🖼️ トップ画像</div>
       <div class="fg"><label class="form-label" data-t="orderImg">オーダートップ画像（注文画面）</label><input id="orderImg" type="file" accept="image/*" class="fc" onchange="prev('orderImg','prevOrder')"><img id="prevOrder" class="prev"><button class="btn sec" style="margin-top:8px;" onclick="upImg('orderImg','uploadTopImage','st-img')" data-t="upload">⬆️ アップロード</button></div>
       <hr style="border:0;border-top:1px solid var(--border);margin:14px 0;">
@@ -167,6 +174,23 @@
 
   </div>
 
+  <!-- Table QR Codes Modal -->
+  <div id="qrModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-weight:900;font-size:16px;" data-t="qrModalTitle">テーブル QRコード</div>
+          <div style="font-size:12px;color:var(--text-3);" data-t="qrModalSub">スキャンで注文画面を開く</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn sec" style="padding:8px 12px;" onclick="printQrCodes()" data-t="qrPrintBtn">🖨️ 印刷</button>
+          <button class="btn sec" style="padding:8px 12px;" onclick="closeQrModal()" data-t="close">閉じる</button>
+        </div>
+      </div>
+      <div id="qrGrid" style="padding:18px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;"></div>
+    </div>
+  </div>
+
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
@@ -176,6 +200,59 @@
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function $(id){ return document.getElementById(id); }
     function st(id, text, ok){ var e=$(id); e.style.display='block'; e.style.background=ok?'#dcfce7':'#fee2e2'; e.style.color=ok?'#15803d':'#b91c1c'; e.innerText=text; }
+
+    // ---- テーブルQRコード ----
+    window.showQrModal = function(){
+      st('st-qr', I18n.t('sending'), true); $('st-qr').style.display='none';
+      rpc('getTableMaster',[]).then(function(list){
+        list = list || [];
+        if (!list.length){ st('st-qr', I18n.t('qrNoTables'), false); return; }
+        var shopName = ($('shopName') && $('shopName').value ? $('shopName').value.trim() : '');
+        var base = location.href.replace(/settings\.html.*$/, 'index.html');
+        var grid = $('qrGrid'); var html = '';
+        list.forEach(function(tableNum){
+          var url = base + '?table=' + encodeURIComponent(tableNum);
+          var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=10&data=' + encodeURIComponent(url);
+          html += '<div style="text-align:center;background:#f8fafc;border-radius:14px;padding:14px 10px;border:1px solid var(--border);">' +
+            '<img src="' + qrSrc + '" width="120" height="120" style="display:block;margin:0 auto 8px;border-radius:6px;" loading="lazy">' +
+            '<div style="font-weight:900;font-size:13px;color:var(--navy);">' + esc(tableNum) + '</div>' +
+            (shopName ? '<div style="font-size:10px;color:var(--text-3);font-weight:600;">' + esc(shopName) + '</div>' : '') +
+          '</div>';
+        });
+        grid.innerHTML = html;
+        tableListForQr = list;
+        $('qrModal').style.display = 'flex';
+      }).catch(function(e){ st('st-qr', I18n.t('errPrefix')+(e.message||e), false); });
+    };
+    window.closeQrModal = function(){ $('qrModal').style.display = 'none'; };
+    window.printQrCodes = function(){
+      if (!tableListForQr.length) return;
+      var shopName = ($('shopName') && $('shopName').value ? $('shopName').value.trim() : '');
+      var base = location.href.replace(/settings\.html.*$/, 'index.html');
+      var rows = '';
+      tableListForQr.forEach(function(tableNum){
+        var url = base + '?table=' + encodeURIComponent(tableNum);
+        var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data=' + encodeURIComponent(url);
+        rows += '<div class="qr-card">' +
+          '<img src="' + qrSrc + '" width="180" height="180">' +
+          '<div class="qr-table">' + esc(tableNum) + '</div>' +
+          (shopName ? '<div class="qr-shop">' + esc(shopName) + '</div>' : '') +
+        '</div>';
+      });
+      var win = window.open('', '_blank');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Table QR Codes</title>' +
+        '<style>body{font-family:sans-serif;margin:0;padding:16px;background:#fff;}' +
+        '.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}' +
+        '.qr-card{text-align:center;border:1px solid #ccc;border-radius:12px;padding:16px;}' +
+        '.qr-table{font-size:16px;font-weight:900;margin-top:8px;color:#0f172a;}' +
+        '.qr-shop{font-size:11px;color:#666;margin-top:2px;}' +
+        '@media print{body{padding:0;}}</style></head>' +
+        '<body><div class="grid">' + rows + '</div>' +
+        '<script>window.onload=function(){window.print();}<\/script></body></html>');
+      win.document.close();
+    };
+    var tableListForQr = [];
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
     window.prev = function(inp, img){ var f=$(inp).files[0]; if(!f) return; var el=$(img); el.src=URL.createObjectURL(f); el.style.display='block'; };
     window.upImg = function(inp, fn, stId){
@@ -264,7 +341,8 @@
     rpc('getGeminiKeyStatus',[]).then(function(s){ if(s) setBadge('gemBadge', s.configured); }).catch(function(){});
 
     I18n.init({
-      ja:{ title:'⚙️ 設定', back:'← 管理へ', save:'💾 保存', status:'状態:', unset:'未設定', set:'設定済', phPaste:'貼り付けて保存',
+      ja:{ title:'⚙️ 設定', back:'← 管理へ', save:'💾 保存', status:'状態:', unset:'未設定', set:'設定済', phPaste:'貼り付けて保存', close:'閉じる',
+        qrCardTitle:'📱 テーブルQRコード', qrCardDesc:'各テーブルのQRコードを印刷してテーブルに設置してください。お客様がスキャンするとそのテーブル専用の注文画面が開きます。', qrShowBtn:'📱 QRコードを表示', qrModalTitle:'テーブル QRコード', qrModalSub:'スキャンで注文画面を開く', qrPrintBtn:'🖨️ 印刷', qrNoTables:'テーブルが設定されていません。先にテーブル数を保存してください。',
         shopTitle:'🏪 店舗設定', shopName:'店舗名', shopAddress:'住所（レシート表示）', shopTin:'TIN番号（レシート表示）', shopLogo:'レシートのロゴ（先頭に中央印字）', logoClear:'クリア', logoSize:'印字サイズ（%）', logoHint:'白黒の感熱印刷用に自動で縮小・変換します。58mm幅を100%として、下の値で印字サイズを調整できます。', tableCount:'テーブル数', counterCount:'カウンター数', seatHint:'注文画面で「テーブル1〜」「カウンター1〜」から席を選べます。0にするとその種別は非表示。', tableHint:'注文画面のテーブル番号の上限。',
         imgTitle:'🖼️ トップ画像', orderImg:'オーダートップ画像（注文画面）', loginImg:'ログイン画面の画像（管理ログイン画面に表示）', upload:'⬆️ アップロード',
         localeTitle:'🌐 表示・地域', curCode:'通貨コード', curSym:'通貨記号', svcRate:'サービス料 (%)', taxRate:'税率 (%)', defLang:'既定言語', accent:'アクセント色',
@@ -276,7 +354,8 @@
         repTitle:'📧 定期レポート（自動メール）', repDaily:'日次日報（毎日）', repWeekly:'週次レポート', repMonthly:'月次レポート', repEmail:'送信先メール（複数可・カンマか改行区切り）', repHour:'送信時刻（0-23時）', repWeekDay:'送信曜日', repMonthDay:'送信日（1〜28）', dow0:'日曜', dow1:'月曜', dow2:'火曜', dow3:'水曜', dow4:'木曜', dow5:'金曜', dow6:'土曜', repSave:'💾 保存＆スケジュール', repTestD:'✉️ 日次テスト', repTestW:'✉️ 週次テスト', repTestM:'✉️ 月次テスト',
         repLang:'出力言語', repLangJa:'日本語', repLangEn:'英語', repLangBoth:'日本語＋英語（両方）',
         saved:'✅ 保存しました', savedSched:'✅ 保存＆スケジュール設定しました', uploaded:'✅ アップロードしました', pickImg:'画像を選択してください', needKey:'キーを入力してください', noGeoDev:'この端末は位置情報に対応していません', gotLoc:'現在地を取得しました。「保存」を押してください。', noLoc:'位置情報を取得できませんでした。手動入力してください。', sending:'送信中…', testSent:'✅ テスト送信しました。受信箱をご確認ください', sendFail:'送信できませんでした', scopeReauth:'認証(スコープ)の再承認が必要かもしれません', errPrefix:'エラー: ' },
-      en:{ title:'⚙️ Settings', back:'← Manage', save:'💾 Save', status:'Status:', unset:'Not set', set:'Set', phPaste:'Paste and save',
+      en:{ title:'⚙️ Settings', back:'← Manage', save:'💾 Save', status:'Status:', unset:'Not set', set:'Set', phPaste:'Paste and save', close:'Close',
+        qrCardTitle:'📱 Table QR Codes', qrCardDesc:'Print and place these QR codes on each table. Customers scan to open the order screen locked to their table.', qrShowBtn:'📱 Show QR Codes', qrModalTitle:'Table QR Codes', qrModalSub:'Scan to open the order screen', qrPrintBtn:'🖨️ Print', qrNoTables:'No tables are set up yet. Please save the table count first.',
         shopTitle:'🏪 Store settings', shopName:'Store name', shopAddress:'Address (on receipt)', shopTin:'TIN (on receipt)', shopLogo:'Receipt logo (centered on top)', logoClear:'Clear', logoSize:'Print size (%)', logoHint:'Auto-resized & converted for B/W thermal printing. 58mm width = 100%; adjust the print size below.', tableCount:'Tables', counterCount:'Counter seats', seatHint:'On the order screen guests pick from “Table 1…” / “Counter 1…”. Set 0 to hide that type.', tableHint:'Max table number on the order screen.',
         imgTitle:'🖼️ Top images', orderImg:'Order top image (order screen)', loginImg:'Login screen image (shown on admin login)', upload:'⬆️ Upload',
         localeTitle:'🌐 Display & region', curCode:'Currency code', curSym:'Currency symbol', svcRate:'Service charge (%)', taxRate:'Tax (%)', defLang:'Default language', accent:'Accent color',
