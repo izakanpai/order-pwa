@@ -177,15 +177,23 @@
   <!-- Table QR Codes Modal -->
   <div id="qrModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9999;align-items:center;justify-content:center;padding:16px;">
     <div style="background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);">
-        <div>
-          <div style="font-weight:900;font-size:16px;" data-t="qrModalTitle">テーブル QRコード</div>
-          <div style="font-size:12px;color:var(--text-3);" data-t="qrModalSub">スキャンで注文画面を開く</div>
+      <div style="padding:16px 18px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div>
+            <div style="font-weight:900;font-size:16px;" data-t="qrModalTitle">テーブル QRコード</div>
+            <div style="font-size:12px;color:var(--text-3);" data-t="qrModalSub">スキャンで注文画面を開く</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn sec" style="padding:8px 12px;" onclick="printQrCodes()" data-t="qrPrintBtn">🖨️ 印刷</button>
+            <button class="btn sec" style="padding:8px 12px;" onclick="closeQrModal()" data-t="close">閉じる</button>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn sec" style="padding:8px 12px;" onclick="printQrCodes()" data-t="qrPrintBtn">🖨️ 印刷</button>
-          <button class="btn sec" style="padding:8px 12px;" onclick="closeQrModal()" data-t="close">閉じる</button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);">
+          <label class="form-label" style="margin:0;" data-t="qrBridgeLabel">🖶 プリンタへ送信</label>
+          <select id="qrPrinterSel" class="fc" style="width:auto;min-width:160px;padding:8px 10px;font-size:13px;"></select>
+          <button class="btn" style="padding:8px 12px;" onclick="enqueueAllQr()" data-t="qrEnqueueAllBtn">全卓をキューへ</button>
         </div>
+        <div class="st" id="st-qr-bridge" style="margin-top:8px;"></div>
       </div>
       <div id="qrGrid" style="padding:18px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;"></div>
     </div>
@@ -217,14 +225,46 @@
             '<img src="' + qrSrc + '" width="120" height="120" style="display:block;margin:0 auto 8px;border-radius:6px;" loading="lazy">' +
             '<div style="font-weight:900;font-size:13px;color:var(--navy);">' + esc(tableNum) + '</div>' +
             (shopName ? '<div style="font-size:10px;color:var(--text-3);font-weight:600;">' + esc(shopName) + '</div>' : '') +
+            '<button type="button" class="btn sec" style="margin-top:8px;padding:5px 8px;font-size:11px;" onclick="enqueueOneQr(\'' + esc(tableNum).replace(/'/g, "\\'") + '\')" data-t="qrEnqueueOneBtn">🖶 印刷キューへ</button>' +
           '</div>';
         });
         grid.innerHTML = html;
         tableListForQr = list;
+        loadPrinterOptions();
         $('qrModal').style.display = 'flex';
       }).catch(function(e){ st('st-qr', I18n.t('errPrefix')+(e.message||e), false); });
     };
     window.closeQrModal = function(){ $('qrModal').style.display = 'none'; };
+    function loadPrinterOptions(){
+      var sel = $('qrPrinterSel'); if (!sel) return;
+      rpc('getAllPrinters',[]).then(function(ps){
+        ps = (ps||[]).filter(function(p){ return p.enabled; });
+        if (!ps.length){ sel.innerHTML = '<option value="">'+I18n.t('qrNoPrinters')+'</option>'; sel.disabled = true; return; }
+        sel.disabled = false;
+        sel.innerHTML = ps.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'; }).join('');
+      }).catch(function(){ sel.innerHTML = '<option value="">'+I18n.t('qrNoPrinters')+'</option>'; sel.disabled = true; });
+    }
+    function _qrUrlFor(tableNum){ return location.href.replace(/settings\.html.*$/, 'index.html') + '?table=' + encodeURIComponent(tableNum); }
+    window.enqueueAllQr = function(){
+      var sel = $('qrPrinterSel'); var pid = sel && sel.value;
+      if (!pid){ st('st-qr-bridge', I18n.t('qrNoPrinters'), false); return; }
+      if (!tableListForQr.length) return;
+      st('st-qr-bridge', I18n.t('sending'), true);
+      var items = tableListForQr.map(function(t){ return { table: t, url: _qrUrlFor(t) }; });
+      rpc('enqueueQrPrintJobs',[pid, items]).then(function(r){
+        if (r && r.success) st('st-qr-bridge', I18n.t('qrQueued').replace('{n}', r.count), true);
+        else st('st-qr-bridge', I18n.t('errPrefix')+((r&&r.error)||''), false);
+      }).catch(function(e){ st('st-qr-bridge', I18n.t('errPrefix')+(e.message||e), false); });
+    };
+    window.enqueueOneQr = function(tableNum){
+      var sel = $('qrPrinterSel'); var pid = sel && sel.value;
+      if (!pid){ st('st-qr-bridge', I18n.t('qrNoPrinters'), false); return; }
+      st('st-qr-bridge', I18n.t('sending'), true);
+      rpc('enqueueQrPrintJobs',[pid, [{ table: tableNum, url: _qrUrlFor(tableNum) }]]).then(function(r){
+        if (r && r.success) st('st-qr-bridge', I18n.t('qrQueued').replace('{n}', r.count), true);
+        else st('st-qr-bridge', I18n.t('errPrefix')+((r&&r.error)||''), false);
+      }).catch(function(e){ st('st-qr-bridge', I18n.t('errPrefix')+(e.message||e), false); });
+    };
     window.printQrCodes = function(){
       if (!tableListForQr.length) return;
       var shopName = ($('shopName') && $('shopName').value ? $('shopName').value.trim() : '');
@@ -343,6 +383,7 @@
     I18n.init({
       ja:{ title:'⚙️ 設定', back:'← 管理へ', save:'💾 保存', status:'状態:', unset:'未設定', set:'設定済', phPaste:'貼り付けて保存', close:'閉じる',
         qrCardTitle:'📱 テーブルQRコード', qrCardDesc:'各テーブルのQRコードを印刷してテーブルに設置してください。お客様がスキャンするとそのテーブル専用の注文画面が開きます。', qrShowBtn:'📱 QRコードを表示', qrModalTitle:'テーブル QRコード', qrModalSub:'スキャンで注文画面を開く', qrPrintBtn:'🖨️ 印刷', qrNoTables:'テーブルが設定されていません。先にテーブル数を保存してください。',
+        qrBridgeLabel:'🖶 プリンタへ送信', qrEnqueueAllBtn:'全卓をキューへ', qrEnqueueOneBtn:'🖶 印刷キューへ', qrNoPrinters:'有効なプリンタがありません（プリンタ設定を確認してください）', qrQueued:'✅ {n}件を印刷キューへ送信しました',
         shopTitle:'🏪 店舗設定', shopName:'店舗名', shopAddress:'住所（レシート表示）', shopTin:'TIN番号（レシート表示）', shopLogo:'レシートのロゴ（先頭に中央印字）', logoClear:'クリア', logoSize:'印字サイズ（%）', logoHint:'白黒の感熱印刷用に自動で縮小・変換します。58mm幅を100%として、下の値で印字サイズを調整できます。', tableCount:'テーブル数', counterCount:'カウンター数', seatHint:'注文画面で「テーブル1〜」「カウンター1〜」から席を選べます。0にするとその種別は非表示。', tableHint:'注文画面のテーブル番号の上限。',
         imgTitle:'🖼️ トップ画像', orderImg:'オーダートップ画像（注文画面）', loginImg:'ログイン画面の画像（管理ログイン画面に表示）', upload:'⬆️ アップロード',
         localeTitle:'🌐 表示・地域', curCode:'通貨コード', curSym:'通貨記号', svcRate:'サービス料 (%)', taxRate:'税率 (%)', defLang:'既定言語', accent:'アクセント色',
@@ -356,6 +397,7 @@
         saved:'✅ 保存しました', savedSched:'✅ 保存＆スケジュール設定しました', uploaded:'✅ アップロードしました', pickImg:'画像を選択してください', needKey:'キーを入力してください', noGeoDev:'この端末は位置情報に対応していません', gotLoc:'現在地を取得しました。「保存」を押してください。', noLoc:'位置情報を取得できませんでした。手動入力してください。', sending:'送信中…', testSent:'✅ テスト送信しました。受信箱をご確認ください', sendFail:'送信できませんでした', scopeReauth:'認証(スコープ)の再承認が必要かもしれません', errPrefix:'エラー: ' },
       en:{ title:'⚙️ Settings', back:'← Manage', save:'💾 Save', status:'Status:', unset:'Not set', set:'Set', phPaste:'Paste and save', close:'Close',
         qrCardTitle:'📱 Table QR Codes', qrCardDesc:'Print and place these QR codes on each table. Customers scan to open the order screen locked to their table.', qrShowBtn:'📱 Show QR Codes', qrModalTitle:'Table QR Codes', qrModalSub:'Scan to open the order screen', qrPrintBtn:'🖨️ Print', qrNoTables:'No tables are set up yet. Please save the table count first.',
+        qrBridgeLabel:'🖶 Send to printer', qrEnqueueAllBtn:'Queue all tables', qrEnqueueOneBtn:'🖶 Queue print', qrNoPrinters:'No enabled printer found (check printer settings)', qrQueued:'✅ Sent {n} to the print queue',
         shopTitle:'🏪 Store settings', shopName:'Store name', shopAddress:'Address (on receipt)', shopTin:'TIN (on receipt)', shopLogo:'Receipt logo (centered on top)', logoClear:'Clear', logoSize:'Print size (%)', logoHint:'Auto-resized & converted for B/W thermal printing. 58mm width = 100%; adjust the print size below.', tableCount:'Tables', counterCount:'Counter seats', seatHint:'On the order screen guests pick from “Table 1…” / “Counter 1…”. Set 0 to hide that type.', tableHint:'Max table number on the order screen.',
         imgTitle:'🖼️ Top images', orderImg:'Order top image (order screen)', loginImg:'Login screen image (shown on admin login)', upload:'⬆️ Upload',
         localeTitle:'🌐 Display & region', curCode:'Currency code', curSym:'Currency symbol', svcRate:'Service charge (%)', taxRate:'Tax (%)', defLang:'Default language', accent:'Accent color',
