@@ -24,7 +24,8 @@
       taxInclText:'Prices include VAT {v}%.', taxExclText:'VAT {v}% will be added at checkout.',
       svcInclText:'Prices include a {v}% service charge.', svcExclText:'A {v}% service charge applies separately.',
       btnMember:'Rewards', btnCoupon:'Coupon', btnCall:'Call', btnBill:'Bill', btnStatus:'Orders', btnFeedback:'Rate',
-      doneTitle:'Thank you!', doneMsg:'Your bill has been settled. If you\'d like to order again, please scan the table QR code once more.' },
+      doneTitle:'Thank you!', doneMsg:'Your bill has been settled. If you\'d like to order again, please scan the table QR code once more.',
+      mgmtBack:'← Manage' },
     ja: { order:'ご注文', total:'合計', all:'すべて', send:'注文する', empty:'商品を選んでください',
       confirm:'この内容で注文しますか？', okTitle:'注文を送信しました', okMsg:'ご注文を承りました。',
       queuedTitle:'保留しました（オフライン）', queuedMsg:'今は接続がありません。オンライン復帰時に自動送信します。',
@@ -46,7 +47,8 @@
       taxInclText:'表示価格はVAT{v}%込みです。', taxExclText:'お会計時に別途VAT{v}%を頂戴いたします。',
       svcInclText:'表示価格はサービス料{v}%込みです。', svcExclText:'別途サービス料{v}%を頂戴いたします。',
       btnMember:'特典', btnCoupon:'クーポン', btnCall:'呼出', btnBill:'会計', btnStatus:'状況', btnFeedback:'評価',
-      doneTitle:'ご利用ありがとうございました', doneMsg:'お会計が完了しました。追加でご注文の際は、テーブルのQRコードを再度読み取ってください。' }
+      doneTitle:'ご利用ありがとうございました', doneMsg:'お会計が完了しました。追加でご注文の際は、テーブルのQRコードを再度読み取ってください。',
+      mgmtBack:'← 管理' }
   };
 
   var state = {
@@ -163,6 +165,7 @@
       $('tableChip').title = (state.lang === 'en') ? 'Tap to change table' : '卓を選び直す';
     }
     $('langBtn').textContent = x.lang;
+    if ($('mgmtBackBtn')) $('mgmtBackBtn').textContent = x.mgmtBack;
     $('totalLbl').textContent = x.total;
     $('sendLbl').textContent = x.send;
     $('offlineText').textContent = x.offline;
@@ -799,6 +802,8 @@
     state.tableLocked = !!state.table;
     state.staffMode = !state.table;
     state.lang = (localStorage.getItem('lang') || '').match(/^(ja|en)$/) ? localStorage.getItem('lang') : '';
+    // 管理メニューからログイン中の端末でだけ「← 管理へ」を表示（客のQRスキャンでは非表示）
+    try { if (localStorage.getItem('mgmtToken') && $('mgmtBackBtn')) $('mgmtBackBtn').style.display = 'inline-block'; } catch (e) {}
 
     $('langBtn').addEventListener('click', function () { setLang(state.lang === 'ja' ? 'en' : 'ja'); });
     $('sendBtn').addEventListener('click', send);
