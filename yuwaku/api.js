@@ -59,7 +59,15 @@
         redirect: 'follow'
       });
       const json = await res.json();
-      if (!json.ok) { const e = new Error(json.error || 'api_error'); e.__server = true; throw e; }
+      if (!json.ok) {
+        // ログイントークン失効（unauthorized）は生のエラーを見せず、管理画面（ログイン）へ自動的に戻す
+        if (json.error === 'unauthorized' && (function () { try { return !!localStorage.getItem('mgmtToken'); } catch (e) { return false; } })()) {
+          try { localStorage.removeItem('mgmtToken'); localStorage.removeItem('mgmtName'); localStorage.removeItem('mgmtRole'); } catch (e) {}
+          location.href = './manage.html';
+          return new Promise(function () {}); // 遷移するのでこれ以上は解決しない
+        }
+        const e = new Error(json.error || 'api_error'); e.__server = true; throw e;
+      }
       return json;
     } finally {
       if (!silent) _load.hide();

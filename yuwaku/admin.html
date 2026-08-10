@@ -193,9 +193,14 @@
     function seatLabel(v){ var s=String(v==null?'':v); var m=s.match(/^テーブル(\d+)$/); if(m) return (lang==='en'?'Table ':'テーブル')+m[1]; var c=s.match(/^カウンター(\d+)$/); if(c) return (lang==='en'?'Counter ':'カウンター')+c[1]; return s; }
     function breakdown(subtotal){
       var s = Number(subtotal)||0;
-      var svc = Math.round(s * (Number(SETTINGS.serviceRate)||0)/100);
-      var tax = Math.round((s+svc) * (Number(SETTINGS.taxRate)||0)/100);
-      return { sub:s, service:svc, tax:tax, total:s+svc+tax };
+      var svcRate = Number(SETTINGS.serviceRate)||0, taxRate = Number(SETTINGS.taxRate)||0;
+      var svcIncl = String(SETTINGS.serviceInclusive)==='true', taxIncl = String(SETTINGS.taxInclusive)==='true';
+      var svc, afterSvc, tax, total;
+      if (svcIncl) { svc = Math.round(s - s/(1+svcRate/100)); afterSvc = s; }
+      else { svc = Math.round(s * (svcRate/100)); afterSvc = s + svc; }
+      if (taxIncl) { tax = Math.round(s - s/(1+taxRate/100)); total = afterSvc; }
+      else { tax = Math.round(afterSvc * (taxRate/100)); total = afterSvc + tax; }
+      return { sub:s, service:svc, tax:tax, total:total };
     }
 
     window.toggleLang = function(){ lang = (lang==='ja'?'en':'ja'); try{localStorage.setItem('lang',lang);}catch(e){} applyLang(); render(); renderCalls(); renderAuto(); };
