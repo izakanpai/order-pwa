@@ -167,28 +167,18 @@ async function apiAck(id, ok){
 
 // テキスト → 58mm幅の画像 → ESC/POSラスター送信
 async function printText(text){
-  var cv=buildCanvasFromText(text);
-  var bytes=canvasToEscpos(cv);
+  await printBands(buildCanvasFromText(text));
+}
+// BLE書き込み（1バンド分のバイト列を分割送信）
+async function sendChunks(bytes){
+  var canNR=!!writeChar.properties.writeWithoutResponse;
   var safe=document.getElementById('safeMode').checked;
-  var canNR = !!writeChar.properties.writeWithoutResponse;
-  if(safe){
-    // 確実性優先（低速）：応答あり書き込みを小さめチャンクで
-    var useNR0 = !writeChar.properties.write; // writeが使えなければNR
-    for(var i=0;i<bytes.length;i+=20){
-      var s0=bytes.slice(i, Math.min(i+20,bytes.length));
-      if(useNR0) await writeChar.writeValueWithoutResponse(s0); else await writeChar.writeValue(s0);
-      await sleep(14);
-    }
-  } else {
-    // 実機で全文きれいに出た実績設定（技術検証と同じ）：応答なし・128バイト・8ms
-    var canNR = !!writeChar.properties.writeWithoutResponse;
-    for(var j=0;j<bytes.length;j+=128){
-      var s=bytes.slice(j, Math.min(j+128,bytes.length));
-      if(canNR) await writeChar.writeValueWithoutResponse(s); else await writeChar.writeValue(s);
-      await sleep(8);
-    }
+  var chunk=safe?20:128, d=safe?12:5;
+  for(var i=0;i<bytes.length;i+=chunk){
+    var s=bytes.slice(i, Math.min(i+chunk,bytes.length));
+    if(canNR) await writeChar.writeValueWithoutResponse(s); else await writeChar.writeValue(s);
+    await sleep(d);
   }
-  await sleep(120); // 末尾まで送信完了を待つ
 }
 function buildCanvasFromText(text){
   var cv=document.getElementById('cv'); var ctx=cv.getContext('2d');
@@ -216,20 +206,26 @@ function buildCanvasFromText(text){
   lines.forEach(function(ln){ ctx.fillText(ln, pad, y); y+=LH; });
   return cv;
 }
-function canvasToEscpos(cv){
+// 画像を小さなバンドに分けて「送る→印字を待つ→次を送る」でプリンタの印字速度に歩調を合わせる。
+// これで受信バッファが溢れず、レシートが長くても末尾（VAT以降）が化けない。
+async function printBands(cv){
   var ctx=cv.getContext('2d'); var W=cv.width,H=cv.height;
   var img=ctx.getImageData(0,0,W,H).data; var bpr=W/8;
-  var out=[0x1B,0x40]; var BAND=64; // 帯分割フルラスター（PT-210で安定）
+  var safe=document.getElementById('safeMode').checked;
+  await sendChunks(new Uint8Array([0x1B,0x40])); // 初期化
+  var BAND=24; // 1バンド=24ドット行（約3mm）
   for(var y0=0;y0<H;y0+=BAND){
     var rows=Math.min(BAND,H-y0);
-    out.push(0x1D,0x76,0x30,0x00, bpr&0xff,(bpr>>8)&0xff, rows&0xff,(rows>>8)&0xff);
+    var band=[0x1D,0x76,0x30,0x00, bpr&0xff,(bpr>>8)&0xff, rows&0xff,(rows>>8)&0xff];
     for(var y=0;y<rows;y++){ for(var bx=0;bx<bpr;bx++){ var b=0;
       for(var bit=0;bit<8;bit++){ var px=bx*8+bit, py=y0+y, idx=(py*W+px)*4;
         if(img[idx+3]>32 && (img[idx]*0.299+img[idx+1]*0.587+img[idx+2]*0.114)<128) b|=(0x80>>bit); }
-      out.push(b); } }
+      band.push(b); } }
+    await sendChunks(new Uint8Array(band));
+    await sleep(rows*(safe?7:4) + 25); // このバンドが印字されるのを待ってから次を送る
   }
-  out.push(0x0A,0x0A,0x0A);
-  return new Uint8Array(out);
+  await sendChunks(new Uint8Array([0x0A,0x0A,0x0A]));
+  await sleep(120);
 }
 
 async function requestWake(){ try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); log('画面常時点灯ON'); } }catch(e){ log('WakeLock不可: '+(e&&e.message||e)); } }
