@@ -20,7 +20,8 @@
       callConfirm:'Call a staff member to your table?', billConfirm:'Request your bill?',
       fbTitle:'How was it?', fbSub:'Your rating helps us improve.', fbComment:'Comment (optional)', fbSend:'Send', fbPick:'Please tap the stars to rate.', fbThanks:'Thank you!', fbThanksMsg:'Thanks for your feedback.',
       bdayLbl:'🎂 Register your birthday for a treat', bdaySave:'Save', bdaySaved:'Saved! 🎉', bdayBad:'Enter as MM-DD (e.g. 08-15)',
-      stTitle:'My orders', stTotalLbl:'Unpaid total', stRefresh:'Refresh', stEmpty:'No orders yet for this table.', stPending:'Preparing', stServed:'Served' },
+      stTitle:'My orders', stTotalLbl:'Unpaid total', stRefresh:'Refresh', stEmpty:'No orders yet for this table.', stPending:'Preparing', stServed:'Served',
+      vatIncl:'Prices include VAT {v}%.', svcExtra:'A {v}% service charge applies separately.' },
     ja: { order:'ご注文', total:'合計', all:'すべて', send:'注文する', empty:'商品を選んでください',
       confirm:'この内容で注文しますか？', okTitle:'注文を送信しました', okMsg:'ご注文を承りました。',
       queuedTitle:'保留しました（オフライン）', queuedMsg:'今は接続がありません。オンライン復帰時に自動送信します。',
@@ -38,7 +39,8 @@
       callConfirm:'スタッフを呼びますか？', billConfirm:'お会計を依頼しますか？',
       fbTitle:'ご感想は？', fbSub:'評価は今後の改善に役立ちます。', fbComment:'コメント（任意）', fbSend:'送信', fbPick:'星をタップして評価してください。', fbThanks:'ありがとうございます！', fbThanksMsg:'ご意見ありがとうございました。',
       bdayLbl:'🎂 お誕生日を登録すると特典があります', bdaySave:'登録', bdaySaved:'登録しました！🎉', bdayBad:'MM-DD 形式で入力（例: 08-15）',
-      stTitle:'注文状況', stTotalLbl:'未会計 合計', stRefresh:'更新', stEmpty:'この卓の注文はまだありません。', stPending:'準備中', stServed:'提供済み' }
+      stTitle:'注文状況', stTotalLbl:'未会計 合計', stRefresh:'更新', stEmpty:'この卓の注文はまだありません。', stPending:'準備中', stServed:'提供済み',
+      vatIncl:'表示価格はVAT{v}%込みです。', svcExtra:'別途サービス料{v}%を頂戴いたします。' }
   };
 
   var state = {
@@ -125,6 +127,21 @@
     $('totalLbl').textContent = x.total;
     $('sendLbl').textContent = x.send;
     $('offlineText').textContent = x.offline;
+    renderVatNotice();
+  }
+
+  // 税・サービス料の案内（設定のtaxRate/serviceRateが未設定/0のときはその部分を省く）
+  function renderVatNotice() {
+    var el = $('vatNotice'); if (!el) return;
+    var x = t();
+    var vat = Number(state.settings.taxRate) || 0;
+    var svc = Number(state.settings.serviceRate) || 0;
+    if (vat <= 0 && svc <= 0) { el.style.display = 'none'; el.textContent = ''; return; }
+    var parts = [];
+    if (vat > 0) parts.push(x.vatIncl.replace('{v}', vat));
+    if (svc > 0) parts.push(x.svcExtra.replace('{v}', svc));
+    el.textContent = parts.join(' ');
+    el.style.display = 'block';
   }
 
   function renderCats() {
