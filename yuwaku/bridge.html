@@ -140,7 +140,7 @@ async function startLoop(){
   await loadLogo(); // レシートロゴを取得（設定画面のもの）
   setStat(tt('watching'),'run'); log('監視開始');
   tick();
-  timer=setInterval(tick, 2500);
+  timer=setInterval(tick, 1200);
 }
 function stopLoop(){
   looping=false; if(timer){ clearInterval(timer); timer=null; }
