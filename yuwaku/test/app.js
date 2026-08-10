@@ -90,9 +90,11 @@
     var svcIncl = String(state.settings.serviceInclusive) === 'true';
     var taxIncl = String(state.settings.taxInclusive) === 'true';
     // 内税/外税：内税＝表示価格に含まれる（追加課金なし）／外税＝表示価格の上に加算
+    // サービス料は最終会計（レジ）でまとめて加算するため、注文画面の合計・送信額には加算しない（二重加算防止）。
+    // 内税の場合は表示価格に含まれる分の参考値として算出（合計への影響なし＝従来通り）。
     var service, afterService, tax, base;
-    if (svcIncl) { service = Math.round(sub - sub / (1 + svcRate / 100)); afterService = sub; }
-    else { service = Math.round(sub * (svcRate / 100)); afterService = sub + service; }
+    service = svcIncl ? Math.round(sub - sub / (1 + svcRate / 100)) : 0;
+    afterService = sub;
     if (taxIncl) { tax = Math.round(sub - sub / (1 + taxRate / 100)); base = afterService; }
     else { tax = Math.round(afterService * (taxRate / 100)); base = afterService + tax; }
     // クーポン割引（先に適用）
