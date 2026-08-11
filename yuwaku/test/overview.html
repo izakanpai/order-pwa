@@ -24,6 +24,7 @@
       <button data-tlang onclick="I18n.toggle()">EN</button>
       <a href="#" id="openLink" target="_blank" rel="noopener" data-t="openImg">画像を開く</a>
       <a href="#" id="dlLink" download data-t="saveImg">保存</a>
+      <a href="./manage.html" data-t="back">← 管理へ</a>
     </div>
   </div>
   <div class="wrap">
@@ -45,8 +46,8 @@
       document.getElementById('dlLink').href = src;
     }
     I18n.init({
-      ja:{ title:'📖 システム利用イメージ', openImg:'画像を開く', saveImg:'保存', hint:'ピンチ操作で拡大／横スクロールできます。<br>最新の図は管理側で更新すると自動で反映されます。', alt:'システム利用イメージ（客・厨房・店員・管理者の流れ）' },
-      en:{ title:'📖 System Overview', openImg:'Open image', saveImg:'Save', hint:'Pinch to zoom, or scroll sideways.<br>The latest diagram is reflected automatically when updated by an admin.', alt:'System overview (customer, kitchen, staff, admin flow)' }
+      ja:{ title:'📖 システム利用イメージ', openImg:'画像を開く', saveImg:'保存', back:'← 管理へ', hint:'ピンチ操作で拡大／横スクロールできます。<br>最新の図は管理側で更新すると自動で反映されます。', alt:'システム利用イメージ（客・厨房・店員・管理者の流れ）' },
+      en:{ title:'📖 System Overview', openImg:'Open image', saveImg:'Save', back:'← Manage', hint:'Pinch to zoom, or scroll sideways.<br>The latest diagram is reflected automatically when updated by an admin.', alt:'System overview (customer, kitchen, staff, admin flow)' }
     }, function(){
       document.getElementById('hintEl').innerHTML = I18n.t('hint');
       document.getElementById('diagImg').alt = I18n.t('alt');
