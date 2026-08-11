@@ -10,7 +10,7 @@
     body{ margin:0; background:#f1f5f9; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans JP',sans-serif; color:#0f172a; }
     .bar{ position:sticky; top:0; z-index:10; background:#0f172a; color:#fff; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; }
     .bar h1{ font-size:15px; margin:0; font-weight:800; }
-    .bar a{ background:rgba(255,255,255,.16); color:#fff; text-decoration:none; border-radius:8px; padding:7px 11px; font-size:12.5px; font-weight:800; white-space:nowrap; }
+    .bar a,.bar button{ background:rgba(255,255,255,.16); color:#fff; text-decoration:none; border:0; border-radius:8px; padding:7px 11px; font-size:12.5px; font-weight:800; white-space:nowrap; font-family:inherit; cursor:pointer; }
     .wrap{ padding:12px; }
     .card{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:8px; overflow:auto; -webkit-overflow-scrolling:touch; }
     .card img{ width:100%; height:auto; display:block; min-width:760px; }
@@ -19,17 +19,39 @@
 </head>
 <body>
   <div class="bar">
-    <h1>📖 システム利用イメージ</h1>
+    <h1 data-t="title">📖 システム利用イメージ</h1>
     <div style="display:flex;gap:8px;">
-      <a href="./system-overview.svg" target="_blank" rel="noopener">画像を開く</a>
-      <a href="./system-overview.svg" download>保存</a>
+      <button data-tlang onclick="I18n.toggle()">EN</button>
+      <a href="#" id="openLink" target="_blank" rel="noopener" data-t="openImg">画像を開く</a>
+      <a href="#" id="dlLink" download data-t="saveImg">保存</a>
     </div>
   </div>
   <div class="wrap">
     <div class="card">
-      <img src="./system-overview.svg" alt="システム利用イメージ（客・厨房・店員・管理者の流れ）">
+      <img id="diagImg" src="./system-overview.svg" alt="システム利用イメージ（客・厨房・店員・管理者の流れ）">
     </div>
-    <div class="hint">ピンチ操作で拡大／横スクロールできます。<br>最新の図は管理側で更新すると自動で反映されます。</div>
+    <div class="hint" id="hintEl">ピンチ操作で拡大／横スクロールできます。<br>最新の図は管理側で更新すると自動で反映されます。</div>
   </div>
+
+  <script src="./config.js"></script>
+  <script src="./i18n.js"></script>
+  <script>
+    var SRC = { ja: './system-overview.svg', en: './system-overview-en.svg' };
+    function applyDiagram(){
+      var l = (window.I18n && I18n.lang) ? I18n.lang() : 'ja';
+      var src = SRC[l] || SRC.ja;
+      document.getElementById('diagImg').src = src;
+      document.getElementById('openLink').href = src;
+      document.getElementById('dlLink').href = src;
+    }
+    I18n.init({
+      ja:{ title:'📖 システム利用イメージ', openImg:'画像を開く', saveImg:'保存', hint:'ピンチ操作で拡大／横スクロールできます。<br>最新の図は管理側で更新すると自動で反映されます。', alt:'システム利用イメージ（客・厨房・店員・管理者の流れ）' },
+      en:{ title:'📖 System Overview', openImg:'Open image', saveImg:'Save', hint:'Pinch to zoom, or scroll sideways.<br>The latest diagram is reflected automatically when updated by an admin.', alt:'System overview (customer, kitchen, staff, admin flow)' }
+    }, function(){
+      document.getElementById('hintEl').innerHTML = I18n.t('hint');
+      document.getElementById('diagImg').alt = I18n.t('alt');
+      applyDiagram();
+    });
+  </script>
 </body>
 </html>
