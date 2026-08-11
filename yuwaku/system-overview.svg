@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 960" font-family="'Noto Sans JP','Segoe UI',Roboto,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 1000" font-family="'Noto Sans JP','Segoe UI',Roboto,sans-serif">
   <!-- ===== 更新方法: 各カードの<text>行を編集すれば内容を更新できます ===== -->
-  <rect x="0" y="0" width="1300" height="960" fill="#f8fafc"/>
+  <rect x="0" y="0" width="1300" height="1000" fill="#f8fafc"/>
 
   <!-- Header -->
   <rect x="0" y="0" width="1300" height="66" fill="#0f172a"/>
@@ -20,7 +20,7 @@
     <line x1="230" y1="470" x2="560" y2="352"/>            <!-- ホール→hub -->
     <line x1="1070" y1="430" x2="742" y2="352"/>           <!-- 管理→hub -->
     <line x1="650" y1="352" x2="650" y2="432"/>            <!-- hub→データ -->
-    <line x1="650" y1="530" x2="650" y2="836"/>            <!-- データ→外部連携 -->
+    <line x1="650" y1="530" x2="650" y2="876"/>            <!-- データ→外部連携 -->
   </g>
   <g font-size="12.5" fill="#475569" font-weight="700">
     <text x="415" y="238">① 注文</text>
@@ -66,11 +66,11 @@
     <text x="920" y="198">③ 🍳 表示・注文票を見てフードを調理</text>
     <text x="920" y="222">④ ✅ できたら「提供済」に設定→一覧から消える</text>
     <text x="920" y="246">📦 提供時に材料在庫を自動で減算</text>
-    <text x="920" y="272" fill="#64748b" font-size="11.5">※ 厨房専用スマホ／タブレットで常時表示</text>
+    <text x="920" y="272" fill="#64748b" font-size="11.5">※ 商品ごとに厨房表示ON/OFFを設定可能</text>
   </g>
 
   <!-- ================= ホール・店員 ================= -->
-  <rect x="40" y="470" width="360" height="300" rx="14" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+  <rect x="40" y="470" width="360" height="340" rx="14" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
   <text x="60" y="502" fill="#047857" font-size="17" font-weight="800">🙋 ホール・店員（店舗端末）</text>
   <g font-size="12.8" fill="#1e293b">
     <text x="60" y="528">① ✍️ 口頭注文をフロアスタッフが代理入力</text>
@@ -80,44 +80,47 @@
     <text x="60" y="622">④ 💴 会計：現金／カード／GCash（割勘・一部・シニア/PWD割引）</text>
     <text x="60" y="646">⑤ 🖨️ レシート印刷／✉️ eレシート</text>
     <text x="60" y="670">🚫 注文取消（理由＋責任者の承認制）／⏰ 写真＋GPS打刻</text>
-    <text x="60" y="702" fill="#64748b" font-size="11.5">※ 注文入力・管理はログイン不要（店舗端末運用）</text>
-    <text x="60" y="738" fill="#047857" font-size="12" font-weight="700">🖨️ プリンタ・💳 決済端末と連携</text>
+    <text x="60" y="694">📇 卓QRコードもこの端末から印刷</text>
+    <text x="60" y="726" fill="#64748b" font-size="11.5">※ 注文入力・管理はログイン不要（店舗端末運用）</text>
+    <text x="60" y="762" fill="#047857" font-size="12" font-weight="700">🖨️ 印刷ステーション（Bluetooth PT-210）・💳 決済端末と連携</text>
   </g>
 
   <!-- ================= 管理者・オーナー ================= -->
-  <rect x="900" y="430" width="360" height="340" rx="14" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
+  <rect x="900" y="430" width="360" height="380" rx="14" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
   <text x="920" y="462" fill="#7e22ce" font-size="17" font-weight="800">🧑‍💼 管理者・オーナー</text>
-  <text x="920" y="482" fill="#64748b" font-size="11.5">管理コンソール（ログイン・6タブ・権限別）</text>
+  <text x="920" y="482" fill="#64748b" font-size="11.5">管理コンソール（ログイン・多数タブ・権限別）</text>
   <g font-size="12.8" fill="#1e293b">
-    <text x="920" y="510">📊 ダッシュボード・売上・月間粗利</text>
-    <text x="920" y="534">🧾 会計履歴（月別・再印刷）／💵 レジ締め</text>
-    <text x="920" y="558">📦 在庫・棚卸／🚚 仕入・発注・仕入先</text>
-    <text x="920" y="582">🍽️ メニュー編集（並び替え・売切・タグ）</text>
-    <text x="920" y="606">🎁 会員・🎂 誕生日クーポン・🗓️ 予約</text>
-    <text x="920" y="630">🕐 勤怠・給与概算／👥 ユーザー・権限</text>
-    <text x="920" y="654">🛡️ 監査・操作ログ／⚙️ 設定</text>
-    <text x="920" y="678">💾 バックアップ・CSV書出</text>
-    <text x="920" y="702">✉️ 週次・月次レポートを自動メール</text>
-    <text x="920" y="738" fill="#7e22ce" font-size="12" font-weight="700">🧪 テスト環境で検証 → 本番へ反映</text>
+    <text x="920" y="508">📊 ダッシュボード・売上・月間粗利</text>
+    <text x="920" y="530">🧾 会計履歴（月別・再印刷）／💵 レジ締め</text>
+    <text x="920" y="552">📦 在庫・棚卸（🤖AIカメラで自動カウント）</text>
+    <text x="920" y="574">🚚 仕入・新規発注／✉️ 発注メール送信（多言語）</text>
+    <text x="920" y="596">🍽️ メニュー編集（在庫紐づけ・厨房表示ON/OFF）</text>
+    <text x="920" y="618">🎁 会員・🎂 誕生日クーポン・🗓️ 予約</text>
+    <text x="920" y="640">✅ Todo共有・📮 申し入れ管理</text>
+    <text x="920" y="662">🕐 勤怠・給与概算／👥 ユーザー・権限</text>
+    <text x="920" y="684">🛡️ 監査・操作ログ／⚙️ 設定</text>
+    <text x="920" y="706">💾 バックアップ・CSV書出</text>
+    <text x="920" y="728">✉️ 日次・週次・月次レポートを自動メール（EN/JP）</text>
+    <text x="920" y="764" fill="#7e22ce" font-size="12" font-weight="700">🧪 テスト環境で検証 → 本番へ反映</text>
   </g>
 
   <!-- ================= 外部連携 ================= -->
-  <text x="650" y="862" fill="#0f172a" font-size="14" font-weight="800" text-anchor="middle">🔌 外部連携</text>
+  <text x="650" y="902" fill="#0f172a" font-size="14" font-weight="800" text-anchor="middle">🔌 外部連携</text>
   <g>
-    <rect x="120" y="884" width="250" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="245" y="908" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">🖨️ プリンタ CloudPRNT</text>
-    <text x="245" y="926" font-size="11.5" fill="#64748b" text-anchor="middle">注文票・レシート印刷</text>
+    <rect x="120" y="924" width="250" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="245" y="948" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">🖨️ プリンタ（Bluetooth PT-210）</text>
+    <text x="245" y="966" font-size="11.5" fill="#64748b" text-anchor="middle">印刷ステーション経由で自動印字</text>
 
-    <rect x="392" y="884" width="250" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="517" y="908" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">💳 PayMongo</text>
-    <text x="517" y="926" font-size="11.5" fill="#64748b" text-anchor="middle">GCash・カード決済</text>
+    <rect x="392" y="924" width="250" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="517" y="948" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">💳 PayMongo</text>
+    <text x="517" y="966" font-size="11.5" fill="#64748b" text-anchor="middle">GCash・カード決済</text>
 
-    <rect x="664" y="884" width="250" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="789" y="908" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ メール</text>
-    <text x="789" y="926" font-size="11.5" fill="#64748b" text-anchor="middle">eレシート・レポート</text>
+    <rect x="664" y="924" width="250" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="789" y="948" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ メール</text>
+    <text x="789" y="966" font-size="11.5" fill="#64748b" text-anchor="middle">eレシート・レポート・発注メール</text>
 
-    <rect x="936" y="884" width="244" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="1058" y="908" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">☁️ Google Drive</text>
-    <text x="1058" y="926" font-size="11.5" fill="#64748b" text-anchor="middle">画像・バックアップ</text>
+    <rect x="936" y="924" width="244" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="1058" y="948" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">☁️ Google Drive</text>
+    <text x="1058" y="966" font-size="11.5" fill="#64748b" text-anchor="middle">画像・バックアップ</text>
   </g>
 </svg>
