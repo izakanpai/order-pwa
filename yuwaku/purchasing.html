@@ -51,6 +51,7 @@
         <div class="fg"><label class="form-label" data-t="sName">仕入先名</label><input id="sName" class="fc"></div>
         <div class="fg"><label class="form-label" data-t="sContact">連絡先</label><input id="sContact" class="fc" data-tph="phContact" placeholder="電話・担当など"></div>
       </div>
+      <div class="fg"><label class="form-label" data-t="sEmail">メールアドレス（任意・発注メール送信用）</label><input id="sEmail" type="email" class="fc" data-tph="phEmail" placeholder="order@supplier.example"></div>
       <div class="fg"><label class="form-label" data-t="sItems">取扱品目（任意）</label><input id="sItems" class="fc" data-tph="phItems" placeholder="例: ビール, 焼酎, 生鮮"></div>
       <div class="fg"><label class="form-label" data-t="sMemo">備考（任意）</label><input id="sMemo" class="fc"></div>
       <input type="hidden" id="sId">
@@ -58,9 +59,9 @@
       <div class="alert" id="msg"></div>
       <div style="overflow:auto;margin-top:14px;">
         <table><thead><tr>
-          <th data-t="thName">仕入先</th><th data-t="thContact">連絡先</th><th data-t="thItems">取扱品目</th><th style="width:90px;"></th>
+          <th data-t="thName">仕入先</th><th data-t="thContact">連絡先</th><th data-t="thEmail">メール</th><th data-t="thItems">取扱品目</th><th style="width:90px;"></th>
         </tr></thead>
-        <tbody id="supRows"><tr><td colspan="4" class="muted" style="padding:14px;text-align:center;" data-t="loading">読み込み中…</td></tr></tbody></table>
+        <tbody id="supRows"><tr><td colspan="5" class="muted" style="padding:14px;text-align:center;" data-t="loading">読み込み中…</td></tr></tbody></table>
       </div>
     </div>
   </div>
@@ -80,44 +81,64 @@
 
     function renderReorder(){
       if(!REORDER.length){ document.getElementById('reorder').innerHTML='<div class="muted">'+I18n.t('reorderEmpty')+'</div>'; return; }
-      document.getElementById('reorder').innerHTML = REORDER.map(function(g){
+      document.getElementById('reorder').innerHTML = REORDER.map(function(g, gi){
         var head = (g.supplier||I18n.t('noSupplier')) + (g.contact?(' <span class="muted">('+esc(g.contact)+')</span>'):'');
         var rows = g.items.map(function(it){
           return '<tr><td>'+esc(loc(it.name, it.nameEn))+'</td><td class="num low">'+it.stock+' '+esc(it.unit)+'</td><td class="num muted">'+it.minimum+'</td><td class="num" style="font-weight:800;">+'+it.suggest+' '+esc(it.unit)+'</td></tr>';
         }).join('');
-        return '<div class="sup-group"><div class="sup-h">🏢 '+head+'</div>'+
-          '<table><thead><tr><th>'+I18n.t('thItem')+'</th><th class="num">'+I18n.t('thStock')+'</th><th class="num">'+I18n.t('thMin')+'</th><th class="num">'+I18n.t('thSuggest')+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+        var mailBtn = g.supplier ?
+          (g.email
+            ? '<button class="btn-sm" style="background:#dcfce7;color:#15803d;" id="mailBtn'+gi+'" onclick="sendOrderEmail('+gi+')">'+I18n.t('sendMailBtn')+'</button>'
+            : '<span class="muted" title="'+esc(I18n.t('noEmailHint'))+'">'+I18n.t('noEmailBadge')+'</span>')
+          : '';
+        return '<div class="sup-group"><div class="sup-h" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;"><span>🏢 '+head+'</span>'+mailBtn+'</div>'+
+          '<table><thead><tr><th>'+I18n.t('thItem')+'</th><th class="num">'+I18n.t('thStock')+'</th><th class="num">'+I18n.t('thMin')+'</th><th class="num">'+I18n.t('thSuggest')+'</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+          '<div class="muted" id="mailStatus'+gi+'" style="margin-top:6px;"></div></div>';
       }).join('');
     }
+    window.sendOrderEmail = function(gi){
+      var g = REORDER[gi]; if(!g) return;
+      var btn = document.getElementById('mailBtn'+gi); var st = document.getElementById('mailStatus'+gi);
+      if(!confirm(I18n.t('sendMailConfirm')+'「'+g.supplier+'」（'+g.email+'）')) return;
+      if(btn) btn.disabled = true;
+      rpc('sendReorderEmail',[g.supplier]).then(function(res){
+        if(btn) btn.disabled = false;
+        if(res && res.success){ if(st) st.innerText = I18n.t('sendMailDone'); return; }
+        if(st) st.innerText = I18n.t('sendMailFail')+((res&&res.error)||'');
+      }).catch(function(e){ if(btn) btn.disabled = false; if(st) st.innerText = I18n.t('sendMailFail')+(e.message||e); });
+    };
     function renderSups(){
-      if(!SUPS.length){ document.getElementById('supRows').innerHTML='<tr><td colspan="4" class="muted" style="padding:14px;text-align:center;">'+I18n.t('supEmpty')+'</td></tr>'; return; }
+      if(!SUPS.length){ document.getElementById('supRows').innerHTML='<tr><td colspan="5" class="muted" style="padding:14px;text-align:center;">'+I18n.t('supEmpty')+'</td></tr>'; return; }
       document.getElementById('supRows').innerHTML = SUPS.map(function(s){
-        return '<tr><td style="font-weight:800;">'+esc(s.name)+'</td><td>'+esc(s.contact)+'</td><td class="muted">'+esc(s.items)+'</td>'+
+        return '<tr><td style="font-weight:800;">'+esc(s.name)+'</td><td>'+esc(s.contact)+'</td><td class="muted">'+esc(s.email||'')+'</td><td class="muted">'+esc(s.items)+'</td>'+
           '<td><button class="btn-sm" onclick="edit(\''+s.id+'\')">'+I18n.t('edit')+'</button> <button class="btn-sm" style="background:#fee2e2;color:#b91c1c;" onclick="del(\''+s.id+'\')">'+I18n.t('del')+'</button></td></tr>';
       }).join('');
     }
     function msg(text, ok){ var m=document.getElementById('msg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
-    function clearForm(){ ['sId','sName','sContact','sItems','sMemo'].forEach(function(id){ document.getElementById(id).value=''; }); }
+    function clearForm(){ ['sId','sName','sContact','sEmail','sItems','sMemo'].forEach(function(id){ document.getElementById(id).value=''; }); }
 
-    window.edit = function(id){ var s=SUPS.filter(function(x){return x.id===id;})[0]; if(!s) return; document.getElementById('sId').value=s.id; document.getElementById('sName').value=s.name; document.getElementById('sContact').value=s.contact; document.getElementById('sItems').value=s.items; document.getElementById('sMemo').value=s.memo||''; window.scrollTo({top:9999,behavior:'smooth'}); };
+    window.edit = function(id){ var s=SUPS.filter(function(x){return x.id===id;})[0]; if(!s) return; document.getElementById('sId').value=s.id; document.getElementById('sName').value=s.name; document.getElementById('sContact').value=s.contact; document.getElementById('sEmail').value=s.email||''; document.getElementById('sItems').value=s.items; document.getElementById('sMemo').value=s.memo||''; window.scrollTo({top:9999,behavior:'smooth'}); };
     window.del = function(id){ if(!confirm(I18n.t('delConfirm'))) return; rpc('deleteSupplier',[id]).then(function(){ return reloadSups(); }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); }); };
     window.save = function(){
-      var sup = { id:document.getElementById('sId').value, name:document.getElementById('sName').value.trim(), contact:document.getElementById('sContact').value.trim(), items:document.getElementById('sItems').value.trim(), memo:document.getElementById('sMemo').value.trim() };
+      var sup = { id:document.getElementById('sId').value, name:document.getElementById('sName').value.trim(), contact:document.getElementById('sContact').value.trim(), email:document.getElementById('sEmail').value.trim(), items:document.getElementById('sItems').value.trim(), memo:document.getElementById('sMemo').value.trim() };
       if(!sup.name){ msg(I18n.t('needName'), false); return; }
       var btn=document.getElementById('saveBtn'); btn.disabled=true;
-      rpc('saveSupplier',[sup]).then(function(d){ btn.disabled=false; if(d&&d.error){ msg(I18n.t('errPrefix')+d.error, false); return; } msg(I18n.t('saved'), true); clearForm(); return reloadSups(); })
+      rpc('saveSupplier',[sup]).then(function(d){ btn.disabled=false; if(d&&d.error){ msg(I18n.t('errPrefix')+d.error, false); return; } msg(I18n.t('saved'), true); clearForm(); reloadReorder(); return reloadSups(); })
         .catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
     function reloadSups(){ return rpc('getSuppliers',[]).then(function(l){ SUPS=l||[]; renderSups(); }); }
+    function reloadReorder(){ return rpc('getReorderSuggestions',[]).then(function(l){ REORDER=l||[]; renderReorder(); }).catch(function(){}); }
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; }).catch(function(){});
     rpc('getReorderSuggestions',[]).then(function(l){ REORDER=l||[]; renderReorder(); }).catch(function(e){ document.getElementById('reorder').innerHTML='<div class="muted" style="color:#b91c1c;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>'; });
     rpc('getSuppliers',[]).then(function(l){ SUPS=l||[]; __loaded=true; renderSups(); })
-      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('supRows').innerHTML='<tr><td colspan="4" style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('supRows').innerHTML='<tr><td colspan="5" style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
 
     I18n.init({
-      ja:{ title:'🚚 仕入・発注', back:'← 管理へ', inv:'📦 在庫', reorderTitle:'🔔 発注提案（最小在庫以下）', reorderHint:'在庫が最小在庫を下回った品目を仕入先ごとにまとめます。推奨数＝最小在庫の2倍を目標に補充。', reorderEmpty:'発注が必要な品目はありません 🎉', noSupplier:'仕入先未設定', thItem:'品目', thStock:'在庫', thMin:'最小', thSuggest:'推奨発注', supTitle:'🏢 仕入先マスタ', sName:'仕入先名', sContact:'連絡先', phContact:'電話・担当など', sItems:'取扱品目（任意）', phItems:'例: ビール, 焼酎, 生鮮', sMemo:'備考（任意）', add:'💾 登録', thName:'仕入先', thContact:'連絡先', thItems:'取扱品目', loading:'読み込み中…', supEmpty:'仕入先が未登録です', edit:'編集', del:'削除', delConfirm:'この仕入先を削除しますか？', needName:'仕入先名を入力してください', saved:'✅ 登録しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ' },
-      en:{ title:'🚚 Purchasing', back:'← Manage', inv:'📦 Inventory', reorderTitle:'🔔 Reorder suggestions (at/below min)', reorderHint:'Items at or below minimum stock, grouped by supplier. Suggested qty targets twice the minimum stock.', reorderEmpty:'Nothing to reorder 🎉', noSupplier:'No supplier set', thItem:'Item', thStock:'Stock', thMin:'Min', thSuggest:'Suggested', supTitle:'🏢 Suppliers', sName:'Supplier name', sContact:'Contact', phContact:'Phone / person', sItems:'Items handled (optional)', phItems:'e.g. beer, shochu, fresh', sMemo:'Memo (optional)', add:'💾 Save', thName:'Supplier', thContact:'Contact', thItems:'Items', loading:'Loading…', supEmpty:'No suppliers yet', edit:'Edit', del:'Delete', delConfirm:'Delete this supplier?', needName:'Please enter a supplier name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ' }
+      ja:{ title:'🚚 仕入・発注', back:'← 管理へ', inv:'📦 在庫', reorderTitle:'🔔 発注提案（最小在庫以下）', reorderHint:'在庫が最小在庫を下回った品目を仕入先ごとにまとめます。推奨数＝最小在庫の2倍を目標に補充。', reorderEmpty:'発注が必要な品目はありません 🎉', noSupplier:'仕入先未設定', thItem:'品目', thStock:'在庫', thMin:'最小', thSuggest:'推奨発注', supTitle:'🏢 仕入先マスタ', sName:'仕入先名', sContact:'連絡先', phContact:'電話・担当など', sEmail:'メールアドレス（任意・発注メール送信用）', phEmail:'order@supplier.example', sItems:'取扱品目（任意）', phItems:'例: ビール, 焼酎, 生鮮', sMemo:'備考（任意）', add:'💾 登録', thName:'仕入先', thContact:'連絡先', thEmail:'メール', thItems:'取扱品目', loading:'読み込み中…', supEmpty:'仕入先が未登録です', edit:'編集', del:'削除', delConfirm:'この仕入先を削除しますか？', needName:'仕入先名を入力してください', saved:'✅ 登録しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ',
+        sendMailBtn:'✉️ 発注メールを送る', noEmailBadge:'✉️ メール未設定', noEmailHint:'仕入先マスタにメールアドレスを登録すると送信できます', sendMailConfirm:'発注メールを送信しますか？\n', sendMailDone:'✅ 送信しました', sendMailFail:'❌ 送信失敗: ' },
+      en:{ title:'🚚 Purchasing', back:'← Manage', inv:'📦 Inventory', reorderTitle:'🔔 Reorder suggestions (at/below min)', reorderHint:'Items at or below minimum stock, grouped by supplier. Suggested qty targets twice the minimum stock.', reorderEmpty:'Nothing to reorder 🎉', noSupplier:'No supplier set', thItem:'Item', thStock:'Stock', thMin:'Min', thSuggest:'Suggested', supTitle:'🏢 Suppliers', sName:'Supplier name', sContact:'Contact', phContact:'Phone / person', sEmail:'Email (optional, for sending orders)', phEmail:'order@supplier.example', sItems:'Items handled (optional)', phItems:'e.g. beer, shochu, fresh', sMemo:'Memo (optional)', add:'💾 Save', thName:'Supplier', thContact:'Contact', thEmail:'Email', thItems:'Items', loading:'Loading…', supEmpty:'No suppliers yet', edit:'Edit', del:'Delete', delConfirm:'Delete this supplier?', needName:'Please enter a supplier name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ',
+        sendMailBtn:'✉️ Send order email', noEmailBadge:'✉️ No email set', noEmailHint:'Add an email address in the supplier master to enable sending', sendMailConfirm:'Send the order email?\n', sendMailDone:'✅ Sent', sendMailFail:'❌ Failed: ' }
     }, function(){ if(__loaded){ renderReorder(); renderSups(); } });
   </script>
 </body>
