@@ -170,7 +170,11 @@
     var autoOn = (function(){ try{ var v=localStorage.getItem('adminAuto'); return v===null?true:(v==='1'); }catch(e){ return true; } })();
     var refreshSec = (function(){ try{ var v=parseInt(localStorage.getItem('adminRefreshSec'),10); return (v===10||v===30||v===60)?v:30; }catch(e){ return 30; } })();
     var refreshTimer = null;
-    var lang = (localStorage.getItem('lang') || '').match(/^(ja|en)$/) ? localStorage.getItem('lang') : 'ja';
+    // 言語の優先順位: ①ユーザーが手動で切替済み（localStorage.lang）②店舗設定の既定言語（起動時にbootstrapで取得しキャッシュ）③英語。
+    // 以前は未設定時に常に日本語固定だったため、店舗設定の既定言語を無視してしまう不具合があった（統一対応）。
+    function explicitLang(){ try{ var v=localStorage.getItem('lang'); return (v==='en'||v==='ja')?v:null; }catch(e){ return null; } }
+    function cachedDefaultLang(){ try{ var v=localStorage.getItem('langDefaultCache'); return (v==='en'||v==='ja')?v:null; }catch(e){ return null; } }
+    var lang = explicitLang() || cachedDefaultLang() || 'en';
     var payTable = '', payTotal = 0, payCheckoutId = null, payMethod = 'cash', paySub = 0, payBase = null, payOrderIds = null, partTable = '';
 
     var i18n = {
@@ -519,6 +523,10 @@
       API.post('bootstrap', {}).then(function(r){
         SETTINGS = r.settings || {}; PAYMONGO = !!r.paymongo;
         (r.menu||[]).forEach(function(m){ var jp=m['商品名'], en=m['商品名_EN']; if(jp && en) MENU_MAP[String(jp)]=String(en); });
+        // ユーザーが手動切替していなければ、店舗設定の既定言語をキャッシュ・反映する
+        var def = (SETTINGS.defaultLang === 'ja') ? 'ja' : 'en';
+        try{ localStorage.setItem('langDefaultCache', def); }catch(e){}
+        if (!explicitLang() && lang !== def) { lang = def; applyLang(); render(); renderCalls(); renderAuto(); }
         load();
       }).catch(function(){ load(); });
       loadCalls();

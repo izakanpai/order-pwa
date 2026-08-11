@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 960" font-family="'Noto Sans JP','Segoe UI',Roboto,sans-serif">
+  <!-- ===== English translation of system-overview.svg. Edit the <text> lines to update content. ===== -->
+  <rect x="0" y="0" width="1300" height="960" fill="#f8fafc"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="1300" height="66" fill="#0f172a"/>
+  <text x="36" y="42" fill="#ffffff" font-size="26" font-weight="800">🍶 Order Management System — Overview</text>
+  <text x="1264" y="28" fill="#93c5fd" font-size="13" text-anchor="end">A relaxing spot by the creek — Yuwaku Bar</text>
+  <text x="1264" y="48" fill="#cbd5e1" font-size="12" text-anchor="end">PWA + Google Apps Script + Spreadsheet</text>
+
+  <!-- Arrows (背面に描画) -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <g stroke="#64748b" stroke-width="2.5" fill="none" marker-end="url(#arrow)">
+    <line x1="400" y1="205" x2="486" y2="258"/>            <!-- 客→hub -->
+    <line x1="900" y1="205" x2="814" y2="258"/>            <!-- 厨房→hub -->
+    <line x1="230" y1="470" x2="560" y2="352"/>            <!-- ホール→hub -->
+    <line x1="1070" y1="430" x2="742" y2="352"/>           <!-- 管理→hub -->
+    <line x1="650" y1="352" x2="650" y2="432"/>            <!-- hub→データ -->
+    <line x1="650" y1="530" x2="650" y2="836"/>            <!-- データ→外部連携 -->
+  </g>
+  <g font-size="12.5" fill="#475569" font-weight="700">
+    <text x="415" y="238">① Order</text>
+    <text x="836" y="238" text-anchor="end">② Sync</text>
+    <text x="392" y="410">Order entry · checkout</text>
+    <text x="906" y="392" text-anchor="end">Admin · reporting</text>
+    <text x="662" y="400">Save</text>
+  </g>
+
+  <!-- 中央: システム hub -->
+  <rect x="486" y="212" width="328" height="140" rx="14" fill="#0f172a" stroke="#0ea5e9" stroke-width="2.5"/>
+  <text x="650" y="250" fill="#ffffff" font-size="18" font-weight="800" text-anchor="middle">🖥️ Order Management System</text>
+  <text x="650" y="280" fill="#e2e8f0" font-size="12.5" text-anchor="middle">Phone/tablet PWA (GitHub Pages)</text>
+  <text x="650" y="302" fill="#e2e8f0" font-size="12.5" text-anchor="middle">Role-based screens · EN/JP toggle</text>
+  <text x="650" y="330" fill="#7dd3fc" font-size="12.5" text-anchor="middle">Live: izakanpai.com/yuwaku/</text>
+
+  <!-- データ基盤 -->
+  <rect x="486" y="432" width="328" height="96" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="1.6"/>
+  <text x="650" y="462" fill="#0f172a" font-size="15" font-weight="800" text-anchor="middle">🗄️ Data Layer</text>
+  <text x="650" y="486" fill="#334155" font-size="12.5" text-anchor="middle">Google Sheets (all data)</text>
+  <text x="650" y="508" fill="#334155" font-size="12" text-anchor="middle">Google Apps Script (API, automation)</text>
+
+  <!-- ================= 客 ================= -->
+  <rect x="40" y="88" width="360" height="250" rx="14" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="60" y="120" fill="#1d4ed8" font-size="17" font-weight="800">👤 Customer (guest's phone)</text>
+  <g font-size="12.8" fill="#1e293b">
+    <text x="60" y="150">📱 Scan the table QR to order</text>
+    <text x="60" y="174">🍽️ Order from menu (photo, options, qty)</text>
+    <text x="60" y="198">🎟️ Coupons / 🎁 Member points</text>
+    <text x="60" y="222">💳 Self-checkout: GCash / Card (optional)</text>
+    <text x="60" y="246">🔔 Call staff / 🧾 Bill / 📋 Order status</text>
+    <text x="60" y="270">⭐ Feedback / 🎂 Birthday sign-up</text>
+    <text x="60" y="294">🥡 Takeout orders / 🗓️ Reservations</text>
+    <text x="60" y="320" fill="#64748b" font-size="11.5">※ No login needed · one QR per table</text>
+  </g>
+
+  <!-- ================= 厨房 ================= -->
+  <rect x="900" y="88" width="360" height="250" rx="14" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
+  <text x="920" y="120" fill="#c2410c" font-size="17" font-weight="800">🍳 Kitchen (kitchen device)</text>
+  <g font-size="12.8" fill="#1e293b">
+    <text x="920" y="150">① 🖥️ Orders list on KDS (auto-refresh)</text>
+    <text x="920" y="174">② 🖨️ Auto-prints ticket (by category)</text>
+    <text x="920" y="198">③ 🍳 Cook using the KDS / ticket</text>
+    <text x="920" y="222">④ ✅ Mark "Served" — leaves the list</text>
+    <text x="920" y="246">📦 Stock auto-deducted when served</text>
+    <text x="920" y="272" fill="#64748b" font-size="11.5">※ Always-on kitchen phone/tablet</text>
+  </g>
+
+  <!-- ================= ホール・店員 ================= -->
+  <rect x="40" y="470" width="360" height="300" rx="14" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+  <text x="60" y="502" fill="#047857" font-size="17" font-weight="800">🙋 Floor staff (store device)</text>
+  <g font-size="12.8" fill="#1e293b">
+    <text x="60" y="528">① ✍️ Staff enter verbal orders for guests</text>
+    <text x="60" y="550">    (Admin → pick table/counter → enter)</text>
+    <text x="60" y="574">② 🧾 Track orders per table (seated timer)</text>
+    <text x="60" y="598">③ 🔔 Respond to staff-call &amp; bill requests</text>
+    <text x="60" y="622" font-size="11">④ 💴 Checkout: cash, card, GCash (split/partial/discount)</text>
+    <text x="60" y="646">⑤ 🖨️ Print receipt / ✉️ e-receipt</text>
+    <text x="60" y="670" font-size="11">🚫 Void (reason + approval) / ⏰ Photo+GPS clock-in</text>
+    <text x="60" y="702" fill="#64748b" font-size="11.5">※ No login for entry/admin (shared device)</text>
+    <text x="60" y="738" fill="#047857" font-size="12" font-weight="700">🖨️ Connected to printer &amp; 💳 payment terminal</text>
+  </g>
+
+  <!-- ================= 管理者・オーナー ================= -->
+  <rect x="900" y="430" width="360" height="340" rx="14" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
+  <text x="920" y="462" fill="#7e22ce" font-size="17" font-weight="800">🧑‍💼 Admin / Owner</text>
+  <text x="920" y="482" fill="#64748b" font-size="11.5">Management console (login, 6 tabs, roles)</text>
+  <g font-size="12.8" fill="#1e293b">
+    <text x="920" y="510">📊 Dashboard · Sales · Monthly profit</text>
+    <text x="920" y="534" font-size="11.8">🧾 Receipts (by month, reprint) / 💵 Register</text>
+    <text x="920" y="558">📦 Inventory · Stocktake / 🚚 Purchasing</text>
+    <text x="920" y="582">🍽️ Menu editor (reorder, sold-out, tags)</text>
+    <text x="920" y="606" font-size="11.8">🎁 Members · 🎂 Birthday coupons · 🗓️ Bookings</text>
+    <text x="920" y="630">🕐 Attendance · Payroll est. / 👥 Users</text>
+    <text x="920" y="654">🛡️ Audit log / ⚙️ Settings</text>
+    <text x="920" y="678">💾 Backup · CSV export</text>
+    <text x="920" y="702">✉️ Weekly/monthly reports auto-emailed</text>
+    <text x="920" y="738" fill="#7e22ce" font-size="12" font-weight="700">🧪 Verify in test → deploy to prod</text>
+  </g>
+
+  <!-- ================= 外部連携 ================= -->
+  <text x="650" y="862" fill="#0f172a" font-size="14" font-weight="800" text-anchor="middle">🔌 External Integrations</text>
+  <g>
+    <rect x="120" y="884" width="250" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="245" y="908" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">🖨️ Printer (CloudPRNT)</text>
+    <text x="245" y="926" font-size="11.5" fill="#64748b" text-anchor="middle">Tickets &amp; receipt printing</text>
+
+    <rect x="392" y="884" width="250" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="517" y="908" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">💳 PayMongo</text>
+    <text x="517" y="926" font-size="11.5" fill="#64748b" text-anchor="middle">GCash · card payments</text>
+
+    <rect x="664" y="884" width="250" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="789" y="908" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ Email</text>
+    <text x="789" y="926" font-size="11.5" fill="#64748b" text-anchor="middle">e-receipts · reports</text>
+
+    <rect x="936" y="884" width="244" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="1058" y="908" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">☁️ Google Drive</text>
+    <text x="1058" y="926" font-size="11.5" fill="#64748b" text-anchor="middle">Images · backups</text>
+  </g>
+</svg>

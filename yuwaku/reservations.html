@@ -30,7 +30,17 @@
 </head>
 <body>
   <div class="head"><h1 data-t="title">🗓️ 予約管理</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><button class="hbtn" onclick="reload()" data-t="reload">↻</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
-  <div class="wrap"><div class="card">
+  <div class="wrap">
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:900;font-size:14px;margin-bottom:4px;" data-t="urlTitle">🔗 予約フォームの共有URL</div>
+      <div class="muted" style="font-size:12.5px;margin-bottom:10px;line-height:1.6;" data-t="urlHint">お客様がこのURLを開くと予約をリクエストできます。SNSやGoogleビジネスプロフィールなどに貼ってご利用ください。</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input id="resUrl" readonly style="flex:1;min-width:220px;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#f8fafc;color:var(--navy);" onclick="this.select()">
+        <button class="hbtn" style="background:var(--navy);" onclick="copyResUrl()" data-t="urlCopy">📋 コピー</button>
+      </div>
+      <div id="urlMsg" style="display:none;margin-top:8px;font-size:12.5px;font-weight:700;color:#15803d;" data-t="urlCopied">✅ コピーしました</div>
+    </div>
+    <div class="card">
     <div style="overflow:auto;">
       <table><thead><tr>
         <th data-t="thWhen">予約日時</th><th class="num" data-t="thPeople">人数</th><th data-t="thName">氏名</th>
@@ -64,12 +74,22 @@
     }
     window.setStatus = function(id, status){ rpc('updateReservationStatus',[id,status]).then(function(){ return reload(); }).catch(function(){}); };
     window.reload = function(){ return rpc('getReservations',[]).then(function(l){ ROWS=l||[]; render(); }); };
+
+    // 予約フォーム（reserve.html）の共有URL
+    document.getElementById('resUrl').value = location.href.replace(/reservations\.html.*$/, 'reserve.html');
+    window.copyResUrl = function(){
+      var input = document.getElementById('resUrl');
+      var done = function(){ var m=document.getElementById('urlMsg'); m.style.display='block'; setTimeout(function(){ m.style.display='none'; }, 2200); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(input.value).then(done).catch(function(){ input.select(); document.execCommand('copy'); done(); });
+      } else { input.select(); document.execCommand('copy'); done(); }
+    };
     rpc('getReservations',[]).then(function(l){ ROWS=l||[]; __loaded=true; render(); })
       .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="7" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
 
     I18n.init({
-      ja:{ title:'🗓️ 予約管理', back:'← 管理へ', reload:'↻', thWhen:'予約日時', thPeople:'人数', thName:'氏名', thPhone:'電話', thSeat:'席', thNotes:'備考', thStatus:'状態', loading:'読み込み中…', empty:'予約はありません', loadErr:'読み込みエラー: ', stRecv:'受付', stOk:'確定', stCame:'来店済', stCxl:'キャンセル' },
-      en:{ title:'🗓️ Reservations', back:'← Manage', reload:'↻', thWhen:'Date & time', thPeople:'Party', thName:'Name', thPhone:'Phone', thSeat:'Seat', thNotes:'Notes', thStatus:'Status', loading:'Loading…', empty:'No reservations', loadErr:'Load error: ', stRecv:'Received', stOk:'Confirmed', stCame:'Arrived', stCxl:'Cancelled' }
+      ja:{ title:'🗓️ 予約管理', back:'← 管理へ', reload:'↻', urlTitle:'🔗 予約フォームの共有URL', urlHint:'お客様がこのURLを開くと予約をリクエストできます。SNSやGoogleビジネスプロフィールなどに貼ってご利用ください。', urlCopy:'📋 コピー', urlCopied:'✅ コピーしました', thWhen:'予約日時', thPeople:'人数', thName:'氏名', thPhone:'電話', thSeat:'席', thNotes:'備考', thStatus:'状態', loading:'読み込み中…', empty:'予約はありません', loadErr:'読み込みエラー: ', stRecv:'受付', stOk:'確定', stCame:'来店済', stCxl:'キャンセル' },
+      en:{ title:'🗓️ Reservations', back:'← Manage', reload:'↻', urlTitle:'🔗 Reservation form URL', urlHint:'Customers who open this URL can request a reservation. Share it on social media, Google Business Profile, etc.', urlCopy:'📋 Copy', urlCopied:'✅ Copied', thWhen:'Date & time', thPeople:'Party', thName:'Name', thPhone:'Phone', thSeat:'Seat', thNotes:'Notes', thStatus:'Status', loading:'Loading…', empty:'No reservations', loadErr:'Load error: ', stRecv:'Received', stOk:'Confirmed', stCame:'Arrived', stCxl:'Cancelled' }
     }, function(){ if(__loaded) render(); });
   </script>
 </body>

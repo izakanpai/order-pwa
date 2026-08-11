@@ -4,10 +4,15 @@
 //   ヘッダに <button data-tlang onclick="I18n.toggle()">EN</button> を置く。
 //   翻訳したい要素に data-t="key"（テキスト）/ data-tph="key"（placeholder）を付ける。
 //   I18n.init({ ja:{key:'日本語'}, en:{key:'English'} }, function(lang){ /* 動的部分を再描画 */ });
-//   動的文字列は I18n.t('key') で取得。言語は localStorage.lang に保存（他ページと共通）。
+//   動的文字列は I18n.t('key') で取得。
+//   言語の優先順位: ①ユーザーが手動で切替済み（localStorage.lang）②店舗設定の「既定言語」
+//   （localStorage.langDefaultCacheに直近値をキャッシュしつつ、毎回バックグラウンドで最新値を取得・反映）③最終フォールバックはEnglish。
+//   （以前は②③が無く、未設定時は常に日本語だった。店舗設定の既定言語を無視してしまう不具合のため統一）
 (function () {
   var DICT = {}, cb = null;
-  function lang() { try { return localStorage.getItem('lang') === 'en' ? 'en' : 'ja'; } catch (e) { return 'ja'; } }
+  function explicitLang() { try { var v = localStorage.getItem('lang'); return (v === 'en' || v === 'ja') ? v : null; } catch (e) { return null; } }
+  function cachedDefault() { try { var v = localStorage.getItem('langDefaultCache'); return (v === 'en' || v === 'ja') ? v : null; } catch (e) { return null; } }
+  function lang() { return explicitLang() || cachedDefault() || 'en'; }
   function apply() {
     var l = lang(), d = DICT[l] || {};
     document.querySelectorAll('[data-t]').forEach(function (el) { var k = el.getAttribute('data-t'); if (d[k] != null) el.textContent = d[k]; });
@@ -17,11 +22,33 @@
     if (cb) try { cb(l); } catch (e) {}
   }
   window.I18n = {
-    init: function (dict, onChange) { DICT = dict || {}; cb = onChange || null; apply(); },
+    init: function (dict, onChange) { DICT = dict || {}; cb = onChange || null; apply(); fetchDefaultLang(); },
     toggle: function () { try { localStorage.setItem('lang', lang() === 'ja' ? 'en' : 'ja'); } catch (e) {} apply(); },
     lang: lang,
     t: function (k) { var d = DICT[lang()] || {}; return d[k] != null ? d[k] : k; }
   };
+
+  // 店舗設定の「既定言語」をバックグラウンドで取得し、ユーザーが手動切替していない場合のみ反映する。
+  // 取得完了まではキャッシュ値（無ければ英語）で表示し、完了後に差分があれば再描画する。
+  function fetchDefaultLang() {
+    if (explicitLang()) return; // ユーザーが既に手動で選択済みなら何もしない
+    try {
+      if (typeof window === 'undefined' || !window.APP_CONFIG || !window.APP_CONFIG.API_URL) return;
+      fetch(window.APP_CONFIG.API_URL + '?api=1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'getSettings' }),
+        redirect: 'follow'
+      }).then(function (res) { return res.json(); }).then(function (json) {
+        if (explicitLang()) return; // 応答待ちの間にユーザーが手動切替していたら上書きしない
+        var d = (json && json.ok && json.data) || {};
+        var def = (d.defaultLang === 'ja') ? 'ja' : 'en';
+        var cur = cachedDefault();
+        try { localStorage.setItem('langDefaultCache', def); } catch (e) {}
+        if (def !== cur) apply();
+      }).catch(function () {});
+    } catch (e) {}
+  }
 
   // 入力欄でEnter→そのブロックの主ボタンを実行（フォーム未使用のため共通で補う）。
   // api.js と i18n.js の両方に同じ処理を置くが、フラグで二重バインドを防止。
