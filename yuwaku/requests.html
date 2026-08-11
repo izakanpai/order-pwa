@@ -33,14 +33,16 @@
     .item .top{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
     .item .who{ font-weight:800; font-size:13px; }
     .item .when{ font-size:11.5px; color:var(--text-3); }
-    .badge{ display:inline-block; font-size:11px; font-weight:800; padding:2px 9px; border-radius:999px; margin-right:6px; }
+    .badge{ display:inline-block; font-size:11px; font-weight:800; padding:2px 9px; border-radius:999px; margin-right:6px; margin-bottom:3px; }
     .cat-bug{ background:#fee2e2; color:#b91c1c; } .cat-ops{ background:#fef3c7; color:#92400e; } .cat-other{ background:#eef2f7; color:var(--navy); }
     .st-open{ background:#fee2e2; color:#b91c1c; } .st-prog{ background:#fef3c7; color:#92400e; } .st-done{ background:#dcfce7; color:#15803d; }
+    .badge.overdue{ background:#fee2e2; color:#b91c1c; }
     .item .content{ margin:8px 0; font-size:14px; line-height:1.6; white-space:pre-wrap; word-break:break-word; }
     .item .note{ font-size:12.5px; color:var(--text-3); background:#f8fafc; border-radius:9px; padding:8px 10px; margin-top:6px; }
     .mgmt{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
     select.mini{ padding:6px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
     input.noteInp{ flex:1; min-width:140px; padding:6px 8px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
+    input.dueInp{ padding:6px 8px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
     .delbtn{ background:none; border:0; color:#b91c1c; font-size:16px; cursor:pointer; }
     .empty{ text-align:center; color:var(--text-3); padding:24px 0; }
   </style>
@@ -95,23 +97,30 @@
     function catLabel(c){ var k={'不具合':'catBug','運営':'catOps','その他':'catOther'}[c]; return k?I18n.t(k):c; }
     function stLabel(s){ var k={'未対応':'stOpen','対応中':'stProg','解決済み':'stDone'}[s]; return k?I18n.t(k):s; }
 
+    function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
     function render(){
       if (!ROWS.length){ $('list').innerHTML = '<div class="empty">'+I18n.t('empty')+'</div>'; return; }
+      var today = todayStr();
       $('list').innerHTML = ROWS.map(function(r){
+        var overdue = (r.due && r.status !== '解決済み' && r.due < today);
         var mgmtHtml = '';
         if (CAN_MANAGE){
           var opts = STATUSES.map(function(s){ return '<option value="'+s+'"'+(s===r.status?' selected':'')+'>'+esc(stLabel(s))+'</option>'; }).join('');
           mgmtHtml = '<div class="mgmt">' +
-            '<select class="mini" onchange="setStatus(\''+r.id+'\',this.value,null)">'+opts+'</select>' +
-            '<input class="noteInp" placeholder="'+esc(I18n.t('notePh'))+'" value="'+esc(r.note)+'" onchange="setStatus(\''+r.id+'\',null,this.value)">' +
+            '<select class="mini" onchange="setStatus(\''+r.id+'\',this.value,null,null)">'+opts+'</select>' +
+            '<input class="noteInp" placeholder="'+esc(I18n.t('notePh'))+'" value="'+esc(r.note)+'" onchange="setStatus(\''+r.id+'\',null,this.value,null)">' +
+            '<input type="date" class="dueInp" title="'+esc(I18n.t('dueLabel'))+'" value="'+esc(r.due||'')+'" onchange="setStatus(\''+r.id+'\',null,null,this.value)">' +
             '<button class="delbtn" onclick="removeReq(\''+r.id+'\')" title="'+esc(I18n.t('delete'))+'">🗑️</button>' +
           '</div>';
         } else if (r.note) {
           mgmtHtml = '<div class="note">💬 '+esc(r.note)+'</div>';
         }
         return '<div class="item">' +
-          '<div class="top"><span class="who">👤 '+esc(r.author||I18n.t('anon'))+'</span><span class="when">'+esc(r.created)+'</span></div>' +
-          '<div style="margin-top:6px;"><span class="badge '+(CAT_CLS[r.category]||'cat-other')+'">'+esc(catLabel(r.category))+'</span><span class="badge '+(ST_CLS[r.status]||'st-open')+'">'+esc(stLabel(r.status))+'</span></div>' +
+          '<div class="top"><span class="who">👤 '+esc(r.author||I18n.t('anon'))+'</span><span class="when">🕒 '+esc(r.created)+'</span></div>' +
+          '<div style="margin-top:6px;"><span class="badge '+(CAT_CLS[r.category]||'cat-other')+'">'+esc(catLabel(r.category))+'</span><span class="badge '+(ST_CLS[r.status]||'st-open')+'">'+esc(stLabel(r.status))+'</span>' +
+            (r.due ? '<span class="badge'+(overdue?' overdue':'')+'">📅 '+esc(I18n.t('dueLbl'))+esc(r.due)+(overdue?(' '+esc(I18n.t('overdue'))):'')+'</span>' : '') +
+          '</div>' +
           '<div class="content">'+esc(r.content)+'</div>' +
           mgmtHtml +
         '</div>';
@@ -127,11 +136,12 @@
         return reload();
       }).catch(function(e){ errEl.textContent = I18n.t('errPrefix')+(e.message||e); errEl.style.display='block'; });
     };
-    window.setStatus = function(id, status, note){
+    window.setStatus = function(id, status, note, due){
       var row = ROWS.filter(function(r){ return r.id===id; })[0]; if (!row) return;
       var s = (status===null || status===undefined) ? row.status : status;
       var n = (note===null || note===undefined) ? row.note : note;
-      rpc('updateRequestStatus',[id, s, n]).then(function(){ return reload(); }).catch(function(){ reload(); });
+      var d = (due===null || due===undefined) ? row.due : due;
+      rpc('updateRequestStatus',[id, s, n, d]).then(function(){ return reload(); }).catch(function(){ reload(); });
     };
     window.removeReq = function(id){
       if (!confirm(I18n.t('confirmDelete'))) return;
@@ -154,12 +164,14 @@
         contentLabel:'内容', contentPh:'困っていること・気づいたことを自由に書いてください', submitBtn:'📮 送信',
         listTitle:'📋 一覧', loading:'読み込み中…', empty:'まだ投稿はありません', loadErr:'読み込みエラー: ',
         stOpen:'未対応', stProg:'対応中', stDone:'解決済み', notePh:'対応メモ', delete:'削除', confirmDelete:'この投稿を削除しますか？',
+        dueLabel:'対応納期', dueLbl:'納期: ', overdue:'（期限超過）',
         anon:'-', needContent:'内容を入力してください', errPrefix:'エラー: ', asNameLbl:'投稿者: ' },
       en:{ title:'📮 Staff requests', back:'← Manage', reload:'↻',
         submitTitle:'✍️ New request', catLabel:'Category', catBug:'🐞 System bug', catOps:'🏪 Store operations', catOther:'💬 Other',
         contentLabel:'Content', contentPh:'Describe the issue or concern', submitBtn:'📮 Send',
         listTitle:'📋 List', loading:'Loading…', empty:'No requests yet', loadErr:'Load error: ',
         stOpen:'Open', stProg:'In progress', stDone:'Resolved', notePh:'Note', delete:'Delete', confirmDelete:'Delete this request?',
+        dueLabel:'Due date', dueLbl:'Due: ', overdue:'(overdue)',
         anon:'-', needContent:'Please enter content', errPrefix:'Error: ', asNameLbl:'Posting as: ' }
     }, function(){
       $('asName').textContent = MY_NAME ? (I18n.t('asNameLbl')+MY_NAME) : '';

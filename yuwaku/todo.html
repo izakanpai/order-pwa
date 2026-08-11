@@ -25,8 +25,8 @@
     .fc{ width:100%; padding:10px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); }
     .btn{ border:0; border-radius:11px; padding:12px 16px; font-size:14px; font-weight:900; cursor:pointer; font-family:inherit; background:var(--navy); color:#fff; }
     .muted{ color:var(--text-3); }
-    .row{ display:flex; gap:8px; }
-    .row .fg{ flex:1; }
+    .row{ display:flex; gap:8px; flex-wrap:wrap; }
+    .row .fg{ flex:1; min-width:120px; }
     .item{ display:flex; align-items:flex-start; gap:10px; padding:12px 4px; border-bottom:1px solid var(--border); }
     .item:last-child{ border-bottom:0; }
     .item input[type=checkbox]{ width:22px; height:22px; margin-top:2px; flex:0 0 auto; cursor:pointer; }
@@ -34,9 +34,11 @@
     .item .ttl{ font-weight:800; font-size:14.5px; word-break:break-word; }
     .item.done .ttl{ text-decoration:line-through; color:var(--text-3); }
     .item .meta{ font-size:11.5px; color:var(--text-3); margin-top:3px; }
-    .badge{ display:inline-block; background:#eef2f7; color:var(--navy); font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; margin-right:6px; }
+    .badge{ display:inline-block; background:#eef2f7; color:var(--navy); font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; margin-right:6px; margin-bottom:3px; }
+    .badge.overdue{ background:#fee2e2; color:#b91c1c; }
     .delbtn{ background:none; border:0; color:#b91c1c; font-size:18px; cursor:pointer; flex:0 0 auto; padding:4px 6px; }
     .empty{ text-align:center; color:var(--text-3); padding:24px 0; }
+    .created-line{ margin-top:2px; }
   </style>
 </head>
 <body>
@@ -53,6 +55,10 @@
         <div class="fg" style="flex:1;">
           <label class="form-label" data-t="assigneeLabel">担当者</label>
           <select id="newAssignee" class="fc"></select>
+        </div>
+        <div class="fg" style="flex:1;">
+          <label class="form-label" data-t="dueLabel">期限（任意）</label>
+          <input id="newDue" type="date" class="fc">
         </div>
       </div>
       <button class="btn" onclick="addTodo()" data-t="addBtn">➕ 追加</button>
@@ -78,16 +84,22 @@
 
     var ROWS = [], EMPLOYEES = [], __loaded = false;
 
+    function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
     function render(){
       if (!ROWS.length){ $('list').innerHTML = '<div class="empty">'+I18n.t('empty')+'</div>'; return; }
+      var today = todayStr();
       $('list').innerHTML = ROWS.map(function(r){
+        var overdue = (r.due && !r.done && r.due < today);
         return '<div class="item'+(r.done?' done':'')+'">' +
           '<input type="checkbox" '+(r.done?'checked':'')+' onchange="toggleDone(\''+r.id+'\',this.checked)">' +
           '<div class="body">' +
             '<div class="ttl">'+esc(r.title)+'</div>' +
             '<div class="meta">' +
               (r.assignee ? '<span class="badge">👤 '+esc(r.assignee)+'</span>' : '<span class="badge">'+esc(I18n.t('unassigned'))+'</span>') +
-              esc(I18n.t('createdBy'))+esc(r.creator||'-')+' · '+esc(r.created) +
+              (r.due ? '<span class="badge'+(overdue?' overdue':'')+'">📅 '+esc(I18n.t('dueLbl'))+esc(r.due)+(overdue?(' '+esc(I18n.t('overdue'))):'')+'</span>' : '') +
+            '</div>' +
+            '<div class="meta created-line">🕒 '+esc(I18n.t('createdBy'))+esc(r.creator||'-')+' · '+esc(r.created) +
               (r.done && r.doneAt ? ' · '+esc(I18n.t('doneAt'))+esc(r.doneAt) : '') +
             '</div>' +
           '</div>' +
@@ -106,8 +118,9 @@
       var errEl = $('addErr'); errEl.style.display='none';
       if (!title){ errEl.textContent = I18n.t('needTitle'); errEl.style.display='block'; return; }
       var assignee = $('newAssignee').value||'';
-      rpc('saveTodo',[{ title: title, assignee: assignee }]).then(function(){
-        $('newTitle').value=''; $('newAssignee').value='';
+      var due = $('newDue').value||'';
+      rpc('saveTodo',[{ title: title, assignee: assignee, due: due }]).then(function(){
+        $('newTitle').value=''; $('newAssignee').value=''; $('newDue').value='';
         return reload();
       }).catch(function(e){ errEl.textContent = I18n.t('errPrefix')+(e.message||e); errEl.style.display='block'; });
     };
@@ -138,14 +151,16 @@
 
     I18n.init({
       ja:{ title:'✅ Todo管理', back:'← 管理へ', reload:'↻',
-        addTitle:'➕ 新しいタスク', taskLabel:'タスク内容', taskPh:'例：ドリンクメニューの在庫を確認', assigneeLabel:'担当者', addBtn:'➕ 追加',
+        addTitle:'➕ 新しいタスク', taskLabel:'タスク内容', taskPh:'例：ドリンクメニューの在庫を確認', assigneeLabel:'担当者', dueLabel:'期限（任意）', addBtn:'➕ 追加',
         listTitle:'📋 タスク一覧', loading:'読み込み中…', empty:'タスクはまだありません', loadErr:'読み込みエラー: ',
         unassigned:'未定', unassignedOpt:'未定・共有タスク', createdBy:'作成: ', doneAt:'完了: ', delete:'削除', confirmDelete:'このタスクを削除しますか？',
+        dueLbl:'期限: ', overdue:'（期限超過）',
         needTitle:'タスク内容を入力してください', errPrefix:'エラー: ' },
       en:{ title:'✅ To-dos', back:'← Manage', reload:'↻',
-        addTitle:'➕ New task', taskLabel:'Task', taskPh:'e.g. Check drink menu stock', assigneeLabel:'Assignee', addBtn:'➕ Add',
+        addTitle:'➕ New task', taskLabel:'Task', taskPh:'e.g. Check drink menu stock', assigneeLabel:'Assignee', dueLabel:'Due date (optional)', addBtn:'➕ Add',
         listTitle:'📋 Task list', loading:'Loading…', empty:'No tasks yet', loadErr:'Load error: ',
         unassigned:'Unassigned', unassignedOpt:'Unassigned / shared', createdBy:'By: ', doneAt:'Done: ', delete:'Delete', confirmDelete:'Delete this task?',
+        dueLbl:'Due: ', overdue:'(overdue)',
         needTitle:'Please enter a task', errPrefix:'Error: ' }
     }, function(){ if (__loaded) { renderAssigneeOptions(); render(); } });
   </script>
