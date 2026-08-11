@@ -73,6 +73,9 @@
     if (!TOKEN) location.href = './manage.html';
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    // 言語切替の一元ヘルパー（新しい表示・候補リストを追加する際は必ずこれを通すこと）
+    function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
+    function loc(ja, en){ ja = ja||''; en = (en||'').trim(); return isEN() ? (en || ja) : ja; }
     var SUPS = [], REORDER = [], SYM='₱', __loaded=false;
 
     function renderReorder(){
@@ -80,7 +83,7 @@
       document.getElementById('reorder').innerHTML = REORDER.map(function(g){
         var head = (g.supplier||I18n.t('noSupplier')) + (g.contact?(' <span class="muted">('+esc(g.contact)+')</span>'):'');
         var rows = g.items.map(function(it){
-          return '<tr><td>'+esc(it.name)+'</td><td class="num low">'+it.stock+' '+esc(it.unit)+'</td><td class="num muted">'+it.minimum+'</td><td class="num" style="font-weight:800;">+'+it.suggest+' '+esc(it.unit)+'</td></tr>';
+          return '<tr><td>'+esc(loc(it.name, it.nameEn))+'</td><td class="num low">'+it.stock+' '+esc(it.unit)+'</td><td class="num muted">'+it.minimum+'</td><td class="num" style="font-weight:800;">+'+it.suggest+' '+esc(it.unit)+'</td></tr>';
         }).join('');
         return '<div class="sup-group"><div class="sup-h">🏢 '+head+'</div>'+
           '<table><thead><tr><th>'+I18n.t('thItem')+'</th><th class="num">'+I18n.t('thStock')+'</th><th class="num">'+I18n.t('thMin')+'</th><th class="num">'+I18n.t('thSuggest')+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
