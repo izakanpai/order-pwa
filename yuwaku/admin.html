@@ -345,7 +345,7 @@
     function resetTimer(){ if(refreshTimer) clearInterval(refreshTimer); refreshTimer = setInterval(tick, refreshSec*1000); }
     function renderAuto(){
       var b=document.getElementById('autoBtn');
-      var en=(window.I18n && I18n.lang()==='en');
+      var en=(lang==='en');
       b.className='auto-toggle '+(autoOn?'on':'off');
       b.innerText=(autoOn?(en?'🔄 Auto: ON':'🔄 自動更新: ON'):(en?'⏸ Auto: OFF':'⏸ 自動更新: OFF'));
       var g=document.getElementById('intGroup');
