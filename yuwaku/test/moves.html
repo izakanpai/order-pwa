@@ -61,6 +61,9 @@
     if (!TOKEN) location.href = './manage.html';
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    // 言語切替の一元ヘルパー（新しい表示・候補リストを追加する際は必ずこれを通すこと）
+    function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
+    function loc(ja, en){ ja = ja||''; en = (en||'').trim(); return isEN() ? (en || ja) : ja; }
     var ALL = [], SYM='₱', __loaded=false;
     var TYPEKEY = { '入荷':'tIn', '廃棄':'tWaste', '棚卸':'tCount' };
     var TYPECLS = { '入荷':'b-in', '廃棄':'b-waste', '棚卸':'b-count' };
@@ -81,7 +84,7 @@
       document.getElementById('rows').innerHTML = list.map(function(r){
         return '<tr><td class="muted" style="white-space:nowrap;">'+esc(fmt(r.ts))+'</td>'+
           '<td><span class="badge '+(TYPECLS[r.type]||'')+'">'+esc(typeLabel(r.type))+'</span></td>'+
-          '<td>'+esc(r.name)+'</td>'+
+          '<td>'+esc(loc(r.name, r.nameEn))+'</td>'+
           '<td class="num" style="color:'+(r.qty<0?'#b91c1c':'#15803d')+';font-weight:800;">'+(r.qty>0?'+':'')+r.qty.toLocaleString()+' '+esc(r.unit)+'</td>'+
           '<td class="num">'+r.stock.toLocaleString()+'</td>'+
           '<td class="num">'+SYM+(Number(r.costEst)||0).toLocaleString()+'</td>'+

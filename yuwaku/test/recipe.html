@@ -52,9 +52,13 @@
     if (!TOKEN) location.href = './manage.html';
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    // 言語切替の一元ヘルパー（新しい選択肢・候補リストを追加する際は必ずこれを通すこと）
+    function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
+    function loc(ja, en){ ja = ja||''; en = (en||'').trim(); return isEN() ? (en || ja) : ja; }
     window.rows = []; var MATERIALS = [], MENUS = [];
 
-    function opts(list, sel){ return '<option value=""></option>' + (list||[]).map(function(n){ return '<option value="'+esc(n)+'"'+(n===sel?' selected':'')+'>'+esc(n)+'</option>'; }).join(''); }
+    // list: [{ja:'...', en:'...'}, ...]。value（送信値・バックエンド照合キー）は常に日本語、表示テキストのみ現在の言語に合わせる。
+    function opts(list, sel){ return '<option value=""></option>' + (list||[]).map(function(n){ return '<option value="'+esc(n.ja)+'"'+(n.ja===sel?' selected':'')+'>'+esc(loc(n.ja, n.en))+'</option>'; }).join(''); }
     function render(){
       var html = '';
       window.rows.forEach(function(r,i){
@@ -79,8 +83,8 @@
 
     Promise.all([ rpc('getRecipes',[]), rpc('getDrinkInventory',[]), rpc('getAllMenuForAdmin',[]) ]).then(function(res){
       window.rows = (res[0]||[]).slice();
-      MATERIALS = (res[1]||[]).map(function(m){ return m.name; });
-      MENUS = (res[2]||[]).map(function(m){ return m['商品名']; }).filter(Boolean);
+      MATERIALS = (res[1]||[]).map(function(m){ return { ja:m.name, en:m.nameEn }; }).filter(function(m){ return m.ja; });
+      MENUS = (res[2]||[]).map(function(m){ return { ja:m['商品名'], en:m['商品名_EN'] }; }).filter(function(m){ return m.ja; });
       __loaded = true; render();
     }).catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="4" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
 

@@ -75,6 +75,9 @@
     if (!TOKEN) location.href = './manage.html';
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    // 言語切替の一元ヘルパー（新しい表示・候補リストを追加する際は必ずこれを通すこと）
+    function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
+    function loc(ja, en){ ja = ja||''; en = (en||'').trim(); return isEN() ? (en || ja) : ja; }
     var SYM = '₱';
     function money(v){ return SYM + (Number(v)||0).toLocaleString(); }
     var dailyChart, hourChart, dowChart;
@@ -109,11 +112,11 @@
       var abc = { A:'#16a34a', B:'#f59e0b', C:'#94a3b8' };
       var html = '<thead><tr><th>'+I18n.t('cItem')+'</th><th style="text-align:right;">'+I18n.t('cQty')+'</th><th style="text-align:right;">'+I18n.t('cRev')+'</th><th style="text-align:right;">'+I18n.t('cCost')+'</th><th style="text-align:right;">'+I18n.t('cCostR')+'</th><th style="text-align:right;">'+I18n.t('cCum')+'</th><th>ABC</th></tr></thead><tbody>';
       if (!d.items.length) html += '<tr><td colspan="7" style="color:#aaa;padding:14px;">'+I18n.t('noData')+'</td></tr>';
-      d.items.forEach(function(it){ html += '<tr><td>'+esc(it.name)+'</td><td style="text-align:right;">'+it.qty+'</td><td style="text-align:right;">'+money(it.revenue)+'</td><td style="text-align:right;color:var(--text-3);">'+money(it.cost||0)+'</td><td style="text-align:right;">'+(it.costRate||0)+'%</td><td style="text-align:right;">'+it.cumPct+'%</td><td><span style="background:'+(abc[it.abc]||'#94a3b8')+';color:#fff;font-weight:800;font-size:11px;padding:1px 8px;border-radius:999px;">'+it.abc+'</span></td></tr>'; });
+      d.items.forEach(function(it){ html += '<tr><td>'+esc(loc(it.name, it.nameEn))+'</td><td style="text-align:right;">'+it.qty+'</td><td style="text-align:right;">'+money(it.revenue)+'</td><td style="text-align:right;color:var(--text-3);">'+money(it.cost||0)+'</td><td style="text-align:right;">'+(it.costRate||0)+'%</td><td style="text-align:right;">'+it.cumPct+'%</td><td><span style="background:'+(abc[it.abc]||'#94a3b8')+';color:#fff;font-weight:800;font-size:11px;padding:1px 8px;border-radius:999px;">'+it.abc+'</span></td></tr>'; });
       html += '</tbody>';
       document.getElementById('anaItems').innerHTML = html;
       var ch = '<thead><tr><th>'+I18n.t('cCat')+'</th><th style="text-align:right;">'+I18n.t('cRev')+'</th></tr></thead><tbody>';
-      (d.byCategory||[]).forEach(function(c){ ch += '<tr><td>'+esc(c.category||I18n.t('other'))+'</td><td style="text-align:right;">'+money(c.revenue)+'</td></tr>'; });
+      (d.byCategory||[]).forEach(function(c){ ch += '<tr><td>'+esc(loc(c.category, c.categoryEn)||I18n.t('other'))+'</td><td style="text-align:right;">'+money(c.revenue)+'</td></tr>'; });
       if(!(d.byCategory||[]).length) ch += '<tr><td colspan="2" style="color:#aaa;padding:14px;">—</td></tr>';
       ch += '</tbody>'; document.getElementById('anaCat').innerHTML = ch;
       var hLabels = d.byHour.map(function(x){ return x.hour+I18n.t('hourU'); });
@@ -139,7 +142,7 @@
       d.items.forEach(function(it,i){
         var l = lb[it.label]||lb.ok;
         var bar = '<div style="background:#eef1f5;border-radius:6px;height:10px;width:88px;overflow:hidden;display:inline-block;vertical-align:middle;"><div style="height:10px;width:'+it.score+'%;background:'+l[1]+';"></div></div> <span style="font-weight:800;">'+it.score+'</span>';
-        html += '<tr><td>'+(i+1)+'</td><td>'+esc(it.name)+'</td><td style="color:var(--text-3);">'+esc(it.category)+'</td><td style="text-align:right;">'+it.qty+'</td><td>'+bar+'</td><td><span style="color:'+l[1]+';font-weight:800;font-size:12px;white-space:nowrap;">'+l[0]+'</span></td></tr>';
+        html += '<tr><td>'+(i+1)+'</td><td>'+esc(loc(it.name, it.nameEn))+'</td><td style="color:var(--text-3);">'+esc(loc(it.category, it.categoryEn))+'</td><td style="text-align:right;">'+it.qty+'</td><td>'+bar+'</td><td><span style="color:'+l[1]+';font-weight:800;font-size:12px;white-space:nowrap;">'+l[0]+'</span></td></tr>';
       });
       html += '</tbody></table>';
       document.getElementById('popList').innerHTML = html;

@@ -96,13 +96,17 @@
     if (!TOKEN) location.href = './manage.html';
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    // 言語切替の一元ヘルパー（新しい選択肢・候補リストを追加する際は必ずこれを通すこと）
+    function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
+    function loc(ja, en){ ja = ja||''; en = (en||'').trim(); return isEN() ? (en || ja) : ja; }
     var MENU = [];
     var curCat = 'all', VIEW = [];
     var INVENTORY = [];
+    // value（送信値・バックエンド照合キー）は常に日本語の在庫名、表示テキストのみ現在の言語に合わせる。
     function renderInvSel(){
       var sel = document.getElementById('mLinkInv'); var cur = sel.value;
       var h = '<option value="">'+I18n.t('linkInvNone')+'</option>';
-      h += INVENTORY.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join('');
+      h += INVENTORY.map(function(n){ return '<option value="'+esc(n.ja)+'">'+esc(loc(n.ja, n.en))+'</option>'; }).join('');
       sel.innerHTML = h; sel.value = cur;
     }
 
@@ -274,7 +278,7 @@
     };
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; }).catch(function(){});
-    rpc('getDrinkInventory',[]).then(function(l){ INVENTORY=(l||[]).map(function(r){ return r.name; }).filter(Boolean); renderInvSel(); }).catch(function(){});
+    rpc('getDrinkInventory',[]).then(function(l){ INVENTORY=(l||[]).map(function(r){ return { ja:r.name, en:r.nameEn }; }).filter(function(r){ return r.ja; }); renderInvSel(); }).catch(function(){});
     var __loaded=false;
     rpc('getAllMenuForAdmin',[]).then(function(l){ MENU=l||[]; __loaded=true; render(); })
       .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('list').innerHTML='<div style="color:#b91c1c;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>'; });
@@ -284,7 +288,7 @@
         lblLinkInv:'🔗 在庫紐づけ（任意）', linkInvNone:'（紐づけなし）', linkInvHint:'ドリンク等、注文1点で在庫を1点そのまま自動減算したい商品に設定します（レシピ不要）。複数材料を消費するフード等は「レシピ・原価」ページで設定してください。' },
       en:{ title:'🍽️ Menu Editor', back:'← Manage', formTitle:'➕ Add / Edit item', lblName:'Name', lblPrice:'Price', lblCat:'Category', lblStatus:'Status', onSale:'On sale', stopped:'Stopped', lblNameEn:'Name (English)', lblCatEn:'Category (English)', phAuto:'Auto-translated if blank', catUnset:'(none)', catNew:'＋ New category…', phNewCat:'New category name', optTitle:'🎛️ Options (size, toppings, etc.)', optHint:'e.g. Size = single choice, Toppings = multiple. Extra charge = price delta (+ only).', addGroup:'＋ Add option group', phGroup:'Group name (e.g. Size)', phChoice:'Choice (e.g. Large)', single:'Single', multi:'Multiple', required:'Required', addChoice:'Add choice', enHint:'English fields are auto-translated on save if left blank (editable later).', lblImg:'Image (optional, only to change)', save:'💾 Save', clear:'Clear', listTitle:'🍽️ Menu items', loading:'Loading…', noItems:'No items', edit:'Edit', del:'Delete', delConfirm:'Delete this item?', deleted:'✅ Deleted', needName:'Please enter an item name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ', allCat:'All', reorderHint:'Use ▲▼ to reorder (reflected in the customer order screen). Filter by category tabs.', orderSaved:'✅ Order saved', availTitle:'⏰ Service hours & tags', availHint:'Leave times blank for always-available. Overnight (e.g. 22:00–02:00) supported.', lblSvcStart:'Serve from', lblSvcEnd:'Serve until', lblAllerg:'Allergens (optional, comma-separated)', phAllerg:'e.g. egg, wheat, shrimp', lblSpicy:'Spiciness', spicy0:'None', soldOut:'Sold out today', markSold:'Mark sold out', markAvail:'Undo sold out', lblKitchen:'🍳 Show on kitchen display (turn off for drinks etc. that need no cooking)', kdsOn:'🍳Kitchen: shown', kdsOff:'🚫🍳Kitchen: hidden',
         lblLinkInv:'🔗 Linked inventory item (optional)', linkInvNone:'(No link)', linkInvHint:'Use this for items where 1 order = 1 inventory unit deducted directly (e.g. drinks) — no recipe needed. For food items that consume multiple ingredients, use the Recipes page instead.' }
-    }, function(){ if(__loaded) render(); });
+    }, function(){ renderInvSel(); if(__loaded) render(); });
   </script>
 </body>
 </html>
