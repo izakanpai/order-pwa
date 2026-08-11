@@ -37,8 +37,28 @@
   </style>
 </head>
 <body>
-  <div class="head"><h1 data-t="title">🚚 仕入・発注</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><a class="hbtn" href="./inventory.html" data-t="inv">📦 在庫</a><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
+  <div class="head"><h1 data-t="title">🚚 仕入・発注</h1><div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><a class="hbtn" href="./order_items.html" data-t="orderItemsLink">📋 発注アイテム</a><a class="hbtn" href="./inventory.html" data-t="inv">📦 在庫</a><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
   <div class="wrap">
+    <div class="card">
+      <div class="card-title" data-t="newOrderTitle">🆕 新規発注</div>
+      <div class="muted" data-t="newOrderHint" style="margin-bottom:10px;">仕入先を選び、品目を追加してください。メニュー・発注アイテムマスタから選ぶか、直接入力できます。入力が終わったら「発注依頼」でメールを送信します。</div>
+      <div class="fg"><label class="form-label" data-t="poSupplier">仕入先</label><select id="poSupplier" class="fc" onchange="onPoSupplierChange()"></select></div>
+      <div class="alert" id="poSupplierWarn" style="background:#fef9c3;color:#854d0e;"></div>
+      <div style="overflow:auto;margin-top:6px;">
+        <table><thead><tr>
+          <th data-t="thItem">品目</th><th style="width:88px;" data-t="poThQty">数量</th><th style="width:88px;" data-t="poThUnit">単位</th><th style="width:40px;"></th>
+        </tr></thead>
+        <tbody id="poRows"></tbody></table>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+        <button class="btn-sm" onclick="poAddRow()" data-t="poAddRow">＋ 行を追加</button>
+        <button class="btn-sm" onclick="openPoPicker('menu')" data-t="poFromMenu">🍽️ メニューから追加</button>
+        <button class="btn-sm" onclick="openPoPicker('item')" data-t="poFromItem">📋 発注アイテムから追加</button>
+      </div>
+      <button class="btn" style="margin-top:12px;" id="poSendBtn" onclick="sendPo()" data-t="poSendBtn">📧 発注依頼</button>
+      <div class="alert" id="poMsg"></div>
+    </div>
+
     <div class="card">
       <div class="card-title" data-t="reorderTitle">🔔 発注提案（最小在庫以下）</div>
       <div class="muted" data-t="reorderHint" style="margin-bottom:10px;">在庫が最小在庫を下回った品目を仕入先ごとにまとめます。推奨数＝最小在庫の2倍を目標に補充。</div>
@@ -66,6 +86,16 @@
     </div>
   </div>
 
+  <!-- 新規発注：メニュー／発注アイテムマスタから品目を選ぶピッカー -->
+  <div id="poPickOv" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:56;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;padding:20px;max-width:380px;width:calc(100% - 32px);">
+      <div id="poPickTitle" style="font-weight:900;font-size:15px;margin-bottom:10px;"></div>
+      <select id="poPickSel" class="fc" style="margin-bottom:14px;"></select>
+      <button class="btn" onclick="confirmPoPick()" data-t="poPickAdd">＋ 追加</button>
+      <button class="btn-sm" style="margin-top:8px;width:100%;" onclick="closePoPicker()" data-t="mvClose">閉じる</button>
+    </div>
+  </div>
+
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
@@ -78,6 +108,88 @@
     function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
     function loc(ja, en){ ja = ja||''; en = (en||'').trim(); return isEN() ? (en || ja) : ja; }
     var SUPS = [], REORDER = [], SYM='₱', __loaded=false;
+    var MENU_ALL_PO = [], ORDER_ITEMS_PO = [];
+    var PO_ROWS = [{ name:'', qty:1, unit:'' }];
+
+    // ── 新規発注（自由入力） ──
+    function poRenderRows(){
+      var html = PO_ROWS.map(function(r,i){
+        return '<tr>'+
+          '<td><input value="'+esc(r.name)+'" oninput="PO_ROWS['+i+'].name=this.value"></td>'+
+          '<td><input type="number" min="0" step="any" value="'+(r.qty||'')+'" oninput="PO_ROWS['+i+'].qty=Number(this.value)||0"></td>'+
+          '<td><input value="'+esc(r.unit||'')+'" oninput="PO_ROWS['+i+'].unit=this.value"></td>'+
+          '<td><button class="btn-sm" onclick="poDelRow('+i+')">🗑</button></td></tr>';
+      }).join('');
+      if(!PO_ROWS.length) html = '<tr><td colspan="4" style="color:#aaa;padding:14px;text-align:center;">'+I18n.t('poEmpty')+'</td></tr>';
+      document.getElementById('poRows').innerHTML = html;
+    }
+    window.poAddRow = function(){ PO_ROWS.push({ name:'', qty:1, unit:'' }); poRenderRows(); };
+    window.poDelRow = function(i){ PO_ROWS.splice(i,1); poRenderRows(); };
+
+    function fillPoSupplierSel(){
+      var sel = document.getElementById('poSupplier'); var cur = sel.value;
+      sel.innerHTML = '<option value="">'+I18n.t('poSupplierPh')+'</option>' +
+        SUPS.map(function(s){ return '<option value="'+esc(s.name)+'">'+esc(s.name)+(s.email?'':(' — '+I18n.t('poNoEmailTag')))+'</option>'; }).join('');
+      sel.value = cur;
+      onPoSupplierChange();
+    }
+    window.onPoSupplierChange = function(){
+      var name = document.getElementById('poSupplier').value;
+      var s = SUPS.filter(function(x){ return x.name===name; })[0];
+      var w = document.getElementById('poSupplierWarn');
+      if(name && (!s || !s.email)){ w.style.display='block'; w.innerText = I18n.t('poNoEmailWarn'); }
+      else { w.style.display='none'; }
+    };
+
+    var poPickMode = null;
+    window.openPoPicker = function(mode){
+      poPickMode = mode;
+      var sel = document.getElementById('poPickSel');
+      var opts = '<option value="">'+I18n.t('poPickPh')+'</option>';
+      if(mode==='menu'){
+        document.getElementById('poPickTitle').textContent = I18n.t('poFromMenu');
+        opts += MENU_ALL_PO.map(function(m){
+          var nm = m['商品名']; if(!nm) return '';
+          var disp = loc(nm, m['商品名_EN']);
+          return '<option value="'+esc(nm)+'" data-unit="">'+esc(disp)+'</option>';
+        }).join('');
+      } else {
+        document.getElementById('poPickTitle').textContent = I18n.t('poFromItem');
+        opts += ORDER_ITEMS_PO.map(function(it){
+          return '<option value="'+esc(it.name)+'" data-unit="'+esc(it.unit||'')+'">'+esc(it.name)+(it.unit?(' ('+esc(it.unit)+')'):'')+'</option>';
+        }).join('');
+      }
+      sel.innerHTML = opts; sel.value='';
+      document.getElementById('poPickOv').style.display='flex';
+    };
+    window.closePoPicker = function(){ document.getElementById('poPickOv').style.display='none'; };
+    window.confirmPoPick = function(){
+      var sel = document.getElementById('poPickSel');
+      var name = sel.value; if(!name) return;
+      var unit = sel.options[sel.selectedIndex].getAttribute('data-unit') || '';
+      // 空の最終行があればそこに入れる。無ければ新規行を追加。
+      var last = PO_ROWS[PO_ROWS.length-1];
+      if(last && !last.name && !last.qty){ last.name=name; last.qty=1; last.unit=unit; }
+      else { PO_ROWS.push({ name:name, qty:1, unit:unit }); }
+      poRenderRows(); closePoPicker();
+    };
+    function poMsg(text, ok){ var m=document.getElementById('poMsg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
+    window.sendPo = function(){
+      var supplierName = document.getElementById('poSupplier').value;
+      if(!supplierName){ poMsg(I18n.t('poNeedSupplier'), false); return; }
+      var sup = SUPS.filter(function(s){ return s.name===supplierName; })[0];
+      if(!sup || !sup.email){ poMsg(I18n.t('poNeedEmailFirst'), false); return; }
+      var items = PO_ROWS.filter(function(r){ return (r.name||'').trim() && Number(r.qty)>0; })
+        .map(function(r){ return { name:r.name.trim(), qty:Number(r.qty)||0, unit:(r.unit||'').trim() }; });
+      if(!items.length){ poMsg(I18n.t('poNeedItems'), false); return; }
+      if(!confirm(I18n.t('poSendConfirm')+'「'+supplierName+'」（'+sup.email+'）\n'+items.length+I18n.t('poItemsCountU'))) return;
+      var btn = document.getElementById('poSendBtn'); btn.disabled = true;
+      rpc('sendPurchaseOrderEmail',[supplierName, items]).then(function(res){
+        btn.disabled = false;
+        if(res && res.success){ poMsg(I18n.t('poSendDone'), true); PO_ROWS=[{ name:'', qty:1, unit:'' }]; poRenderRows(); document.getElementById('poSupplier').value=''; onPoSupplierChange(); return; }
+        poMsg(I18n.t('errPrefix')+((res&&res.error)||''), false);
+      }).catch(function(e){ btn.disabled=false; poMsg(I18n.t('errPrefix')+(e.message||e), false); });
+    };
 
     function renderReorder(){
       if(!REORDER.length){ document.getElementById('reorder').innerHTML='<div class="muted">'+I18n.t('reorderEmpty')+'</div>'; return; }
@@ -126,19 +238,24 @@
       rpc('saveSupplier',[sup]).then(function(d){ btn.disabled=false; if(d&&d.error){ msg(I18n.t('errPrefix')+d.error, false); return; } msg(I18n.t('saved'), true); clearForm(); reloadReorder(); return reloadSups(); })
         .catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
-    function reloadSups(){ return rpc('getSuppliers',[]).then(function(l){ SUPS=l||[]; renderSups(); }); }
+    function reloadSups(){ return rpc('getSuppliers',[]).then(function(l){ SUPS=l||[]; renderSups(); fillPoSupplierSel(); }); }
     function reloadReorder(){ return rpc('getReorderSuggestions',[]).then(function(l){ REORDER=l||[]; renderReorder(); }).catch(function(){}); }
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; }).catch(function(){});
     rpc('getReorderSuggestions',[]).then(function(l){ REORDER=l||[]; renderReorder(); }).catch(function(e){ document.getElementById('reorder').innerHTML='<div class="muted" style="color:#b91c1c;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>'; });
-    rpc('getSuppliers',[]).then(function(l){ SUPS=l||[]; __loaded=true; renderSups(); })
+    rpc('getSuppliers',[]).then(function(l){ SUPS=l||[]; __loaded=true; renderSups(); fillPoSupplierSel(); })
       .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('supRows').innerHTML='<tr><td colspan="5" style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+    rpc('getAllMenuForAdmin',[]).then(function(l){ MENU_ALL_PO=l||[]; }).catch(function(){});
+    rpc('getOrderItems',[]).then(function(l){ ORDER_ITEMS_PO=l||[]; }).catch(function(){});
+    poRenderRows();
 
     I18n.init({
-      ja:{ title:'🚚 仕入・発注', back:'← 管理へ', inv:'📦 在庫', reorderTitle:'🔔 発注提案（最小在庫以下）', reorderHint:'在庫が最小在庫を下回った品目を仕入先ごとにまとめます。推奨数＝最小在庫の2倍を目標に補充。', reorderEmpty:'発注が必要な品目はありません 🎉', noSupplier:'仕入先未設定', thItem:'品目', thStock:'在庫', thMin:'最小', thSuggest:'推奨発注', supTitle:'🏢 仕入先マスタ', sName:'仕入先名', sContact:'連絡先', phContact:'電話・担当など', sEmail:'メールアドレス（任意・発注メール送信用）', phEmail:'order@supplier.example', sItems:'取扱品目（任意）', phItems:'例: ビール, 焼酎, 生鮮', sMemo:'備考（任意）', add:'💾 登録', thName:'仕入先', thContact:'連絡先', thEmail:'メール', thItems:'取扱品目', loading:'読み込み中…', supEmpty:'仕入先が未登録です', edit:'編集', del:'削除', delConfirm:'この仕入先を削除しますか？', needName:'仕入先名を入力してください', saved:'✅ 登録しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ',
-        sendMailBtn:'✉️ 発注メールを送る', noEmailBadge:'✉️ メール未設定', noEmailHint:'仕入先マスタにメールアドレスを登録すると送信できます', sendMailConfirm:'発注メールを送信しますか？\n', sendMailDone:'✅ 送信しました', sendMailFail:'❌ 送信失敗: ' },
-      en:{ title:'🚚 Purchasing', back:'← Manage', inv:'📦 Inventory', reorderTitle:'🔔 Reorder suggestions (at/below min)', reorderHint:'Items at or below minimum stock, grouped by supplier. Suggested qty targets twice the minimum stock.', reorderEmpty:'Nothing to reorder 🎉', noSupplier:'No supplier set', thItem:'Item', thStock:'Stock', thMin:'Min', thSuggest:'Suggested', supTitle:'🏢 Suppliers', sName:'Supplier name', sContact:'Contact', phContact:'Phone / person', sEmail:'Email (optional, for sending orders)', phEmail:'order@supplier.example', sItems:'Items handled (optional)', phItems:'e.g. beer, shochu, fresh', sMemo:'Memo (optional)', add:'💾 Save', thName:'Supplier', thContact:'Contact', thEmail:'Email', thItems:'Items', loading:'Loading…', supEmpty:'No suppliers yet', edit:'Edit', del:'Delete', delConfirm:'Delete this supplier?', needName:'Please enter a supplier name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ',
-        sendMailBtn:'✉️ Send order email', noEmailBadge:'✉️ No email set', noEmailHint:'Add an email address in the supplier master to enable sending', sendMailConfirm:'Send the order email?\n', sendMailDone:'✅ Sent', sendMailFail:'❌ Failed: ' }
+      ja:{ title:'🚚 仕入・発注', back:'← 管理へ', inv:'📦 在庫', orderItemsLink:'📋 発注アイテム', reorderTitle:'🔔 発注提案（最小在庫以下）', reorderHint:'在庫が最小在庫を下回った品目を仕入先ごとにまとめます。推奨数＝最小在庫の2倍を目標に補充。', reorderEmpty:'発注が必要な品目はありません 🎉', noSupplier:'仕入先未設定', thItem:'品目', thStock:'在庫', thMin:'最小', thSuggest:'推奨発注', supTitle:'🏢 仕入先マスタ', sName:'仕入先名', sContact:'連絡先', phContact:'電話・担当など', sEmail:'メールアドレス（任意・発注メール送信用）', phEmail:'order@supplier.example', sItems:'取扱品目（任意）', phItems:'例: ビール, 焼酎, 生鮮', sMemo:'備考（任意）', add:'💾 登録', thName:'仕入先', thContact:'連絡先', thEmail:'メール', thItems:'取扱品目', loading:'読み込み中…', supEmpty:'仕入先が未登録です', edit:'編集', del:'削除', delConfirm:'この仕入先を削除しますか？', needName:'仕入先名を入力してください', saved:'✅ 登録しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ',
+        sendMailBtn:'✉️ 発注メールを送る', noEmailBadge:'✉️ メール未設定', noEmailHint:'仕入先マスタにメールアドレスを登録すると送信できます', sendMailConfirm:'発注メールを送信しますか？\n', sendMailDone:'✅ 送信しました', sendMailFail:'❌ 送信失敗: ',
+        newOrderTitle:'🆕 新規発注', newOrderHint:'仕入先を選び、品目を追加してください。メニュー・発注アイテムマスタから選ぶか、直接入力できます。入力が終わったら「発注依頼」でメールを送信します。', poSupplier:'仕入先', poSupplierPh:'仕入先を選択…', poNoEmailTag:'メール未設定', poNoEmailWarn:'この仕入先にはメールアドレスが未登録です。先に仕入先マスタで登録してください。', poThQty:'数量', poThUnit:'単位', poEmpty:'「＋ 行を追加」で品目を追加してください', poAddRow:'＋ 行を追加', poFromMenu:'🍽️ メニューから追加', poFromItem:'📋 発注アイテムから追加', poPickPh:'選択してください…', poPickAdd:'＋ 追加', poSendBtn:'📧 発注依頼', poNeedSupplier:'仕入先を選択してください', poNeedEmailFirst:'この仕入先にはメールアドレスが未登録です。先に仕入先マスタで登録してください。', poNeedItems:'品目と数量を入力してください', poSendConfirm:'発注メールを送信しますか？\n', poItemsCountU:'件の品目', poSendDone:'✅ 発注メールを送信しました', mvClose:'閉じる' },
+      en:{ title:'🚚 Purchasing', back:'← Manage', inv:'📦 Inventory', orderItemsLink:'📋 Order items', reorderTitle:'🔔 Reorder suggestions (at/below min)', reorderHint:'Items at or below minimum stock, grouped by supplier. Suggested qty targets twice the minimum stock.', reorderEmpty:'Nothing to reorder 🎉', noSupplier:'No supplier set', thItem:'Item', thStock:'Stock', thMin:'Min', thSuggest:'Suggested', supTitle:'🏢 Suppliers', sName:'Supplier name', sContact:'Contact', phContact:'Phone / person', sEmail:'Email (optional, for sending orders)', phEmail:'order@supplier.example', sItems:'Items handled (optional)', phItems:'e.g. beer, shochu, fresh', sMemo:'Memo (optional)', add:'💾 Save', thName:'Supplier', thContact:'Contact', thEmail:'Email', thItems:'Items', loading:'Loading…', supEmpty:'No suppliers yet', edit:'Edit', del:'Delete', delConfirm:'Delete this supplier?', needName:'Please enter a supplier name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ',
+        sendMailBtn:'✉️ Send order email', noEmailBadge:'✉️ No email set', noEmailHint:'Add an email address in the supplier master to enable sending', sendMailConfirm:'Send the order email?\n', sendMailDone:'✅ Sent', sendMailFail:'❌ Failed: ',
+        newOrderTitle:'🆕 New purchase order', newOrderHint:'Pick a supplier and add items — from the menu, the order item master, or typed directly. Press “Request order” when done to send the email.', poSupplier:'Supplier', poSupplierPh:'Select a supplier…', poNoEmailTag:'no email set', poNoEmailWarn:'This supplier has no email address registered. Add one in the supplier master first.', poThQty:'Qty', poThUnit:'Unit', poEmpty:'Tap “＋ Add row” to add items', poAddRow:'＋ Add row', poFromMenu:'🍽️ Add from menu', poFromItem:'📋 Add from order items', poPickPh:'Select…', poPickAdd:'＋ Add', poSendBtn:'📧 Request order', poNeedSupplier:'Please select a supplier', poNeedEmailFirst:'This supplier has no email address registered. Add one in the supplier master first.', poNeedItems:'Please enter items and quantities', poSendConfirm:'Send the order email?\n', poItemsCountU:' item(s)', poSendDone:'✅ Order email sent', mvClose:'Close' }
     }, function(){ if(__loaded){ renderReorder(); renderSups(); } });
   </script>
 </body>
