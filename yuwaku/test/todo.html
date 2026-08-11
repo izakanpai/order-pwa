@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="To-dos">
+
+  <link rel="manifest" href="./todo.webmanifest">
+  <title>To-dos</title>
+  <style>
+    :root{ --bg:#f6f7f9; --surface:#fff; --border:#e5e7eb; --navy:#0f172a; --text-3:#64748b; --green:#16a34a; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans JP',sans-serif; background:var(--bg); color:var(--navy); }
+    .head{ position:sticky; top:0; z-index:20; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:12px 16px; }
+    .head h1{ font-size:18px; margin:0; font-weight:900; }
+    .hbtn{ background:rgba(255,255,255,.14); color:#fff; border:0; border-radius:9px; padding:8px 12px; font-size:13px; font-weight:800; cursor:pointer; text-decoration:none; }
+    .wrap{ padding:16px; max-width:720px; margin:0 auto; }
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
+    .card-title{ font-weight:900; font-size:15px; margin-bottom:12px; }
+    .fg{ margin-bottom:10px; }
+    .form-label{ font-size:12px; font-weight:700; display:block; margin-bottom:4px; }
+    .fc{ width:100%; padding:10px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); }
+    .btn{ border:0; border-radius:11px; padding:12px 16px; font-size:14px; font-weight:900; cursor:pointer; font-family:inherit; background:var(--navy); color:#fff; }
+    .muted{ color:var(--text-3); }
+    .row{ display:flex; gap:8px; }
+    .row .fg{ flex:1; }
+    .item{ display:flex; align-items:flex-start; gap:10px; padding:12px 4px; border-bottom:1px solid var(--border); }
+    .item:last-child{ border-bottom:0; }
+    .item input[type=checkbox]{ width:22px; height:22px; margin-top:2px; flex:0 0 auto; cursor:pointer; }
+    .item .body{ flex:1; min-width:0; }
+    .item .ttl{ font-weight:800; font-size:14.5px; word-break:break-word; }
+    .item.done .ttl{ text-decoration:line-through; color:var(--text-3); }
+    .item .meta{ font-size:11.5px; color:var(--text-3); margin-top:3px; }
+    .badge{ display:inline-block; background:#eef2f7; color:var(--navy); font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; margin-right:6px; }
+    .delbtn{ background:none; border:0; color:#b91c1c; font-size:18px; cursor:pointer; flex:0 0 auto; padding:4px 6px; }
+    .empty{ text-align:center; color:var(--text-3); padding:24px 0; }
+  </style>
+</head>
+<body>
+  <div class="head"><h1 data-t="title">✅ Todo管理</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><button class="hbtn" onclick="reload()" data-t="reload">↻</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
+  <div class="wrap">
+
+    <div class="card">
+      <div class="card-title" data-t="addTitle">➕ 新しいタスク</div>
+      <div class="row">
+        <div class="fg" style="flex:2;">
+          <label class="form-label" data-t="taskLabel">タスク内容</label>
+          <input id="newTitle" class="fc" placeholder="" data-tph="taskPh">
+        </div>
+        <div class="fg" style="flex:1;">
+          <label class="form-label" data-t="assigneeLabel">担当者</label>
+          <select id="newAssignee" class="fc"></select>
+        </div>
+      </div>
+      <button class="btn" onclick="addTodo()" data-t="addBtn">➕ 追加</button>
+      <div id="addErr" class="muted" style="margin-top:8px;display:none;color:#b91c1c;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-t="listTitle">📋 タスク一覧</div>
+      <div id="list"><div class="empty" data-t="loading">読み込み中…</div></div>
+    </div>
+
+  </div>
+
+  <script src="./config.js"></script>
+  <script src="./api.js"></script>
+  <script src="./i18n.js"></script>
+  <script>
+    var TOKEN = localStorage.getItem('mgmtToken') || '';
+    if (!TOKEN) location.href = './manage.html';
+    function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
+    function $(id){ return document.getElementById(id); }
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+    var ROWS = [], EMPLOYEES = [], __loaded = false;
+
+    function render(){
+      if (!ROWS.length){ $('list').innerHTML = '<div class="empty">'+I18n.t('empty')+'</div>'; return; }
+      $('list').innerHTML = ROWS.map(function(r){
+        return '<div class="item'+(r.done?' done':'')+'">' +
+          '<input type="checkbox" '+(r.done?'checked':'')+' onchange="toggleDone(\''+r.id+'\',this.checked)">' +
+          '<div class="body">' +
+            '<div class="ttl">'+esc(r.title)+'</div>' +
+            '<div class="meta">' +
+              (r.assignee ? '<span class="badge">👤 '+esc(r.assignee)+'</span>' : '<span class="badge">'+esc(I18n.t('unassigned'))+'</span>') +
+              esc(I18n.t('createdBy'))+esc(r.creator||'-')+' · '+esc(r.created) +
+              (r.done && r.doneAt ? ' · '+esc(I18n.t('doneAt'))+esc(r.doneAt) : '') +
+            '</div>' +
+          '</div>' +
+          '<button class="delbtn" onclick="removeTodo(\''+r.id+'\')" title="'+esc(I18n.t('delete'))+'">🗑️</button>' +
+        '</div>';
+      }).join('');
+    }
+    function renderAssigneeOptions(){
+      var sel = $('newAssignee');
+      var opts = '<option value="">'+esc(I18n.t('unassignedOpt'))+'</option>';
+      opts += EMPLOYEES.map(function(e){ return '<option value="'+esc(e.name)+'">'+esc(e.name)+'</option>'; }).join('');
+      sel.innerHTML = opts;
+    }
+    window.addTodo = function(){
+      var title = ($('newTitle').value||'').trim();
+      var errEl = $('addErr'); errEl.style.display='none';
+      if (!title){ errEl.textContent = I18n.t('needTitle'); errEl.style.display='block'; return; }
+      var assignee = $('newAssignee').value||'';
+      rpc('saveTodo',[{ title: title, assignee: assignee }]).then(function(){
+        $('newTitle').value=''; $('newAssignee').value='';
+        return reload();
+      }).catch(function(e){ errEl.textContent = I18n.t('errPrefix')+(e.message||e); errEl.style.display='block'; });
+    };
+    window.toggleDone = function(id, done){
+      rpc('toggleTodoDone',[id, done]).then(function(){ return reload(); }).catch(function(){ reload(); });
+    };
+    window.removeTodo = function(id){
+      if (!confirm(I18n.t('confirmDelete'))) return;
+      rpc('deleteTodo',[id]).then(function(){ return reload(); }).catch(function(){});
+    };
+    window.reload = function(){
+      return rpc('getTodos',[]).then(function(l){ ROWS=l||[]; render(); });
+    };
+
+    Promise.all([
+      rpc('getTodos',[]).catch(function(){ return []; }),
+      rpc('getAllEmployees',[]).catch(function(){ return []; })
+    ]).then(function(res){
+      ROWS = res[0]||[];
+      EMPLOYEES = (res[1]||[]).filter(function(e){ return e.status !== '退職'; });
+      __loaded = true;
+      renderAssigneeOptions();
+      render();
+    }).catch(function(e){
+      if (String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; }
+      $('list').innerHTML = '<div style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>';
+    });
+
+    I18n.init({
+      ja:{ title:'✅ Todo管理', back:'← 管理へ', reload:'↻',
+        addTitle:'➕ 新しいタスク', taskLabel:'タスク内容', taskPh:'例：ドリンクメニューの在庫を確認', assigneeLabel:'担当者', addBtn:'➕ 追加',
+        listTitle:'📋 タスク一覧', loading:'読み込み中…', empty:'タスクはまだありません', loadErr:'読み込みエラー: ',
+        unassigned:'未定', unassignedOpt:'未定・共有タスク', createdBy:'作成: ', doneAt:'完了: ', delete:'削除', confirmDelete:'このタスクを削除しますか？',
+        needTitle:'タスク内容を入力してください', errPrefix:'エラー: ' },
+      en:{ title:'✅ To-dos', back:'← Manage', reload:'↻',
+        addTitle:'➕ New task', taskLabel:'Task', taskPh:'e.g. Check drink menu stock', assigneeLabel:'Assignee', addBtn:'➕ Add',
+        listTitle:'📋 Task list', loading:'Loading…', empty:'No tasks yet', loadErr:'Load error: ',
+        unassigned:'Unassigned', unassignedOpt:'Unassigned / shared', createdBy:'By: ', doneAt:'Done: ', delete:'Delete', confirmDelete:'Delete this task?',
+        needTitle:'Please enter a task', errPrefix:'Error: ' }
+    }, function(){ if (__loaded) { renderAssigneeOptions(); render(); } });
+  </script>
+</body>
+</html>

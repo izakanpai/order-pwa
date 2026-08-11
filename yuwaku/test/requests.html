@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Requests">
+
+  <link rel="manifest" href="./requests.webmanifest">
+  <title>Staff requests</title>
+  <style>
+    :root{ --bg:#f6f7f9; --surface:#fff; --border:#e5e7eb; --navy:#0f172a; --text-3:#64748b; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans JP',sans-serif; background:var(--bg); color:var(--navy); }
+    .head{ position:sticky; top:0; z-index:20; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:12px 16px; }
+    .head h1{ font-size:18px; margin:0; font-weight:900; }
+    .hbtn{ background:rgba(255,255,255,.14); color:#fff; border:0; border-radius:9px; padding:8px 12px; font-size:13px; font-weight:800; cursor:pointer; text-decoration:none; }
+    .wrap{ padding:16px; max-width:720px; margin:0 auto; }
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
+    .card-title{ font-weight:900; font-size:15px; margin-bottom:12px; }
+    .fg{ margin-bottom:10px; }
+    .form-label{ font-size:12px; font-weight:700; display:block; margin-bottom:4px; }
+    .fc{ width:100%; padding:10px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); }
+    textarea.fc{ resize:vertical; min-height:80px; }
+    .btn{ border:0; border-radius:11px; padding:12px 16px; font-size:14px; font-weight:900; cursor:pointer; font-family:inherit; background:var(--navy); color:#fff; }
+    .btn.sec{ background:#eef2f7; color:var(--navy); }
+    .muted{ color:var(--text-3); }
+    .hint{ color:var(--text-3); font-size:12px; margin-bottom:10px; }
+    .item{ padding:14px 0; border-bottom:1px solid var(--border); }
+    .item:last-child{ border-bottom:0; }
+    .item .top{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+    .item .who{ font-weight:800; font-size:13px; }
+    .item .when{ font-size:11.5px; color:var(--text-3); }
+    .badge{ display:inline-block; font-size:11px; font-weight:800; padding:2px 9px; border-radius:999px; margin-right:6px; }
+    .cat-bug{ background:#fee2e2; color:#b91c1c; } .cat-ops{ background:#fef3c7; color:#92400e; } .cat-other{ background:#eef2f7; color:var(--navy); }
+    .st-open{ background:#fee2e2; color:#b91c1c; } .st-prog{ background:#fef3c7; color:#92400e; } .st-done{ background:#dcfce7; color:#15803d; }
+    .item .content{ margin:8px 0; font-size:14px; line-height:1.6; white-space:pre-wrap; word-break:break-word; }
+    .item .note{ font-size:12.5px; color:var(--text-3); background:#f8fafc; border-radius:9px; padding:8px 10px; margin-top:6px; }
+    .mgmt{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+    select.mini{ padding:6px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
+    input.noteInp{ flex:1; min-width:140px; padding:6px 8px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
+    .delbtn{ background:none; border:0; color:#b91c1c; font-size:16px; cursor:pointer; }
+    .empty{ text-align:center; color:var(--text-3); padding:24px 0; }
+  </style>
+</head>
+<body>
+  <div class="head"><h1 data-t="title">📮 申し入れ</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><button class="hbtn" onclick="reload()" data-t="reload">↻</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
+  <div class="wrap">
+
+    <div class="card">
+      <div class="card-title" data-t="submitTitle">✍️ 新しい申し入れ</div>
+      <div class="hint" id="asName"></div>
+      <div class="fg">
+        <label class="form-label" data-t="catLabel">カテゴリ</label>
+        <select id="newCat" class="fc">
+          <option value="不具合" data-t="catBug">🐞 システム不具合</option>
+          <option value="運営" data-t="catOps">🏪 お店の運営について</option>
+          <option value="その他" data-t="catOther">💬 その他</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="form-label" data-t="contentLabel">内容</label>
+        <textarea id="newContent" class="fc" data-tph="contentPh"></textarea>
+      </div>
+      <button class="btn" onclick="submitReq()" data-t="submitBtn">📮 送信</button>
+      <div id="subErr" class="muted" style="margin-top:8px;display:none;color:#b91c1c;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-t="listTitle">📋 一覧</div>
+      <div id="list"><div class="empty" data-t="loading">読み込み中…</div></div>
+    </div>
+
+  </div>
+
+  <script src="./config.js"></script>
+  <script src="./api.js"></script>
+  <script src="./i18n.js"></script>
+  <script>
+    var TOKEN = localStorage.getItem('mgmtToken') || '';
+    if (!TOKEN) location.href = './manage.html';
+    var MY_NAME = localStorage.getItem('mgmtName') || '';
+    var MY_ROLE = localStorage.getItem('mgmtRole') || '';
+    var CAN_MANAGE = (MY_ROLE === 'マネージャー' || MY_ROLE === '管理者' || MY_ROLE === 'システム');
+    function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
+    function $(id){ return document.getElementById(id); }
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+    var ROWS = [], __loaded = false;
+    var STATUSES = ['未対応','対応中','解決済み'];
+    var CAT_CLS = { '不具合':'cat-bug', '運営':'cat-ops' };
+    var ST_CLS = { '未対応':'st-open', '対応中':'st-prog', '解決済み':'st-done' };
+    function catLabel(c){ var k={'不具合':'catBug','運営':'catOps','その他':'catOther'}[c]; return k?I18n.t(k):c; }
+    function stLabel(s){ var k={'未対応':'stOpen','対応中':'stProg','解決済み':'stDone'}[s]; return k?I18n.t(k):s; }
+
+    function render(){
+      if (!ROWS.length){ $('list').innerHTML = '<div class="empty">'+I18n.t('empty')+'</div>'; return; }
+      $('list').innerHTML = ROWS.map(function(r){
+        var mgmtHtml = '';
+        if (CAN_MANAGE){
+          var opts = STATUSES.map(function(s){ return '<option value="'+s+'"'+(s===r.status?' selected':'')+'>'+esc(stLabel(s))+'</option>'; }).join('');
+          mgmtHtml = '<div class="mgmt">' +
+            '<select class="mini" onchange="setStatus(\''+r.id+'\',this.value,null)">'+opts+'</select>' +
+            '<input class="noteInp" placeholder="'+esc(I18n.t('notePh'))+'" value="'+esc(r.note)+'" onchange="setStatus(\''+r.id+'\',null,this.value)">' +
+            '<button class="delbtn" onclick="removeReq(\''+r.id+'\')" title="'+esc(I18n.t('delete'))+'">🗑️</button>' +
+          '</div>';
+        } else if (r.note) {
+          mgmtHtml = '<div class="note">💬 '+esc(r.note)+'</div>';
+        }
+        return '<div class="item">' +
+          '<div class="top"><span class="who">👤 '+esc(r.author||I18n.t('anon'))+'</span><span class="when">'+esc(r.created)+'</span></div>' +
+          '<div style="margin-top:6px;"><span class="badge '+(CAT_CLS[r.category]||'cat-other')+'">'+esc(catLabel(r.category))+'</span><span class="badge '+(ST_CLS[r.status]||'st-open')+'">'+esc(stLabel(r.status))+'</span></div>' +
+          '<div class="content">'+esc(r.content)+'</div>' +
+          mgmtHtml +
+        '</div>';
+      }).join('');
+    }
+    window.submitReq = function(){
+      var content = ($('newContent').value||'').trim();
+      var errEl = $('subErr'); errEl.style.display='none';
+      if (!content){ errEl.textContent = I18n.t('needContent'); errEl.style.display='block'; return; }
+      var category = $('newCat').value||'その他';
+      rpc('submitRequest',[{ category: category, content: content }]).then(function(){
+        $('newContent').value='';
+        return reload();
+      }).catch(function(e){ errEl.textContent = I18n.t('errPrefix')+(e.message||e); errEl.style.display='block'; });
+    };
+    window.setStatus = function(id, status, note){
+      var row = ROWS.filter(function(r){ return r.id===id; })[0]; if (!row) return;
+      var s = (status===null || status===undefined) ? row.status : status;
+      var n = (note===null || note===undefined) ? row.note : note;
+      rpc('updateRequestStatus',[id, s, n]).then(function(){ return reload(); }).catch(function(){ reload(); });
+    };
+    window.removeReq = function(id){
+      if (!confirm(I18n.t('confirmDelete'))) return;
+      rpc('deleteRequest',[id]).then(function(){ return reload(); }).catch(function(){});
+    };
+    window.reload = function(){
+      return rpc('getRequests',[]).then(function(l){ ROWS=l||[]; render(); });
+    };
+
+    rpc('getRequests',[]).then(function(l){
+      ROWS = l||[]; __loaded = true; render();
+    }).catch(function(e){
+      if (String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; }
+      $('list').innerHTML = '<div style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>';
+    });
+
+    I18n.init({
+      ja:{ title:'📮 申し入れ', back:'← 管理へ', reload:'↻',
+        submitTitle:'✍️ 新しい申し入れ', catLabel:'カテゴリ', catBug:'🐞 システム不具合', catOps:'🏪 お店の運営について', catOther:'💬 その他',
+        contentLabel:'内容', contentPh:'困っていること・気づいたことを自由に書いてください', submitBtn:'📮 送信',
+        listTitle:'📋 一覧', loading:'読み込み中…', empty:'まだ投稿はありません', loadErr:'読み込みエラー: ',
+        stOpen:'未対応', stProg:'対応中', stDone:'解決済み', notePh:'対応メモ', delete:'削除', confirmDelete:'この投稿を削除しますか？',
+        anon:'-', needContent:'内容を入力してください', errPrefix:'エラー: ', asNameLbl:'投稿者: ' },
+      en:{ title:'📮 Staff requests', back:'← Manage', reload:'↻',
+        submitTitle:'✍️ New request', catLabel:'Category', catBug:'🐞 System bug', catOps:'🏪 Store operations', catOther:'💬 Other',
+        contentLabel:'Content', contentPh:'Describe the issue or concern', submitBtn:'📮 Send',
+        listTitle:'📋 List', loading:'Loading…', empty:'No requests yet', loadErr:'Load error: ',
+        stOpen:'Open', stProg:'In progress', stDone:'Resolved', notePh:'Note', delete:'Delete', confirmDelete:'Delete this request?',
+        anon:'-', needContent:'Please enter content', errPrefix:'Error: ', asNameLbl:'Posting as: ' }
+    }, function(){
+      $('asName').textContent = MY_NAME ? (I18n.t('asNameLbl')+MY_NAME) : '';
+      if (__loaded) render();
+    });
+  </script>
+</body>
+</html>
