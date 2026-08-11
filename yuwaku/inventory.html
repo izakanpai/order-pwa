@@ -45,12 +45,13 @@
         <th style="width:84px;" data-t="thStock">在庫数</th>
         <th style="width:92px;" data-t="thMin">最小在庫</th>
         <th style="width:84px;" data-t="thCost">原価</th>
-        <th style="width:120px;"></th>
+        <th style="width:150px;"></th>
       </tr></thead>
       <tbody id="rows"><tr><td colspan="8" style="color:#aaa;padding:16px;text-align:center;" data-t="loading">読み込み中…</td></tr></tbody></table>
     </div>
     <button class="btn btn-sec" onclick="addRow()" data-t="addRow">＋ 行を追加</button>
     <button class="btn btn-sec" onclick="openAiScan()" data-t="aiScanBtn">🤖 AIスキャン</button>
+    <button class="btn btn-sec" onclick="openLinkPicker(-1)" data-t="linkFromMenuBtn">🔗 メニューから追加</button>
     <button class="btn btn-pri" id="saveBtn" onclick="save()" data-t="save">💾 保存</button>
     <div class="alert" id="msg"></div>
   </div></div>
@@ -116,6 +117,18 @@
     </div>
   </div>
 
+  <!-- Link inventory item to a menu item -->
+  <div id="linkOv" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:56;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;padding:20px;max-width:380px;width:calc(100% - 32px);">
+      <div id="linkModalTitle" style="font-weight:900;font-size:15px;margin-bottom:4px;"></div>
+      <div class="hint" id="linkModalHint" style="margin-bottom:10px;"></div>
+      <select id="linkMenuSel" class="fc" style="margin-bottom:14px;"></select>
+      <div class="alert" id="linkAlert" style="display:none;margin-bottom:10px;"></div>
+      <button class="btn btn-pri" onclick="confirmLink()" data-t="linkConfirmBtn">🔗 リンク</button>
+      <button class="btn btn-sec" style="margin-top:8px;" onclick="closeLinkPicker()" data-t="mvClose">閉じる</button>
+    </div>
+  </div>
+
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
@@ -143,7 +156,14 @@
           '<td><input type="number" step="any" value="'+(r.stock||0)+'" oninput="window.rows['+i+'].stock=Number(this.value)||0"></td>'+
           '<td><input type="number" step="any" value="'+(r.minimum||0)+'" oninput="window.rows['+i+'].minimum=Number(this.value)||0"></td>'+
           '<td><input type="number" step="any" value="'+(r.cost||0)+'" oninput="window.rows['+i+'].cost=Number(this.value)||0"></td>'+
-          '<td style="white-space:nowrap;"><button class="btn-sm" style="background:#dcfce7;color:#15803d;" onclick="openMove('+i+')">'+I18n.t('moveBtn')+'</button> <button class="btn-sm" onclick="delRow('+i+')">🗑</button></td></tr>';
+          (function(){
+            var linkedMenus = MENU_ALL.filter(function(m){ return m['在庫紐づけ']===r.name; }).map(function(m){ return m['商品名']; });
+            var linkLabel = linkedMenus.length ? '🔗✓' : '🔗';
+            var linkTitle = linkedMenus.length ? (I18n.t('linkedWith')+linkedMenus.join('、')) : I18n.t('linkBtnTitle');
+            return '<td style="white-space:nowrap;"><button class="btn-sm" style="background:#dcfce7;color:#15803d;" onclick="openMove('+i+')">'+I18n.t('moveBtn')+'</button> '+
+              '<button class="btn-sm" style="background:#eff6ff;color:#2563eb;" onclick="openLinkPicker('+i+')" title="'+esc(linkTitle)+'">'+linkLabel+'</button> '+
+              '<button class="btn-sm" onclick="delRow('+i+')">🗑</button></td></tr>';
+          })();
       });
       if (!window.rows.length) html = '<tr><td colspan="8" style="color:#aaa;padding:16px;text-align:center;">'+I18n.t('empty')+'</td></tr>';
       document.getElementById('rows').innerHTML = html;
@@ -155,6 +175,7 @@
       var sl = document.getElementById('supList'); if(sl) sl.innerHTML = sups.map(function(s){ return '<option value="'+esc(s)+'">'; }).join('');
     }
     var SUPPLIERS = [];
+    var MENU_ALL = [];
     window.addRow = function(){ window.rows.push({ name:'', category:'', supplier:'', unit:'本', stock:0, minimum:0, cost:0, nameEn:'', categoryEn:'' }); render(); };
     window.delRow = function(i){ window.rows.splice(i,1); render(); };
     window.save = function(){
@@ -370,16 +391,71 @@
       render(); closeAiScan(); msg(count ? I18n.t('aiApplied') : I18n.t('aiNoDetect'), !!count);
     };
 
+    // ── メニューとの紐づけ（在庫画面からメニュー品目を選んでリンク／新規追加） ──
+    var linkTargetRow = -1; // -1 = 新規追加モード、0以上 = 既存行を紐づけ
+    function linkErr(m){ var a=document.getElementById('linkAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=m; }
+    window.openLinkPicker = function(rowIndex){
+      linkTargetRow = rowIndex;
+      document.getElementById('linkAlert').style.display='none';
+      var sel = document.getElementById('linkMenuSel');
+      var opts = '<option value="">'+I18n.t('linkPickPh')+'</option>';
+      opts += MENU_ALL.map(function(m){
+        var nm = m['商品名']; if(!nm) return '';
+        var linkedTag = m['在庫紐づけ'] ? ' — 🔗'+m['在庫紐づけ'] : '';
+        return '<option value="'+esc(nm)+'">'+esc(nm)+esc(linkedTag)+'</option>';
+      }).join('');
+      sel.innerHTML = opts; sel.value='';
+      if (rowIndex >= 0 && window.rows[rowIndex]) {
+        document.getElementById('linkModalTitle').textContent = I18n.t('linkExistingTitle');
+        document.getElementById('linkModalHint').textContent = I18n.t('linkExistingHint')+'「'+(window.rows[rowIndex].name||'')+'」';
+      } else {
+        document.getElementById('linkModalTitle').textContent = I18n.t('linkNewTitle');
+        document.getElementById('linkModalHint').textContent = I18n.t('linkNewHint');
+      }
+      document.getElementById('linkOv').style.display='flex';
+    };
+    window.closeLinkPicker = function(){ document.getElementById('linkOv').style.display='none'; };
+    window.confirmLink = function(){
+      var menuName = document.getElementById('linkMenuSel').value;
+      if (!menuName){ linkErr(I18n.t('linkNeedSel')); return; }
+      if (linkTargetRow >= 0) {
+        var r = window.rows[linkTargetRow]; if(!r || !(r.name||'').trim()){ linkErr(I18n.t('linkRowNeedName')); return; }
+        rpc('linkMenuInventory',[menuName, r.name]).then(function(res){
+          if (res && res.success){ closeLinkPicker(); msg(I18n.t('linkDone'), true); return reloadMenuLinks(); }
+          linkErr(I18n.t('errPrefix')+((res&&res.error)||''));
+        }).catch(function(e){ linkErr(I18n.t('errPrefix')+(e.message||e)); });
+      } else {
+        var exists = window.rows.some(function(r){ return r.name===menuName; });
+        rpc('linkMenuInventory',[menuName, menuName]).then(function(res){
+          if (!(res && res.success)){ linkErr(I18n.t('errPrefix')+((res&&res.error)||'')); return; }
+          closeLinkPicker();
+          if (!exists){ window.rows.push({ name:menuName, category:'', supplier:'', unit:'本', stock:0, minimum:0, cost:0, nameEn:'', categoryEn:'' }); render(); }
+          msg(I18n.t('linkAddedNeedSave'), true);
+          return reloadMenuLinks();
+        }).catch(function(e){ linkErr(I18n.t('errPrefix')+(e.message||e)); });
+      }
+    };
+    function reloadMenuLinks(){ return rpc('getAllMenuForAdmin',[]).then(function(l){ MENU_ALL=l||[]; render(); }).catch(function(){}); }
+
     rpc('getSuppliers',[]).then(function(l){ SUPPLIERS=(l||[]).map(function(s){ return s.name; }); render(); }).catch(function(){});
+    rpc('getAllMenuForAdmin',[]).then(function(l){ MENU_ALL=l||[]; render(); }).catch(function(){});
     var __loaded=false;
     rpc('getDrinkInventory',[]).then(function(list){ window.rows=(list||[]).slice(); __loaded=true; render(); })
       .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
 
     I18n.init({
       ja:{ title:'📦 在庫管理', back:'← 管理へ', movesLink:'📋 変動履歴', hint:'ドリンク・食材・備品などをまとめて数量管理できます。最小在庫を下回ると赤く表示され、日報・レポートに低在庫として通知。レシピ（材料名一致）で注文時に自動減算されます。「変動」から入荷・廃棄・棚卸を記録すると履歴に残ります。', thName:'商品名', thCat:'カテゴリ', thSupplier:'仕入先', thUnit:'単位', thStock:'在庫数', thMin:'最小在庫', thCost:'原価', addRow:'＋ 行を追加', save:'💾 保存', loading:'読み込み中…', empty:'「＋ 行を追加」で登録してください', saved:'✅ 保存しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ', moveBtn:'変動', mvIn:'＋ 入荷', mvWaste:'− 廃棄', mvCount:'棚卸', mvQty:'数量', mvCounted:'実棚卸数', mvCostL:'原価（任意・単価更新）', mvReasonL:'理由', mvStockNow:'現在庫', mvGo:'実行', mvClose:'閉じる', mvDone:'✅ 記録しました', mvBad:'数量を確認してください', mvNeedSave:'先に「保存」で商品を登録してください', camHintShoot:'📸を押して撮影 → 写真を1つずつタップして数えます', camHintTap:'商品を1つずつタップ。↩で取消、✓で数量を採用', camNoCam:'カメラを利用できません（権限/対応をご確認ください）',
-        aiScanBtn:'🤖 AIスキャン', aiTitle:'🤖 AI在庫スキャン', aiTapText:'タップして撮影', aiAnalyzeBtn:'🤖 AI分析開始', aiAnalyzing:'分析中…', aiResultTitle:'AI検出結果 — 商品名・数量は自由に編集できます', aiResultHint:'商品名は直接書き換えできます。下のプルダウンから既存の在庫を選ぶと自動で入力されます。✕で1件だけ除外できます。', aiApplyBtn:'✅ 在庫に反映', aiNoApiKey:'Gemini APIキーが未設定です。設定画面から追加してください。', aiNoDetect:'ドリンクが検出されませんでした。別の角度で撮り直してください。', aiSkip:'この項目を除外', aiPickPh:'（既存の在庫から選ぶ）', aiApplied:'✅ 反映しました（「💾 保存」で確定してください）' },
+        aiScanBtn:'🤖 AIスキャン', aiTitle:'🤖 AI在庫スキャン', aiTapText:'タップして撮影', aiAnalyzeBtn:'🤖 AI分析開始', aiAnalyzing:'分析中…', aiResultTitle:'AI検出結果 — 商品名・数量は自由に編集できます', aiResultHint:'商品名は直接書き換えできます。下のプルダウンから既存の在庫を選ぶと自動で入力されます。✕で1件だけ除外できます。', aiApplyBtn:'✅ 在庫に反映', aiNoApiKey:'Gemini APIキーが未設定です。設定画面から追加してください。', aiNoDetect:'ドリンクが検出されませんでした。別の角度で撮り直してください。', aiSkip:'この項目を除外', aiPickPh:'（既存の在庫から選ぶ）', aiApplied:'✅ 反映しました（「💾 保存」で確定してください）',
+        linkFromMenuBtn:'🔗 メニューから追加', linkConfirmBtn:'🔗 リンク', linkPickPh:'メニューを選択…', linkNeedSel:'メニューを選択してください', linkRowNeedName:'先に商品名を入力してください',
+        linkNewTitle:'🔗 メニューから在庫を追加', linkNewHint:'選んだメニューの商品名でそのまま在庫アイテムを追加し、紐づけます（在庫数・最小在庫は追加後に入力してください）。',
+        linkExistingTitle:'🔗 メニューと紐づけ', linkExistingHint:'紐づけるメニューを選択: ', linkDone:'✅ 紐づけました', linkAddedNeedSave:'✅ 在庫に追加・紐づけしました（「💾 保存」で確定してください）',
+        linkedWith:'紐づくメニュー: ', linkBtnTitle:'メニューと紐づけ（未設定）' },
       en:{ title:'📦 Inventory', back:'← Manage', movesLink:'📋 History', hint:'Track drinks, ingredients and supplies together by quantity. Rows below the minimum turn red and appear as low-stock in reports. Auto-deducted on orders via recipes (material-name match). Use “Move” to log receiving, waste and stocktake — all kept in history.', thName:'Item', thCat:'Category', thSupplier:'Supplier', thUnit:'Unit', thStock:'Stock', thMin:'Min stock', thCost:'Cost', addRow:'＋ Add row', save:'💾 Save', loading:'Loading…', empty:'Tap “＋ Add row” to register', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ', moveBtn:'Move', mvIn:'＋ Receive', mvWaste:'− Waste', mvCount:'Stocktake', mvQty:'Quantity', mvCounted:'Counted qty', mvCostL:'Cost (optional, updates unit cost)', mvReasonL:'Reason', mvStockNow:'Current', mvGo:'Apply', mvClose:'Close', mvDone:'✅ Recorded', mvBad:'Please check the quantity', mvNeedSave:'Please save the item first', camHintShoot:'Tap 📸 to capture, then tap each item to count', camHintTap:'Tap each item. ↩ to undo, ✓ to use the count', camNoCam:'Camera unavailable (check permission/support)',
-        aiScanBtn:'🤖 AI Scan', aiTitle:'🤖 AI Stocktake Scan', aiTapText:'Tap to take a photo', aiAnalyzeBtn:'🤖 Analyze with AI', aiAnalyzing:'Analyzing…', aiResultTitle:'AI results — item name & quantity are fully editable', aiResultHint:'Edit the name directly, or pick an existing item from the dropdown below to auto-fill it. Use ✕ to skip a single row.', aiApplyBtn:'✅ Apply to inventory', aiNoApiKey:'Gemini API key not set. Add it in Settings.', aiNoDetect:'No drinks detected. Try a different angle.', aiSkip:'Skip this item', aiPickPh:'(Pick from existing items)', aiApplied:'✅ Applied (press “💾 Save” to confirm)' }
+        aiScanBtn:'🤖 AI Scan', aiTitle:'🤖 AI Stocktake Scan', aiTapText:'Tap to take a photo', aiAnalyzeBtn:'🤖 Analyze with AI', aiAnalyzing:'Analyzing…', aiResultTitle:'AI results — item name & quantity are fully editable', aiResultHint:'Edit the name directly, or pick an existing item from the dropdown below to auto-fill it. Use ✕ to skip a single row.', aiApplyBtn:'✅ Apply to inventory', aiNoApiKey:'Gemini API key not set. Add it in Settings.', aiNoDetect:'No drinks detected. Try a different angle.', aiSkip:'Skip this item', aiPickPh:'(Pick from existing items)', aiApplied:'✅ Applied (press “💾 Save” to confirm)',
+        linkFromMenuBtn:'🔗 Add from menu', linkConfirmBtn:'🔗 Link', linkPickPh:'Select a menu item…', linkNeedSel:'Please select a menu item', linkRowNeedName:'Please enter an item name first',
+        linkNewTitle:'🔗 Add inventory item from menu', linkNewHint:'Adds a new inventory item using the selected menu item’s name and links it (fill in stock/min after adding).',
+        linkExistingTitle:'🔗 Link to a menu item', linkExistingHint:'Choose a menu item to link: ', linkDone:'✅ Linked', linkAddedNeedSave:'✅ Added and linked (press “💾 Save” to confirm)',
+        linkedWith:'Linked menu items: ', linkBtnTitle:'Link to a menu item (not set)' }
     }, function(){ if(__loaded) render(); });
   </script>
   <datalist id="catList"></datalist>
