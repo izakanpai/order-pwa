@@ -50,6 +50,7 @@
       <tbody id="rows"><tr><td colspan="8" style="color:#aaa;padding:16px;text-align:center;" data-t="loading">読み込み中…</td></tr></tbody></table>
     </div>
     <button class="btn btn-sec" onclick="addRow()" data-t="addRow">＋ 行を追加</button>
+    <button class="btn btn-sec" onclick="openAiScan()" data-t="aiScanBtn">🤖 AIスキャン</button>
     <button class="btn btn-pri" id="saveBtn" onclick="save()" data-t="save">💾 保存</button>
     <div class="alert" id="msg"></div>
   </div></div>
@@ -88,6 +89,29 @@
       <button class="btn btn-sec" id="camUndoBtn" onclick="camUndo()" style="flex:1;">↩</button>
       <button class="btn" id="camDoneBtn" onclick="camDone()" style="flex:2;background:#16a34a;color:#fff;">✓</button>
       <button class="btn btn-sec" onclick="camClose()" style="flex:1;">✕</button>
+    </div>
+  </div>
+
+  <!-- AI stocktake scan -->
+  <div id="aiOv" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:55;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;padding:20px;max-width:420px;width:calc(100% - 32px);max-height:88vh;overflow:auto;">
+      <div style="font-weight:900;font-size:16px;margin-bottom:12px;" data-t="aiTitle">🤖 AI在庫スキャン</div>
+      <div id="aiPhotoArea" style="width:100%;padding-top:56%;position:relative;background:#0f172a;border-radius:12px;overflow:hidden;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById('aiInput').click()">
+        <img id="aiPreview" src="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
+        <div id="aiPlaceholder" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.6);">
+          <div style="font-size:40px;">📷</div>
+          <div style="font-size:13px;font-weight:700;margin-top:6px;" data-t="aiTapText">タップして撮影</div>
+        </div>
+      </div>
+      <input type="file" id="aiInput" accept="image/*" capture="environment" style="display:none;" onchange="onAiPhotoSelected(event)">
+      <button class="btn btn-pri" id="aiAnalyzeBtn" style="display:none;" onclick="analyzeAiPhoto()" data-t="aiAnalyzeBtn">🤖 AI分析開始</button>
+      <div id="aiResultWrap" style="display:none;margin-top:12px;">
+        <div style="font-size:12px;font-weight:800;color:var(--text-3);margin-bottom:8px;" data-t="aiResultTitle">AI検出結果 — 在庫アイテムに紐付け</div>
+        <div id="aiResultList"></div>
+        <button class="btn btn-pri" style="margin-top:8px;" onclick="applyAiResults()" data-t="aiApplyBtn">✅ 在庫に反映</button>
+      </div>
+      <div class="alert" id="aiAlert" style="display:none;margin-top:10px;"></div>
+      <button class="btn btn-sec" style="margin-top:10px;" onclick="closeAiScan()" data-t="mvClose">閉じる</button>
     </div>
   </div>
 
@@ -236,14 +260,118 @@
       });
     })();
 
+    // ── AIスキャン（写真から複数商品の在庫数をまとめてAI判定・一括反映） ──
+    var aiFile=null, aiCounts=null, aiKeys=null;
+    window.openAiScan = function(){
+      aiFile=null; aiCounts=null; aiKeys=null;
+      document.getElementById('aiPreview').style.display='none';
+      document.getElementById('aiPreview').src='';
+      document.getElementById('aiPlaceholder').style.display='block';
+      document.getElementById('aiAnalyzeBtn').style.display='none';
+      document.getElementById('aiResultWrap').style.display='none';
+      document.getElementById('aiAlert').style.display='none';
+      document.getElementById('aiOv').style.display='flex';
+    };
+    window.closeAiScan = function(){ document.getElementById('aiOv').style.display='none'; };
+    function aiErr(m){ var a=document.getElementById('aiAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=m; }
+    window.onAiPhotoSelected = function(e){
+      var file = e.target.files && e.target.files[0]; if(!file) return;
+      aiFile = file;
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        document.getElementById('aiPreview').src = ev.target.result;
+        document.getElementById('aiPreview').style.display='block';
+        document.getElementById('aiPlaceholder').style.display='none';
+        document.getElementById('aiAnalyzeBtn').style.display='block';
+        document.getElementById('aiResultWrap').style.display='none';
+        document.getElementById('aiAlert').style.display='none';
+      };
+      reader.readAsDataURL(file);
+    };
+    function aiResizeImage(file, maxW, maxH, quality, cb){
+      var reader = new FileReader();
+      reader.onload = function(e){
+        var img = new Image();
+        img.onload = function(){
+          var ratio = Math.min(maxW/img.width, maxH/img.height, 1);
+          var can = document.createElement('canvas');
+          can.width = Math.round(img.width*ratio); can.height = Math.round(img.height*ratio);
+          can.getContext('2d').drawImage(img,0,0,can.width,can.height);
+          var url = can.toDataURL('image/jpeg', quality);
+          cb(url.split(',')[1], 'image/jpeg');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    window.analyzeAiPhoto = function(){
+      if(!aiFile) return;
+      var btn = document.getElementById('aiAnalyzeBtn'); btn.disabled=true; btn.innerText=I18n.t('aiAnalyzing');
+      document.getElementById('aiAlert').style.display='none';
+      aiResizeImage(aiFile, 1024, 768, 0.75, function(b64, mime){
+        rpc('countDrinksWithAI',[b64, mime]).then(function(res){
+          btn.disabled=false; btn.innerText=I18n.t('aiAnalyzeBtn');
+          res = res || {};
+          if(res.error){ aiErr(res.error==='no_api_key' ? I18n.t('aiNoApiKey') : (I18n.t('errPrefix')+res.error)); return; }
+          renderAiResults(res.counts || res.raw || {});
+        }).catch(function(e){ btn.disabled=false; btn.innerText=I18n.t('aiAnalyzeBtn'); aiErr(I18n.t('errPrefix')+(e.message||e)); });
+      });
+    };
+    function renderAiResults(countsOrRaw){
+      var listEl = document.getElementById('aiResultList');
+      if (typeof countsOrRaw === 'string'){
+        listEl.innerHTML = '<div style="white-space:pre-wrap;font-size:13px;color:var(--text-3);">'+esc(countsOrRaw)+'</div>';
+        document.getElementById('aiResultWrap').style.display='block';
+        aiCounts=null; aiKeys=null;
+        return;
+      }
+      var names = window.rows.map(function(r){ return r.name; });
+      var keys = Object.keys(countsOrRaw);
+      if(!keys.length){
+        listEl.innerHTML='<div style="padding:14px;text-align:center;color:var(--text-3);">'+I18n.t('aiNoDetect')+'</div>';
+        document.getElementById('aiResultWrap').style.display='block';
+        aiCounts=null; aiKeys=null;
+        return;
+      }
+      var html='';
+      keys.forEach(function(key,ki){
+        var qty = countsOrRaw[key];
+        var bestMatch=''; names.forEach(function(n){ if(n && (n.indexOf(key)>=0 || key.indexOf(n)>=0)) bestMatch=n; });
+        html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">'+
+          '<div style="flex:1;font-weight:700;font-size:13px;">'+esc(key)+'</div>'+
+          '<div style="font-weight:900;font-size:15px;min-width:30px;text-align:right;">'+esc(qty)+'</div>'+
+          '<select id="ai-match-'+ki+'" style="font-size:12px;padding:4px;border:1px solid var(--border);border-radius:7px;max-width:130px;">'+
+            '<option value="">'+esc(I18n.t('aiNone'))+'</option>'+
+            names.map(function(n){ return '<option value="'+esc(n)+'"'+(n===bestMatch?' selected':'')+'>'+esc(n)+'</option>'; }).join('')+
+            '<option value="__new__">'+esc(I18n.t('aiNewItem'))+' "'+esc(key)+'"</option>'+
+          '</select>'+
+        '</div>';
+      });
+      listEl.innerHTML = html;
+      aiCounts = countsOrRaw; aiKeys = keys;
+      document.getElementById('aiResultWrap').style.display='block';
+    }
+    window.applyAiResults = function(){
+      if(!aiCounts || !aiKeys) return;
+      aiKeys.forEach(function(key,ki){
+        var sel = document.getElementById('ai-match-'+ki); if(!sel || !sel.value) return;
+        var qty = Number(aiCounts[key])||0;
+        if(sel.value==='__new__'){ window.rows.push({ name:key, category:'', supplier:'', unit:'本', stock:qty, minimum:0, cost:0, nameEn:'', categoryEn:'' }); }
+        else { var idx=-1; for(var i=0;i<window.rows.length;i++){ if(window.rows[i].name===sel.value){ idx=i; break; } } if(idx>=0) window.rows[idx].stock=qty; }
+      });
+      render(); closeAiScan(); msg(I18n.t('aiApplied'), true);
+    };
+
     rpc('getSuppliers',[]).then(function(l){ SUPPLIERS=(l||[]).map(function(s){ return s.name; }); render(); }).catch(function(){});
     var __loaded=false;
     rpc('getDrinkInventory',[]).then(function(list){ window.rows=(list||[]).slice(); __loaded=true; render(); })
       .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
 
     I18n.init({
-      ja:{ title:'📦 在庫管理', back:'← 管理へ', movesLink:'📋 変動履歴', hint:'ドリンク・食材・備品などをまとめて数量管理できます。最小在庫を下回ると赤く表示され、日報・レポートに低在庫として通知。レシピ（材料名一致）で注文時に自動減算されます。「変動」から入荷・廃棄・棚卸を記録すると履歴に残ります。', thName:'商品名', thCat:'カテゴリ', thSupplier:'仕入先', thUnit:'単位', thStock:'在庫数', thMin:'最小在庫', thCost:'原価', addRow:'＋ 行を追加', save:'💾 保存', loading:'読み込み中…', empty:'「＋ 行を追加」で登録してください', saved:'✅ 保存しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ', moveBtn:'変動', mvIn:'＋ 入荷', mvWaste:'− 廃棄', mvCount:'棚卸', mvQty:'数量', mvCounted:'実棚卸数', mvCostL:'原価（任意・単価更新）', mvReasonL:'理由', mvStockNow:'現在庫', mvGo:'実行', mvClose:'閉じる', mvDone:'✅ 記録しました', mvBad:'数量を確認してください', mvNeedSave:'先に「保存」で商品を登録してください', camHintShoot:'📸を押して撮影 → 写真を1つずつタップして数えます', camHintTap:'商品を1つずつタップ。↩で取消、✓で数量を採用', camNoCam:'カメラを利用できません（権限/対応をご確認ください）' },
-      en:{ title:'📦 Inventory', back:'← Manage', movesLink:'📋 History', hint:'Track drinks, ingredients and supplies together by quantity. Rows below the minimum turn red and appear as low-stock in reports. Auto-deducted on orders via recipes (material-name match). Use “Move” to log receiving, waste and stocktake — all kept in history.', thName:'Item', thCat:'Category', thSupplier:'Supplier', thUnit:'Unit', thStock:'Stock', thMin:'Min stock', thCost:'Cost', addRow:'＋ Add row', save:'💾 Save', loading:'Loading…', empty:'Tap “＋ Add row” to register', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ', moveBtn:'Move', mvIn:'＋ Receive', mvWaste:'− Waste', mvCount:'Stocktake', mvQty:'Quantity', mvCounted:'Counted qty', mvCostL:'Cost (optional, updates unit cost)', mvReasonL:'Reason', mvStockNow:'Current', mvGo:'Apply', mvClose:'Close', mvDone:'✅ Recorded', mvBad:'Please check the quantity', mvNeedSave:'Please save the item first', camHintShoot:'Tap 📸 to capture, then tap each item to count', camHintTap:'Tap each item. ↩ to undo, ✓ to use the count', camNoCam:'Camera unavailable (check permission/support)' }
+      ja:{ title:'📦 在庫管理', back:'← 管理へ', movesLink:'📋 変動履歴', hint:'ドリンク・食材・備品などをまとめて数量管理できます。最小在庫を下回ると赤く表示され、日報・レポートに低在庫として通知。レシピ（材料名一致）で注文時に自動減算されます。「変動」から入荷・廃棄・棚卸を記録すると履歴に残ります。', thName:'商品名', thCat:'カテゴリ', thSupplier:'仕入先', thUnit:'単位', thStock:'在庫数', thMin:'最小在庫', thCost:'原価', addRow:'＋ 行を追加', save:'💾 保存', loading:'読み込み中…', empty:'「＋ 行を追加」で登録してください', saved:'✅ 保存しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ', moveBtn:'変動', mvIn:'＋ 入荷', mvWaste:'− 廃棄', mvCount:'棚卸', mvQty:'数量', mvCounted:'実棚卸数', mvCostL:'原価（任意・単価更新）', mvReasonL:'理由', mvStockNow:'現在庫', mvGo:'実行', mvClose:'閉じる', mvDone:'✅ 記録しました', mvBad:'数量を確認してください', mvNeedSave:'先に「保存」で商品を登録してください', camHintShoot:'📸を押して撮影 → 写真を1つずつタップして数えます', camHintTap:'商品を1つずつタップ。↩で取消、✓で数量を採用', camNoCam:'カメラを利用できません（権限/対応をご確認ください）',
+        aiScanBtn:'🤖 AIスキャン', aiTitle:'🤖 AI在庫スキャン', aiTapText:'タップして撮影', aiAnalyzeBtn:'🤖 AI分析開始', aiAnalyzing:'分析中…', aiResultTitle:'AI検出結果 — 在庫アイテムに紐付け', aiApplyBtn:'✅ 在庫に反映', aiNoApiKey:'Gemini APIキーが未設定です。設定画面から追加してください。', aiNoDetect:'ドリンクが検出されませんでした。別の角度で撮り直してください。', aiNewItem:'（新規追加）', aiNone:'（適用しない）', aiApplied:'✅ 反映しました（「💾 保存」で確定してください）' },
+      en:{ title:'📦 Inventory', back:'← Manage', movesLink:'📋 History', hint:'Track drinks, ingredients and supplies together by quantity. Rows below the minimum turn red and appear as low-stock in reports. Auto-deducted on orders via recipes (material-name match). Use “Move” to log receiving, waste and stocktake — all kept in history.', thName:'Item', thCat:'Category', thSupplier:'Supplier', thUnit:'Unit', thStock:'Stock', thMin:'Min stock', thCost:'Cost', addRow:'＋ Add row', save:'💾 Save', loading:'Loading…', empty:'Tap “＋ Add row” to register', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ', moveBtn:'Move', mvIn:'＋ Receive', mvWaste:'− Waste', mvCount:'Stocktake', mvQty:'Quantity', mvCounted:'Counted qty', mvCostL:'Cost (optional, updates unit cost)', mvReasonL:'Reason', mvStockNow:'Current', mvGo:'Apply', mvClose:'Close', mvDone:'✅ Recorded', mvBad:'Please check the quantity', mvNeedSave:'Please save the item first', camHintShoot:'Tap 📸 to capture, then tap each item to count', camHintTap:'Tap each item. ↩ to undo, ✓ to use the count', camNoCam:'Camera unavailable (check permission/support)',
+        aiScanBtn:'🤖 AI Scan', aiTitle:'🤖 AI Stocktake Scan', aiTapText:'Tap to take a photo', aiAnalyzeBtn:'🤖 Analyze with AI', aiAnalyzing:'Analyzing…', aiResultTitle:'AI results — match to inventory items', aiApplyBtn:'✅ Apply to inventory', aiNoApiKey:'Gemini API key not set. Add it in Settings.', aiNoDetect:'No drinks detected. Try a different angle.', aiNewItem:'(New item)', aiNone:'(Skip)', aiApplied:'✅ Applied (press “💾 Save” to confirm)' }
     }, function(){ if(__loaded) render(); });
   </script>
   <datalist id="catList"></datalist>
