@@ -69,9 +69,11 @@
       <div class="card-title" data-t="supTitle">🏢 仕入先マスタ</div>
       <div class="grid">
         <div class="fg"><label class="form-label" data-t="sName">仕入先名</label><input id="sName" class="fc"></div>
-        <div class="fg"><label class="form-label" data-t="sContact">連絡先</label><input id="sContact" class="fc" data-tph="phContact" placeholder="電話・担当など"></div>
+        <div class="fg"><label class="form-label" data-t="sNameEn">英語名（任意）</label><input id="sNameEn" class="fc" data-tph="phNameEn" placeholder="e.g. ABC Trading Co."></div>
       </div>
+      <div class="fg"><label class="form-label" data-t="sContact">連絡先</label><input id="sContact" class="fc" data-tph="phContact" placeholder="電話・担当など"></div>
       <div class="fg"><label class="form-label" data-t="sEmail">メールアドレス（任意・発注メール送信用）</label><input id="sEmail" type="email" class="fc" data-tph="phEmail" placeholder="order@supplier.example"></div>
+      <div class="fg" style="max-width:260px;"><label class="form-label" data-t="sLanguage">発注メール言語</label><select id="sLanguage" class="fc"><option value="ja" data-t="langJa">日本語</option><option value="en" data-t="langEn">英語</option><option value="both" data-t="langBoth">日本語＋英語（両方）</option></select></div>
       <div class="fg"><label class="form-label" data-t="sItems">取扱品目（任意）</label><input id="sItems" class="fc" data-tph="phItems" placeholder="例: ビール, 焼酎, 生鮮"></div>
       <div class="fg"><label class="form-label" data-t="sMemo">備考（任意）</label><input id="sMemo" class="fc"></div>
       <input type="hidden" id="sId">
@@ -79,9 +81,9 @@
       <div class="alert" id="msg"></div>
       <div style="overflow:auto;margin-top:14px;">
         <table><thead><tr>
-          <th data-t="thName">仕入先</th><th data-t="thContact">連絡先</th><th data-t="thEmail">メール</th><th data-t="thItems">取扱品目</th><th style="width:90px;"></th>
+          <th data-t="thName">仕入先</th><th data-t="thContact">連絡先</th><th data-t="thEmail">メール</th><th data-t="thLanguage">言語</th><th data-t="thItems">取扱品目</th><th style="width:90px;"></th>
         </tr></thead>
-        <tbody id="supRows"><tr><td colspan="5" class="muted" style="padding:14px;text-align:center;" data-t="loading">読み込み中…</td></tr></tbody></table>
+        <tbody id="supRows"><tr><td colspan="6" class="muted" style="padding:14px;text-align:center;" data-t="loading">読み込み中…</td></tr></tbody></table>
       </div>
     </div>
   </div>
@@ -109,13 +111,13 @@
     function loc(ja, en){ ja = ja||''; en = (en||'').trim(); return isEN() ? (en || ja) : ja; }
     var SUPS = [], REORDER = [], SYM='₱', __loaded=false;
     var MENU_ALL_PO = [], ORDER_ITEMS_PO = [];
-    var PO_ROWS = [{ name:'', qty:1, unit:'' }];
+    var PO_ROWS = [{ name:'', nameEn:'', qty:1, unit:'' }];
 
     // ── 新規発注（自由入力） ──
     function poRenderRows(){
       var html = PO_ROWS.map(function(r,i){
         return '<tr>'+
-          '<td><input value="'+esc(r.name)+'" oninput="PO_ROWS['+i+'].name=this.value"></td>'+
+          '<td><input value="'+esc(r.name)+'" oninput="PO_ROWS['+i+'].name=this.value;PO_ROWS['+i+'].nameEn=\'\'"></td>'+
           '<td><input type="number" min="0" step="any" value="'+(r.qty||'')+'" oninput="PO_ROWS['+i+'].qty=Number(this.value)||0"></td>'+
           '<td><input value="'+esc(r.unit||'')+'" oninput="PO_ROWS['+i+'].unit=this.value"></td>'+
           '<td><button class="btn-sm" onclick="poDelRow('+i+')">🗑</button></td></tr>';
@@ -123,13 +125,13 @@
       if(!PO_ROWS.length) html = '<tr><td colspan="4" style="color:#aaa;padding:14px;text-align:center;">'+I18n.t('poEmpty')+'</td></tr>';
       document.getElementById('poRows').innerHTML = html;
     }
-    window.poAddRow = function(){ PO_ROWS.push({ name:'', qty:1, unit:'' }); poRenderRows(); };
+    window.poAddRow = function(){ PO_ROWS.push({ name:'', nameEn:'', qty:1, unit:'' }); poRenderRows(); };
     window.poDelRow = function(i){ PO_ROWS.splice(i,1); poRenderRows(); };
 
     function fillPoSupplierSel(){
       var sel = document.getElementById('poSupplier'); var cur = sel.value;
       sel.innerHTML = '<option value="">'+I18n.t('poSupplierPh')+'</option>' +
-        SUPS.map(function(s){ return '<option value="'+esc(s.name)+'">'+esc(s.name)+(s.email?'':(' — '+I18n.t('poNoEmailTag')))+'</option>'; }).join('');
+        SUPS.map(function(s){ return '<option value="'+esc(s.name)+'">'+esc(loc(s.name, s.nameEn))+(s.email?'':(' — '+I18n.t('poNoEmailTag')))+'</option>'; }).join('');
       sel.value = cur;
       onPoSupplierChange();
     }
@@ -151,12 +153,13 @@
         opts += MENU_ALL_PO.map(function(m){
           var nm = m['商品名']; if(!nm) return '';
           var disp = loc(nm, m['商品名_EN']);
-          return '<option value="'+esc(nm)+'" data-unit="">'+esc(disp)+'</option>';
+          return '<option value="'+esc(nm)+'" data-unit="" data-nameen="'+esc(m['商品名_EN']||'')+'">'+esc(disp)+'</option>';
         }).join('');
       } else {
         document.getElementById('poPickTitle').textContent = I18n.t('poFromItem');
         opts += ORDER_ITEMS_PO.map(function(it){
-          return '<option value="'+esc(it.name)+'" data-unit="'+esc(it.unit||'')+'">'+esc(it.name)+(it.unit?(' ('+esc(it.unit)+')'):'')+'</option>';
+          var disp = loc(it.name, it.nameEn);
+          return '<option value="'+esc(it.name)+'" data-unit="'+esc(it.unit||'')+'" data-nameen="'+esc(it.nameEn||'')+'">'+esc(disp)+(it.unit?(' ('+esc(it.unit)+')'):'')+'</option>';
         }).join('');
       }
       sel.innerHTML = opts; sel.value='';
@@ -166,11 +169,13 @@
     window.confirmPoPick = function(){
       var sel = document.getElementById('poPickSel');
       var name = sel.value; if(!name) return;
-      var unit = sel.options[sel.selectedIndex].getAttribute('data-unit') || '';
+      var opt = sel.options[sel.selectedIndex];
+      var unit = opt.getAttribute('data-unit') || '';
+      var nameEn = opt.getAttribute('data-nameen') || '';
       // 空の最終行があればそこに入れる。無ければ新規行を追加。
       var last = PO_ROWS[PO_ROWS.length-1];
-      if(last && !last.name && !last.qty){ last.name=name; last.qty=1; last.unit=unit; }
-      else { PO_ROWS.push({ name:name, qty:1, unit:unit }); }
+      if(last && !last.name && !last.qty){ last.name=name; last.nameEn=nameEn; last.qty=1; last.unit=unit; }
+      else { PO_ROWS.push({ name:name, nameEn:nameEn, qty:1, unit:unit }); }
       poRenderRows(); closePoPicker();
     };
     function poMsg(text, ok){ var m=document.getElementById('poMsg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
@@ -180,13 +185,13 @@
       var sup = SUPS.filter(function(s){ return s.name===supplierName; })[0];
       if(!sup || !sup.email){ poMsg(I18n.t('poNeedEmailFirst'), false); return; }
       var items = PO_ROWS.filter(function(r){ return (r.name||'').trim() && Number(r.qty)>0; })
-        .map(function(r){ return { name:r.name.trim(), qty:Number(r.qty)||0, unit:(r.unit||'').trim() }; });
+        .map(function(r){ return { name:r.name.trim(), nameEn:(r.nameEn||'').trim(), qty:Number(r.qty)||0, unit:(r.unit||'').trim() }; });
       if(!items.length){ poMsg(I18n.t('poNeedItems'), false); return; }
       if(!confirm(I18n.t('poSendConfirm')+'「'+supplierName+'」（'+sup.email+'）\n'+items.length+I18n.t('poItemsCountU'))) return;
       var btn = document.getElementById('poSendBtn'); btn.disabled = true;
       rpc('sendPurchaseOrderEmail',[supplierName, items]).then(function(res){
         btn.disabled = false;
-        if(res && res.success){ poMsg(I18n.t('poSendDone'), true); PO_ROWS=[{ name:'', qty:1, unit:'' }]; poRenderRows(); document.getElementById('poSupplier').value=''; onPoSupplierChange(); return; }
+        if(res && res.success){ poMsg(I18n.t('poSendDone'), true); PO_ROWS=[{ name:'', nameEn:'', qty:1, unit:'' }]; poRenderRows(); document.getElementById('poSupplier').value=''; onPoSupplierChange(); return; }
         poMsg(I18n.t('errPrefix')+((res&&res.error)||''), false);
       }).catch(function(e){ btn.disabled=false; poMsg(I18n.t('errPrefix')+(e.message||e), false); });
     };
@@ -219,20 +224,22 @@
         if(st) st.innerText = I18n.t('sendMailFail')+((res&&res.error)||'');
       }).catch(function(e){ if(btn) btn.disabled = false; if(st) st.innerText = I18n.t('sendMailFail')+(e.message||e); });
     };
+    function langLabel(v){ return v==='en' ? I18n.t('langEn') : (v==='both' ? I18n.t('langBoth') : I18n.t('langJa')); }
     function renderSups(){
-      if(!SUPS.length){ document.getElementById('supRows').innerHTML='<tr><td colspan="5" class="muted" style="padding:14px;text-align:center;">'+I18n.t('supEmpty')+'</td></tr>'; return; }
+      if(!SUPS.length){ document.getElementById('supRows').innerHTML='<tr><td colspan="6" class="muted" style="padding:14px;text-align:center;">'+I18n.t('supEmpty')+'</td></tr>'; return; }
       document.getElementById('supRows').innerHTML = SUPS.map(function(s){
-        return '<tr><td style="font-weight:800;">'+esc(s.name)+'</td><td>'+esc(s.contact)+'</td><td class="muted">'+esc(s.email||'')+'</td><td class="muted">'+esc(s.items)+'</td>'+
+        var nmCell = '<td style="font-weight:800;">'+esc(s.name)+(s.nameEn?' <span class="muted" style="font-weight:400;">('+esc(s.nameEn)+')</span>':'')+'</td>';
+        return '<tr>'+nmCell+'<td>'+esc(s.contact)+'</td><td class="muted">'+esc(s.email||'')+'</td><td class="muted">'+esc(langLabel(s.language))+'</td><td class="muted">'+esc(s.items)+'</td>'+
           '<td><button class="btn-sm" onclick="edit(\''+s.id+'\')">'+I18n.t('edit')+'</button> <button class="btn-sm" style="background:#fee2e2;color:#b91c1c;" onclick="del(\''+s.id+'\')">'+I18n.t('del')+'</button></td></tr>';
       }).join('');
     }
     function msg(text, ok){ var m=document.getElementById('msg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
-    function clearForm(){ ['sId','sName','sContact','sEmail','sItems','sMemo'].forEach(function(id){ document.getElementById(id).value=''; }); }
+    function clearForm(){ ['sId','sName','sNameEn','sContact','sEmail','sItems','sMemo'].forEach(function(id){ document.getElementById(id).value=''; }); document.getElementById('sLanguage').value='ja'; }
 
-    window.edit = function(id){ var s=SUPS.filter(function(x){return x.id===id;})[0]; if(!s) return; document.getElementById('sId').value=s.id; document.getElementById('sName').value=s.name; document.getElementById('sContact').value=s.contact; document.getElementById('sEmail').value=s.email||''; document.getElementById('sItems').value=s.items; document.getElementById('sMemo').value=s.memo||''; window.scrollTo({top:9999,behavior:'smooth'}); };
+    window.edit = function(id){ var s=SUPS.filter(function(x){return x.id===id;})[0]; if(!s) return; document.getElementById('sId').value=s.id; document.getElementById('sName').value=s.name; document.getElementById('sNameEn').value=s.nameEn||''; document.getElementById('sContact').value=s.contact; document.getElementById('sEmail').value=s.email||''; document.getElementById('sLanguage').value=s.language||'ja'; document.getElementById('sItems').value=s.items; document.getElementById('sMemo').value=s.memo||''; window.scrollTo({top:9999,behavior:'smooth'}); };
     window.del = function(id){ if(!confirm(I18n.t('delConfirm'))) return; rpc('deleteSupplier',[id]).then(function(){ return reloadSups(); }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); }); };
     window.save = function(){
-      var sup = { id:document.getElementById('sId').value, name:document.getElementById('sName').value.trim(), contact:document.getElementById('sContact').value.trim(), email:document.getElementById('sEmail').value.trim(), items:document.getElementById('sItems').value.trim(), memo:document.getElementById('sMemo').value.trim() };
+      var sup = { id:document.getElementById('sId').value, name:document.getElementById('sName').value.trim(), nameEn:document.getElementById('sNameEn').value.trim(), contact:document.getElementById('sContact').value.trim(), email:document.getElementById('sEmail').value.trim(), language:document.getElementById('sLanguage').value, items:document.getElementById('sItems').value.trim(), memo:document.getElementById('sMemo').value.trim() };
       if(!sup.name){ msg(I18n.t('needName'), false); return; }
       var btn=document.getElementById('saveBtn'); btn.disabled=true;
       rpc('saveSupplier',[sup]).then(function(d){ btn.disabled=false; if(d&&d.error){ msg(I18n.t('errPrefix')+d.error, false); return; } msg(I18n.t('saved'), true); clearForm(); reloadReorder(); return reloadSups(); })
@@ -244,16 +251,16 @@
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; }).catch(function(){});
     rpc('getReorderSuggestions',[]).then(function(l){ REORDER=l||[]; renderReorder(); }).catch(function(e){ document.getElementById('reorder').innerHTML='<div class="muted" style="color:#b91c1c;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>'; });
     rpc('getSuppliers',[]).then(function(l){ SUPS=l||[]; __loaded=true; renderSups(); fillPoSupplierSel(); })
-      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('supRows').innerHTML='<tr><td colspan="5" style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('supRows').innerHTML='<tr><td colspan="6" style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
     rpc('getAllMenuForAdmin',[]).then(function(l){ MENU_ALL_PO=l||[]; }).catch(function(){});
     rpc('getOrderItems',[]).then(function(l){ ORDER_ITEMS_PO=l||[]; }).catch(function(){});
     poRenderRows();
 
     I18n.init({
-      ja:{ title:'🚚 仕入・発注', back:'← 管理へ', inv:'📦 在庫', orderItemsLink:'📋 発注アイテム', reorderTitle:'🔔 発注提案（最小在庫以下）', reorderHint:'在庫が最小在庫を下回った品目を仕入先ごとにまとめます。推奨数＝最小在庫の2倍を目標に補充。', reorderEmpty:'発注が必要な品目はありません 🎉', noSupplier:'仕入先未設定', thItem:'品目', thStock:'在庫', thMin:'最小', thSuggest:'推奨発注', supTitle:'🏢 仕入先マスタ', sName:'仕入先名', sContact:'連絡先', phContact:'電話・担当など', sEmail:'メールアドレス（任意・発注メール送信用）', phEmail:'order@supplier.example', sItems:'取扱品目（任意）', phItems:'例: ビール, 焼酎, 生鮮', sMemo:'備考（任意）', add:'💾 登録', thName:'仕入先', thContact:'連絡先', thEmail:'メール', thItems:'取扱品目', loading:'読み込み中…', supEmpty:'仕入先が未登録です', edit:'編集', del:'削除', delConfirm:'この仕入先を削除しますか？', needName:'仕入先名を入力してください', saved:'✅ 登録しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ',
+      ja:{ title:'🚚 仕入・発注', back:'← 管理へ', inv:'📦 在庫', orderItemsLink:'📋 発注アイテム', reorderTitle:'🔔 発注提案（最小在庫以下）', reorderHint:'在庫が最小在庫を下回った品目を仕入先ごとにまとめます。推奨数＝最小在庫の2倍を目標に補充。', reorderEmpty:'発注が必要な品目はありません 🎉', noSupplier:'仕入先未設定', thItem:'品目', thStock:'在庫', thMin:'最小', thSuggest:'推奨発注', supTitle:'🏢 仕入先マスタ', sName:'仕入先名', sNameEn:'英語名（任意）', phNameEn:'e.g. ABC Trading Co.', sContact:'連絡先', phContact:'電話・担当など', sEmail:'メールアドレス（任意・発注メール送信用）', phEmail:'order@supplier.example', sLanguage:'発注メール言語', langJa:'日本語', langEn:'英語', langBoth:'日本語＋英語（両方）', thLanguage:'言語', sItems:'取扱品目（任意）', phItems:'例: ビール, 焼酎, 生鮮', sMemo:'備考（任意）', add:'💾 登録', thName:'仕入先', thContact:'連絡先', thEmail:'メール', thItems:'取扱品目', loading:'読み込み中…', supEmpty:'仕入先が未登録です', edit:'編集', del:'削除', delConfirm:'この仕入先を削除しますか？', needName:'仕入先名を入力してください', saved:'✅ 登録しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ',
         sendMailBtn:'✉️ 発注メールを送る', noEmailBadge:'✉️ メール未設定', noEmailHint:'仕入先マスタにメールアドレスを登録すると送信できます', sendMailConfirm:'発注メールを送信しますか？\n', sendMailDone:'✅ 送信しました', sendMailFail:'❌ 送信失敗: ',
         newOrderTitle:'🆕 新規発注', newOrderHint:'仕入先を選び、品目を追加してください。メニュー・発注アイテムマスタから選ぶか、直接入力できます。入力が終わったら「発注依頼」でメールを送信します。', poSupplier:'仕入先', poSupplierPh:'仕入先を選択…', poNoEmailTag:'メール未設定', poNoEmailWarn:'この仕入先にはメールアドレスが未登録です。先に仕入先マスタで登録してください。', poThQty:'数量', poThUnit:'単位', poEmpty:'「＋ 行を追加」で品目を追加してください', poAddRow:'＋ 行を追加', poFromMenu:'🍽️ メニューから追加', poFromItem:'📋 発注アイテムから追加', poPickPh:'選択してください…', poPickAdd:'＋ 追加', poSendBtn:'📧 発注依頼', poNeedSupplier:'仕入先を選択してください', poNeedEmailFirst:'この仕入先にはメールアドレスが未登録です。先に仕入先マスタで登録してください。', poNeedItems:'品目と数量を入力してください', poSendConfirm:'発注メールを送信しますか？\n', poItemsCountU:'件の品目', poSendDone:'✅ 発注メールを送信しました', mvClose:'閉じる' },
-      en:{ title:'🚚 Purchasing', back:'← Manage', inv:'📦 Inventory', orderItemsLink:'📋 Order items', reorderTitle:'🔔 Reorder suggestions (at/below min)', reorderHint:'Items at or below minimum stock, grouped by supplier. Suggested qty targets twice the minimum stock.', reorderEmpty:'Nothing to reorder 🎉', noSupplier:'No supplier set', thItem:'Item', thStock:'Stock', thMin:'Min', thSuggest:'Suggested', supTitle:'🏢 Suppliers', sName:'Supplier name', sContact:'Contact', phContact:'Phone / person', sEmail:'Email (optional, for sending orders)', phEmail:'order@supplier.example', sItems:'Items handled (optional)', phItems:'e.g. beer, shochu, fresh', sMemo:'Memo (optional)', add:'💾 Save', thName:'Supplier', thContact:'Contact', thEmail:'Email', thItems:'Items', loading:'Loading…', supEmpty:'No suppliers yet', edit:'Edit', del:'Delete', delConfirm:'Delete this supplier?', needName:'Please enter a supplier name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ',
+      en:{ title:'🚚 Purchasing', back:'← Manage', inv:'📦 Inventory', orderItemsLink:'📋 Order items', reorderTitle:'🔔 Reorder suggestions (at/below min)', reorderHint:'Items at or below minimum stock, grouped by supplier. Suggested qty targets twice the minimum stock.', reorderEmpty:'Nothing to reorder 🎉', noSupplier:'No supplier set', thItem:'Item', thStock:'Stock', thMin:'Min', thSuggest:'Suggested', supTitle:'🏢 Suppliers', sName:'Supplier name', sNameEn:'English name (optional)', phNameEn:'e.g. ABC Trading Co.', sContact:'Contact', phContact:'Phone / person', sEmail:'Email (optional, for sending orders)', phEmail:'order@supplier.example', sLanguage:'Order email language', langJa:'Japanese', langEn:'English', langBoth:'Japanese + English (both)', thLanguage:'Language', sItems:'Items handled (optional)', phItems:'e.g. beer, shochu, fresh', sMemo:'Memo (optional)', add:'💾 Save', thName:'Supplier', thContact:'Contact', thEmail:'Email', thItems:'Items', loading:'Loading…', supEmpty:'No suppliers yet', edit:'Edit', del:'Delete', delConfirm:'Delete this supplier?', needName:'Please enter a supplier name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ',
         sendMailBtn:'✉️ Send order email', noEmailBadge:'✉️ No email set', noEmailHint:'Add an email address in the supplier master to enable sending', sendMailConfirm:'Send the order email?\n', sendMailDone:'✅ Sent', sendMailFail:'❌ Failed: ',
         newOrderTitle:'🆕 New purchase order', newOrderHint:'Pick a supplier and add items — from the menu, the order item master, or typed directly. Press “Request order” when done to send the email.', poSupplier:'Supplier', poSupplierPh:'Select a supplier…', poNoEmailTag:'no email set', poNoEmailWarn:'This supplier has no email address registered. Add one in the supplier master first.', poThQty:'Qty', poThUnit:'Unit', poEmpty:'Tap “＋ Add row” to add items', poAddRow:'＋ Add row', poFromMenu:'🍽️ Add from menu', poFromItem:'📋 Add from order items', poPickPh:'Select…', poPickAdd:'＋ Add', poSendBtn:'📧 Request order', poNeedSupplier:'Please select a supplier', poNeedEmailFirst:'This supplier has no email address registered. Add one in the supplier master first.', poNeedItems:'Please enter items and quantities', poSendConfirm:'Send the order email?\n', poItemsCountU:' item(s)', poSendDone:'✅ Order email sent', mvClose:'Close' }
     }, function(){ fillPoSupplierSel(); if(__loaded){ renderReorder(); renderSups(); } });

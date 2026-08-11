@@ -40,8 +40,9 @@
       <div class="hint" data-t="hint">在庫・メニューとは別に、発注時によく使う品目をあらかじめ登録しておけます。新規発注画面の「発注アイテムから選ぶ」で使用します。</div>
       <div class="grid">
         <div class="fg"><label class="form-label" data-t="iName">品目名</label><input id="iName" class="fc"></div>
-        <div class="fg"><label class="form-label" data-t="iUnit">単位（任意）</label><input id="iUnit" class="fc" data-tph="phUnit" placeholder="例: 本, kg, 箱"></div>
+        <div class="fg"><label class="form-label" data-t="iNameEn">英語名（任意）</label><input id="iNameEn" class="fc" data-tph="phNameEn" placeholder="e.g. Beer bottle"></div>
       </div>
+      <div class="fg"><label class="form-label" data-t="iUnit">単位（任意）</label><input id="iUnit" class="fc" data-tph="phUnit" placeholder="例: 本, kg, 箱"></div>
       <div class="fg"><label class="form-label" data-t="iSupplier">既定仕入先（任意）</label><select id="iSupplier" class="fc"></select></div>
       <div class="fg"><label class="form-label" data-t="iMemo">備考（任意）</label><input id="iMemo" class="fc"></div>
       <input type="hidden" id="iId">
@@ -64,28 +65,32 @@
     if (!TOKEN) location.href = './manage.html';
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    // 表示する日本語/英語の出し分けは必ずこの2関数経由で行うこと（新しい表示箇所を追加する際も同様。過去に個別対応漏れで再発したため）。
+    function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
+    function loc(ja, en){ ja = ja||''; en = (en||'').trim(); return isEN() ? (en || ja) : ja; }
     var ITEMS = [], SUPS = [], __loaded=false;
 
     function fillSupSel(){
       var sel = document.getElementById('iSupplier'); var cur = sel.value;
       var h = '<option value="">'+I18n.t('supUnset')+'</option>';
-      h += SUPS.map(function(s){ return '<option value="'+esc(s.name)+'">'+esc(s.name)+'</option>'; }).join('');
+      h += SUPS.map(function(s){ return '<option value="'+esc(s.name)+'">'+esc(loc(s.name, s.nameEn))+'</option>'; }).join('');
       sel.innerHTML = h; sel.value = cur;
     }
     function render(){
       if(!ITEMS.length){ document.getElementById('rows').innerHTML='<tr><td colspan="5" style="color:#aaa;padding:14px;text-align:center;">'+I18n.t('empty')+'</td></tr>'; return; }
       document.getElementById('rows').innerHTML = ITEMS.map(function(it){
-        return '<tr><td style="font-weight:800;">'+esc(it.name)+'</td><td>'+esc(it.unit)+'</td><td>'+esc(it.supplier)+'</td><td style="color:var(--text-3);">'+esc(it.memo)+'</td>'+
+        var nmCell = esc(it.name)+(it.nameEn?' <span style="color:var(--text-3);">('+esc(it.nameEn)+')</span>':'');
+        return '<tr><td style="font-weight:800;">'+nmCell+'</td><td>'+esc(it.unit)+'</td><td>'+esc(it.supplier)+'</td><td style="color:var(--text-3);">'+esc(it.memo)+'</td>'+
           '<td><button class="btn-sm" onclick="edit(\''+it.id+'\')">'+I18n.t('edit')+'</button> <button class="btn-sm" style="background:#fee2e2;color:#b91c1c;" onclick="del(\''+it.id+'\')">'+I18n.t('del')+'</button></td></tr>';
       }).join('');
     }
     function msg(text, ok){ var m=document.getElementById('msg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
-    function clearForm(){ ['iId','iName','iUnit','iMemo'].forEach(function(id){ document.getElementById(id).value=''; }); document.getElementById('iSupplier').value=''; }
+    function clearForm(){ ['iId','iName','iNameEn','iUnit','iMemo'].forEach(function(id){ document.getElementById(id).value=''; }); document.getElementById('iSupplier').value=''; }
 
-    window.edit = function(id){ var it=ITEMS.filter(function(x){return x.id===id;})[0]; if(!it) return; document.getElementById('iId').value=it.id; document.getElementById('iName').value=it.name; document.getElementById('iUnit').value=it.unit||''; document.getElementById('iSupplier').value=it.supplier||''; document.getElementById('iMemo').value=it.memo||''; window.scrollTo({top:9999,behavior:'smooth'}); };
+    window.edit = function(id){ var it=ITEMS.filter(function(x){return x.id===id;})[0]; if(!it) return; document.getElementById('iId').value=it.id; document.getElementById('iName').value=it.name; document.getElementById('iNameEn').value=it.nameEn||''; document.getElementById('iUnit').value=it.unit||''; document.getElementById('iSupplier').value=it.supplier||''; document.getElementById('iMemo').value=it.memo||''; window.scrollTo({top:9999,behavior:'smooth'}); };
     window.del = function(id){ if(!confirm(I18n.t('delConfirm'))) return; rpc('deleteOrderItem',[id]).then(function(){ return reload(); }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); }); };
     window.save = function(){
-      var it = { id:document.getElementById('iId').value, name:document.getElementById('iName').value.trim(), unit:document.getElementById('iUnit').value.trim(), supplier:document.getElementById('iSupplier').value, memo:document.getElementById('iMemo').value.trim() };
+      var it = { id:document.getElementById('iId').value, name:document.getElementById('iName').value.trim(), nameEn:document.getElementById('iNameEn').value.trim(), unit:document.getElementById('iUnit').value.trim(), supplier:document.getElementById('iSupplier').value, memo:document.getElementById('iMemo').value.trim() };
       if(!it.name){ msg(I18n.t('needName'), false); return; }
       var btn=document.getElementById('saveBtn'); btn.disabled=true;
       rpc('saveOrderItem',[it]).then(function(d){ btn.disabled=false; if(d&&d.error){ msg(I18n.t('errPrefix')+d.error, false); return; } msg(I18n.t('saved'), true); clearForm(); return reload(); })
@@ -98,8 +103,8 @@
       .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="5" style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
 
     I18n.init({
-      ja:{ title:'📋 発注アイテム管理', pur:'🚚 仕入・発注', back:'← 管理へ', cardTitle:'📋 発注アイテムマスタ', hint:'在庫・メニューとは別に、発注時によく使う品目をあらかじめ登録しておけます。新規発注画面の「発注アイテムから選ぶ」で使用します。', iName:'品目名', iUnit:'単位（任意）', phUnit:'例: 本, kg, 箱', iSupplier:'既定仕入先（任意）', supUnset:'（未選択）', iMemo:'備考（任意）', add:'💾 登録', thName:'品目名', thUnit:'単位', thSupplier:'既定仕入先', thMemo:'備考', loading:'読み込み中…', empty:'まだ発注アイテムが登録されていません', edit:'編集', del:'削除', delConfirm:'このアイテムを削除しますか？', needName:'品目名を入力してください', saved:'✅ 登録しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ' },
-      en:{ title:'📋 Order Items', pur:'🚚 Purchasing', back:'← Manage', cardTitle:'📋 Order item master', hint:'Register items you order often, separate from inventory or the menu. Used by “Add from order items” on the new purchase order screen.', iName:'Item name', iUnit:'Unit (optional)', phUnit:'e.g. bottle, kg, box', iSupplier:'Default supplier (optional)', supUnset:'(none)', iMemo:'Memo (optional)', add:'💾 Save', thName:'Item', thUnit:'Unit', thSupplier:'Default supplier', thMemo:'Memo', loading:'Loading…', empty:'No order items registered yet', edit:'Edit', del:'Delete', delConfirm:'Delete this item?', needName:'Please enter an item name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ' }
+      ja:{ title:'📋 発注アイテム管理', pur:'🚚 仕入・発注', back:'← 管理へ', cardTitle:'📋 発注アイテムマスタ', hint:'在庫・メニューとは別に、発注時によく使う品目をあらかじめ登録しておけます。新規発注画面の「発注アイテムから選ぶ」で使用します。', iName:'品目名', iNameEn:'英語名（任意）', phNameEn:'e.g. Beer bottle', iUnit:'単位（任意）', phUnit:'例: 本, kg, 箱', iSupplier:'既定仕入先（任意）', supUnset:'（未選択）', iMemo:'備考（任意）', add:'💾 登録', thName:'品目名', thUnit:'単位', thSupplier:'既定仕入先', thMemo:'備考', loading:'読み込み中…', empty:'まだ発注アイテムが登録されていません', edit:'編集', del:'削除', delConfirm:'このアイテムを削除しますか？', needName:'品目名を入力してください', saved:'✅ 登録しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ' },
+      en:{ title:'📋 Order Items', pur:'🚚 Purchasing', back:'← Manage', cardTitle:'📋 Order item master', hint:'Register items you order often, separate from inventory or the menu. Used by “Add from order items” on the new purchase order screen.', iName:'Item name', iNameEn:'English name (optional)', phNameEn:'e.g. Beer bottle', iUnit:'Unit (optional)', phUnit:'e.g. bottle, kg, box', iSupplier:'Default supplier (optional)', supUnset:'(none)', iMemo:'Memo (optional)', add:'💾 Save', thName:'Item', thUnit:'Unit', thSupplier:'Default supplier', thMemo:'Memo', loading:'Loading…', empty:'No order items registered yet', edit:'Edit', del:'Delete', delConfirm:'Delete this item?', needName:'Please enter an item name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ' }
     }, function(){ if(__loaded) render(); fillSupSel(); });
   </script>
 </body>
