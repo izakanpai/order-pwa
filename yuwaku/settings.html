@@ -361,12 +361,19 @@
     function setBadge(id, on){ var b=$(id); b.className='badge '+(on?'on':'offb'); b.innerText=on?I18n.t('set'):I18n.t('unset'); b.removeAttribute('data-t'); }
 
     // ---- load ----
-    API.post('getSettings', {}).then(function(r){
-      var d = r.data || {};
+    // 以前はgetSettings/getReceiptLogo/getPaymongoKeyStatus/getGeminiKeyStatusを
+    // 個別に（一部は同時並行で）呼んでおり、GAS側の実行が競合して初期表示が
+    // 遅くなる原因になっていた（体感10秒前後）。1回のRPCにまとめて往復回数を減らす。
+    var payConfigured = false, gemConfigured = false;
+    rpc('getSettingsBundle',[]).then(function(bundle){
+      bundle = bundle || {};
+      var d = bundle.settings || {};
+      if(bundle.receiptLogo){ $('logoPrev').src=bundle.receiptLogo; $('logoPrev').style.display='inline-block'; }
+      if(bundle.paymongo){ payConfigured = !!bundle.paymongo.configured; setBadge('payBadge', payConfigured); }
+      if(bundle.gemini){ gemConfigured = !!bundle.gemini.configured; setBadge('gemBadge', gemConfigured); }
       $('shopName').value = d.shopName || '';
       if($('shopAddress')) $('shopAddress').value = d.shopAddress || '';
       if($('shopTin')) $('shopTin').value = d.shopTin || '';
-      rpc('getReceiptLogo',[]).then(function(url){ if(url){ $('logoPrev').src=url; $('logoPrev').style.display='inline-block'; } }).catch(function(){});
       if($('logoScale')) $('logoScale').value = Number(d.logoScalePct)||100;
       $('tableCount').value = (d.tableCount!==undefined && d.tableCount!=='') ? d.tableCount : 20;
       $('counterCount').value = (d.counterCount!==undefined && d.counterCount!=='') ? d.counterCount : 0;
@@ -395,9 +402,6 @@
       $('reportLang').value = (d.reportLang==='en'||d.reportLang==='both')?d.reportLang:'ja';
       $('bridgePollSec').value = (d.bridgePollMs!==undefined && d.bridgePollMs!=='') ? (Number(d.bridgePollMs)/1000) : 1.2;
     }).catch(function(){});
-    var payConfigured = false, gemConfigured = false;
-    rpc('getPaymongoKeyStatus',[]).then(function(s){ if(s){ payConfigured = !!s.configured; setBadge('payBadge', payConfigured); } }).catch(function(){});
-    rpc('getGeminiKeyStatus',[]).then(function(s){ if(s){ gemConfigured = !!s.configured; setBadge('gemBadge', gemConfigured); } }).catch(function(){});
 
     I18n.init({
       ja:{ title:'⚙️ 設定', back:'← 管理へ', save:'💾 保存', status:'状態:', unset:'未設定', set:'設定済', phPaste:'貼り付けて保存', close:'閉じる',
