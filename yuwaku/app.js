@@ -10,7 +10,7 @@
       offline:'Offline — orders will be sent automatically when back online', lang:'JP',
       svc:'Service', tax:'Tax',
       tblTitle:'Select your table', tblMsg:'Scan the QR at your table, or pick your table number.', tblGo:'Start',
-      payTitle:'How would you like to pay?', payLater:'👤 Pay at counter', payCard:'💳 Card', payProcessing:'Preparing…', payScan:'Scan the QR to pay', payNotYet:'Payment not confirmed yet.', payNoKey:'Online payment is not set up.', paidTitle:'Paid & ordered', paidMsg:'Payment received. Your order was sent.', cancel:'Cancel',
+      payTitle:'How would you like to pay?', payLater:'👤 Pay at counter', payCard:'💳 Card', payProcessing:'Preparing…', payScan:'Scan the QR to pay', payNotYet:'Payment not confirmed yet.', payNoKey:'Online payment is not set up.', payTimeout:'Payment confirmation timed out. If you already paid, please tell a staff member.', paidTitle:'Paid & ordered', paidMsg:'Payment received. Your order was sent.', cancel:'Cancel',
       memberTitle:'Member (points)', memberSub:'Enter your phone to earn / use points.', check:'Check', usePoints:'Use points', points:'pts', discountLbl:'Points', earned:'pts earned',
       couponTitle:'Coupon / Voucher', couponSub:'Enter a code to get a discount.', apply:'Apply', remove:'Remove coupon', close:'Close', couponLbl:'Coupon',
       cpApplied:'Applied', cpEmpty:'Enter a code', cpNotfound:'Code not found', cpInactive:'Not available', cpExpired:'Expired', cpLimit:'Usage limit reached', cpMin:'Minimum order not met', cpInvalid:'Invalid code',
@@ -33,7 +33,7 @@
       offline:'オフライン — 復帰時に自動送信します', lang:'EN',
       svc:'サービス料', tax:'税',
       tblTitle:'テーブルを選択', tblMsg:'QRを読み取るか、テーブル番号を選んでください。', tblGo:'開始',
-      payTitle:'お支払い方法', payLater:'👤 店員に支払う（後会計）', payCard:'💳 カード', payProcessing:'準備中…', payScan:'QRを読み取ってお支払い', payNotYet:'まだ支払いが確認できません。', payNoKey:'オンライン決済は未設定です。', paidTitle:'支払い完了・注文しました', paidMsg:'お支払いを受け付けました。注文を送信しました。', cancel:'キャンセル',
+      payTitle:'お支払い方法', payLater:'👤 店員に支払う（後会計）', payCard:'💳 カード', payProcessing:'準備中…', payScan:'QRを読み取ってお支払い', payNotYet:'まだ支払いが確認できません。', payNoKey:'オンライン決済は未設定です。', payTimeout:'決済確認がタイムアウトしました。お支払い済みの場合は店員にお伝えください。', paidTitle:'支払い完了・注文しました', paidMsg:'お支払いを受け付けました。注文を送信しました。', cancel:'キャンセル',
       memberTitle:'会員（ポイント）', memberSub:'電話番号を入力するとポイントが貯まる/使えます。', check:'確認', usePoints:'ポイントを使う', points:'pt', discountLbl:'ポイント割引', earned:'pt 獲得',
       couponTitle:'クーポン／バウチャー', couponSub:'コードを入力すると割引されます。', apply:'適用', remove:'クーポンを外す', close:'閉じる', couponLbl:'クーポン',
       cpApplied:'適用しました', cpEmpty:'コードを入力してください', cpNotfound:'コードが見つかりません', cpInactive:'利用できません', cpExpired:'期限切れ', cpLimit:'利用上限に達しています', cpMin:'最低注文額に達していません', cpInvalid:'無効なコード',
@@ -492,7 +492,8 @@
   }
 
   // ---- 送信 ----
-  var pendingOrder = null, payCheckoutId = null, payPoll = null;
+  var pendingOrder = null, payCheckoutId = null, payPoll = null, payPollCount = 0;
+  var PAY_POLL_MAX = 120; // 5秒間隔×120回＝約10分でタイムアウトし、決済確認ポーリングを打ち切る（サーバ・外部決済APIへの無限リトライを防止）
 
   function send() {
     var x = t();
@@ -552,7 +553,7 @@
   }
   function closePayChoice() { $('payChoice').classList.remove('show'); }
   function closePayModal() { stopPoll(); $('payModal').classList.remove('show'); }
-  function stopPoll() { if (payPoll) { clearInterval(payPoll); payPoll = null; } }
+  function stopPoll() { if (payPoll) { clearInterval(payPoll); payPoll = null; } payPollCount = 0; }
 
   function startPay(method) {
     closePayChoice();
@@ -579,6 +580,9 @@
   function checkPay() {
     if (!payCheckoutId) return;
     var x = t();
+    // 決済確認ポーリングは上限回数（約10分）で打ち切る。外部決済APIへの無期限リトライを防止するための保険。
+    payPollCount++;
+    if (payPollCount > PAY_POLL_MAX) { stopPoll(); $('pmStatus').textContent = x.payTimeout; $('pmStatus').style.color = '#b91c1c'; return; }
     API.post('checkoutStatus', { checkoutId: payCheckoutId }).then(function (r) {
       var d = r.data || {};
       if (d.paymentStatus === 'paid') { stopPoll(); closePayModal(); var o = pendingOrder; pendingOrder = null; payCheckoutId = null; doSubmit(o, true); }
