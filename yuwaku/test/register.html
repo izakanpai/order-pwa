@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Register">
 
   <link rel="manifest" href="./register.webmanifest">
-  <title>Register</title>
+  <title>Register open/close</title>
   <style>
     :root{ --bg:#f6f7f9; --surface:#fff; --border:#e5e7eb; --navy:#0f172a; --text-3:#64748b; --green:#16a34a; --red:#c62828; }
     *{ box-sizing:border-box; }
@@ -39,7 +39,7 @@
   </style>
 </head>
 <body>
-  <div class="head"><h1 data-t="title">💵 レジ締め</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
+  <div class="head"><h1 data-t="title">💵 レジ開け／締め</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
   <div class="wrap" id="wrap"><div class="loading" data-t="loading">読み込み中…</div></div>
 
   <script src="./config.js"></script>
@@ -47,6 +47,7 @@
   <script src="./i18n.js"></script>
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
+    var NAME = localStorage.getItem('mgmtName') || '';
     if (!TOKEN) location.href = './manage.html';
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
@@ -91,7 +92,7 @@
         html += '<div class="card" style="background:#eff6ff;border-color:#bfdbfe;"><div class="card-title" style="color:#1e40af;">'+I18n.t('helpOpenTitle')+'</div><div style="font-size:13px;line-height:1.8;color:#1e3a8a;">'+I18n.t('helpOpenBody')+'</div></div>';
         html += '<div class="card"><div class="card-title">'+I18n.t('openTitle')+'</div>'
           + '<div class="fg"><label class="form-label">'+I18n.t('float')+'</label><input id="flt" type="number" min="0" step="any" class="fc" placeholder="0"></div>'
-          + '<div class="fg"><label class="form-label">'+I18n.t('staff')+' <span class="muted">('+I18n.t('optional')+')</span></label><input id="stf" class="fc"></div>'
+          + '<div class="fg"><label class="form-label">'+I18n.t('staff')+'</label><input id="stf" class="fc" value="'+esc(NAME)+'" readonly style="background:#f1f5f9;color:#64748b;"></div>'
           + '<button class="btn btn-green" onclick="doOpen()">'+I18n.t('openBtn')+'</button></div>';
       } else {
         var s=CUR.sales||{};
@@ -128,11 +129,11 @@
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; render(); }).catch(function(){});
 
     I18n.init({
-      ja:{ title:'💵 レジ締め', back:'← 管理へ', loading:'読み込み中…', openTitle:'🔓 レジを開ける', float:'開店フロート（釣銭準備金）', staff:'担当', optional:'任意', openBtn:'🔓 レジを開ける', xTitle:'📋 現在のシフト（X）', cashSales:'現金売上', cardSales:'カード/GCash売上', otherSales:'その他売上', expected:'想定現金', refresh:'更新', closeTitle:'🔒 レジ締め（Z）', cashInOut:'現金入出金', cioHint:'入金+ / 出金−', counted:'実現金（数えた金額）', memo:'メモ', closeBtn:'🔒 レジを締める', zTitle:'✅ レジ締め結果（Z）', openAt:'開始', closeAt:'終了', overShort:'過不足', done:'完了', histTitle:'📖 締め履歴', staffTitle:'👤 スタッフ別売上', thStaff:'担当', thShifts:'シフト数', thTotal:'売上合計', needCount:'実現金を入力してください', errPrefix:'エラー: ', loadErr:'読み込みエラー: ',
-        helpOpenTitle:'📘 使い方（開店時）', helpOpenBody:'① 開店フロート（釣銭用の準備金）を入力<br>② 担当者名を入力（任意）<br>③「🔓 レジを開ける」を押す<br>これで営業中の売上集計が始まります。',
+      ja:{ title:'💵 レジ開け／締め', back:'← 管理へ', loading:'読み込み中…', openTitle:'🔓 レジを開ける', float:'開店フロート（釣銭準備金）', staff:'担当', optional:'任意', openBtn:'🔓 レジを開ける', xTitle:'📋 現在のシフト（X）', cashSales:'現金売上', cardSales:'カード/GCash売上', otherSales:'その他売上', expected:'想定現金', refresh:'更新', closeTitle:'🔒 レジ締め（Z）', cashInOut:'現金入出金', cioHint:'入金+ / 出金−', counted:'実現金（数えた金額）', memo:'メモ', closeBtn:'🔒 レジを締める', zTitle:'✅ レジ締め結果（Z）', openAt:'開始', closeAt:'終了', overShort:'過不足', done:'完了', histTitle:'📖 締め履歴', staffTitle:'👤 スタッフ別売上', thStaff:'担当', thShifts:'シフト数', thTotal:'売上合計', needCount:'実現金を入力してください', errPrefix:'エラー: ', loadErr:'読み込みエラー: ',
+        helpOpenTitle:'📘 使い方（開店時）', helpOpenBody:'① 開店フロート（釣銭用の準備金）を入力<br>② 担当者はログイン中のアカウント名が自動設定されます<br>③「🔓 レジを開ける」を押す<br>これで営業中の売上集計が始まります。',
         helpCloseTitle:'📘 使い方（閉店時）', helpCloseBody:'① 両替や釣銭補充などがあれば「現金入出金」に入力（入金は+、出金は−）<br>② レジ内の現金を実際に数えて「実現金」に入力<br>③ 必要ならメモを入力<br>④「🔒 レジを締める」を押す<br>想定現金との差（過不足）が自動計算されます。' },
-      en:{ title:'💵 Register close', back:'← Manage', loading:'Loading…', openTitle:'🔓 Open register', float:'Opening float (change fund)', staff:'Staff', optional:'optional', openBtn:'🔓 Open register', xTitle:'📋 Current shift (X)', cashSales:'Cash sales', cardSales:'Card/GCash sales', otherSales:'Other sales', expected:'Expected cash', refresh:'Refresh', closeTitle:'🔒 Close register (Z)', cashInOut:'Cash in/out', cioHint:'in + / out −', counted:'Counted cash', memo:'Memo', closeBtn:'🔒 Close register', zTitle:'✅ Register close (Z)', openAt:'Open', closeAt:'Close', overShort:'Over/Short', done:'Done', histTitle:'📖 History', staffTitle:'👤 Sales by staff', thStaff:'Staff', thShifts:'Shifts', thTotal:'Total sales', needCount:'Please enter counted cash', errPrefix:'Error: ', loadErr:'Load error: ',
-        helpOpenTitle:'📘 How to use (opening)', helpOpenBody:'① Enter the opening float (change fund)<br>② Enter staff name (optional)<br>③ Tap "🔓 Open register"<br>This starts tracking sales for the shift.',
+      en:{ title:'💵 Register open/close', back:'← Manage', loading:'Loading…', openTitle:'🔓 Open register', float:'Opening float (change fund)', staff:'Staff', optional:'optional', openBtn:'🔓 Open register', xTitle:'📋 Current shift (X)', cashSales:'Cash sales', cardSales:'Card/GCash sales', otherSales:'Other sales', expected:'Expected cash', refresh:'Refresh', closeTitle:'🔒 Close register (Z)', cashInOut:'Cash in/out', cioHint:'in + / out −', counted:'Counted cash', memo:'Memo', closeBtn:'🔒 Close register', zTitle:'✅ Register close (Z)', openAt:'Open', closeAt:'Close', overShort:'Over/Short', done:'Done', histTitle:'📖 History', staffTitle:'👤 Sales by staff', thStaff:'Staff', thShifts:'Shifts', thTotal:'Total sales', needCount:'Please enter counted cash', errPrefix:'Error: ', loadErr:'Load error: ',
+        helpOpenTitle:'📘 How to use (opening)', helpOpenBody:'① Enter the opening float (change fund)<br>② Staff is set automatically to your logged-in account<br>③ Tap "🔓 Open register"<br>This starts tracking sales for the shift.',
         helpCloseTitle:'📘 How to use (closing)', helpCloseBody:'① If you exchanged cash or added change, enter it under "Cash in/out" (in +, out −)<br>② Count the cash in the drawer and enter it as "Counted cash"<br>③ Add a memo if needed<br>④ Tap "🔒 Close register"<br>The difference from the expected cash (over/short) is calculated automatically.' }
     }, function(){ if(CUR!==null) render(); });
 
