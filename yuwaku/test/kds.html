@@ -172,8 +172,7 @@
     function boot(){
       loadMenu();
       load();
-      setInterval(load, 8000);
-      setInterval(load, 60000);
+      setInterval(load, 8000);   // 旧: 8秒/60秒の二重登録だった重複バグを解消（loadが2倍の頻度で呼ばれていた）
       setInterval(loadMenu, 300000); // メニュー設定（厨房表示ON/OFF）の変更を数分以内に反映
       if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(function(){}); }
     }
