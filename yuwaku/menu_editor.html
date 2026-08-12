@@ -58,12 +58,20 @@
       </div>
       <div class="muted" style="margin:-2px 0 8px;" data-t="enHint">英語欄は空でも保存時に自動翻訳され初期値が入ります（あとで編集可）。</div>
       <div class="fg"><label class="form-label" data-t="lblImg">画像（任意・変更時のみ選択）</label><input id="mFile" type="file" accept="image/*" class="fc" onchange="onFilePicked()">
-        <div style="margin-top:6px;"><button type="button" class="btn-sm" onclick="openImgSearch()" data-t="btnImgSearch">🔍 Google画像検索を開く</button></div>
         <div style="display:flex;gap:6px;margin-top:6px;">
-          <input id="mImgUrl" class="fc" style="flex:1;" placeholder="画像のURLを貼り付け" data-tph="phImgUrl">
-          <button type="button" class="btn-sm" onclick="fetchImgUrl(event)" data-t="btnImgFetch">⬇️ 取得</button>
+          <input id="mImgQuery" class="fc" style="flex:1;" placeholder="検索キーワード（空欄なら商品名で検索）" data-tph="phImgQuery">
+          <button type="button" class="btn-sm" onclick="searchImgs(event)" data-t="btnImgSearch2">🔍 画像検索</button>
         </div>
-        <div id="imgUrlMsg" class="muted" style="margin-top:4px;"></div>
+        <div id="imgSearchMsg" class="muted" style="margin-top:4px;display:none;"></div>
+        <div id="imgResults" style="display:none;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-top:8px;"></div>
+        <details style="margin-top:8px;">
+          <summary class="muted" style="cursor:pointer;" data-t="urlAltTitle">画像のURLを直接指定する場合はこちら</summary>
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            <input id="mImgUrl" class="fc" style="flex:1;" placeholder="画像のURLを貼り付け" data-tph="phImgUrl">
+            <button type="button" class="btn-sm" onclick="fetchImgUrl(event)" data-t="btnImgFetch">⬇️ 取得</button>
+          </div>
+          <div id="imgUrlMsg" class="muted" style="margin-top:4px;display:none;"></div>
+        </details>
         <img id="imgPreview" style="display:none;max-width:110px;max-height:110px;margin-top:6px;border-radius:8px;border:1px solid var(--border);object-fit:cover;">
       </div>
       <div class="form-label" style="margin-top:6px;" data-t="availTitle">⏰ 提供時間帯・タグ</div>
@@ -112,27 +120,49 @@
     var INVENTORY = [];
     var URL_IMG_DATA = null; // URLから取得した画像（{data,type,name}）。ファイル選択時はクリアされる。
 
-    window.onFilePicked = function(){ URL_IMG_DATA = null; document.getElementById('mImgUrl').value=''; hideImgUrlMsg(); document.getElementById('imgPreview').style.display='none'; };
-    window.openImgSearch = function(){
-      var q = document.getElementById('mName').value.trim();
-      var url = 'https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(q || (isEN()?'food':'料理'));
-      window.open(url, '_blank');
-    };
-    function hideImgUrlMsg(){ var m=document.getElementById('imgUrlMsg'); m.style.display='none'; m.innerText=''; }
-    function showImgUrlMsg(text, ok){ var m=document.getElementById('imgUrlMsg'); m.style.display='block'; m.style.color = ok?'#15803d':'#b91c1c'; m.innerText=text; }
+    window.onFilePicked = function(){ URL_IMG_DATA = null; document.getElementById('mImgUrl').value=''; hideMsg('imgUrlMsg'); document.getElementById('imgPreview').style.display='none'; };
+    function hideMsg(id){ var m=document.getElementById(id); m.style.display='none'; m.innerText=''; }
+    function showMsg(id, text, ok){ var m=document.getElementById(id); m.style.display='block'; m.style.color = ok?'#15803d':'#b91c1c'; m.innerText=text; }
+    function _applyFetchedImage(r, msgId){
+      if (!r || !r.success){ showMsg(msgId, I18n.t('imgFetchErr')+((r&&r.error)||''), false); return; }
+      URL_IMG_DATA = { data:r.data, type:r.type, name:r.name };
+      document.getElementById('mFile').value = '';
+      var prev = document.getElementById('imgPreview'); prev.src = 'data:'+r.type+';base64,'+r.data; prev.style.display='inline-block';
+      showMsg(msgId, I18n.t('imgFetchOk'), true);
+    }
     window.fetchImgUrl = function(e){
       var url = document.getElementById('mImgUrl').value.trim();
-      if (!url){ showImgUrlMsg(I18n.t('imgNeedUrl'), false); return; }
+      if (!url){ showMsg('imgUrlMsg', I18n.t('imgNeedUrl'), false); return; }
       var btn = e && e.target; if (btn) btn.disabled = true;
-      showImgUrlMsg(I18n.t('imgFetching'), true);
-      rpc('fetchImageFromUrl',[url]).then(function(r){
+      showMsg('imgUrlMsg', I18n.t('imgFetching'), true);
+      rpc('fetchImageFromUrl',[url]).then(function(r){ if (btn) btn.disabled = false; _applyFetchedImage(r, 'imgUrlMsg'); })
+        .catch(function(e2){ if (btn) btn.disabled=false; showMsg('imgUrlMsg', I18n.t('imgFetchErr')+(e2.message||e2), false); });
+    };
+    window.searchImgs = function(e){
+      var q = document.getElementById('mImgQuery').value.trim() || document.getElementById('mName').value.trim();
+      var grid = document.getElementById('imgResults'); grid.style.display='none'; grid.innerHTML='';
+      if (!q){ showMsg('imgSearchMsg', I18n.t('imgNeedQuery'), false); return; }
+      var btn = e && e.target; if (btn) btn.disabled = true;
+      showMsg('imgSearchMsg', I18n.t('imgSearching'), true);
+      rpc('searchMenuImages',[q]).then(function(r){
         if (btn) btn.disabled = false;
-        if (!r || !r.success){ showImgUrlMsg(I18n.t('imgFetchErr')+((r&&r.error)||''), false); return; }
-        URL_IMG_DATA = { data:r.data, type:r.type, name:r.name };
-        document.getElementById('mFile').value = '';
-        var prev = document.getElementById('imgPreview'); prev.src = 'data:'+r.type+';base64,'+r.data; prev.style.display='inline-block';
-        showImgUrlMsg(I18n.t('imgFetchOk'), true);
-      }).catch(function(e){ if (btn) btn.disabled=false; showImgUrlMsg(I18n.t('imgFetchErr')+(e.message||e), false); });
+        if (!r || !r.success){
+          if (r && r.error==='not_configured') showMsg('imgSearchMsg', I18n.t('imgNotConfigured'), false);
+          else showMsg('imgSearchMsg', I18n.t('imgFetchErr')+((r&&r.error)||''), false);
+          return;
+        }
+        if (!r.items || !r.items.length){ showMsg('imgSearchMsg', I18n.t('imgNoResults'), false); return; }
+        hideMsg('imgSearchMsg');
+        grid.innerHTML = r.items.map(function(it){ return '<img src="'+esc(it.thumbnail)+'" data-url="'+esc(it.url)+'" title="'+esc(it.title)+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:2px solid var(--border);cursor:pointer;" onclick="selectSearchImg(this)" alt="">'; }).join('');
+        grid.style.display='grid';
+      }).catch(function(e2){ if (btn) btn.disabled=false; showMsg('imgSearchMsg', I18n.t('imgFetchErr')+(e2.message||e2), false); });
+    };
+    window.selectSearchImg = function(el){
+      document.querySelectorAll('#imgResults img').forEach(function(im){ im.style.borderColor='var(--border)'; });
+      el.style.borderColor = '#2563eb';
+      showMsg('imgSearchMsg', I18n.t('imgFetching'), true);
+      rpc('fetchImageFromUrl',[el.getAttribute('data-url')]).then(function(r){ _applyFetchedImage(r, 'imgSearchMsg'); })
+        .catch(function(e){ showMsg('imgSearchMsg', I18n.t('imgFetchErr')+(e.message||e), false); });
     };
     // value（送信値・バックエンド照合キー）は常に日本語の在庫名、表示テキストのみ現在の言語に合わせる。
     function renderInvSel(){
@@ -273,7 +303,7 @@
       document.getElementById('mNameEn').value = m['商品名_EN']||'';
       setCatSel('mCatEn','mCatEnNew', m['カテゴリ_EN']||'');
       document.getElementById('mFile').value = '';
-      URL_IMG_DATA = null; document.getElementById('mImgUrl').value=''; hideImgUrlMsg(); document.getElementById('imgPreview').style.display='none';
+      URL_IMG_DATA = null; document.getElementById('mImgUrl').value=''; document.getElementById('mImgQuery').value=''; hideMsg('imgUrlMsg'); hideMsg('imgSearchMsg'); var ir=document.getElementById('imgResults'); ir.innerHTML=''; ir.style.display='none'; document.getElementById('imgPreview').style.display='none';
       document.getElementById('mSvcStart').value = m['提供開始']||'';
       document.getElementById('mSvcEnd').value = m['提供終了']||'';
       document.getElementById('mAllergens').value = m['アレルゲン']||'';
@@ -284,7 +314,7 @@
       renderOpts();
       window.scrollTo({top:0,behavior:'smooth'});
     };
-    window.clearForm = function(){ ['oldName','mName','mPrice','mNameEn','mFile','mSvcStart','mSvcEnd','mAllergens'].forEach(function(id){ document.getElementById(id).value=''; }); setCatSel('mCat','mCatNew',''); setCatSel('mCatEn','mCatEnNew',''); document.getElementById('mStatus').value='販売中'; document.getElementById('mSpicy').value='0'; document.getElementById('mKitchen').checked=true; document.getElementById('mLinkInv').value=''; curOpts=[]; renderOpts(); document.getElementById('msg').style.display='none'; URL_IMG_DATA=null; document.getElementById('mImgUrl').value=''; hideImgUrlMsg(); document.getElementById('imgPreview').style.display='none'; };
+    window.clearForm = function(){ ['oldName','mName','mPrice','mNameEn','mFile','mSvcStart','mSvcEnd','mAllergens'].forEach(function(id){ document.getElementById(id).value=''; }); setCatSel('mCat','mCatNew',''); setCatSel('mCatEn','mCatEnNew',''); document.getElementById('mStatus').value='販売中'; document.getElementById('mSpicy').value='0'; document.getElementById('mKitchen').checked=true; document.getElementById('mLinkInv').value=''; curOpts=[]; renderOpts(); document.getElementById('msg').style.display='none'; URL_IMG_DATA=null; document.getElementById('mImgUrl').value=''; document.getElementById('mImgQuery').value=''; hideMsg('imgUrlMsg'); hideMsg('imgSearchMsg'); var ir=document.getElementById('imgResults'); ir.innerHTML=''; ir.style.display='none'; document.getElementById('imgPreview').style.display='none'; };
     function msg(text, ok){ var m=document.getElementById('msg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
 
     window.save = function(){
@@ -320,9 +350,9 @@
     I18n.init({
       ja:{ title:'🍽️ メニュー編集', back:'← 管理へ', formTitle:'➕ 商品の追加 / 編集', lblName:'商品名', lblPrice:'価格', lblCat:'カテゴリ', lblStatus:'ステータス', onSale:'販売中', stopped:'販売停止', lblNameEn:'商品名（English）', lblCatEn:'カテゴリ（English）', phAuto:'空欄なら自動翻訳', catUnset:'（未選択）', catNew:'＋ 新規カテゴリ…', phNewCat:'新規カテゴリ名', optTitle:'🎛️ オプション（サイズ・トッピング等）', optHint:'例）サイズ＝単一選択、トッピング＝複数選択。追加料金は差額（+のみ）。', addGroup:'＋ オプショングループ追加', phGroup:'グループ名（例: サイズ）', phChoice:'選択肢（例: 大盛り）', single:'単一選択', multi:'複数選択', required:'必須', addChoice:'選択肢を追加', enHint:'英語欄は空でも保存時に自動翻訳され初期値が入ります（あとで編集可）。', lblImg:'画像（任意・変更時のみ選択）', save:'💾 保存', clear:'クリア', listTitle:'🍽️ 商品一覧', loading:'読み込み中…', noItems:'商品がありません', edit:'編集', del:'削除', delConfirm:'この商品を削除しますか？', deleted:'✅ 削除しました', needName:'商品名を入力してください', saved:'✅ 保存しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ', allCat:'すべて', reorderHint:'▲▼ で並び替え（客の注文画面の表示順に反映）。カテゴリタブで絞り込めます。', orderSaved:'✅ 並び順を保存しました', availTitle:'⏰ 提供時間帯・タグ', availHint:'提供時間は空欄なら常時提供。深夜跨ぎ（例 22:00〜02:00）も可。', lblSvcStart:'提供開始', lblSvcEnd:'提供終了', lblAllerg:'アレルゲン（任意・カンマ区切り）', phAllerg:'例: 卵, 小麦, えび', lblSpicy:'辛さ', spicy0:'なし', soldOut:'本日売切', markSold:'売切にする', markAvail:'売切解除', lblKitchen:'🍳 キッチン画面に表示する（ドリンク等、調理不要な商品はオフ）', kdsOn:'🍳キッチン表示ON', kdsOff:'🚫🍳キッチン表示OFF',
         lblLinkInv:'🔗 在庫紐づけ（任意）', linkInvNone:'（紐づけなし）', linkInvHint:'ドリンク等、注文1点で在庫を1点そのまま自動減算したい商品に設定します（レシピ不要）。複数材料を消費するフード等は「レシピ・原価」ページで設定してください。',
-        btnImgSearch:'🔍 Google画像検索を開く', phImgUrl:'画像のURLを貼り付け', btnImgFetch:'⬇️ 取得', imgNeedUrl:'URLを入力してください', imgFetching:'取得中…', imgFetchOk:'✅ 画像を取得しました（保存を押すと登録されます）', imgFetchErr:'取得エラー: ' },
+        btnImgSearch2:'🔍 画像検索', phImgQuery:'検索キーワード（空欄なら商品名で検索）', urlAltTitle:'画像のURLを直接指定する場合はこちら', phImgUrl:'画像のURLを貼り付け', btnImgFetch:'⬇️ 取得', imgNeedUrl:'URLを入力してください', imgNeedQuery:'検索キーワードを入力してください', imgSearching:'検索中…', imgNoResults:'画像が見つかりませんでした', imgNotConfigured:'画像検索が未設定です。設定画面の「🔍 Google画像検索」でAPIキーを登録してください。', imgFetching:'取得中…', imgFetchOk:'✅ 画像を取得しました（保存を押すと登録されます）', imgFetchErr:'取得エラー: ' },
       en:{ title:'🍽️ Menu Editor', back:'← Manage', formTitle:'➕ Add / Edit item', lblName:'Name', lblPrice:'Price', lblCat:'Category', lblStatus:'Status', onSale:'On sale', stopped:'Stopped', lblNameEn:'Name (English)', lblCatEn:'Category (English)', phAuto:'Auto-translated if blank', catUnset:'(none)', catNew:'＋ New category…', phNewCat:'New category name', optTitle:'🎛️ Options (size, toppings, etc.)', optHint:'e.g. Size = single choice, Toppings = multiple. Extra charge = price delta (+ only).', addGroup:'＋ Add option group', phGroup:'Group name (e.g. Size)', phChoice:'Choice (e.g. Large)', single:'Single', multi:'Multiple', required:'Required', addChoice:'Add choice', enHint:'English fields are auto-translated on save if left blank (editable later).', lblImg:'Image (optional, only to change)', save:'💾 Save', clear:'Clear', listTitle:'🍽️ Menu items', loading:'Loading…', noItems:'No items', edit:'Edit', del:'Delete', delConfirm:'Delete this item?', deleted:'✅ Deleted', needName:'Please enter an item name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ', allCat:'All', reorderHint:'Use ▲▼ to reorder (reflected in the customer order screen). Filter by category tabs.', orderSaved:'✅ Order saved', availTitle:'⏰ Service hours & tags', availHint:'Leave times blank for always-available. Overnight (e.g. 22:00–02:00) supported.', lblSvcStart:'Serve from', lblSvcEnd:'Serve until', lblAllerg:'Allergens (optional, comma-separated)', phAllerg:'e.g. egg, wheat, shrimp', lblSpicy:'Spiciness', spicy0:'None', soldOut:'Sold out today', markSold:'Mark sold out', markAvail:'Undo sold out', lblKitchen:'🍳 Show on kitchen display (turn off for drinks etc. that need no cooking)', kdsOn:'🍳Kitchen: shown', kdsOff:'🚫🍳Kitchen: hidden',
-        btnImgSearch:'🔍 Open Google Image Search', phImgUrl:'Paste image URL', btnImgFetch:'⬇️ Fetch', imgNeedUrl:'Please enter a URL', imgFetching:'Fetching…', imgFetchOk:'✅ Image fetched (press Save to register)', imgFetchErr:'Fetch error: ',
+        btnImgSearch2:'🔍 Search images', phImgQuery:'Search keywords (uses item name if blank)', urlAltTitle:'Or enter an image URL directly', phImgUrl:'Paste image URL', btnImgFetch:'⬇️ Fetch', imgNeedUrl:'Please enter a URL', imgNeedQuery:'Please enter search keywords', imgSearching:'Searching…', imgNoResults:'No images found', imgNotConfigured:'Image search is not set up yet. Add an API key under "🔍 Google Image Search" in Settings.', imgFetching:'Fetching…', imgFetchOk:'✅ Image fetched (press Save to register)', imgFetchErr:'Fetch error: ',
         lblLinkInv:'🔗 Linked inventory item (optional)', linkInvNone:'(No link)', linkInvHint:'Use this for items where 1 order = 1 inventory unit deducted directly (e.g. drinks) — no recipe needed. For food items that consume multiple ingredients, use the Recipes page instead.' }
     }, function(){ renderInvSel(); if(__loaded) render(); });
   </script>
