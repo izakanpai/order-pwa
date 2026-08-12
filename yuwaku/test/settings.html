@@ -380,8 +380,9 @@
       $('reportMonthlyHour').value = (d.reportMonthlyHour!==undefined&&d.reportMonthlyHour!=='')?d.reportMonthlyHour:'';
       $('reportLang').value = (d.reportLang==='en'||d.reportLang==='both')?d.reportLang:'ja';
     }).catch(function(){});
-    rpc('getPaymongoKeyStatus',[]).then(function(s){ if(s) setBadge('payBadge', s.configured); }).catch(function(){});
-    rpc('getGeminiKeyStatus',[]).then(function(s){ if(s) setBadge('gemBadge', s.configured); }).catch(function(){});
+    var payConfigured = false, gemConfigured = false;
+    rpc('getPaymongoKeyStatus',[]).then(function(s){ if(s){ payConfigured = !!s.configured; setBadge('payBadge', payConfigured); } }).catch(function(){});
+    rpc('getGeminiKeyStatus',[]).then(function(s){ if(s){ gemConfigured = !!s.configured; setBadge('gemBadge', gemConfigured); } }).catch(function(){});
 
     I18n.init({
       ja:{ title:'⚙️ 設定', back:'← 管理へ', save:'💾 保存', status:'状態:', unset:'未設定', set:'設定済', phPaste:'貼り付けて保存', close:'閉じる',
@@ -414,7 +415,7 @@
         repTitle:'📧 Scheduled reports (auto email)', repDaily:'Daily report (every day)', repWeekly:'Weekly report', repMonthly:'Monthly report', repEmail:'Recipient emails (multiple, comma/newline separated)', repHour:'Send time (0-23)', repWeekDay:'Send day', repMonthDay:'Send day (1–28)', dow0:'Sun', dow1:'Mon', dow2:'Tue', dow3:'Wed', dow4:'Thu', dow5:'Fri', dow6:'Sat', repSave:'💾 Save & schedule', repTestD:'✉️ Daily test', repTestW:'✉️ Weekly test', repTestM:'✉️ Monthly test',
         repLang:'Output language', repLangJa:'Japanese', repLangEn:'English', repLangBoth:'Japanese + English (both)',
         saved:'✅ Saved', savedSched:'✅ Saved & scheduled', uploaded:'✅ Uploaded', pickImg:'Please select an image', needKey:'Please enter a key', noGeoDev:'This device does not support location', gotLoc:'Location acquired. Please press Save.', noLoc:'Could not get location. Please enter manually.', sending:'Sending…', testSent:'✅ Test sent. Please check your inbox', sendFail:'Could not send', scopeReauth:'You may need to re-authorize (scopes)', errPrefix:'Error: ' }
-    }, function(){ rpc('getPaymongoKeyStatus',[]).then(function(s){ if(s) setBadge('payBadge', s.configured); }).catch(function(){}); rpc('getGeminiKeyStatus',[]).then(function(s){ if(s) setBadge('gemBadge', s.configured); }).catch(function(){}); });
+    }, function(){ setBadge('payBadge', payConfigured); setBadge('gemBadge', gemConfigured); });
   </script>
 </body>
 </html>
