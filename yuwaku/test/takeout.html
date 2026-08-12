@@ -119,7 +119,8 @@
   <script>
     var MENU = [], SETTINGS = {}, PAYMONGO = false;
     var cart = {}, curCat = null, payMethod = 'card';
-    var pendingOrder = null, pollTimer = null, takeoutCoupon = null;
+    var pendingOrder = null, pollTimer = null, takeoutCoupon = null, payPollCount = 0;
+    var PAY_POLL_MAX = 150; // 4秒間隔×150回＝約10分でタイムアウトし、決済確認ポーリングを打ち切る（外部決済APIへの無期限リトライを防止）
     var lang = (localStorage.getItem('lang') || '').match(/^(ja|en)$/) ? localStorage.getItem('lang') : '';
 
     var T = {
@@ -129,6 +130,7 @@
             needName:'お名前を入力してください', empty:'カートが空です', thanks:'ご注文ありがとうございます！',
             codeHint:'この番号を店頭でお伝えください', payAtStore:'店頭でお支払いください', paid:'お支払い済み',
             newOrder:'新しい注文', waiting:'決済確認中…支払い画面で完了してください', payFail:'決済が確認できませんでした。もう一度お試しください。',
+            payTimeout:'決済確認がタイムアウトしました。お支払い済みの場合は店舗にご連絡ください。',
             confirmPay:'支払い完了を確認', opening:'決済画面を開いています…', pickupLabel:'受取', totalLabel:'合計',
             coupon:'クーポン（任意）', apply:'適用', cpApplied:'適用しました', cpNotfound:'コードが見つかりません', cpInactive:'利用できません', cpExpired:'期限切れ', cpLimit:'利用上限に達しています', cpMin:'最低注文額に達していません', cpInvalid:'無効なコード', discountLabel:'割引', loading:'読み込み中…', loadErr:'メニューを取得できませんでした' },
       en: { cart:'Cart', order:'Checkout', pickup:'Pickup details', name:'Name *', phone:'Phone (optional)', pickupT:'Pickup time',
@@ -137,6 +139,7 @@
             needName:'Please enter your name', empty:'Cart is empty', thanks:'Thank you for your order!',
             codeHint:'Show this number at the counter', payAtStore:'Please pay at the counter', paid:'Paid',
             newOrder:'New order', waiting:'Confirming payment… complete it in the payment window', payFail:'Payment not confirmed. Please try again.',
+            payTimeout:'Payment confirmation timed out. If you already paid, please contact the shop.',
             confirmPay:'I have paid', opening:'Opening payment window…', pickupLabel:'Pickup', totalLabel:'Total',
             coupon:'Coupon (optional)', apply:'Apply', cpApplied:'Applied', cpNotfound:'Code not found', cpInactive:'Not available', cpExpired:'Expired', cpLimit:'Usage limit reached', cpMin:'Minimum order not met', cpInvalid:'Invalid code', discountLabel:'Discount', loading:'Loading…', loadErr:'Could not load the menu' }
     };
@@ -266,11 +269,15 @@
         document.getElementById('coConfirm').onclick = checkPayment;
         showAlert(t.waiting, true);
         if (pollTimer) clearInterval(pollTimer);
+        payPollCount = 0;
         pollTimer = setInterval(checkPayment, 4000);
       }).catch(function(e){ btn.disabled=false; showAlert(String(e.message||e), false); });
     }
     function checkPayment(){
       if (!pendingOrder) return;
+      // 決済確認ポーリングは上限回数（約10分）で打ち切る。外部決済APIへの無期限リトライを防止するための保険。
+      payPollCount++;
+      if (payPollCount > PAY_POLL_MAX) { if (pollTimer){ clearInterval(pollTimer); pollTimer=null; } showAlert(tt().payTimeout, false); return; }
       API.post('checkoutStatus', { checkoutId: pendingOrder.checkoutId }).then(function(r){
         var st = r.data || {};
         if (st && (st.paymentStatus==='paid' || st.status==='paid')){
