@@ -70,6 +70,7 @@ var API_URL = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
 var device=null, server=null, writeChar=null;
 var looping=false, busy=false, timer=null, wakeLock=null;
 var cntOk=0, cntErr=0;
+var POLL_MS=1200; // 印刷キュー確認間隔（設定画面「印刷ブリッジ」カードで変更可能。既定1.2秒）
 var logoImg=null; // レシートロゴ（設定画面でアップロード）
 var logoScale=100; // ロゴ印字サイズ（58mm=100%）
 
@@ -138,9 +139,19 @@ async function startLoop(){
   document.getElementById('btnStop').disabled=false;
   await requestWake();
   await loadLogo(); // レシートロゴを取得（設定画面のもの）
-  setStat(tt('watching'),'run'); log('監視開始');
+  await loadPollInterval(); // キュー確認間隔（設定画面で変更可能）を取得
+  setStat(tt('watching'),'run'); log('監視開始 (interval='+POLL_MS+'ms)');
   tick();
-  timer=setInterval(tick, 1200);
+  timer=setInterval(tick, POLL_MS);
+}
+// 設定画面「印刷ブリッジ」カードの間隔（ミリ秒）を取得。未設定/取得失敗時は既定値1200msのまま。
+async function loadPollInterval(){
+  try{
+    var res = await fetch(API_URL+'?api=1',{ method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'getSettings' }) });
+    var j = await res.json();
+    var ms = j && j.ok && j.data ? Number(j.data.bridgePollMs) : NaN;
+    if(!isNaN(ms) && ms >= 500 && ms <= 60000) POLL_MS = ms;
+  }catch(e){}
 }
 function stopLoop(){
   looping=false; if(timer){ clearInterval(timer); timer=null; }

@@ -174,6 +174,14 @@
       <div class="st" id="st-report"></div>
     </div>
 
+    <div class="card">
+      <div class="card-title" data-t="bridgeTitle">🖶 印刷ブリッジ（プリンタ連携）</div>
+      <div class="fg" style="max-width:220px;"><label class="form-label" data-t="bridgeInterval">キュー確認間隔（秒）</label><input id="bridgePollSec" type="number" min="1" max="60" step="0.1" class="fc" placeholder="1.2"></div>
+      <div class="hint" data-t="bridgeHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">印刷キュー（bridge.html）がサーバーへ確認しにいく頻度です。短いほど印刷が早く始まりますが、サーバー負荷は増えます。既定値は1.2秒です。</div>
+      <button class="btn" onclick="saveBridgePoll()" data-t="save">💾 保存</button>
+      <div class="st" id="st-bridge"></div>
+    </div>
+
   </div>
 
   <!-- Table QR Codes Modal -->
@@ -344,6 +352,12 @@
     window.saveLoy = function(){ rpc('saveSettings',[{ loyaltyEnabled:$('loyaltyEnabled').checked?'on':'', loyaltyEarnRate:Number($('loyaltyEarnRate').value)||20, loyaltyRedeemValue:Number($('loyaltyRedeemValue').value)||1 }]).then(function(){ st('st-loy',I18n.t('saved'), true); }).catch(function(e){ st('st-loy',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.saveReport = function(){ var emails=($('reportEmail').value||'').split(/[\s,;]+/).map(function(x){return x.trim();}).filter(Boolean).join(','); rpc('saveReportSettings',[emails, $('reportHour').value, $('reportEnabled').checked, $('reportWeekly').checked, $('reportMonthly').checked, $('reportWeeklyDay').value, $('reportWeeklyHour').value, $('reportMonthlyDay').value, $('reportMonthlyHour').value, $('reportLang').value]).then(function(r){ if(r&&r.success){ st('st-report',I18n.t('savedSched'), true); } else { st('st-report',I18n.t('errPrefix')+((r&&r.error)||I18n.t('scopeReauth')), false); } }).catch(function(e){ st('st-report',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.testReport = function(kind){ st('st-report',I18n.t('sending'), true); rpc('sendTestReport',[kind||'daily']).then(function(r){ if(r&&r.success){ st('st-report',I18n.t('testSent'), true); } else { st('st-report',I18n.t('errPrefix')+((r&&r.error)||I18n.t('sendFail')), false); } }).catch(function(e){ st('st-report',I18n.t('errPrefix')+(e.message||e), false); }); };
+    window.saveBridgePoll = function(){
+      var sec = Number($('bridgePollSec').value) || 1.2;
+      sec = Math.min(60, Math.max(0.5, sec));   // 0.5〜60秒の範囲にクランプ（極端な値によるサーバー過負荷／印刷遅延を防止）
+      $('bridgePollSec').value = sec;
+      rpc('saveSettings',[{ bridgePollMs: Math.round(sec * 1000) }]).then(function(){ st('st-bridge',I18n.t('saved'), true); }).catch(function(e){ st('st-bridge',I18n.t('errPrefix')+(e.message||e), false); });
+    };
     function setBadge(id, on){ var b=$(id); b.className='badge '+(on?'on':'offb'); b.innerText=on?I18n.t('set'):I18n.t('unset'); b.removeAttribute('data-t'); }
 
     // ---- load ----
@@ -379,6 +393,7 @@
       $('reportMonthlyDay').value = (d.reportMonthlyDay!==undefined&&d.reportMonthlyDay!=='')?d.reportMonthlyDay:'1';
       $('reportMonthlyHour').value = (d.reportMonthlyHour!==undefined&&d.reportMonthlyHour!=='')?d.reportMonthlyHour:'';
       $('reportLang').value = (d.reportLang==='en'||d.reportLang==='both')?d.reportLang:'ja';
+      $('bridgePollSec').value = (d.bridgePollMs!==undefined && d.bridgePollMs!=='') ? (Number(d.bridgePollMs)/1000) : 1.2;
     }).catch(function(){});
     var payConfigured = false, gemConfigured = false;
     rpc('getPaymongoKeyStatus',[]).then(function(s){ if(s){ payConfigured = !!s.configured; setBadge('payBadge', payConfigured); } }).catch(function(){});
@@ -399,6 +414,7 @@
         loyTitle:'🎁 ロイヤリティ（ポイント）', loyEnable:'有効にする', loyEarn:'付与レート（何円で1pt）', loyRedeem:'利用価値（1pt=何円）',
         repTitle:'📧 定期レポート（自動メール）', repDaily:'日次日報（毎日）', repWeekly:'週次レポート', repMonthly:'月次レポート', repEmail:'送信先メール（複数可・カンマか改行区切り）', repHour:'送信時刻（0-23時）', repWeekDay:'送信曜日', repMonthDay:'送信日（1〜28）', dow0:'日曜', dow1:'月曜', dow2:'火曜', dow3:'水曜', dow4:'木曜', dow5:'金曜', dow6:'土曜', repSave:'💾 保存＆スケジュール', repTestD:'✉️ 日次テスト', repTestW:'✉️ 週次テスト', repTestM:'✉️ 月次テスト',
         repLang:'出力言語', repLangJa:'日本語', repLangEn:'英語', repLangBoth:'日本語＋英語（両方）',
+        bridgeTitle:'🖶 印刷ブリッジ（プリンタ連携）', bridgeInterval:'キュー確認間隔（秒）', bridgeHint:'印刷キュー（bridge.html）がサーバーへ確認しにいく頻度です。短いほど印刷が早く始まりますが、サーバー負荷は増えます。既定値は1.2秒です。',
         saved:'✅ 保存しました', savedSched:'✅ 保存＆スケジュール設定しました', uploaded:'✅ アップロードしました', pickImg:'画像を選択してください', needKey:'キーを入力してください', noGeoDev:'この端末は位置情報に対応していません', gotLoc:'現在地を取得しました。「保存」を押してください。', noLoc:'位置情報を取得できませんでした。手動入力してください。', sending:'送信中…', testSent:'✅ テスト送信しました。受信箱をご確認ください', sendFail:'送信できませんでした', scopeReauth:'認証(スコープ)の再承認が必要かもしれません', errPrefix:'エラー: ' },
       en:{ title:'⚙️ Settings', back:'← Manage', save:'💾 Save', status:'Status:', unset:'Not set', set:'Set', phPaste:'Paste and save', close:'Close',
         qrCardTitle:'📱 Table QR Codes', qrCardDesc:'Print and place these QR codes on each table. Customers scan to open the order screen locked to their table.', qrShowBtn:'📱 Show QR Codes', qrModalTitle:'Table QR Codes', qrModalSub:'Scan to open the order screen', qrPrintBtn:'🖨️ Print', qrNoTables:'No tables are set up yet. Please save the table count first.',
@@ -414,6 +430,7 @@
         loyTitle:'🎁 Loyalty (points)', loyEnable:'Enable', loyEarn:'Earn rate (amount per 1pt)', loyRedeem:'Redeem value (1pt = amount)',
         repTitle:'📧 Scheduled reports (auto email)', repDaily:'Daily report (every day)', repWeekly:'Weekly report', repMonthly:'Monthly report', repEmail:'Recipient emails (multiple, comma/newline separated)', repHour:'Send time (0-23)', repWeekDay:'Send day', repMonthDay:'Send day (1–28)', dow0:'Sun', dow1:'Mon', dow2:'Tue', dow3:'Wed', dow4:'Thu', dow5:'Fri', dow6:'Sat', repSave:'💾 Save & schedule', repTestD:'✉️ Daily test', repTestW:'✉️ Weekly test', repTestM:'✉️ Monthly test',
         repLang:'Output language', repLangJa:'Japanese', repLangEn:'English', repLangBoth:'Japanese + English (both)',
+        bridgeTitle:'🖶 Print bridge (printer connection)', bridgeInterval:'Queue check interval (sec)', bridgeHint:'How often the print bridge (bridge.html) checks the server for print jobs. Shorter = faster printing but more server load. Default is 1.2 seconds.',
         saved:'✅ Saved', savedSched:'✅ Saved & scheduled', uploaded:'✅ Uploaded', pickImg:'Please select an image', needKey:'Please enter a key', noGeoDev:'This device does not support location', gotLoc:'Location acquired. Please press Save.', noLoc:'Could not get location. Please enter manually.', sending:'Sending…', testSent:'✅ Test sent. Please check your inbox', sendFail:'Could not send', scopeReauth:'You may need to re-authorize (scopes)', errPrefix:'Error: ' }
     }, function(){ setBadge('payBadge', payConfigured); setBadge('gemBadge', gemConfigured); });
   </script>
