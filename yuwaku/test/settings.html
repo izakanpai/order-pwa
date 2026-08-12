@@ -98,10 +98,10 @@
         </div>
         <div class="fg"><label class="form-label" data-t="defLang">既定言語</label><select id="defaultLang" class="fc"><option value="en">English</option><option value="ja">日本語</option></select></div>
         <div class="fg"><label class="form-label" data-t="accent">アクセント色</label><input id="accentColor" type="color" class="fc" style="height:44px;"></div>
-        <div class="fg"><label class="form-label" data-t="bizCutoff">営業日切替時刻</label><input id="bizDayCutoffHour" type="number" min="0" max="11" class="fc" placeholder="0"></div>
+        <div class="fg"><label class="form-label" data-t="bizCutoff">営業日切替時刻</label><input id="bizDayCutoff" type="time" class="fc" step="60"></div>
       </div>
       <div class="form-hint" data-t="chargesHint" style="margin:6px 0 10px;">チェックなし＝外税（表示価格に加算）。チェックあり＝内税（表示価格に含む）。一般的には税＝内税、サービス料＝外税です。</div>
-      <div class="form-hint" data-t="bizCutoffHint" style="margin:0 0 10px;">深夜営業の場合に設定してください。例：2を設定すると、午前2時までの売上は前日の営業日として日報・週報・月報・売上集計に計上されます。0＝通常どおり午前0時で区切り。</div>
+      <div class="form-hint" data-t="bizCutoffHint" style="margin:0 0 10px;">深夜営業の場合に設定してください。例：2:30を設定すると、午前2時30分までの売上は前日の営業日として日報・週報・月報・売上集計に計上されます。0:00＝通常どおり午前0時で区切り。指定できるのは0:00〜11:59の範囲です（それ以外は0:00として扱われます）。</div>
       <button class="btn" onclick="saveLocale()" data-t="save">💾 保存</button>
       <div class="st" id="st-locale"></div>
     </div>
@@ -149,19 +149,20 @@
       <div class="fg"><label class="form-label" data-t="repEmail">送信先メール（複数可・カンマか改行区切り）</label><textarea id="reportEmail" class="fc" rows="2" placeholder="a@example.com, b@example.com"></textarea></div>
 
       <label class="chk" style="display:block;margin:10px 0 4px;"><input type="checkbox" id="reportEnabled"><span data-t="repDaily">日次日報（毎日）</span></label>
-      <div class="fg" style="max-width:200px;"><label class="form-label" data-t="repHour">送信時刻（0-23時）</label><input id="reportHour" type="number" min="0" max="23" class="fc"></div>
+      <div class="fg" style="max-width:200px;"><label class="form-label" data-t="repHour">送信時刻</label><input id="reportTime" type="time" class="fc" step="60"></div>
 
       <label class="chk" style="display:block;margin:12px 0 4px;"><input type="checkbox" id="reportWeekly"><span data-t="repWeekly">週次レポート</span></label>
       <div class="grid2">
         <div class="fg"><label class="form-label" data-t="repWeekDay">送信曜日</label><select id="reportWeeklyDay" class="fc"><option value="0" data-t="dow0">日曜</option><option value="1" data-t="dow1">月曜</option><option value="2" data-t="dow2">火曜</option><option value="3" data-t="dow3">水曜</option><option value="4" data-t="dow4">木曜</option><option value="5" data-t="dow5">金曜</option><option value="6" data-t="dow6">土曜</option></select></div>
-        <div class="fg"><label class="form-label" data-t="repHour">送信時刻（0-23時）</label><input id="reportWeeklyHour" type="number" min="0" max="23" class="fc"></div>
+        <div class="fg"><label class="form-label" data-t="repHour">送信時刻</label><input id="reportWeeklyTime" type="time" class="fc" step="60"></div>
       </div>
 
       <label class="chk" style="display:block;margin:12px 0 4px;"><input type="checkbox" id="reportMonthly"><span data-t="repMonthly">月次レポート</span></label>
       <div class="grid2">
         <div class="fg"><label class="form-label" data-t="repMonthDay">送信日（1〜28）</label><input id="reportMonthlyDay" type="number" min="1" max="28" class="fc"></div>
-        <div class="fg"><label class="form-label" data-t="repHour">送信時刻（0-23時）</label><input id="reportMonthlyHour" type="number" min="0" max="23" class="fc"></div>
+        <div class="fg"><label class="form-label" data-t="repHour">送信時刻</label><input id="reportMonthlyTime" type="time" class="fc" step="60"></div>
       </div>
+      <div class="form-hint" style="margin:6px 0 0;">Apps Scriptの仕様上、実際の送信は指定時刻から最大15分程度ずれる場合があります。</div>
 
       <div class="fg" style="max-width:220px;margin-top:12px;"><label class="form-label" data-t="repLang">出力言語</label><select id="reportLang" class="fc"><option value="ja" data-t="repLangJa">日本語</option><option value="en" data-t="repLangEn">英語</option><option value="both" data-t="repLangBoth">日本語＋英語（両方）</option></select></div>
 
@@ -341,7 +342,11 @@
       $('logoPrev').src=''; $('logoPrev').style.display='none'; $('logoFile').value='';
       rpc('saveReceiptLogo',['']).then(function(){ st('st-shop', I18n.t('saved'), true); }).catch(function(e){ st('st-shop', I18n.t('errPrefix')+(e.message||e), false); });
     };
-    window.saveLocale = function(){ rpc('saveSettings',[{ currencyCode:$('currencyCode').value, currencySymbol:$('currencySymbol').value, serviceRate:$('serviceRate').value, taxRate:$('taxRate').value, serviceInclusive:$('serviceInclusive').checked?'true':'false', taxInclusive:$('taxInclusive').checked?'true':'false', defaultLang:$('defaultLang').value, accentColor:$('accentColor').value, bizDayCutoffHour:Number($('bizDayCutoffHour').value)||0 }]).then(function(){ st('st-locale',I18n.t('saved'), true); }).catch(function(e){ st('st-locale',I18n.t('errPrefix')+(e.message||e), false); }); };
+    // "HH:MM" 形式のtime inputから[時,分]を取り出す（未入力なら[0,0]）。
+    function _splitTime(v){ var m=/^(\d{1,2}):(\d{2})$/.exec(v||''); return m? [Number(m[1]), Number(m[2])] : [0,0]; }
+    // 時・分（数値）からtime input用の"HH:MM"文字列を作る。
+    function _fmtTime(h,m){ h=parseInt(h,10)||0; m=parseInt(m,10)||0; return (h<10?'0':'')+h+':'+(m<10?'0':'')+m; }
+    window.saveLocale = function(){ var bc=_splitTime($('bizDayCutoff').value); rpc('saveSettings',[{ currencyCode:$('currencyCode').value, currencySymbol:$('currencySymbol').value, serviceRate:$('serviceRate').value, taxRate:$('taxRate').value, serviceInclusive:$('serviceInclusive').checked?'true':'false', taxInclusive:$('taxInclusive').checked?'true':'false', defaultLang:$('defaultLang').value, accentColor:$('accentColor').value, bizDayCutoffHour:bc[0], bizDayCutoffMin:bc[1] }]).then(function(){ st('st-locale',I18n.t('saved'), true); }).catch(function(e){ st('st-locale',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.savePayKey = function(){ var k=$('payKey').value.trim(); if(!k){ st('st-pay',I18n.t('needKey'), false); return; } rpc('savePaymongoKey',[k]).then(function(){ $('payKey').value=''; st('st-pay',I18n.t('saved'), true); return rpc('getPaymongoKeyStatus',[]); }).then(function(s){ if(s) setBadge('payBadge', s.configured); }).catch(function(e){ st('st-pay',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.saveGemKey = function(){ var k=$('gemKey').value.trim(); if(!k){ st('st-gem',I18n.t('needKey'), false); return; } rpc('saveGeminiKey',[k]).then(function(){ $('gemKey').value=''; st('st-gem',I18n.t('saved'), true); return rpc('getGeminiKeyStatus',[]); }).then(function(s){ if(s) setBadge('gemBadge', s.configured); }).catch(function(e){ st('st-gem',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.getLoc = function(){
@@ -350,7 +355,11 @@
     };
     window.saveGeo = function(){ rpc('saveSettings',[{ storeLat:$('storeLat').value, storeLng:$('storeLng').value, storeRadius:Number($('storeRadius').value)||0 }]).then(function(){ st('st-geo',I18n.t('saved'), true); }).catch(function(e){ st('st-geo',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.saveLoy = function(){ rpc('saveSettings',[{ loyaltyEnabled:$('loyaltyEnabled').checked?'on':'', loyaltyEarnRate:Number($('loyaltyEarnRate').value)||20, loyaltyRedeemValue:Number($('loyaltyRedeemValue').value)||1 }]).then(function(){ st('st-loy',I18n.t('saved'), true); }).catch(function(e){ st('st-loy',I18n.t('errPrefix')+(e.message||e), false); }); };
-    window.saveReport = function(){ var emails=($('reportEmail').value||'').split(/[\s,;]+/).map(function(x){return x.trim();}).filter(Boolean).join(','); rpc('saveReportSettings',[emails, $('reportHour').value, $('reportEnabled').checked, $('reportWeekly').checked, $('reportMonthly').checked, $('reportWeeklyDay').value, $('reportWeeklyHour').value, $('reportMonthlyDay').value, $('reportMonthlyHour').value, $('reportLang').value]).then(function(r){ if(r&&r.success){ st('st-report',I18n.t('savedSched'), true); } else { st('st-report',I18n.t('errPrefix')+((r&&r.error)||I18n.t('scopeReauth')), false); } }).catch(function(e){ st('st-report',I18n.t('errPrefix')+(e.message||e), false); }); };
+    window.saveReport = function(){
+      var emails=($('reportEmail').value||'').split(/[\s,;]+/).map(function(x){return x.trim();}).filter(Boolean).join(',');
+      var dt=_splitTime($('reportTime').value), wt=_splitTime($('reportWeeklyTime').value), mt=_splitTime($('reportMonthlyTime').value);
+      rpc('saveReportSettings',[emails, dt[0], dt[1], $('reportEnabled').checked, $('reportWeekly').checked, $('reportMonthly').checked, $('reportWeeklyDay').value, wt[0], wt[1], $('reportMonthlyDay').value, mt[0], mt[1], $('reportLang').value]).then(function(r){ if(r&&r.success){ st('st-report',I18n.t('savedSched'), true); } else { st('st-report',I18n.t('errPrefix')+((r&&r.error)||I18n.t('scopeReauth')), false); } }).catch(function(e){ st('st-report',I18n.t('errPrefix')+(e.message||e), false); });
+    };
     window.testReport = function(kind){ st('st-report',I18n.t('sending'), true); rpc('sendTestReport',[kind||'daily']).then(function(r){ if(r&&r.success){ st('st-report',I18n.t('testSent'), true); } else { st('st-report',I18n.t('errPrefix')+((r&&r.error)||I18n.t('sendFail')), false); } }).catch(function(e){ st('st-report',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.saveBridgePoll = function(){
       var sec = Number($('bridgePollSec').value) || 1.2;
@@ -387,18 +396,18 @@
       $('taxInclusive').checked = String(d.taxInclusive) === 'true';
       $('defaultLang').value = d.defaultLang || 'en';
       $('accentColor').value = d.accentColor || '#0f172a';
-      $('bizDayCutoffHour').value = (d.bizDayCutoffHour!==undefined && d.bizDayCutoffHour!=='') ? d.bizDayCutoffHour : 0;
+      $('bizDayCutoff').value = _fmtTime(d.bizDayCutoffHour, d.bizDayCutoffMin);
       $('storeLat').value = d.storeLat || ''; $('storeLng').value = d.storeLng || ''; $('storeRadius').value = d.storeRadius || '';
       $('loyaltyEnabled').checked = (d.loyaltyEnabled==='on'||d.loyaltyEnabled===true||d.loyaltyEnabled==='true');
       $('loyaltyEarnRate').value = d.loyaltyEarnRate || ''; $('loyaltyRedeemValue').value = d.loyaltyRedeemValue || '';
-      $('reportEmail').value = (d.reportEmail || '').replace(/,/g,'\n'); $('reportHour').value = (d.reportHour!==undefined&&d.reportHour!=='')?d.reportHour:'';
+      $('reportEmail').value = (d.reportEmail || '').replace(/,/g,'\n'); $('reportTime').value = _fmtTime(d.reportHour!==undefined&&d.reportHour!==''?d.reportHour:23, d.reportMin);
       $('reportEnabled').checked = (d.reportEnabled==='on'||d.reportEnabled===true||d.reportEnabled==='true');
       $('reportWeekly').checked = (d.reportWeeklyEnabled==='on'||d.reportWeeklyEnabled===true||d.reportWeeklyEnabled==='true');
       $('reportMonthly').checked = (d.reportMonthlyEnabled==='on'||d.reportMonthlyEnabled===true||d.reportMonthlyEnabled==='true');
       $('reportWeeklyDay').value = (d.reportWeeklyDay!==undefined&&d.reportWeeklyDay!=='')?String(d.reportWeeklyDay):'1';
-      $('reportWeeklyHour').value = (d.reportWeeklyHour!==undefined&&d.reportWeeklyHour!=='')?d.reportWeeklyHour:'';
+      $('reportWeeklyTime').value = _fmtTime(d.reportWeeklyHour!==undefined&&d.reportWeeklyHour!==''?d.reportWeeklyHour:d.reportHour, d.reportWeeklyMin!==undefined&&d.reportWeeklyMin!==''?d.reportWeeklyMin:d.reportMin);
       $('reportMonthlyDay').value = (d.reportMonthlyDay!==undefined&&d.reportMonthlyDay!=='')?d.reportMonthlyDay:'1';
-      $('reportMonthlyHour').value = (d.reportMonthlyHour!==undefined&&d.reportMonthlyHour!=='')?d.reportMonthlyHour:'';
+      $('reportMonthlyTime').value = _fmtTime(d.reportMonthlyHour!==undefined&&d.reportMonthlyHour!==''?d.reportMonthlyHour:d.reportHour, d.reportMonthlyMin!==undefined&&d.reportMonthlyMin!==''?d.reportMonthlyMin:d.reportMin);
       $('reportLang').value = (d.reportLang==='en'||d.reportLang==='both')?d.reportLang:'ja';
       $('bridgePollSec').value = (d.bridgePollMs!==undefined && d.bridgePollMs!=='') ? (Number(d.bridgePollMs)/1000) : 1.2;
     }).catch(function(){});
@@ -411,12 +420,12 @@
         imgTitle:'🖼️ トップ画像', orderImg:'オーダートップ画像（注文画面）', loginImg:'ログイン画面の画像（管理ログイン画面に表示）', upload:'⬆️ アップロード',
         localeTitle:'🌐 表示・地域', curCode:'通貨コード', curSym:'通貨記号', svcRate:'サービス料 (%)', taxRate:'税率 (%)', defLang:'既定言語', accent:'アクセント色',
         svcInclLabel:'内税（価格に含む）', taxInclLabel:'内税（価格に含む）', chargesHint:'チェックなし＝外税（表示価格に加算）。チェックあり＝内税（表示価格に含む）。一般的には税＝内税、サービス料＝外税です。',
-        bizCutoff:'営業日切替時刻', bizCutoffHint:'深夜営業の場合に設定してください。例：2を設定すると、午前2時までの売上は前日の営業日として日報・週報・月報・売上集計に計上されます。0＝通常どおり午前0時で区切り。',
+        bizCutoff:'営業日切替時刻', bizCutoffHint:'深夜営業の場合に設定してください。例：2:30を設定すると、午前2時30分までの売上は前日の営業日として日報・週報・月報・売上集計に計上されます。0:00＝通常どおり午前0時で区切り。指定できるのは0:00〜11:59の範囲です（それ以外は0:00として扱われます）。',
         payTitle:'💳 PayMongo（オンライン決済）', payKey:'シークレットキー（sk_live_… / sk_test_…）', payHint:'保存後はキー自体は表示されません（状態のみ）。',
         gemTitle:'🤖 Gemini APIキー（画像検索・在庫AIスキャン用・任意）', apiKey:'APIキー',
         geoTitle:'📍 勤怠・店舗位置', lat:'緯度', lng:'経度', radius:'許容半径 (m)', getLoc:'📡 現在地を取得',
         loyTitle:'🎁 ロイヤリティ（ポイント）', loyEnable:'有効にする', loyEarn:'付与レート（何円で1pt）', loyRedeem:'利用価値（1pt=何円）',
-        repTitle:'📧 定期レポート（自動メール）', repDaily:'日次日報（毎日）', repWeekly:'週次レポート', repMonthly:'月次レポート', repEmail:'送信先メール（複数可・カンマか改行区切り）', repHour:'送信時刻（0-23時）', repWeekDay:'送信曜日', repMonthDay:'送信日（1〜28）', dow0:'日曜', dow1:'月曜', dow2:'火曜', dow3:'水曜', dow4:'木曜', dow5:'金曜', dow6:'土曜', repSave:'💾 保存＆スケジュール', repTestD:'✉️ 日次テスト', repTestW:'✉️ 週次テスト', repTestM:'✉️ 月次テスト',
+        repTitle:'📧 定期レポート（自動メール）', repDaily:'日次日報（毎日）', repWeekly:'週次レポート', repMonthly:'月次レポート', repEmail:'送信先メール（複数可・カンマか改行区切り）', repHour:'送信時刻', repWeekDay:'送信曜日', repMonthDay:'送信日（1〜28）', dow0:'日曜', dow1:'月曜', dow2:'火曜', dow3:'水曜', dow4:'木曜', dow5:'金曜', dow6:'土曜', repSave:'💾 保存＆スケジュール', repTestD:'✉️ 日次テスト', repTestW:'✉️ 週次テスト', repTestM:'✉️ 月次テスト',
         repLang:'出力言語', repLangJa:'日本語', repLangEn:'英語', repLangBoth:'日本語＋英語（両方）',
         bridgeTitle:'🖶 印刷ブリッジ（プリンタ連携）', bridgeInterval:'キュー確認間隔（秒）', bridgeHint:'印刷キュー（bridge.html）がサーバーへ確認しにいく頻度です。短いほど印刷が早く始まりますが、サーバー負荷は増えます。既定値は1.2秒です。',
         saved:'✅ 保存しました', savedSched:'✅ 保存＆スケジュール設定しました', uploaded:'✅ アップロードしました', pickImg:'画像を選択してください', needKey:'キーを入力してください', noGeoDev:'この端末は位置情報に対応していません', gotLoc:'現在地を取得しました。「保存」を押してください。', noLoc:'位置情報を取得できませんでした。手動入力してください。', sending:'送信中…', testSent:'✅ テスト送信しました。受信箱をご確認ください', sendFail:'送信できませんでした', scopeReauth:'認証(スコープ)の再承認が必要かもしれません', errPrefix:'エラー: ' },
@@ -427,12 +436,12 @@
         imgTitle:'🖼️ Top images', orderImg:'Order top image (order screen)', loginImg:'Login screen image (shown on admin login)', upload:'⬆️ Upload',
         localeTitle:'🌐 Display & region', curCode:'Currency code', curSym:'Currency symbol', svcRate:'Service charge (%)', taxRate:'Tax (%)', defLang:'Default language', accent:'Accent color',
         svcInclLabel:'Tax-inclusive (included in price)', taxInclLabel:'Tax-inclusive (included in price)', chargesHint:'Unchecked = exclusive (added on top of the listed price). Checked = inclusive (already included in the listed price). Typically tax is inclusive and the service charge is exclusive.',
-        bizCutoff:'Business day cutoff hour', bizCutoffHint:'Set this if you stay open past midnight. E.g. setting 2 means sales up to 2am count toward the previous day’s business day in the daily/weekly/monthly reports and sales totals. 0 = normal midnight cutoff.',
+        bizCutoff:'Business day cutoff time', bizCutoffHint:'Set this if you stay open past midnight. E.g. setting 2:30 means sales up to 2:30am count toward the previous day’s business day in the daily/weekly/monthly reports and sales totals. 0:00 = normal midnight cutoff. Valid range is 0:00–11:59 (anything else is treated as 0:00).',
         payTitle:'💳 PayMongo (online payment)', payKey:'Secret key (sk_live_… / sk_test_…)', payHint:'The key itself is not shown after saving (status only).',
         gemTitle:'🤖 Gemini API key (image search & inventory AI scan, optional)', apiKey:'API key',
         geoTitle:'📍 Attendance / store location', lat:'Latitude', lng:'Longitude', radius:'Allowed radius (m)', getLoc:'📡 Get current location',
         loyTitle:'🎁 Loyalty (points)', loyEnable:'Enable', loyEarn:'Earn rate (amount per 1pt)', loyRedeem:'Redeem value (1pt = amount)',
-        repTitle:'📧 Scheduled reports (auto email)', repDaily:'Daily report (every day)', repWeekly:'Weekly report', repMonthly:'Monthly report', repEmail:'Recipient emails (multiple, comma/newline separated)', repHour:'Send time (0-23)', repWeekDay:'Send day', repMonthDay:'Send day (1–28)', dow0:'Sun', dow1:'Mon', dow2:'Tue', dow3:'Wed', dow4:'Thu', dow5:'Fri', dow6:'Sat', repSave:'💾 Save & schedule', repTestD:'✉️ Daily test', repTestW:'✉️ Weekly test', repTestM:'✉️ Monthly test',
+        repTitle:'📧 Scheduled reports (auto email)', repDaily:'Daily report (every day)', repWeekly:'Weekly report', repMonthly:'Monthly report', repEmail:'Recipient emails (multiple, comma/newline separated)', repHour:'Send time', repWeekDay:'Send day', repMonthDay:'Send day (1–28)', dow0:'Sun', dow1:'Mon', dow2:'Tue', dow3:'Wed', dow4:'Thu', dow5:'Fri', dow6:'Sat', repSave:'💾 Save & schedule', repTestD:'✉️ Daily test', repTestW:'✉️ Weekly test', repTestM:'✉️ Monthly test',
         repLang:'Output language', repLangJa:'Japanese', repLangEn:'English', repLangBoth:'Japanese + English (both)',
         bridgeTitle:'🖶 Print bridge (printer connection)', bridgeInterval:'Queue check interval (sec)', bridgeHint:'How often the print bridge (bridge.html) checks the server for print jobs. Shorter = faster printing but more server load. Default is 1.2 seconds.',
         saved:'✅ Saved', savedSched:'✅ Saved & scheduled', uploaded:'✅ Uploaded', pickImg:'Please select an image', needKey:'Please enter a key', noGeoDev:'This device does not support location', gotLoc:'Location acquired. Please press Save.', noLoc:'Could not get location. Please enter manually.', sending:'Sending…', testSent:'✅ Test sent. Please check your inbox', sendFail:'Could not send', scopeReauth:'You may need to re-authorize (scopes)', errPrefix:'Error: ' }
