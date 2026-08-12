@@ -44,21 +44,82 @@
   const BG_ACTIONS = { checkToken: 1, getOrders: 1, checkoutStatus: 1, bootstrap: 1, getSettings: 1, getStaffCalls: 1, getTableCheckoutStamp: 1 };
   const BG_RPC = { getPrintQueue: 1, getPrintQueueCounts: 1, getSettings: 1 };
 
+  // ---- 通信エラー時の自動リトライ＋再読み込み案内バナー（全アクション共通）----
+  // GAS側のコールドスタート等で最初の呼び出しが固まる/404になることがあるため、
+  // 「読み取り系」アクションに限り1回だけ自動リトライする（書き込み系は二重実行を避けるためリトライしない）。
+  // それでも失敗した場合は控えめなバナーで案内する（次に何か1回でも成功すれば自動的に消える）。
+  const _FETCH_TIMEOUT_MS = 25000;
+  const _RETRY_DELAY_MS = 1200;
+  const _READ_ACTIONS = { getSettings: 1, checkToken: 1, bootstrap: 1, checkoutStatus: 1, getStaffCalls: 1, getTableCheckoutStamp: 1 };
+  function _isReadOnly(action, fn) {
+    if (action === 'rpc') return /^(get|check|list|count|fetch)/i.test(fn || '');
+    return !!_READ_ACTIONS[action];
+  }
+  function _isEN() { try { return localStorage.getItem('lang') === 'en'; } catch (e) { return false; } }
+  const _errBar = (function () {
+    let el = null;
+    function ensure() {
+      if (el || typeof document === 'undefined' || !document.body) return;
+      const st = document.createElement('style');
+      st.textContent = '#izErrBar{position:fixed;left:0;right:0;bottom:0;z-index:99998;display:none;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;background:#b91c1c;color:#fff;font:700 13px -apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,\'Noto Sans JP\',sans-serif;padding:10px 14px;text-align:center;}'
+        + '#izErrBar button{background:#fff;color:#b91c1c;border:0;border-radius:8px;padding:6px 14px;font-weight:800;cursor:pointer;}';
+      document.head.appendChild(st);
+      el = document.createElement('div'); el.id = 'izErrBar';
+      el.innerHTML = '<span id="izErrTx"></span><button type="button" id="izErrBtn"></button>';
+      el.querySelector('#izErrBtn').onclick = function () { location.reload(); };
+      document.body.appendChild(el);
+    }
+    return {
+      show: function () {
+        ensure(); if (!el) return;
+        el.querySelector('#izErrTx').textContent = _isEN()
+          ? 'Having trouble connecting to the server. Some data may not have loaded correctly.'
+          : 'サーバーとの通信がうまくいっていません。データが正しく表示されていない可能性があります。';
+        el.querySelector('#izErrBtn').textContent = _isEN() ? '🔄 Reload' : '🔄 再読み込み';
+        el.style.display = 'flex';
+      },
+      hide: function () { if (el) el.style.display = 'none'; }
+    };
+  })();
+
+  function _fetchOnce(body, ms) {
+    const ctrl = new AbortController();
+    const t = setTimeout(function () { ctrl.abort('timeout'); }, ms);
+    return fetch(CFG.API_URL + '?api=1', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: body,
+      redirect: 'follow',
+      signal: ctrl.signal
+    }).then(function (res) {
+      if (!res.ok) { throw new Error('http_' + res.status); }
+      return res.json();
+    }).finally(function () { clearTimeout(t); });
+  }
+
   // ---- 低レベル POST ----
   API.post = async function (action, payload) {
     payload = payload || {};
     const silent = !!payload.__silent || BG_ACTIONS[action] || (action === 'rpc' && BG_RPC[payload.fn]);
     const send = Object.assign({}, payload); delete send.__silent; delete send.__msg;
     const body = JSON.stringify(Object.assign({ action: action }, send));
+    const canRetry = _isReadOnly(action, payload.fn);
     if (!silent) _load.show(payload.__msg);
     try {
-      const res = await fetch(CFG.API_URL + '?api=1', {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: body,
-        redirect: 'follow'
-      });
-      const json = await res.json();
+      let json;
+      try {
+        json = await _fetchOnce(body, _FETCH_TIMEOUT_MS);
+      } catch (e1) {
+        if (!canRetry) { _errBar.show(); throw e1; }
+        await new Promise(function (r) { setTimeout(r, _RETRY_DELAY_MS); });
+        try {
+          json = await _fetchOnce(body, _FETCH_TIMEOUT_MS);
+        } catch (e2) {
+          _errBar.show();
+          throw e2;
+        }
+      }
+      _errBar.hide();
       if (!json.ok) {
         // ログイントークン失効（unauthorized）は生のエラーを見せず、管理画面（ログイン）へ自動的に戻す
         if (json.error === 'unauthorized' && (function () { try { return !!localStorage.getItem('mgmtToken'); } catch (e) { return false; } })()) {
