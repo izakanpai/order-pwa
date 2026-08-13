@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Profit Sim">
+
+  <link rel="manifest" href="./profit_sim.webmanifest">
+  <title>Profit Simulator</title>
+  <style>
+    :root{ --bg:#f6f7f9; --surface:#fff; --border:#e5e7eb; --navy:#0f172a; --text-3:#64748b; --green:#16a34a; --red:#c62828; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans JP',sans-serif; background:var(--bg); color:var(--navy); }
+    .head{ position:sticky; top:0; z-index:20; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:12px 16px; }
+    .head h1{ font-size:18px; margin:0; font-weight:900; }
+    .hbtn{ background:rgba(255,255,255,.14); color:#fff; border:0; border-radius:9px; padding:8px 12px; font-size:13px; font-weight:800; cursor:pointer; text-decoration:none; }
+    .wrap{ padding:16px; max-width:720px; margin:0 auto; }
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
+    .card-title{ font-weight:900; font-size:15px; margin-bottom:12px; }
+    .fg{ margin-bottom:10px; }
+    .form-label{ font-size:13px; font-weight:700; display:block; margin-bottom:4px; }
+    .fc{ width:100%; padding:11px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); }
+    .row2{ display:flex; gap:8px; align-items:flex-end; }
+    .row2 .fg{ flex:1; margin-bottom:0; }
+    .exprow{ display:flex; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); }
+    .exprow:last-child{ border-bottom:0; }
+    .exprow .lb{ flex:0 0 40%; font-size:13.5px; font-weight:700; }
+    .exprow .amtwrap{ flex:1; display:flex; align-items:center; gap:4px; }
+    .exprow .sym{ color:var(--text-3); font-size:14px; }
+    .exprow input[type=number]{ flex:1; padding:9px; border:1px solid var(--border); border-radius:8px; font-size:15px; font-family:inherit; text-align:right; }
+    .exprow input.lblInput{ flex:0 0 40%; padding:9px; border:1px solid var(--border); border-radius:8px; font-size:13.5px; font-family:inherit; font-weight:700; }
+    .btn{ border:0; border-radius:11px; padding:13px; font-size:15px; font-weight:900; cursor:pointer; font-family:inherit; }
+    .btn-pri{ background:var(--navy); color:#fff; width:100%; }
+    .btn-sec{ background:#eef2f7; color:var(--navy); }
+    .btn-sm{ border:0; border-radius:8px; padding:9px 13px; font-size:13px; font-weight:800; cursor:pointer; background:#eff6ff; color:#2563eb; font-family:inherit; }
+    .result{ display:flex; justify-content:space-between; align-items:center; padding:9px 2px; font-size:14px; }
+    .result .lb{ font-weight:700; } .result .amt{ font-variant-numeric:tabular-nums; font-weight:800; }
+    .rev .amt{ color:var(--green); font-size:17px; }
+    .cost .amt{ color:var(--red); }
+    .profit{ display:flex; justify-content:space-between; align-items:center; padding:16px 12px; margin-top:8px; border-radius:12px; background:#0f172a; color:#fff; }
+    .profit .lb{ font-weight:900; font-size:16px; } .profit .amt{ font-weight:900; font-size:22px; font-variant-numeric:tabular-nums; }
+    .profit.neg{ background:#7f1d1d; }
+    .profit .rate{ font-size:13px; opacity:.85; margin-left:8px; }
+    .muted{ color:var(--text-3); font-size:12px; }
+    .hint{ color:var(--text-3); font-size:12px; line-height:1.7; margin-top:6px; }
+    .alert{ margin-top:10px; display:none; padding:11px; border-radius:9px; font-size:14px; font-weight:700; }
+    .divider{ height:1px; background:var(--border); margin:12px 0; }
+  </style>
+</head>
+<body>
+  <div class="head"><h1 data-t="title">📐 粗利シミュレーション</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
+  <div class="wrap">
+
+    <div class="card">
+      <div class="card-title" data-t="revTitle">💰 売上</div>
+      <div class="row2">
+        <div class="fg"><label class="form-label" data-t="revenue">月間売上（想定）</label><input id="pRevenue" type="number" min="0" step="any" class="fc" placeholder="0" oninput="calc()"></div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input id="pMonth" type="month" class="fc" style="width:auto;flex:0 0 auto;">
+        <button type="button" class="btn-sm" onclick="loadActual()" data-t="loadActual">📥 その月の実績を読み込む</button>
+      </div>
+      <div class="hint" data-t="loadHint">売上・賃料・電気代・水道代・給与（勤怠概算）を、実際に記録されている数字で自動入力します（上書き確認あり）。</div>
+      <div class="alert" id="loadMsg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-t="expTitle">🧾 経費（月額）</div>
+      <div class="exprow"><span class="lb" data-t="eRent">賃料</span><div class="amtwrap"><span class="sym" id="sym1">₱</span><input type="number" min="0" step="any" id="pRent" oninput="calc()"></div></div>
+      <div class="exprow"><span class="lb" data-t="eElec">電気代</span><div class="amtwrap"><span class="sym" id="sym2">₱</span><input type="number" min="0" step="any" id="pElec" oninput="calc()"></div></div>
+      <div class="exprow"><span class="lb" data-t="eWater">水道代</span><div class="amtwrap"><span class="sym" id="sym3">₱</span><input type="number" min="0" step="any" id="pWater" oninput="calc()"></div></div>
+      <div class="exprow"><span class="lb" data-t="eGas">ガス代（LPG）</span><div class="amtwrap"><span class="sym" id="sym4">₱</span><input type="number" min="0" step="any" id="pGas" oninput="calc()"></div></div>
+      <div class="exprow"><span class="lb" data-t="eNet">通信費（ネット等）</span><div class="amtwrap"><span class="sym" id="sym5">₱</span><input type="number" min="0" step="any" id="pNet" oninput="calc()"></div></div>
+      <div class="exprow"><span class="lb" data-t="eSalary">給与（総額）</span><div class="amtwrap"><span class="sym" id="sym6">₱</span><input type="number" min="0" step="any" id="pSalary" oninput="calc()"></div></div>
+      <div class="exprow"><span class="lb" data-t="eSss">社会保険料（SSS/PhilHealth/Pag-IBIG）</span><div class="amtwrap"><span class="sym" id="sym7">₱</span><input type="number" min="0" step="any" id="pSss" oninput="calc()"></div></div>
+      <div class="exprow"><span class="lb" data-t="eKaraoke">カラオケレンタル</span><div class="amtwrap"><span class="sym" id="sym8">₱</span><input type="number" min="0" step="any" id="pKaraoke" oninput="calc()"></div></div>
+      <div class="divider"></div>
+      <div class="exprow"><input class="lblInput" id="pC1Label" placeholder="その他１" data-tph="phCustom1"><div class="amtwrap"><span class="sym" id="sym9">₱</span><input type="number" min="0" step="any" id="pC1Amt" oninput="calc()"></div></div>
+      <div class="exprow"><input class="lblInput" id="pC2Label" placeholder="その他２" data-tph="phCustom2"><div class="amtwrap"><span class="sym" id="sym10">₱</span><input type="number" min="0" step="any" id="pC2Amt" oninput="calc()"></div></div>
+      <div class="exprow"><input class="lblInput" id="pC3Label" placeholder="その他３" data-tph="phCustom3"><div class="amtwrap"><span class="sym" id="sym11">₱</span><input type="number" min="0" step="any" id="pC3Amt" oninput="calc()"></div></div>
+      <div class="exprow"><input class="lblInput" id="pC4Label" placeholder="その他４" data-tph="phCustom4"><div class="amtwrap"><span class="sym" id="sym12">₱</span><input type="number" min="0" step="any" id="pC4Amt" oninput="calc()"></div></div>
+      <div class="exprow"><input class="lblInput" id="pC5Label" placeholder="その他５" data-tph="phCustom5"><div class="amtwrap"><span class="sym" id="sym13">₱</span><input type="number" min="0" step="any" id="pC5Amt" oninput="calc()"></div></div>
+      <div class="hint" data-t="phHint">ガス代・通信費・社会保険料は、フィリピンの飲食店運営で発生しやすい代表的な項目として追加しています。不要であれば0のままで構いません。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-t="resultTitle">📊 計算結果</div>
+      <div class="result rev"><span class="lb" data-t="revenue2">売上</span><span class="amt" id="rRevenue">₱0</span></div>
+      <div class="result cost"><span class="lb" data-t="expTotal">経費合計</span><span class="amt" id="rExpTotal">− ₱0</span></div>
+      <div class="profit" id="profitBox"><span class="lb" data-t="profit">粗利<span class="rate" id="rRate">粗利率 0%</span></span><span class="amt" id="rProfit">₱0</span></div>
+      <div style="margin-top:14px;"><button class="btn btn-pri" onclick="saveDefaults()" data-t="saveBtn">💾 現在の値を既定値として保存</button></div>
+      <div class="alert" id="saveMsg"></div>
+      <div class="hint" data-t="saveHint">保存すると、次回この画面を開いたときに同じ数字が自動で入力されます（売上だけ毎回入力すればOK）。</div>
+    </div>
+  </div>
+
+  <script src="./config.js"></script>
+  <script src="./api.js"></script>
+  <script src="./i18n.js"></script>
+  <script>
+    var TOKEN = localStorage.getItem('mgmtToken') || '';
+    if (!TOKEN) location.href = './manage.html';
+    function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
+    var SYM = '₱';
+    function money(v){ return SYM+(Math.round(Number(v)||0)).toLocaleString(); }
+    function num(id){ return Number(document.getElementById(id).value) || 0; }
+
+    var FIELD_IDS = ['pRent','pElec','pWater','pGas','pNet','pSalary','pSss','pKaraoke','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
+    var SETTINGS_MAP = {
+      pRevenue:'profitSimRevenue', pRent:'profitSimRent', pElec:'profitSimElec', pWater:'profitSimWater',
+      pGas:'profitSimGas', pNet:'profitSimNet', pSalary:'profitSimSalary', pSss:'profitSimSss', pKaraoke:'profitSimKaraoke',
+      pC1Label:'profitSimC1Label', pC1Amt:'profitSimC1Amt', pC2Label:'profitSimC2Label', pC2Amt:'profitSimC2Amt',
+      pC3Label:'profitSimC3Label', pC3Amt:'profitSimC3Amt', pC4Label:'profitSimC4Label', pC4Amt:'profitSimC4Amt',
+      pC5Label:'profitSimC5Label', pC5Amt:'profitSimC5Amt'
+    };
+
+    function calc(){
+      var revenue = num('pRevenue');
+      var expTotal = 0;
+      FIELD_IDS.forEach(function(id){ expTotal += num(id); });
+      var profit = revenue - expTotal;
+      var rate = revenue > 0 ? Math.round(profit/revenue*1000)/10 : 0;
+      document.getElementById('rRevenue').innerText = money(revenue);
+      document.getElementById('rExpTotal').innerText = '− ' + money(expTotal);
+      document.getElementById('rProfit').innerText = money(profit);
+      document.getElementById('rRate').innerText = I18n.t('rateLabel') + ' ' + rate + '%';
+      var box = document.getElementById('profitBox');
+      box.className = 'profit' + (profit < 0 ? ' neg' : '');
+    }
+
+    function msg(id, text, ok){ var m=document.getElementById(id); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
+
+    window.saveDefaults = function(){
+      var data = {};
+      Object.keys(SETTINGS_MAP).forEach(function(id){ data[SETTINGS_MAP[id]] = document.getElementById(id).value || ''; });
+      rpc('saveSettings',[data]).then(function(){ msg('saveMsg', I18n.t('saved'), true); })
+        .catch(function(e){ msg('saveMsg', I18n.t('errPrefix')+(e.message||e), false); });
+    };
+
+    window.loadActual = function(){
+      var mo = document.getElementById('pMonth').value;
+      if (!mo){ msg('loadMsg', I18n.t('needMonth'), false); return; }
+      if (!confirm(I18n.t('loadConfirm'))) return;
+      rpc('getMonthlyProfit',[mo]).then(function(d){
+        if (!d){ msg('loadMsg', I18n.t('loadFail'), false); return; }
+        var e = d.exp || {};
+        document.getElementById('pRevenue').value = Math.round(d.revenue||0);
+        document.getElementById('pRent').value = Math.round(e['賃料']||0);
+        document.getElementById('pElec').value = Math.round(e['電気代']||0);
+        document.getElementById('pWater').value = Math.round(e['水道代']||0);
+        document.getElementById('pSalary').value = Math.round(d.wages||0);
+        calc();
+        msg('loadMsg', I18n.t('loadOk'), true);
+      }).catch(function(e){ msg('loadMsg', I18n.t('errPrefix')+(e.message||e), false); });
+    };
+
+    function applySyms(){ for(var i=1;i<=13;i++){ var el=document.getElementById('sym'+i); if(el) el.innerText=SYM; } }
+
+    rpc('getSettings',[]).then(function(s){
+      s = s || {};
+      if (s.currencySymbol) SYM = s.currencySymbol;
+      applySyms();
+      Object.keys(SETTINGS_MAP).forEach(function(id){
+        var key = SETTINGS_MAP[id];
+        if (s[key] !== undefined && s[key] !== '') document.getElementById(id).value = s[key];
+      });
+      calc();
+    }).catch(function(e){
+      if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; }
+    });
+
+    document.getElementById('pMonth').value = new Date().toISOString().slice(0,7);
+    applySyms();
+    calc();
+
+    I18n.init({
+      ja:{ title:'📐 粗利シミュレーション', back:'← 管理へ',
+        revTitle:'💰 売上', revenue:'月間売上（想定）', loadActual:'📥 その月の実績を読み込む',
+        loadHint:'売上・賃料・電気代・水道代・給与（勤怠概算）を、実際に記録されている数字で自動入力します（上書き確認あり）。',
+        expTitle:'🧾 経費（月額）', eRent:'賃料', eElec:'電気代', eWater:'水道代', eGas:'ガス代（LPG）', eNet:'通信費（ネット等）',
+        eSalary:'給与（総額）', eSss:'社会保険料（SSS/PhilHealth/Pag-IBIG）', eKaraoke:'カラオケレンタル',
+        phCustom1:'その他１', phCustom2:'その他２', phCustom3:'その他３', phCustom4:'その他４', phCustom5:'その他５',
+        phHint:'ガス代・通信費・社会保険料は、フィリピンの飲食店運営で発生しやすい代表的な項目として追加しています。不要であれば0のままで構いません。',
+        resultTitle:'📊 計算結果', revenue2:'売上', expTotal:'経費合計', profit:'粗利', rateLabel:'粗利率',
+        saveBtn:'💾 現在の値を既定値として保存', saveHint:'保存すると、次回この画面を開いたときに同じ数字が自動で入力されます（売上だけ毎回入力すればOK）。',
+        saved:'✅ 保存しました', errPrefix:'エラー: ', needMonth:'対象月を選択してください', loadConfirm:'現在入力中の売上・賃料・電気代・水道代・給与を、その月の実績で上書きします。よろしいですか？', loadFail:'データを取得できませんでした', loadOk:'✅ 実績を読み込みました' },
+      en:{ title:'📐 Profit Simulator', back:'← Manage',
+        revTitle:'💰 Revenue', revenue:'Monthly revenue (projected)', loadActual:'📥 Load actuals for that month',
+        loadHint:'Fills revenue, rent, electricity, water, and salary (attendance estimate) with the actual recorded figures (confirmation before overwrite).',
+        expTitle:'🧾 Expenses (monthly)', eRent:'Rent', eElec:'Electricity', eWater:'Water', eGas:'Gas (LPG)', eNet:'Internet / telecom',
+        eSalary:'Salary (total)', eSss:'Social contributions (SSS/PhilHealth/Pag-IBIG)', eKaraoke:'Karaoke rental',
+        phCustom1:'Other 1', phCustom2:'Other 2', phCustom3:'Other 3', phCustom4:'Other 4', phCustom5:'Other 5',
+        phHint:'Gas, internet, and social contributions were added as common costs for a Philippines-based restaurant/bar. Leave at 0 if not applicable.',
+        resultTitle:'📊 Result', revenue2:'Revenue', expTotal:'Total expenses', profit:'Gross profit', rateLabel:'Margin',
+        saveBtn:'💾 Save current values as defaults', saveHint:'Once saved, the same figures will be pre-filled next time you open this screen (just enter revenue each time).',
+        saved:'✅ Saved', errPrefix:'Error: ', needMonth:'Please select a month', loadConfirm:'This will overwrite the currently entered revenue, rent, electricity, water, and salary with the actual figures for that month. Continue?', loadFail:'Could not load data', loadOk:'✅ Actuals loaded' }
+    }, function(){ calc(); });
+  </script>
+</body>
+</html>
