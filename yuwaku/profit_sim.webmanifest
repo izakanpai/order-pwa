@@ -1,7 +1,7 @@
 {
-  "name": "Profit Simulator",
-  "short_name": "Profit Sim",
-  "description": "izakanpai — Profit Simulator",
+  "name": "Operating Profit Simulator",
+  "short_name": "Op Profit Sim",
+  "description": "izakanpai — Operating Profit Simulator",
   "start_url": "./profit_sim.html",
   "scope": "./",
   "display": "standalone",
