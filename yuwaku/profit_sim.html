@@ -121,6 +121,8 @@
       <div class="result rev"><span class="lb" data-t="revenue2">売上</span><span class="amt" id="rRevenue">₱0</span></div>
       <div class="result cost"><span class="lb" data-t="expTotal">経費合計</span><span class="amt" id="rExpTotal">− ₱0</span></div>
       <div class="profit" id="profitBox"><span class="lb" data-t="profit">粗利<span class="rate" id="rRate">粗利率 0%</span></span><span class="amt" id="rProfit">₱0</span></div>
+      <div class="result" style="margin-top:6px;"><span class="lb muted" data-t="beLabel">参考：粗利0円になる売上目安</span><span class="amt muted" id="rBreakeven">₱0</span></div>
+      <div class="hint" data-t="beHint">現在入力中の固定費・VAT率・サービス料率をもとにした目安です（仕入れは割合(%)を入力している場合のみ変動費として計算し、未入力なら固定額として扱います）。</div>
       <div style="margin-top:14px;"><button class="btn btn-pri" onclick="saveDefaults()" data-t="saveBtn">💾 現在の値を既定値として保存</button></div>
       <div class="alert" id="saveMsg"></div>
       <div class="hint" data-t="saveHint">保存すると、次回この画面を開いたときに同じ数字が自動で入力されます（売上だけ毎回入力すればOK）。</div>
@@ -161,6 +163,23 @@
       calc();
     };
 
+    var FIXED_FIELD_IDS = ['pRent','pElec','pWater','pGas','pNet','pSalary','pSss','pKaraoke','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
+
+    // 損益分岐点売上（参考値）。VAT・サービス代は常に売上に対する率として、
+    // 仕入れは「割合(%)」が入力されていればその率として、それ以外の項目は固定費として扱う。
+    // revenue = 固定費 / (1 - 変動費率合計) で算出。変動費率が100%以上なら達成不可。
+    function calcBreakeven(){
+      var fixed = 0;
+      FIXED_FIELD_IDS.forEach(function(id){ fixed += num(id); });
+      var cogsRate = num('pCogsRate');
+      if (cogsRate > 0) { /* 変動費として扱うので固定費には加えない */ }
+      else { fixed += num('pCogsAmt'); }
+      var varRate = (VAT_RATE + SVC_RATE + (cogsRate > 0 ? cogsRate : 0)) / 100;
+      if (varRate >= 1) return null;
+      if (fixed <= 0) return 0;
+      return fixed / (1 - varRate);
+    }
+
     function calc(){
       var revenue = num('pRevenue');
       // VAT・サービス代は売上に対する固定率（設定画面の値）で自動計算、編集不可
@@ -176,6 +195,8 @@
       document.getElementById('rRate').innerText = I18n.t('rateLabel') + ' ' + rate + '%';
       var box = document.getElementById('profitBox');
       box.className = 'profit' + (profit < 0 ? ' neg' : '');
+      var be = calcBreakeven();
+      document.getElementById('rBreakeven').innerText = (be === null) ? I18n.t('beNA') : money(be);
     }
 
     function msg(id, text, ok){ var m=document.getElementById(id); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
@@ -242,6 +263,7 @@
         phCustom1:'その他１', phCustom2:'その他２', phCustom3:'その他３', phCustom4:'その他４', phCustom5:'その他５',
         phHint:'ガス代・通信費・社会保険料は、フィリピンの飲食店運営で発生しやすい代表的な項目として追加しています。不要であれば0のままで構いません。',
         resultTitle:'📊 計算結果', revenue2:'売上', expTotal:'経費合計', profit:'粗利', rateLabel:'粗利率',
+        beLabel:'参考：粗利0円になる売上目安', beHint:'現在入力中の固定費・VAT率・サービス料率をもとにした目安です（仕入れは割合(%)を入力している場合のみ変動費として計算し、未入力なら固定額として扱います）。', beNA:'達成不可（変動費率が100%以上）',
         saveBtn:'💾 現在の値を既定値として保存', saveHint:'保存すると、次回この画面を開いたときに同じ数字が自動で入力されます（売上だけ毎回入力すればOK）。',
         saved:'✅ 保存しました', errPrefix:'エラー: ', needMonth:'対象月を選択してください', loadConfirm:'現在入力中の売上・賃料・電気代・水道代・給与を、その月の実績で上書きします。よろしいですか？', loadFail:'データを取得できませんでした', loadOk:'✅ 実績を読み込みました' },
       en:{ title:'📐 Profit Simulator', back:'← Manage',
@@ -255,6 +277,7 @@
         phCustom1:'Other 1', phCustom2:'Other 2', phCustom3:'Other 3', phCustom4:'Other 4', phCustom5:'Other 5',
         phHint:'Gas, internet, and social contributions were added as common costs for a Philippines-based restaurant/bar. Leave at 0 if not applicable.',
         resultTitle:'📊 Result', revenue2:'Revenue', expTotal:'Total expenses', profit:'Gross profit', rateLabel:'Margin',
+        beLabel:'Reference: break-even revenue (profit = 0)', beHint:'Estimated from the fixed costs, VAT rate, and service charge rate currently entered (purchases are treated as a variable cost only if a percentage is entered; otherwise as a fixed amount).', beNA:'Not achievable (variable cost rate is 100% or more)',
         saveBtn:'💾 Save current values as defaults', saveHint:'Once saved, the same figures will be pre-filled next time you open this screen (just enter revenue each time).',
         saved:'✅ Saved', errPrefix:'Error: ', needMonth:'Please select a month', loadConfirm:'This will overwrite the currently entered revenue, rent, electricity, water, and salary with the actual figures for that month. Continue?', loadFail:'Could not load data', loadOk:'✅ Actuals loaded' }
     }, function(){ updateRateNotes(); calc(); });
