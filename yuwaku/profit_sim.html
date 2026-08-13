@@ -32,6 +32,15 @@
     .exprow .sym{ color:var(--text-3); font-size:14px; flex:0 0 auto; }
     .exprow input[type=number]{ min-width:0; width:100%; max-width:100%; padding:9px 6px; border:1px solid var(--border); border-radius:8px; font-size:15px; font-family:inherit; text-align:right; }
     .exprow input.lblInput{ min-width:0; width:100%; max-width:100%; padding:9px; border:1px solid var(--border); border-radius:8px; font-size:13.5px; font-family:inherit; font-weight:700; }
+    .exprow.locked input[type=number]{ background:#f1f5f9; color:var(--text-3); }
+    .subhead{ font-size:12.5px; font-weight:800; color:var(--text-3); text-transform:uppercase; letter-spacing:.03em; margin:2px 0 6px; }
+    .cogsblock{ padding:8px 0; border-bottom:1px solid var(--border); }
+    .cogsblock .lb{ font-size:13.5px; font-weight:700; margin-bottom:6px; }
+    .cogsinputs{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .cogsfield{ display:flex; align-items:center; gap:4px; flex:1 1 130px; min-width:0; }
+    .cogsfield input[type=number]{ min-width:0; width:100%; max-width:100%; padding:9px 6px; border:1px solid var(--border); border-radius:8px; font-size:15px; font-family:inherit; text-align:right; }
+    .cogsfield .sym{ color:var(--text-3); font-size:13px; flex:0 0 auto; }
+    .cogsarrow{ color:var(--text-3); font-size:14px; flex:0 0 auto; }
     .btn{ border:0; border-radius:11px; padding:13px; font-size:15px; font-weight:900; cursor:pointer; font-family:inherit; }
     .btn-pri{ background:var(--navy); color:#fff; width:100%; }
     .btn-sec{ background:#eef2f7; color:var(--navy); }
@@ -69,6 +78,27 @@
 
     <div class="card">
       <div class="card-title" data-t="expTitle">🧾 経費（月額）</div>
+      <div class="subhead" data-t="revLinkedTitle">📎 売上連動</div>
+      <div class="exprow locked">
+        <span class="lb"><span data-t="eVat">VAT</span> <span class="muted" id="vatRateNote"></span></span>
+        <div class="amtwrap"><span class="sym" id="symVat">₱</span><input type="number" id="pVat" readonly tabindex="-1"></div>
+      </div>
+      <div class="exprow locked">
+        <span class="lb"><span data-t="eService">サービス代</span> <span class="muted" id="svcRateNote"></span></span>
+        <div class="amtwrap"><span class="sym" id="symSvc">₱</span><input type="number" id="pService" readonly tabindex="-1"></div>
+      </div>
+      <div class="hint" id="vatSvcHint" data-t="vatSvcHint">VAT・サービス代の税率は設定画面の「税率」「サービス料」の値を使用します（このページでは変更できません）。</div>
+      <div class="cogsblock">
+        <div class="lb" data-t="eCogs">仕入れ</div>
+        <div class="cogsinputs">
+          <div class="cogsfield"><input type="number" id="pCogsRate" min="0" step="any" placeholder="30" oninput="recalcCogs()"><span class="sym">%</span></div>
+          <span class="cogsarrow">→</span>
+          <div class="cogsfield"><span class="sym" id="symCogs">₱</span><input type="number" id="pCogsAmt" min="0" step="any" oninput="calc()"></div>
+        </div>
+      </div>
+      <div class="hint" data-t="cogsHint">割合(%)を入力すると売上から自動計算します。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。</div>
+      <button type="button" class="btn-sm" style="margin-top:8px;" onclick="recalcCogs()" data-t="cogsRecalc">🔄 割合から再計算</button>
+      <div class="divider"></div>
       <div class="exprow"><span class="lb" data-t="eRent">賃料</span><div class="amtwrap"><span class="sym" id="sym1">₱</span><input type="number" min="0" step="any" id="pRent" oninput="calc()"></div></div>
       <div class="exprow"><span class="lb" data-t="eElec">電気代</span><div class="amtwrap"><span class="sym" id="sym2">₱</span><input type="number" min="0" step="any" id="pElec" oninput="calc()"></div></div>
       <div class="exprow"><span class="lb" data-t="eWater">水道代</span><div class="amtwrap"><span class="sym" id="sym3">₱</span><input type="number" min="0" step="any" id="pWater" oninput="calc()"></div></div>
@@ -108,17 +138,34 @@
     function money(v){ return SYM+(Math.round(Number(v)||0)).toLocaleString(); }
     function num(id){ return Number(document.getElementById(id).value) || 0; }
 
-    var FIELD_IDS = ['pRent','pElec','pWater','pGas','pNet','pSalary','pSss','pKaraoke','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
+    var FIELD_IDS = ['pVat','pService','pCogsAmt','pRent','pElec','pWater','pGas','pNet','pSalary','pSss','pKaraoke','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
     var SETTINGS_MAP = {
       pRevenue:'profitSimRevenue', pRent:'profitSimRent', pElec:'profitSimElec', pWater:'profitSimWater',
       pGas:'profitSimGas', pNet:'profitSimNet', pSalary:'profitSimSalary', pSss:'profitSimSss', pKaraoke:'profitSimKaraoke',
+      pCogsRate:'profitSimCogsRate', pCogsAmt:'profitSimCogsAmt',
       pC1Label:'profitSimC1Label', pC1Amt:'profitSimC1Amt', pC2Label:'profitSimC2Label', pC2Amt:'profitSimC2Amt',
       pC3Label:'profitSimC3Label', pC3Amt:'profitSimC3Amt', pC4Label:'profitSimC4Label', pC4Amt:'profitSimC4Amt',
       pC5Label:'profitSimC5Label', pC5Amt:'profitSimC5Amt'
     };
+    var VAT_RATE = 0, SVC_RATE = 0;
+
+    function updateRateNotes(){
+      document.getElementById('vatRateNote').innerText = '(' + VAT_RATE + '%・' + I18n.t('autoCalc') + ')';
+      document.getElementById('svcRateNote').innerText = '(' + SVC_RATE + '%・' + I18n.t('autoCalc') + ')';
+    }
+
+    window.recalcCogs = function(){
+      var revenue = num('pRevenue');
+      var rate = num('pCogsRate');
+      document.getElementById('pCogsAmt').value = Math.round(revenue * rate / 100);
+      calc();
+    };
 
     function calc(){
       var revenue = num('pRevenue');
+      // VAT・サービス代は売上に対する固定率（設定画面の値）で自動計算、編集不可
+      document.getElementById('pVat').value = Math.round(revenue * VAT_RATE / 100);
+      document.getElementById('pService').value = Math.round(revenue * SVC_RATE / 100);
       var expTotal = 0;
       FIELD_IDS.forEach(function(id){ expTotal += num(id); });
       var profit = revenue - expTotal;
@@ -152,17 +199,24 @@
         document.getElementById('pElec').value = Math.round(e['電気代']||0);
         document.getElementById('pWater').value = Math.round(e['水道代']||0);
         document.getElementById('pSalary').value = Math.round(d.wages||0);
+        if (e['商品仕入']) document.getElementById('pCogsAmt').value = Math.round(e['商品仕入']);
         calc();
         msg('loadMsg', I18n.t('loadOk'), true);
       }).catch(function(e){ msg('loadMsg', I18n.t('errPrefix')+(e.message||e), false); });
     };
 
-    function applySyms(){ for(var i=1;i<=13;i++){ var el=document.getElementById('sym'+i); if(el) el.innerText=SYM; } }
+    function applySyms(){
+      for(var i=1;i<=13;i++){ var el=document.getElementById('sym'+i); if(el) el.innerText=SYM; }
+      ['symVat','symSvc','symCogs'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerText=SYM; });
+    }
 
     rpc('getSettings',[]).then(function(s){
       s = s || {};
       if (s.currencySymbol) SYM = s.currencySymbol;
+      VAT_RATE = Number(s.taxRate) || 0;
+      SVC_RATE = Number(s.serviceRate) || 0;
       applySyms();
+      updateRateNotes();
       Object.keys(SETTINGS_MAP).forEach(function(id){
         var key = SETTINGS_MAP[id];
         if (s[key] !== undefined && s[key] !== '') document.getElementById(id).value = s[key];
@@ -180,7 +234,10 @@
       ja:{ title:'📐 粗利シミュレーション', back:'← 管理へ',
         revTitle:'💰 売上', revenue:'月間売上（想定）', loadActual:'📥 その月の実績を読み込む',
         loadHint:'売上・賃料・電気代・水道代・給与（勤怠概算）を、実際に記録されている数字で自動入力します（上書き確認あり）。',
-        expTitle:'🧾 経費（月額）', eRent:'賃料', eElec:'電気代', eWater:'水道代', eGas:'ガス代（LPG）', eNet:'通信費（ネット等）',
+        expTitle:'🧾 経費（月額）', revLinkedTitle:'📎 売上連動', eVat:'VAT', eService:'サービス代', autoCalc:'自動計算',
+        vatSvcHint:'VAT・サービス代の税率は設定画面の「税率」「サービス料」の値を使用します（このページでは変更できません）。',
+        eCogs:'仕入れ', cogsHint:'割合(%)を入力すると売上から自動計算します。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。', cogsRecalc:'🔄 割合から再計算',
+        eRent:'賃料', eElec:'電気代', eWater:'水道代', eGas:'ガス代（LPG）', eNet:'通信費（ネット等）',
         eSalary:'給与（総額）', eSss:'社会保険料（SSS/PhilHealth/Pag-IBIG）', eKaraoke:'カラオケレンタル',
         phCustom1:'その他１', phCustom2:'その他２', phCustom3:'その他３', phCustom4:'その他４', phCustom5:'その他５',
         phHint:'ガス代・通信費・社会保険料は、フィリピンの飲食店運営で発生しやすい代表的な項目として追加しています。不要であれば0のままで構いません。',
@@ -190,14 +247,17 @@
       en:{ title:'📐 Profit Simulator', back:'← Manage',
         revTitle:'💰 Revenue', revenue:'Monthly revenue (projected)', loadActual:'📥 Load actuals for that month',
         loadHint:'Fills revenue, rent, electricity, water, and salary (attendance estimate) with the actual recorded figures (confirmation before overwrite).',
-        expTitle:'🧾 Expenses (monthly)', eRent:'Rent', eElec:'Electricity', eWater:'Water', eGas:'Gas (LPG)', eNet:'Internet / telecom',
+        expTitle:'🧾 Expenses (monthly)', revLinkedTitle:'📎 Revenue-linked', eVat:'VAT', eService:'Service charge', autoCalc:'auto-calculated',
+        vatSvcHint:'VAT and service charge rates come from "Tax" and "Service charge" in Settings (cannot be changed on this page).',
+        eCogs:'Purchases (COGS)', cogsHint:'Enter a percentage (%) to auto-calculate from revenue. The resulting amount can be freely overwritten afterward (changing the % or pressing "Recalculate from %" recalculates it).', cogsRecalc:'🔄 Recalculate from %',
+        eRent:'Rent', eElec:'Electricity', eWater:'Water', eGas:'Gas (LPG)', eNet:'Internet / telecom',
         eSalary:'Salary (total)', eSss:'Social contributions (SSS/PhilHealth/Pag-IBIG)', eKaraoke:'Karaoke rental',
         phCustom1:'Other 1', phCustom2:'Other 2', phCustom3:'Other 3', phCustom4:'Other 4', phCustom5:'Other 5',
         phHint:'Gas, internet, and social contributions were added as common costs for a Philippines-based restaurant/bar. Leave at 0 if not applicable.',
         resultTitle:'📊 Result', revenue2:'Revenue', expTotal:'Total expenses', profit:'Gross profit', rateLabel:'Margin',
         saveBtn:'💾 Save current values as defaults', saveHint:'Once saved, the same figures will be pre-filled next time you open this screen (just enter revenue each time).',
         saved:'✅ Saved', errPrefix:'Error: ', needMonth:'Please select a month', loadConfirm:'This will overwrite the currently entered revenue, rent, electricity, water, and salary with the actual figures for that month. Continue?', loadFail:'Could not load data', loadOk:'✅ Actuals loaded' }
-    }, function(){ calc(); });
+    }, function(){ updateRateNotes(); calc(); });
   </script>
 </body>
 </html>
