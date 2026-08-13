@@ -226,7 +226,9 @@
       var rev = calcRevenueForProfit(target);
       if (rev === null){ msg('wantMsg', I18n.t('beNA'), false); return; }
       document.getElementById('pRevenue').value = Math.round(rev);
-      calc();
+      // 仕入れが割合(%)指定（変動費）の場合、逆算した売上に合わせて仕入れ金額も再計算しないと
+      // 計算結果の粗利が目標とズレるため、その場合はrecalcCogs()経由でcalc()を呼ぶ。
+      if (num('pCogsRate') > 0) { recalcCogs(); } else { calc(); }
       msg('wantMsg', I18n.t('wantOk') + ' ' + money(rev), true);
     };
 
@@ -260,6 +262,9 @@
       ['symVat','symSvc','symCogs'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerText=SYM; });
     }
 
+    // getSettingsはポーリング用途で頻繁に呼ばれる画面があるため共通の待機オーバーレイでは
+    // サイレント扱い（BG_RPC）。このページでは初期表示の唯一の通信なので、ここだけ明示的に出す。
+    API.loading.show();
     rpc('getSettings',[]).then(function(s){
       s = s || {};
       if (s.currencySymbol) SYM = s.currencySymbol;
@@ -274,7 +279,7 @@
       calc();
     }).catch(function(e){
       if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; }
-    });
+    }).finally(function(){ API.loading.hide(); });
 
     document.getElementById('pMonth').value = new Date().toISOString().slice(0,7);
     applySyms();
