@@ -40,6 +40,13 @@
     .cogsfield{ display:flex; align-items:center; gap:4px; flex:1 1 130px; min-width:0; }
     .cogsfield input[type=number]{ min-width:0; width:100%; max-width:100%; padding:9px 6px; border:1px solid var(--border); border-radius:8px; font-size:15px; font-family:inherit; text-align:right; }
     .cogsfield .sym{ color:var(--text-3); font-size:13px; flex:0 0 auto; }
+    .rank3{ flex-wrap:nowrap; }
+    .rank3 .cogsfield{ min-width:0; }
+    .rank3 .cogsfield input[type=number]{ padding:8px 4px; font-size:13.5px; }
+    .rank3 .cogsfield .sym{ font-size:11px; }
+    .rank3 .fwage{ flex:1.3 1 0; }
+    .rank3 .fcount{ flex:0.7 1 0; }
+    .rank3 .fhours{ flex:1 1 0; }
     .cogsarrow{ color:var(--text-3); font-size:14px; flex:0 0 auto; }
     .btn{ border:0; border-radius:11px; padding:13px; font-size:15px; font-weight:900; cursor:pointer; font-family:inherit; }
     .btn-pri{ background:var(--navy); color:#fff; width:100%; }
@@ -137,37 +144,37 @@
       <div class="subhead" data-t="salaryTitle">👥 給与（月額・ランク別）</div>
       <div class="cogsblock">
         <div class="lb" data-t="rankManager">マネージャー</div>
-        <div class="cogsinputs">
-          <div class="cogsfield"><span class="sym">₱</span><input type="number" id="pMgrWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
-          <div class="cogsfield"><input type="number" id="pMgrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
-          <div class="cogsfield"><input type="number" id="pMgrHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
+        <div class="cogsinputs rank3">
+          <div class="cogsfield fwage"><span class="sym">₱</span><input type="number" id="pMgrWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
+          <div class="cogsfield fcount"><input type="number" id="pMgrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield fhours"><input type="number" id="pMgrHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
         </div>
         <div class="muted" id="mgrSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
       <div class="cogsblock" style="margin-top:10px;">
         <div class="lb" data-t="rankSenior">一般上級</div>
-        <div class="cogsinputs">
-          <div class="cogsfield"><span class="sym">₱</span><input type="number" id="pSrWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
-          <div class="cogsfield"><input type="number" id="pSrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
-          <div class="cogsfield"><input type="number" id="pSrHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
+        <div class="cogsinputs rank3">
+          <div class="cogsfield fwage"><span class="sym">₱</span><input type="number" id="pSrWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
+          <div class="cogsfield fcount"><input type="number" id="pSrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield fhours"><input type="number" id="pSrHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
         </div>
         <div class="muted" id="srSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
       <div class="cogsblock" style="margin-top:10px;">
         <div class="lb" data-t="rankMid">一般中級</div>
-        <div class="cogsinputs">
-          <div class="cogsfield"><span class="sym">₱</span><input type="number" id="pMidWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
-          <div class="cogsfield"><input type="number" id="pMidCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
-          <div class="cogsfield"><input type="number" id="pMidHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
+        <div class="cogsinputs rank3">
+          <div class="cogsfield fwage"><span class="sym">₱</span><input type="number" id="pMidWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
+          <div class="cogsfield fcount"><input type="number" id="pMidCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield fhours"><input type="number" id="pMidHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
         </div>
         <div class="muted" id="midSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
       <div class="cogsblock" style="margin-top:10px;">
         <div class="lb" data-t="rankJunior">一般初級</div>
-        <div class="cogsinputs">
-          <div class="cogsfield"><span class="sym">₱</span><input type="number" id="pJrWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
-          <div class="cogsfield"><input type="number" id="pJrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
-          <div class="cogsfield"><input type="number" id="pJrHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
+        <div class="cogsinputs rank3">
+          <div class="cogsfield fwage"><span class="sym">₱</span><input type="number" id="pJrWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
+          <div class="cogsfield fcount"><input type="number" id="pJrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield fhours"><input type="number" id="pJrHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
         </div>
         <div class="muted" id="jrSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
