@@ -134,8 +134,60 @@
       <div class="exprow"><span class="lb" data-t="eWater">水道代</span><div class="amtwrap"><span class="sym" id="sym3">₱</span><input type="number" min="0" step="any" id="pWater" oninput="calc()"></div></div>
       <div class="exprow"><span class="lb" data-t="eGas">ガス代（LPG）</span><div class="amtwrap"><span class="sym" id="sym4">₱</span><input type="number" min="0" step="any" id="pGas" oninput="calc()"></div></div>
       <div class="exprow"><span class="lb" data-t="eNet">通信費（ネット等）</span><div class="amtwrap"><span class="sym" id="sym5">₱</span><input type="number" min="0" step="any" id="pNet" oninput="calc()"></div></div>
-      <div class="exprow"><span class="lb" data-t="eSalary">給与（総額）</span><div class="amtwrap"><span class="sym" id="sym6">₱</span><input type="number" min="0" step="any" id="pSalary" oninput="calc()"></div></div>
-      <div class="exprow"><span class="lb" data-t="eSss">社会保険料（SSS/PhilHealth/Pag-IBIG）</span><div class="amtwrap"><span class="sym" id="sym7">₱</span><input type="number" min="0" step="any" id="pSss" oninput="calc()"></div></div>
+      <div class="subhead" data-t="salaryTitle">👥 給与（月額・ランク別）</div>
+      <div class="cogsblock">
+        <div class="lb" data-t="rankManager">マネージャー</div>
+        <div class="cogsinputs">
+          <div class="cogsfield"><span class="sym">₱</span><input type="number" id="pMgrWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
+          <div class="cogsfield"><input type="number" id="pMgrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield"><input type="number" id="pMgrHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
+        </div>
+        <div class="muted" id="mgrSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
+      </div>
+      <div class="cogsblock" style="margin-top:10px;">
+        <div class="lb" data-t="rankSenior">一般上級</div>
+        <div class="cogsinputs">
+          <div class="cogsfield"><span class="sym">₱</span><input type="number" id="pSrWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
+          <div class="cogsfield"><input type="number" id="pSrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield"><input type="number" id="pSrHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
+        </div>
+        <div class="muted" id="srSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
+      </div>
+      <div class="cogsblock" style="margin-top:10px;">
+        <div class="lb" data-t="rankMid">一般中級</div>
+        <div class="cogsinputs">
+          <div class="cogsfield"><span class="sym">₱</span><input type="number" id="pMidWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
+          <div class="cogsfield"><input type="number" id="pMidCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield"><input type="number" id="pMidHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
+        </div>
+        <div class="muted" id="midSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
+      </div>
+      <div class="cogsblock" style="margin-top:10px;">
+        <div class="lb" data-t="rankJunior">一般初級</div>
+        <div class="cogsinputs">
+          <div class="cogsfield"><span class="sym">₱</span><input type="number" id="pJrWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
+          <div class="cogsfield"><input type="number" id="pJrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield"><input type="number" id="pJrHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
+        </div>
+        <div class="muted" id="jrSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
+      </div>
+      <div class="hint" data-t="salaryHint">各ランクの時給・人数・1人あたりの月間勤務時間を入力すると、給与総額を自動計算します（13か月給与の月割り積立分も自動的に含めて計算します）。</div>
+      <div class="exprow locked">
+        <span class="lb" data-t="salaryTotalLabel">給与合計</span>
+        <div class="amtwrap"><span class="sym" id="symSalaryTotal">₱</span><input type="number" id="pSalaryTotalDisp" readonly tabindex="-1"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="cogsblock">
+        <div class="lb" data-t="eSss">社会保険料（SSS/PhilHealth/Pag-IBIG）</div>
+        <div class="cogsinputs">
+          <div class="cogsfield"><input type="number" id="pSssRate" min="0" step="any" placeholder="13" oninput="recalcSss()"><span class="sym">%</span></div>
+          <span class="cogsarrow">→</span>
+          <div class="cogsfield"><span class="sym" id="symSss">₱</span><input type="number" id="pSss" min="0" step="any" oninput="calc()"></div>
+        </div>
+      </div>
+      <div class="hint" data-t="sssHint">給与合計に対する割合(%)を入力すると自動計算します（初期値13%）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。</div>
+      <button type="button" class="btn-sm" style="margin-top:8px;" onclick="recalcSss()" data-t="cogsRecalc">🔄 割合から再計算</button>
+      <div class="divider"></div>
       <div class="exprow"><span class="lb" data-t="eOtherStaff">その他人件費（弁護士／経理など）</span><div class="amtwrap"><span class="sym" id="symOther">₱</span><input type="number" min="0" step="any" id="pOtherStaff" oninput="calc()"></div></div>
       <div class="exprow"><span class="lb" data-t="eKaraoke">カラオケレンタル</span><div class="amtwrap"><span class="sym" id="sym8">₱</span><input type="number" min="0" step="any" id="pKaraoke" oninput="calc()"></div></div>
       <div class="exprow"><span class="lb" data-t="ePayFee">決済手数料</span><div class="amtwrap"><span class="sym" id="sym14">₱</span><input type="number" min="0" step="any" id="pPayFee" oninput="calc()"></div></div>
@@ -189,10 +241,16 @@
     function num(id){ return Number(document.getElementById(id).value) || 0; }
 
     // pService（サービス代）はユーザー判断により経費合計から除外（参考表示のみ）。
-    var FIELD_IDS = ['pVat','pFoodCogsAmt','pDrinkCogsAmt','pDrinkBackAmt','pRent','pElec','pWater','pGas','pNet','pSalary','pSss','pOtherStaff','pKaraoke','pPayFee','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
+    // pSalary（給与総額）はランク別入力（_salaryTotal()）に置き換わったため FIELD_IDS には含めない。
+    var FIELD_IDS = ['pVat','pFoodCogsAmt','pDrinkCogsAmt','pDrinkBackAmt','pRent','pElec','pWater','pGas','pNet','pSss','pOtherStaff','pKaraoke','pPayFee','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
     var SETTINGS_MAP = {
       pRevenue:'profitSimRevenue', pRent:'profitSimRent', pElec:'profitSimElec', pWater:'profitSimWater',
-      pGas:'profitSimGas', pNet:'profitSimNet', pSalary:'profitSimSalary', pSss:'profitSimSss', pOtherStaff:'profitSimOtherStaff', pKaraoke:'profitSimKaraoke',
+      pGas:'profitSimGas', pNet:'profitSimNet',
+      pMgrWage:'profitSimMgrWage', pMgrCount:'profitSimMgrCount', pMgrHours:'profitSimMgrHours',
+      pSrWage:'profitSimSrWage', pSrCount:'profitSimSrCount', pSrHours:'profitSimSrHours',
+      pMidWage:'profitSimMidWage', pMidCount:'profitSimMidCount', pMidHours:'profitSimMidHours',
+      pJrWage:'profitSimJrWage', pJrCount:'profitSimJrCount', pJrHours:'profitSimJrHours',
+      pSssRate:'profitSimSssRate', pSss:'profitSimSss', pOtherStaff:'profitSimOtherStaff', pKaraoke:'profitSimKaraoke',
       pPayFee:'profitSimPayFee', pPermits:'profitSimPermits', pInsurance:'profitSimInsurance',
       pDrinkRevenuePct:'profitSimDrinkRevenuePct',
       pFoodCogsRate:'profitSimFoodCogsRate', pFoodCogsAmt:'profitSimFoodCogsAmt',
@@ -226,7 +284,35 @@
     window.recalcDrinkCogs = function(){ _recalcVariableAmt('pDrinkCogsRate','pDrinkCogsAmt', _drinkRevenue()); calc(); };
     window.recalcDrinkBack = function(){ _recalcVariableAmt('pDrinkBackRate','pDrinkBackAmt', _drinkRevenue()); calc(); };
 
-    var FIXED_FIELD_IDS = ['pRent','pElec','pWater','pGas','pNet','pSalary','pSss','pOtherStaff','pKaraoke','pPayFee','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
+    // 給与（ランク別）：各ランクの 時給×人数×月間勤務時間 の合計を給与合計とする。
+    var RANKS = [
+      { wage:'pMgrWage', count:'pMgrCount', hours:'pMgrHours', sub:'mgrSubtotal' },
+      { wage:'pSrWage',  count:'pSrCount',  hours:'pSrHours',  sub:'srSubtotal'  },
+      { wage:'pMidWage', count:'pMidCount', hours:'pMidHours', sub:'midSubtotal' },
+      { wage:'pJrWage',  count:'pJrCount',  hours:'pJrHours',  sub:'jrSubtotal'  }
+    ];
+    function _rankSubtotal(r){ return num(r.wage) * num(r.count) * num(r.hours); }
+    function _salaryTotal(){
+      var t = 0;
+      RANKS.forEach(function(r){ t += _rankSubtotal(r); });
+      return t;
+    }
+    // 13か月給与（フィリピンの法定給付）は給与合計の1/12を月割りで積立てる想定。項目は非表示のまま固定費に自動合算する。
+    function _thirteenthMonth(){ return _salaryTotal() / 12; }
+    function _updateSalaryDisplays(){
+      var total = 0;
+      RANKS.forEach(function(r){
+        var sub = _rankSubtotal(r);
+        total += sub;
+        var el = document.getElementById(r.sub);
+        if (el) el.innerText = money(sub);
+      });
+      document.getElementById('pSalaryTotalDisp').value = Math.round(total);
+      return total;
+    }
+    window.recalcSss = function(){ _recalcVariableAmt('pSssRate','pSss', _salaryTotal()); calc(); };
+
+    var FIXED_FIELD_IDS = ['pRent','pElec','pWater','pGas','pNet','pSss','pOtherStaff','pKaraoke','pPayFee','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
 
     // VATは常に売上に対する率として（内税/外税設定に応じた実効率）、フード原価・ドリンク原価・ドリンクバックは
     // それぞれフード売上／ドリンク売上に対する「割合(%)」が入力されていればその率として、
@@ -235,6 +321,8 @@
     function _beInputs(){
       var fixed = 0;
       FIXED_FIELD_IDS.forEach(function(id){ fixed += num(id); });
+      // 給与合計＋13か月給与（月割り・非表示）は固定費として加算する。
+      fixed += _salaryTotal() + _thirteenthMonth();
       var drinkPct = num('pDrinkRevenuePct') / 100;
       var foodPct = 1 - drinkPct;
       var foodCogsRate = num('pFoodCogsRate');
@@ -265,7 +353,9 @@
       document.getElementById('pService').value = Math.round(revenue * _effRate(SVC_RATE, SVC_INCLUSIVE) / 100);
       var dRev = _drinkRevenue(), fRev = _foodRevenue();
       document.getElementById('revSplitDetail').innerText = I18n.t('revSplitDrink') + ' ' + money(dRev) + ' ／ ' + I18n.t('revSplitFood') + ' ' + money(fRev);
-      var expTotal = 0;
+      var salaryTotal = _updateSalaryDisplays();
+      // 13か月給与（月割り・非表示項目）を給与合計に加算して経費合計に含める。
+      var expTotal = salaryTotal + _thirteenthMonth();
       FIELD_IDS.forEach(function(id){ expTotal += num(id); });
       var profit = revenue - expTotal;
       var rate = revenue > 0 ? Math.round(profit/revenue*1000)/10 : 0;
@@ -317,11 +407,12 @@
         document.getElementById('pRent').value = Math.round(e['賃料']||0);
         document.getElementById('pElec').value = Math.round(e['電気代']||0);
         document.getElementById('pWater').value = Math.round(e['水道代']||0);
-        document.getElementById('pSalary').value = Math.round(d.wages||0);
         // 実績の仕入額はフード/ドリンク別に記録されていないため、一旦フード原価欄にまとめて反映します（必要に応じて按分してください）。
         if (e['商品仕入']) document.getElementById('pFoodCogsAmt').value = Math.round(e['商品仕入']);
         calc();
-        msg('loadMsg', I18n.t('loadOk'), true);
+        // 給与はランク別入力に置き換えたため自動入力せず、実績額を参考情報として表示するのみ。
+        var wageNote = (d.wages != null) ? (' ' + I18n.t('loadWageNote') + ' ' + money(d.wages) + ')') : '';
+        msg('loadMsg', I18n.t('loadOk') + wageNote, true);
       }).catch(function(e){ msg('loadMsg', I18n.t('errPrefix')+(e.message||e), false); });
     };
 
@@ -357,7 +448,7 @@
     I18n.init({
       ja:{ title:'📐 営業利益シミュレーション', back:'← 管理へ',
         revTitle:'💰 売上', revenue:'月間売上（想定）', loadActual:'📥 その月の実績を読み込む',
-        loadHint:'売上・賃料・電気代・水道代・給与（勤怠概算）を、実際に記録されている数字で自動入力します（上書き確認あり）。',
+        loadHint:'売上・賃料・電気代・水道代を、実際に記録されている数字で自動入力します（上書き確認あり）。給与実績はランク別入力に置き換えているため自動入力せず、参考値として表示します。',
         expTitle:'🧾 経費（月額）', revLinkedTitle:'📎 売上連動', eVat:'VAT', eService:'サービス代（参考・経費に含まず）', autoCalc:'自動計算', modeIncl:'内税', modeExcl:'外税',
         vatSvcHint:'VAT・サービス代の税率および内税/外税の設定は、設定画面の値をそのまま使用します（このページでは変更できません）。内税の場合は売上に含まれる税額を抽出、外税の場合は売上に加算して計算します。',
         svcRefHint:'「月間売上」はサービス料上乗せ前の小計として扱います。サービス料は徴収後に対象スタッフへ全額分配する預り金のため、参考表示のみで営業利益の計算には含めていません。',
@@ -367,21 +458,26 @@
         cogsRecalc:'🔄 割合から再計算',
         eDrinkBack:'ドリンクバック', drinkBackHint:'ドリンク売上に対する割合(%)を入力すると自動計算します（ホスト/ホステス等へのドリンク歩合）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。', drinkBackRecalc:'🔄 割合から再計算',
         eRent:'賃料', eElec:'電気代', eWater:'水道代', eGas:'ガス代（LPG）', eNet:'通信費（ネット等）',
-        eSalary:'給与（総額）', eSss:'社会保険料（SSS/PhilHealth/Pag-IBIG）', eOtherStaff:'その他人件費（弁護士／経理など）', eKaraoke:'カラオケレンタル',
+        salaryTitle:'👥 給与（月額・ランク別）', rankManager:'マネージャー', rankSenior:'一般上級', rankMid:'一般中級', rankJunior:'一般初級',
+        unitPeople:'名', unitHours:'h/月',
+        salaryHint:'各ランクの時給・人数・1人あたりの月間勤務時間を入力すると、給与総額を自動計算します（13か月給与の月割り積立分も自動的に含めて計算します）。',
+        salaryTotalLabel:'給与合計',
+        eSss:'社会保険料（SSS/PhilHealth/Pag-IBIG）', sssHint:'給与合計に対する割合(%)を入力すると自動計算します（初期値13%）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。',
+        eOtherStaff:'その他人件費（弁護士／経理など）', eKaraoke:'カラオケレンタル',
         ePayFee:'決済手数料', ePermits:'許認可・行政手数料', eInsurance:'保険料',
         phCustom1:'その他１', phCustom2:'その他２', phCustom3:'その他３', phCustom4:'その他４', phCustom5:'その他５',
         phHint:'ガス代・通信費・社会保険料は、フィリピンの飲食店運営で発生しやすい代表的な項目として追加しています。不要であれば0のままで構いません。',
         resultTitle:'📊 計算結果', revenue2:'売上', expTotal:'経費合計', profit:'営業利益', rateLabel:'営業利益率',
-        beLabel:'参考：営業利益0円になる売上目安', beHint:'現在入力中の固定費・VAT率をもとにした目安です（フード原価・ドリンク原価・ドリンクバックは割合(%)を入力している場合のみそれぞれの売上に対する変動費として計算し、未入力なら固定額として扱います。サービス代は含みません）。', beNA:'達成不可（変動費率が100%以上）',
+        beLabel:'参考：営業利益0円になる売上目安', beHint:'現在入力中の固定費（給与・13か月給与・社会保険料を含む）・VAT率をもとにした目安です（フード原価・ドリンク原価・ドリンクバックは割合(%)を入力している場合のみそれぞれの売上に対する変動費として計算し、未入力なら固定額として扱います。サービス代は含みません）。', beNA:'達成不可（変動費率が100%以上）',
         beDetailPrefix:'固定費合計', beDetailRate:'／変動費率',
         wantProfitLabel:'欲しい営業利益から売上を計算', wantProfitBtn:'→ 売上に反映',
         wantProfitHint:'現在の固定費・VAT率・フード原価率・ドリンク原価率・ドリンクバック率（%指定時）をもとに、指定した営業利益を達成するために必要な売上を計算し、上の「月間売上」欄に反映します。',
         wantNeedValue:'欲しい営業利益の金額を入力してください', wantOk:'✅ 売上に反映しました：',
         saveBtn:'💾 現在の値を既定値として保存', saveHint:'保存すると、次回この画面を開いたときに同じ数字が自動で入力されます（売上だけ毎回入力すればOK）。',
-        saved:'✅ 保存しました', errPrefix:'エラー: ', needMonth:'対象月を選択してください', loadConfirm:'現在入力中の売上・賃料・電気代・水道代・給与を、その月の実績で上書きします。よろしいですか？', loadFail:'データを取得できませんでした', loadOk:'✅ 実績を読み込みました' },
+        saved:'✅ 保存しました', errPrefix:'エラー: ', needMonth:'対象月を選択してください', loadConfirm:'現在入力中の売上・賃料・電気代・水道代を、その月の実績で上書きします。よろしいですか？', loadFail:'データを取得できませんでした', loadOk:'✅ 実績を読み込みました', loadWageNote:'（参考：その月の給与実績' },
       en:{ title:'📐 Operating Profit Simulator', back:'← Manage',
         revTitle:'💰 Revenue', revenue:'Monthly revenue (projected)', loadActual:'📥 Load actuals for that month',
-        loadHint:'Fills revenue, rent, electricity, water, and salary (attendance estimate) with the actual recorded figures (confirmation before overwrite).',
+        loadHint:'Fills revenue, rent, electricity, and water with the actual recorded figures (confirmation before overwrite). Actual salary is no longer auto-filled since salary is now entered by rank, but is shown as a reference figure.',
         expTitle:'🧾 Expenses (monthly)', revLinkedTitle:'📎 Revenue-linked', eVat:'VAT', eService:'Service charge (reference only, excluded)', autoCalc:'auto-calculated', modeIncl:'tax-incl.', modeExcl:'tax-excl.',
         vatSvcHint:'VAT and service charge rates, and whether they are tax-inclusive or tax-exclusive, come from Settings and cannot be changed on this page. Tax-inclusive extracts the tax already contained in revenue; tax-exclusive adds it on top of revenue.',
         svcRefHint:'"Monthly revenue" is treated as the subtotal before the service charge is added. Since the service charge collected is fully redistributed to covered staff, it is shown for reference only and excluded from the operating profit calculation.',
@@ -391,18 +487,23 @@
         cogsRecalc:'🔄 Recalculate from %',
         eDrinkBack:'Drink back', drinkBackHint:'Enter a percentage (%) of drink revenue to auto-calculate (commission paid to hosts/hostesses on drink sales). The resulting amount can be freely overwritten afterward (changing the % or pressing "Recalculate from %" recalculates it).', drinkBackRecalc:'🔄 Recalculate from %',
         eRent:'Rent', eElec:'Electricity', eWater:'Water', eGas:'Gas (LPG)', eNet:'Internet / telecom',
-        eSalary:'Salary (total)', eSss:'Social contributions (SSS/PhilHealth/Pag-IBIG)', eOtherStaff:'Other personnel costs (lawyer/accounting, etc.)', eKaraoke:'Karaoke rental',
+        salaryTitle:'👥 Salary (monthly, by rank)', rankManager:'Manager', rankSenior:'General - Senior', rankMid:'General - Mid', rankJunior:'General - Junior',
+        unitPeople:'people', unitHours:'h/mo',
+        salaryHint:'Enter the hourly wage, headcount, and monthly hours per person for each rank to auto-calculate total salary (the monthly accrual for 13th-month pay is automatically included as well).',
+        salaryTotalLabel:'Total salary',
+        eSss:'Social contributions (SSS/PhilHealth/Pag-IBIG)', sssHint:'Enter a percentage (%) of total salary to auto-calculate (default 13%). The resulting amount can be freely overwritten afterward (changing the % or pressing "Recalculate from %" recalculates it).',
+        eOtherStaff:'Other personnel costs (lawyer/accounting, etc.)', eKaraoke:'Karaoke rental',
         ePayFee:'Payment processing fees', ePermits:'Permits & government fees', eInsurance:'Insurance',
         phCustom1:'Other 1', phCustom2:'Other 2', phCustom3:'Other 3', phCustom4:'Other 4', phCustom5:'Other 5',
         phHint:'Gas, internet, and social contributions were added as common costs for a Philippines-based restaurant/bar. Leave at 0 if not applicable.',
         resultTitle:'📊 Result', revenue2:'Revenue', expTotal:'Total expenses', profit:'Operating profit', rateLabel:'Operating margin',
-        beLabel:'Reference: break-even revenue (operating profit = 0)', beHint:'Estimated from the fixed costs and VAT rate currently entered (food COGS, drink COGS, and drink back are treated as a variable cost against their respective revenue only if a percentage is entered; otherwise as a fixed amount. Service charge is not included).', beNA:'Not achievable (variable cost rate is 100% or more)',
+        beLabel:'Reference: break-even revenue (operating profit = 0)', beHint:'Estimated from the fixed costs (including salary, 13th-month pay, and social contributions) and VAT rate currently entered (food COGS, drink COGS, and drink back are treated as a variable cost against their respective revenue only if a percentage is entered; otherwise as a fixed amount. Service charge is not included).', beNA:'Not achievable (variable cost rate is 100% or more)',
         beDetailPrefix:'Total fixed costs', beDetailRate:'/ variable cost rate',
         wantProfitLabel:'Calculate revenue from a target operating profit', wantProfitBtn:'→ Apply to revenue',
         wantProfitHint:'Using the current fixed costs, VAT rate, food COGS rate, drink COGS rate, and drink back rate (if % is set), calculates the revenue needed to reach the target operating profit and fills it into "Monthly revenue" above.',
         wantNeedValue:'Please enter a target operating profit amount', wantOk:'✅ Applied to revenue:',
         saveBtn:'💾 Save current values as defaults', saveHint:'Once saved, the same figures will be pre-filled next time you open this screen (just enter revenue each time).',
-        saved:'✅ Saved', errPrefix:'Error: ', needMonth:'Please select a month', loadConfirm:'This will overwrite the currently entered revenue, rent, electricity, water, and salary with the actual figures for that month. Continue?', loadFail:'Could not load data', loadOk:'✅ Actuals loaded' }
+        saved:'✅ Saved', errPrefix:'Error: ', needMonth:'Please select a month', loadConfirm:'This will overwrite the currently entered revenue, rent, electricity, and water with the actual figures for that month. Continue?', loadFail:'Could not load data', loadOk:'✅ Actuals loaded', loadWageNote:'(Reference: actual salary for that month' }
     }, function(){ updateRateNotes(); calc(); });
   </script>
 </body>
