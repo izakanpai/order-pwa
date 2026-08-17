@@ -185,10 +185,14 @@
         </div>
         <div class="muted" id="jrSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
-      <div class="hint" data-t="salaryHint">各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分も自動的に含めて計算します）。</div>
+      <div class="hint" data-t="salaryHint">各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分は別項目として自動計算し、経費合計に含めます）。</div>
       <div class="exprow locked">
-        <span class="lb" data-t="salaryTotalLabel">給与合計</span>
+        <span class="lb" data-t="salaryTotalLabel">給与合計（12か月分）</span>
         <div class="amtwrap"><span class="sym" id="symSalaryTotal">₱</span><input type="number" id="pSalaryTotalDisp" readonly tabindex="-1"></div>
+      </div>
+      <div class="exprow locked">
+        <span class="lb" data-t="salary13thLabel">13か月給与積立金（月割り）</span>
+        <div class="amtwrap"><span class="sym" id="symSalary13th">₱</span><input type="number" id="pSalary13thDisp" readonly tabindex="-1"></div>
       </div>
       <div class="divider"></div>
       <div class="cogsblock">
@@ -366,6 +370,7 @@
         }
       });
       document.getElementById('pSalaryTotalDisp').value = Math.round(total);
+      document.getElementById('pSalary13thDisp').value = Math.round(total / 12);
       return total;
     }
     window.recalcSss = function(){ _recalcVariableAmt('pSssRate','pSss', _salaryTotal()); calc(); };
@@ -594,7 +599,7 @@
 
     function applySyms(){
       for(var i=1;i<=16;i++){ var el=document.getElementById('sym'+i); if(el) el.innerText=SYM; }
-      ['symVat','symSvc','symFoodCogs','symDrinkCogs','symDrinkBack','symOther'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerText=SYM; });
+      ['symVat','symSvc','symFoodCogs','symDrinkCogs','symDrinkBack','symOther','symSalaryTotal','symSss','symSalary13th'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerText=SYM; });
     }
 
     // 旧給与形式（時給×人数×月間勤務時間）から新形式（日給×人数×月間出勤日数）への自動移行。
@@ -705,8 +710,9 @@
         eRent:'賃料', eElec:'電気代', eWater:'水道代', eGas:'ガス代（LPG）', eNet:'通信費（ネット等）',
         salaryTitle:'👥 給与（月額・ランク別）', rankManager:'マネージャー', rankSenior:'一般上級', rankMid:'一般中級', rankJunior:'一般初級',
         unitPeople:'名', unitDailyWage:'₱/日', unitHoursPerDay:'h/日', unitDays:'日/月', hourlyPrefix:'時給換算',
-        salaryHint:'各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分も自動的に含めて計算します）。',
-        salaryTotalLabel:'給与合計',
+        salaryHint:'各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分は別項目として自動計算し、経費合計に含めます）。',
+        salaryTotalLabel:'給与合計（12か月分）',
+        salary13thLabel:'13か月給与積立金（月割り）',
         eSss:'社会保険料（SSS/PhilHealth/Pag-IBIG）', sssHint:'給与合計に対する割合(%)を入力すると自動計算します（初期値13%）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。',
         eOtherStaff:'その他人件費（弁護士／経理など）', eKaraoke:'カラオケレンタル',
         ePayFee:'決済手数料', ePermits:'許認可・行政手数料', eInsurance:'保険料',
@@ -747,8 +753,9 @@
         eRent:'Rent', eElec:'Electricity', eWater:'Water', eGas:'Gas (LPG)', eNet:'Internet / telecom',
         salaryTitle:'👥 Salary (monthly, by rank)', rankManager:'Manager', rankSenior:'General - Senior', rankMid:'General - Mid', rankJunior:'General - Junior',
         unitPeople:'people', unitDailyWage:'₱/day', unitHoursPerDay:'h/day', unitDays:'days/mo', hourlyPrefix:'≈ hourly',
-        salaryHint:'Enter the daily wage, hours worked per day, headcount, and workdays per month for each rank to auto-calculate the equivalent hourly wage and total salary (the monthly accrual for 13th-month pay is automatically included as well).',
-        salaryTotalLabel:'Total salary',
+        salaryHint:'Enter the daily wage, hours worked per day, headcount, and workdays per month for each rank to auto-calculate the equivalent hourly wage and total salary (the 13th-month pay accrual is calculated as a separate line item and included in total expenses).',
+        salaryTotalLabel:'Total salary (12 months)',
+        salary13thLabel:'13th-month pay accrual (monthly)',
         eSss:'Social contributions (SSS/PhilHealth/Pag-IBIG)', sssHint:'Enter a percentage (%) of total salary to auto-calculate (default 13%). The resulting amount can be freely overwritten afterward (changing the % or pressing "Recalculate from %" recalculates it).',
         eOtherStaff:'Other personnel costs (lawyer/accounting, etc.)', eKaraoke:'Karaoke rental',
         ePayFee:'Payment processing fees', ePermits:'Permits & government fees', eInsurance:'Insurance',
