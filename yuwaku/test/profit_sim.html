@@ -42,7 +42,7 @@
     .cogsfield .sym{ color:var(--text-3); font-size:13px; flex:0 0 auto; }
     .rank3{ flex-wrap:nowrap; gap:4px; }
     .rank3 .cogsfield{ flex:1 1 0; min-width:0; flex-direction:column; align-items:stretch; gap:1px; }
-    .rank3 .cogsfield input[type=number]{ width:100%; min-width:0; padding:6px 2px; font-size:12.5px; text-align:center; }
+    .rank3 .cogsfield input[type=number]{ width:100%; min-width:0; padding:6px 2px; font-size:12.5px; text-align:right; }
     .rank3 .cogsfield .sym{ order:-1; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .cogsarrow{ color:var(--text-3); font-size:14px; flex:0 0 auto; }
     .btn{ border:0; border-radius:11px; padding:13px; font-size:15px; font-weight:900; cursor:pointer; font-family:inherit; }
@@ -56,6 +56,7 @@
     .profit{ display:flex; justify-content:space-between; align-items:center; padding:16px 12px; margin-top:8px; border-radius:12px; background:#0f172a; color:#fff; }
     .profit .lb{ font-weight:900; font-size:16px; } .profit .amt{ font-weight:900; font-size:22px; font-variant-numeric:tabular-nums; }
     .profit.neg{ background:#7f1d1d; }
+    .profit.invalid{ background:#475569; }
     .profit .rate{ font-size:13px; opacity:.85; margin-left:8px; }
     .muted{ color:var(--text-3); font-size:12px; }
     .hint{ color:var(--text-3); font-size:12px; line-height:1.7; margin-top:6px; }
@@ -68,16 +69,19 @@
   <div class="wrap">
 
     <div class="alert" id="validationMsg"></div>
+    <div class="alert" id="settingsErrorMsg"></div>
+    <div class="alert" id="migrationMsg"></div>
 
     <div class="card">
       <div class="card-title" data-t="revTitle">💰 売上</div>
       <div class="row2">
         <div class="fg"><label class="form-label" data-t="revenue">月間売上（想定）</label><input id="pRevenue" type="number" min="0" step="any" class="fc" placeholder="0" oninput="onRevenueConditionChanged()"></div>
       </div>
-      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <div id="loadActualRow" style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <input id="pMonth" type="month" class="fc" style="width:auto;flex:0 0 auto;">
         <button type="button" class="btn-sm" onclick="loadActual()" data-t="loadActual">📥 その月の実績を読み込む</button>
       </div>
+      <div class="hint" id="loadActualLoginHint" data-t="loadActualLoginHint" style="display:none;">ログインすると、その月の実績を読み込めます。</div>
       <div class="hint" data-t="loadHint">売上・賃料・電気代・水道代・給与（勤怠概算）を、実際に記録されている数字で自動入力します（上書き確認あり）。</div>
       <div class="alert" id="loadMsg"></div>
     </div>
@@ -232,7 +236,8 @@
       </div>
       <div class="alert" id="wantMsg"></div>
 
-      <div style="margin-top:14px;"><button class="btn btn-pri" onclick="saveDefaults()" data-t="saveBtn">💾 現在の値を既定値として保存</button></div>
+      <div id="saveDefaultsRow" style="margin-top:14px;"><button class="btn btn-pri" onclick="saveDefaults()" data-t="saveBtn">💾 現在の値を既定値として保存</button></div>
+      <div class="hint" id="saveDefaultsLoginHint" data-t="saveDefaultsLoginHint" style="display:none;">ログインすると、既定値を保存できます。</div>
       <div class="alert" id="saveMsg"></div>
       <div class="hint" data-t="saveHint">保存すると、次回この画面を開いたときに同じ数字が自動で入力されます（売上だけ毎回入力すればOK）。</div>
     </div>
@@ -246,6 +251,20 @@
     // 既にログイン済みの端末であれば保存されたトークンを使い、未ログインでも動作するようトークンなしで送る。
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
+    // 月次実績の閲覧・既定値の保存はバックエンド側で本物のログイントークンを要求するようになった
+    // （サーバー側で必ず検証される。ここでの非表示はUX上のガードであり、画面側だけに頼らない）。
+    // 未ログイン（mgmtToken無し）の場合はボタン自体を隠し、代わりにログイン案内を表示する。
+    if (!TOKEN) {
+      document.getElementById('loadActualRow').style.display = 'none';
+      document.getElementById('loadActualLoginHint').style.display = 'block';
+      document.getElementById('saveDefaultsRow').style.display = 'none';
+      document.getElementById('saveDefaultsLoginHint').style.display = 'block';
+    }
+    // サーバーから'unauthorized'（トークン無し／期限切れ）が返った場合に、わかりやすいメッセージへ変換する。
+    function _authErrMsg(e){
+      var raw = String((e && e.message) || e || '');
+      return raw === 'unauthorized' ? I18n.t('needLoginForAction') : (I18n.t('errPrefix') + raw);
+    }
     var SYM = '₱';
     function money(v){ return SYM+(Math.round(Number(v)||0)).toLocaleString(); }
     function num(id){ return Number(document.getElementById(id).value) || 0; }
@@ -272,6 +291,8 @@
       pC5Label:'profitSimC5Label', pC5Amt:'profitSimC5Amt'
     };
     var VAT_RATE = 0, SVC_RATE = 0, TAX_INCLUSIVE = false, SVC_INCLUSIVE = false;
+    // getSettings取得に失敗した場合、税率等が反映されない不正確な結果を表示しないようにするフラグ。
+    var SETTINGS_LOAD_FAILED = false;
     // 内税（価格に税込）の場合、売上には既に税額が含まれているため rate/(100+rate) で抽出する。
     // 外税（会計時に上乗せ）の場合は、売上（小計）に対して rate/100 をそのまま加算計算する。
     // 設定画面の「税・サービス料の内税/外税」設定（レジ・レシートと同じロジック）に自動で合わせる。
@@ -440,7 +461,26 @@
       return errors;
     }
 
+    // バリデーションエラー時／設定取得失敗時に共通で使う「計算不可」表示。
+    // 古い（条件変更前の）計算結果がそのまま残って有効な値のように見えないよう、全結果欄を無効化する。
+    function _showUnavailable(reasonText){
+      document.getElementById('rRevenue').innerText = '—';
+      document.getElementById('rExpTotal').innerText = '—';
+      document.getElementById('rProfit').innerText = '—';
+      document.getElementById('rRate').innerText = I18n.t('rateLabel') + ' —';
+      document.getElementById('rBreakeven').innerText = '—';
+      document.getElementById('beDetail').innerText = reasonText;
+      document.getElementById('profitBox').className = 'profit invalid';
+    }
+
     function calc(){
+      // 条件（売上・経費・給与など）が変わった時点で、以前の「目標利益達成」成功表示は無効になる。
+      // applyWantProfit()自身は、この後にcalc()を呼んでから改めてwantMsgを表示するため問題ない。
+      document.getElementById('wantMsg').style.display = 'none';
+      if (SETTINGS_LOAD_FAILED) {
+        _showUnavailable(I18n.t('settingsLoadFailedShort'));
+        return;
+      }
       var errors = validateInputs();
       var vEl = document.getElementById('validationMsg');
       if (errors.length){
@@ -449,6 +489,7 @@
         vEl.style.color = '#b91c1c';
         var sep = (window.I18n && I18n.lang() === 'en') ? ', ' : '、';
         vEl.innerText = I18n.t('validationPrefix') + ' ' + errors.join(sep);
+        _showUnavailable(I18n.t('cannotCalculate'));
         return;
       }
       vEl.style.display = 'none';
@@ -457,8 +498,10 @@
       // 内税（価格に税込）の場合は売上に既に含まれる税額を rate/(100+rate) で抽出し、
       // 外税（会計時に上乗せ）の場合は rate/100 をそのまま乗じる（レジ・レシートと同じロジック）。
       document.getElementById('pVat').value = Math.round(revenue * _effRate(VAT_RATE, TAX_INCLUSIVE) / 100);
-      // サービス代は参考表示のみ（経費合計には含めない）。
-      document.getElementById('pService').value = Math.round(revenue * _effRate(SVC_RATE, SVC_INCLUSIVE) / 100);
+      // サービス代は参考表示のみ（経費合計には含めない）。「月間売上」は内税/外税設定に関わらず
+      // 常にサービス料上乗せ前の小計として扱う仕様のため、内税抽出方式ではなく常に加算方式で計算する
+      // （VATと違い、サービス料は revenue に含まれることが無い前提のため _effRate は使わない）。
+      document.getElementById('pService').value = Math.round(revenue * SVC_RATE / 100);
       var dRev = _drinkRevenue(), fRev = _foodRevenue();
       document.getElementById('revSplitDetail').innerText = I18n.t('revSplitDrink') + ' ' + money(dRev) + ' ／ ' + I18n.t('revSplitFood') + ' ' + money(fRev);
       var salaryTotal = _updateSalaryDisplays();
@@ -489,11 +532,17 @@
     function msg(id, text, ok){ var m=document.getElementById(id); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
 
     window.applyWantProfit = function(){
+      // 不正な入力（マイナス家賃など）がある状態で逆算・反映しない。
+      var inputErrors = validateInputs();
+      if (inputErrors.length){ msg('wantMsg', I18n.t('cannotCalculateInvalidInputs'), false); return; }
       var raw = document.getElementById('pWantProfit').value;
       var target = Number(raw);
-      if (raw === '' || isNaN(target)){ msg('wantMsg', I18n.t('wantNeedValue'), false); return; }
+      // 目標営業利益は0以上のみ許可（マイナス目標からマイナス売上が逆算されるのを防ぐ）。
+      if (raw === '' || !isFinite(target) || target < 0){ msg('wantMsg', I18n.t('wantNeedNonNegative'), false); return; }
       var rev = calcRevenueForProfit(target);
       if (rev === null){ msg('wantMsg', I18n.t('beNA'), false); return; }
+      // 逆算結果自体が非有限・マイナスなら反映しない。
+      if (!isFinite(rev) || rev < 0){ msg('wantMsg', I18n.t('wantResultInvalid'), false); return; }
       document.getElementById('pRevenue').value = Math.round(rev);
       // フード原価・ドリンク原価・ドリンクバックが割合(%)指定（変動費）の場合、逆算した売上に合わせて
       // 金額も再計算しないと計算結果の営業利益が目標とズレるため、該当する項目だけ再計算してからcalc()を1回呼ぶ。
@@ -503,10 +552,12 @@
     };
 
     window.saveDefaults = function(){
+      var errors = validateInputs();
+      if (errors.length){ msg('saveMsg', I18n.t('cannotSaveInvalidInputs'), false); return; }
       var data = {};
       Object.keys(SETTINGS_MAP).forEach(function(id){ data[SETTINGS_MAP[id]] = document.getElementById(id).value || ''; });
       rpc('profitSimSaveSettings',[data]).then(function(){ msg('saveMsg', I18n.t('saved'), true); })
-        .catch(function(e){ msg('saveMsg', I18n.t('errPrefix')+(e.message||e), false); });
+        .catch(function(e){ msg('saveMsg', _authErrMsg(e), false); });
     };
 
     window.loadActual = function(){
@@ -538,7 +589,7 @@
         // 給与はランク別入力に置き換えたため自動入力せず、実績額を参考情報として表示するのみ。
         var wageNote = (d.wages != null) ? (' ' + I18n.t('loadWageNote') + ' ' + money(d.wages) + ')') : '';
         msg('loadMsg', I18n.t('loadOk') + wageNote, true);
-      }).catch(function(e){ msg('loadMsg', I18n.t('errPrefix')+(e.message||e), false); });
+      }).catch(function(e){ msg('loadMsg', _authErrMsg(e), false); });
     };
 
     function applySyms(){
@@ -546,32 +597,96 @@
       ['symVat','symSvc','symFoodCogs','symDrinkCogs','symDrinkBack','symOther'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerText=SYM; });
     }
 
+    // 旧給与形式（時給×人数×月間勤務時間）から新形式（日給×人数×月間出勤日数）への自動移行。
+    // 新形式のキーが未保存（＝一度も新形式で保存されていない）で、旧形式のキーに値が残っている場合のみ、
+    // 「1日の勤務時間＝8時間」と仮定して変換する（日給=時給×8、日数=月間時間÷8とすれば
+    // 日給×日数＝時給×月間時間となり、以前と同じ給与総額を維持できる）。人数は元々キー名が
+    // 変わっていないため、通常のSETTINGS_MAP読み込みで既に正しく反映されている。
+    var OLD_RANK_MIGRATIONS = [
+      { wageKey:'profitSimMgrWage', hoursKey:'profitSimMgrHours', dailyId:'pMgrDailyWage', hpdId:'pMgrHoursPerDay', daysId:'pMgrDays', newDailyKey:'profitSimMgrDailyWage' },
+      { wageKey:'profitSimSrWage',  hoursKey:'profitSimSrHours',  dailyId:'pSrDailyWage',  hpdId:'pSrHoursPerDay',  daysId:'pSrDays',  newDailyKey:'profitSimSrDailyWage'  },
+      { wageKey:'profitSimMidWage', hoursKey:'profitSimMidHours', dailyId:'pMidDailyWage', hpdId:'pMidHoursPerDay', daysId:'pMidDays', newDailyKey:'profitSimMidDailyWage' },
+      { wageKey:'profitSimJrWage',  hoursKey:'profitSimJrHours',  dailyId:'pJrDailyWage',  hpdId:'pJrHoursPerDay',  daysId:'pJrDays',  newDailyKey:'profitSimJrDailyWage'  }
+    ];
+    var ASSUMED_HOURS_PER_DAY = 8;
+    function _migrateOldSalarySettings(s){
+      var migrated = false;
+      OLD_RANK_MIGRATIONS.forEach(function(k){
+        var hasNew = s[k.newDailyKey] !== undefined && s[k.newDailyKey] !== '';
+        var hasOld = s[k.wageKey] !== undefined && s[k.wageKey] !== '' && Number(s[k.wageKey]) > 0;
+        if (!hasNew && hasOld) {
+          var hourlyWage = Number(s[k.wageKey]) || 0;
+          var monthlyHours = Number(s[k.hoursKey]) || 0;
+          document.getElementById(k.dailyId).value = Math.round(hourlyWage * ASSUMED_HOURS_PER_DAY);
+          document.getElementById(k.hpdId).value = ASSUMED_HOURS_PER_DAY;
+          document.getElementById(k.daysId).value = Math.round((monthlyHours / ASSUMED_HOURS_PER_DAY) * 100) / 100;
+          migrated = true;
+        }
+      });
+      var mEl = document.getElementById('migrationMsg');
+      if (migrated) {
+        mEl.style.display = 'block';
+        mEl.style.background = '#fef3c7';
+        mEl.style.color = '#92400e';
+        mEl.innerText = I18n.t('migrationNotice');
+      } else {
+        mEl.style.display = 'none';
+      }
+    }
+
     // getSettingsはポーリング用途で頻繁に呼ばれる画面があるため共通の待機オーバーレイでは
     // サイレント扱い（BG_RPC）。このページでは初期表示の唯一の通信なので、ここだけ明示的に出す。
-    API.loading.show();
-    rpc('getSettings',[]).then(function(s){
-      s = s || {};
-      if (s.currencySymbol) SYM = s.currencySymbol;
-      VAT_RATE = Number(s.taxRate) || 0;
-      SVC_RATE = Number(s.serviceRate) || 0;
-      TAX_INCLUSIVE = (s.taxInclusive === true || String(s.taxInclusive).toLowerCase() === 'true');
-      SVC_INCLUSIVE = (s.serviceInclusive === true || String(s.serviceInclusive).toLowerCase() === 'true');
-      applySyms();
-      updateRateNotes();
-      Object.keys(SETTINGS_MAP).forEach(function(id){
-        var key = SETTINGS_MAP[id];
-        if (s[key] !== undefined && s[key] !== '') document.getElementById(id).value = s[key];
-      });
-      // 保存されていた「割合」と「金額」が古い売上を基準にしたものでズレている可能性があるため、
-      // 割合指定モード（割合欄に値がある）の項目は、読み込んだ現在の売上・給与合計を基準に金額を再計算して補正する。
-      // 割合欄が空欄（固定金額モード）の項目は、保存されていた金額をそのまま維持する。
-      recalcRevenueLinkedAmounts();
-      if (num('pSssRate') > 0) { _recalcVariableAmt('pSssRate','pSss', _salaryTotal()); }
-      calc();
-    }).catch(function(e){ /* ログイン不要ページのため失敗しても遷移せず、既定値のまま利用可能にする */ })
-      .finally(function(){ API.loading.hide(); });
+    // 取得に失敗した場合は「設定が0/空欄のまま正常であるかのように見える」ことを避けるため、
+    // エラーバナー＋再読み込みボタンを表示し、計算結果は無効化する（SETTINGS_LOAD_FAILED）。
+    function loadSettingsAndInit(){
+      var errEl = document.getElementById('settingsErrorMsg');
+      errEl.style.display = 'none';
+      errEl.innerHTML = '';
+      API.loading.show();
+      rpc('getSettings',[]).then(function(s){
+        s = s || {};
+        SETTINGS_LOAD_FAILED = false;
+        if (s.currencySymbol) SYM = s.currencySymbol;
+        VAT_RATE = Number(s.taxRate) || 0;
+        SVC_RATE = Number(s.serviceRate) || 0;
+        TAX_INCLUSIVE = (s.taxInclusive === true || String(s.taxInclusive).toLowerCase() === 'true');
+        SVC_INCLUSIVE = (s.serviceInclusive === true || String(s.serviceInclusive).toLowerCase() === 'true');
+        applySyms();
+        updateRateNotes();
+        Object.keys(SETTINGS_MAP).forEach(function(id){
+          var key = SETTINGS_MAP[id];
+          if (s[key] !== undefined && s[key] !== '') document.getElementById(id).value = s[key];
+        });
+        _migrateOldSalarySettings(s);
+        // 保存されていた「割合」と「金額」が古い売上を基準にしたものでズレている可能性があるため、
+        // 割合指定モード（割合欄に値がある）の項目は、読み込んだ現在の売上・給与合計を基準に金額を再計算して補正する。
+        // 割合欄が空欄（固定金額モード）の項目は、保存されていた金額をそのまま維持する。
+        recalcRevenueLinkedAmounts();
+        if (num('pSssRate') > 0) { _recalcVariableAmt('pSssRate','pSss', _salaryTotal()); }
+        calc();
+      }).catch(function(e){
+        SETTINGS_LOAD_FAILED = true;
+        errEl.style.display = 'block';
+        errEl.style.background = '#fee2e2';
+        errEl.style.color = '#b91c1c';
+        var span = document.createElement('span');
+        span.innerText = I18n.t('settingsLoadFailed');
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'btn-sm'; btn.style.marginLeft = '8px';
+        btn.innerText = I18n.t('retry');
+        btn.onclick = loadSettingsAndInit;
+        errEl.appendChild(span); errEl.appendChild(btn);
+        calc();
+      }).finally(function(){ API.loading.hide(); });
+    }
+    loadSettingsAndInit();
 
-    document.getElementById('pMonth').value = new Date().toISOString().slice(0,7);
+    // 現在月の初期値はローカル時間（店舗のタイムゾーン）で決定する。toISOString()はUTC基準のため、
+    // フィリピン時間で月初の午前0〜8時頃に開くと前月が選択されてしまう不具合があった。
+    (function(){
+      var now = new Date();
+      document.getElementById('pMonth').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    })();
     applySyms();
     calc();
 
@@ -605,7 +720,19 @@
         wantNeedValue:'欲しい営業利益の金額を入力してください', wantOk:'✅ 売上に反映しました：',
         saveBtn:'💾 現在の値を既定値として保存', saveHint:'保存すると、次回この画面を開いたときに同じ数字が自動で入力されます（売上だけ毎回入力すればOK）。',
         saved:'✅ 保存しました', errPrefix:'エラー: ', needMonth:'対象月を選択してください', loadConfirm:'現在入力中の売上・賃料・電気代・水道代を、その月の実績で上書きします。仕入実績がある場合はフード原価・ドリンク原価の金額も上書きされることがあります。よろしいですか？', loadFail:'データを取得できませんでした', loadOk:'✅ 実績を読み込みました', loadWageNote:'（参考：その月の給与実績',
-        validationPrefix:'⚠️ 入力値を確認してください：' },
+        validationPrefix:'⚠️ 入力値を確認してください：',
+        migrationNotice:'ℹ️ 給与の設定形式が更新されました。以前の時給・月間労働時間の設定から、金額が変わらないよう自動的に日給形式へ変換しました。内容をご確認のうえ、必要に応じて修正し「既定値として保存」を押してください。',
+        cannotCalculate:'入力値を確認してください（計算できません）',
+        cannotCalculateInvalidInputs:'入力値に誤りがあるため計算できません。上記のエラーをご確認ください。',
+        wantNeedNonNegative:'目標の営業利益には0以上の数値を入力してください',
+        wantResultInvalid:'現在の経費設定では、指定した営業利益を達成できません（必要な売上を計算できませんでした）',
+        cannotSaveInvalidInputs:'入力値に誤りがあるため保存できません。上記のエラーをご確認ください。',
+        needLoginForAction:'この操作にはログインが必要です',
+        settingsLoadFailed:'設定を読み込めませんでした。通信状況をご確認のうえ、再試行してください。',
+        settingsLoadFailedShort:'設定を読み込めませんでした',
+        retry:'再試行',
+        loadActualLoginHint:'ログインすると、その月の実績を読み込めます。',
+        saveDefaultsLoginHint:'ログインすると、既定値を保存できます。' },
       en:{ title:'📐 Operating Profit Simulator', back:'← Manage',
         revTitle:'💰 Revenue', revenue:'Monthly revenue (projected)', loadActual:'📥 Load actuals for that month',
         loadHint:'Fills revenue, rent, electricity, and water with the actual recorded figures (confirmation before overwrite). Actual salary is no longer auto-filled since salary is now entered by rank, but is shown as a reference figure.',
@@ -635,7 +762,19 @@
         wantNeedValue:'Please enter a target operating profit amount', wantOk:'✅ Applied to revenue:',
         saveBtn:'💾 Save current values as defaults', saveHint:'Once saved, the same figures will be pre-filled next time you open this screen (just enter revenue each time).',
         saved:'✅ Saved', errPrefix:'Error: ', needMonth:'Please select a month', loadConfirm:'This will overwrite the currently entered revenue, rent, electricity, and water with the actual figures for that month. Food and drink COGS amounts may also be overwritten if purchase data exists for that month. Continue?', loadFail:'Could not load data', loadOk:'✅ Actuals loaded', loadWageNote:'(Reference: actual salary for that month',
-        validationPrefix:'⚠️ Please check the following input(s):' }
+        validationPrefix:'⚠️ Please check the following input(s):',
+        migrationNotice:'ℹ️ The salary settings format has been updated. Your previous hourly-wage / monthly-hours settings were automatically converted to the new daily-wage format, preserving the same total amount. Please review the values, adjust if needed, and click "Save current values as defaults".',
+        cannotCalculate:'Please check the input(s) (cannot calculate)',
+        cannotCalculateInvalidInputs:'Cannot calculate because some inputs are invalid. Please check the errors above.',
+        wantNeedNonNegative:'Please enter a target operating profit of 0 or more',
+        wantResultInvalid:'The target operating profit cannot be achieved with the current expense settings (could not calculate the required revenue)',
+        cannotSaveInvalidInputs:'Cannot save because some inputs are invalid. Please check the errors above.',
+        needLoginForAction:'You need to be logged in to do this',
+        settingsLoadFailed:'Could not load settings. Please check your connection and try again.',
+        settingsLoadFailedShort:'Could not load settings',
+        retry:'Retry',
+        loadActualLoginHint:'Log in to load actuals for a given month.',
+        saveDefaultsLoginHint:'Log in to save default values.' }
     }, function(){ updateRateNotes(); calc(); });
   </script>
 </body>
