@@ -217,6 +217,11 @@
       <div class="exprow"><input class="lblInput" id="pC3Label" placeholder="その他３" data-tph="phCustom3"><div class="amtwrap"><span class="sym" id="sym11">₱</span><input type="number" min="0" step="any" id="pC3Amt" oninput="calc()"></div></div>
       <div class="exprow"><input class="lblInput" id="pC4Label" placeholder="その他４" data-tph="phCustom4"><div class="amtwrap"><span class="sym" id="sym12">₱</span><input type="number" min="0" step="any" id="pC4Amt" oninput="calc()"></div></div>
       <div class="exprow"><input class="lblInput" id="pC5Label" placeholder="その他５" data-tph="phCustom5"><div class="amtwrap"><span class="sym" id="sym13">₱</span><input type="number" min="0" step="any" id="pC5Amt" oninput="calc()"></div></div>
+      <div class="exprow"><input class="lblInput" id="pC6Label" placeholder="その他６" data-tph="phCustom6"><div class="amtwrap"><span class="sym" id="sym17">₱</span><input type="number" min="0" step="any" id="pC6Amt" oninput="calc()"></div></div>
+      <div class="exprow"><input class="lblInput" id="pC7Label" placeholder="その他７" data-tph="phCustom7"><div class="amtwrap"><span class="sym" id="sym18">₱</span><input type="number" min="0" step="any" id="pC7Amt" oninput="calc()"></div></div>
+      <div class="exprow"><input class="lblInput" id="pC8Label" placeholder="その他８" data-tph="phCustom8"><div class="amtwrap"><span class="sym" id="sym19">₱</span><input type="number" min="0" step="any" id="pC8Amt" oninput="calc()"></div></div>
+      <div class="exprow"><input class="lblInput" id="pC9Label" placeholder="その他９" data-tph="phCustom9"><div class="amtwrap"><span class="sym" id="sym20">₱</span><input type="number" min="0" step="any" id="pC9Amt" oninput="calc()"></div></div>
+      <div class="exprow"><input class="lblInput" id="pC10Label" placeholder="その他１０" data-tph="phCustom10"><div class="amtwrap"><span class="sym" id="sym21">₱</span><input type="number" min="0" step="any" id="pC10Amt" oninput="calc()"></div></div>
       <div class="hint" data-t="phHint">ガス代・通信費・社会保険料は、フィリピンの飲食店運営で発生しやすい代表的な項目として追加しています。不要であれば0のままで構いません。</div>
     </div>
 
@@ -241,7 +246,6 @@
       <div class="alert" id="wantMsg"></div>
 
       <div id="saveDefaultsRow" style="margin-top:14px;"><button class="btn btn-pri" onclick="saveDefaults()" data-t="saveBtn">💾 現在の値を既定値として保存</button></div>
-      <div class="hint" id="saveDefaultsLoginHint" data-t="saveDefaultsLoginHint" style="display:none;">ログインすると、既定値を保存できます。</div>
       <div class="alert" id="saveMsg"></div>
       <div class="hint" data-t="saveHint">保存すると、次回この画面を開いたときに同じ数字が自動で入力されます（売上だけ毎回入力すればOK）。</div>
     </div>
@@ -261,8 +265,7 @@
     if (!TOKEN) {
       document.getElementById('loadActualRow').style.display = 'none';
       document.getElementById('loadActualLoginHint').style.display = 'block';
-      document.getElementById('saveDefaultsRow').style.display = 'none';
-      document.getElementById('saveDefaultsLoginHint').style.display = 'block';
+      // 既定値保存はログイン不要（このページは仮運用中の一時的なツールのため）。
     }
     // サーバーから'unauthorized'（トークン無し／期限切れ）が返った場合に、わかりやすいメッセージへ変換する。
     function _authErrMsg(e){
@@ -276,7 +279,7 @@
     // pService（サービス代）はユーザー判断により経費合計から除外（参考表示のみ）。
     // pSalary（給与総額）はランク別入力（_salaryTotal()）に置き換わったため FIELD_IDS には含めない。
     // pVat（VAT）は内税/外税で扱いが異なるため FIELD_IDS には含めず、calc()内で内税の場合のみ個別に加算する。
-    var FIELD_IDS = ['pFoodCogsAmt','pDrinkCogsAmt','pDrinkBackAmt','pRent','pElec','pWater','pGas','pNet','pSss','pOtherStaff','pKaraoke','pPayFee','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
+    var FIELD_IDS = ['pFoodCogsAmt','pDrinkCogsAmt','pDrinkBackAmt','pRent','pElec','pWater','pGas','pNet','pSss','pOtherStaff','pKaraoke','pPayFee','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt','pC6Amt','pC7Amt','pC8Amt','pC9Amt','pC10Amt'];
     var SETTINGS_MAP = {
       pRevenue:'profitSimRevenue', pRent:'profitSimRent', pElec:'profitSimElec', pWater:'profitSimWater',
       pGas:'profitSimGas', pNet:'profitSimNet',
@@ -292,7 +295,10 @@
       pDrinkBackRate:'profitSimDrinkBackRate', pDrinkBackAmt:'profitSimDrinkBackAmt',
       pC1Label:'profitSimC1Label', pC1Amt:'profitSimC1Amt', pC2Label:'profitSimC2Label', pC2Amt:'profitSimC2Amt',
       pC3Label:'profitSimC3Label', pC3Amt:'profitSimC3Amt', pC4Label:'profitSimC4Label', pC4Amt:'profitSimC4Amt',
-      pC5Label:'profitSimC5Label', pC5Amt:'profitSimC5Amt'
+      pC5Label:'profitSimC5Label', pC5Amt:'profitSimC5Amt',
+      pC6Label:'profitSimC6Label', pC6Amt:'profitSimC6Amt', pC7Label:'profitSimC7Label', pC7Amt:'profitSimC7Amt',
+      pC8Label:'profitSimC8Label', pC8Amt:'profitSimC8Amt', pC9Label:'profitSimC9Label', pC9Amt:'profitSimC9Amt',
+      pC10Label:'profitSimC10Label', pC10Amt:'profitSimC10Amt'
     };
     var VAT_RATE = 0, SVC_RATE = 0, TAX_INCLUSIVE = false, SVC_INCLUSIVE = false;
     // getSettings取得に失敗した場合、税率等が反映されない不正確な結果を表示しないようにするフラグ。
@@ -382,7 +388,7 @@
       calc();
     }
 
-    var FIXED_FIELD_IDS = ['pRent','pElec','pWater','pGas','pNet','pSss','pOtherStaff','pKaraoke','pPayFee','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
+    var FIXED_FIELD_IDS = ['pRent','pElec','pWater','pGas','pNet','pSss','pOtherStaff','pKaraoke','pPayFee','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt','pC6Amt','pC7Amt','pC8Amt','pC9Amt','pC10Amt'];
 
     // VATは常に売上に対する率として（内税/外税設定に応じた実効率）、フード原価・ドリンク原価・ドリンクバックは
     // それぞれフード売上／ドリンク売上に対する「割合(%)」が入力されていればその率として、
@@ -436,6 +442,11 @@
       { id:'pC3Amt', label:function(){ return document.getElementById('pC3Label').value || I18n.t('phCustom3'); }, type:'min0' },
       { id:'pC4Amt', label:function(){ return document.getElementById('pC4Label').value || I18n.t('phCustom4'); }, type:'min0' },
       { id:'pC5Amt', label:function(){ return document.getElementById('pC5Label').value || I18n.t('phCustom5'); }, type:'min0' },
+      { id:'pC6Amt', label:function(){ return document.getElementById('pC6Label').value || I18n.t('phCustom6'); }, type:'min0' },
+      { id:'pC7Amt', label:function(){ return document.getElementById('pC7Label').value || I18n.t('phCustom7'); }, type:'min0' },
+      { id:'pC8Amt', label:function(){ return document.getElementById('pC8Label').value || I18n.t('phCustom8'); }, type:'min0' },
+      { id:'pC9Amt', label:function(){ return document.getElementById('pC9Label').value || I18n.t('phCustom9'); }, type:'min0' },
+      { id:'pC10Amt', label:function(){ return document.getElementById('pC10Label').value || I18n.t('phCustom10'); }, type:'min0' },
       { id:'pFoodCogsAmt', label:function(){ return I18n.t('eFoodCogs'); }, type:'min0' },
       { id:'pDrinkCogsAmt', label:function(){ return I18n.t('eDrinkCogs'); }, type:'min0' },
       { id:'pDrinkBackAmt', label:function(){ return I18n.t('eDrinkBack'); }, type:'min0' },
@@ -598,7 +609,7 @@
     };
 
     function applySyms(){
-      for(var i=1;i<=16;i++){ var el=document.getElementById('sym'+i); if(el) el.innerText=SYM; }
+      for(var i=1;i<=21;i++){ var el=document.getElementById('sym'+i); if(el) el.innerText=SYM; }
       ['symVat','symSvc','symFoodCogs','symDrinkCogs','symDrinkBack','symOther','symSalaryTotal','symSss','symSalary13th'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerText=SYM; });
     }
 
@@ -717,6 +728,7 @@
         eOtherStaff:'その他人件費（弁護士／経理など）', eKaraoke:'カラオケレンタル',
         ePayFee:'決済手数料', ePermits:'許認可・行政手数料', eInsurance:'保険料',
         phCustom1:'その他１', phCustom2:'その他２', phCustom3:'その他３', phCustom4:'その他４', phCustom5:'その他５',
+        phCustom6:'その他６', phCustom7:'その他７', phCustom8:'その他８', phCustom9:'その他９', phCustom10:'その他１０',
         phHint:'ガス代・通信費・社会保険料は、フィリピンの飲食店運営で発生しやすい代表的な項目として追加しています。不要であれば0のままで構いません。',
         resultTitle:'📊 計算結果', revenue2:'売上', expTotal:'経費合計', profit:'営業利益', rateLabel:'営業利益率',
         beLabel:'参考：営業利益0円になる売上目安', beHint:'現在入力中の固定費（給与・13か月給与・社会保険料を含む）・VAT率をもとにした目安です（フード原価・ドリンク原価・ドリンクバックは割合(%)を入力している場合のみそれぞれの売上に対する変動費として計算し、未入力なら固定額として扱います。サービス代は含みません）。', beNA:'達成不可（変動費率が100%以上）',
@@ -760,6 +772,7 @@
         eOtherStaff:'Other personnel costs (lawyer/accounting, etc.)', eKaraoke:'Karaoke rental',
         ePayFee:'Payment processing fees', ePermits:'Permits & government fees', eInsurance:'Insurance',
         phCustom1:'Other 1', phCustom2:'Other 2', phCustom3:'Other 3', phCustom4:'Other 4', phCustom5:'Other 5',
+        phCustom6:'Other 6', phCustom7:'Other 7', phCustom8:'Other 8', phCustom9:'Other 9', phCustom10:'Other 10',
         phHint:'Gas, internet, and social contributions were added as common costs for a Philippines-based restaurant/bar. Leave at 0 if not applicable.',
         resultTitle:'📊 Result', revenue2:'Revenue', expTotal:'Total expenses', profit:'Operating profit', rateLabel:'Operating margin',
         beLabel:'Reference: break-even revenue (operating profit = 0)', beHint:'Estimated from the fixed costs (including salary, 13th-month pay, and social contributions) and VAT rate currently entered (food COGS, drink COGS, and drink back are treated as a variable cost against their respective revenue only if a percentage is entered; otherwise as a fixed amount. Service charge is not included).', beNA:'Not achievable (variable cost rate is 100% or more)',
