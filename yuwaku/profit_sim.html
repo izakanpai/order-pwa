@@ -40,13 +40,10 @@
     .cogsfield{ display:flex; align-items:center; gap:4px; flex:1 1 130px; min-width:0; }
     .cogsfield input[type=number]{ min-width:0; width:100%; max-width:100%; padding:9px 6px; border:1px solid var(--border); border-radius:8px; font-size:15px; font-family:inherit; text-align:right; }
     .cogsfield .sym{ color:var(--text-3); font-size:13px; flex:0 0 auto; }
-    .rank3{ flex-wrap:nowrap; gap:6px; }
-    .rank3 .cogsfield{ min-width:0; gap:2px; }
-    .rank3 .cogsfield input[type=number]{ padding:7px 3px; font-size:13px; text-align:center; }
-    .rank3 .cogsfield .sym{ font-size:10.5px; }
-    .rank3 .fwage{ flex:0 1 76px; }
-    .rank3 .fcount{ flex:0 1 44px; }
-    .rank3 .fhours{ flex:0 1 58px; }
+    .rank3{ flex-wrap:nowrap; gap:4px; }
+    .rank3 .cogsfield{ flex:1 1 0; min-width:0; flex-direction:column; align-items:stretch; gap:1px; }
+    .rank3 .cogsfield input[type=number]{ width:100%; min-width:0; padding:6px 2px; font-size:12.5px; text-align:center; }
+    .rank3 .cogsfield .sym{ order:-1; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .cogsarrow{ color:var(--text-3); font-size:14px; flex:0 0 auto; }
     .btn{ border:0; border-radius:11px; padding:13px; font-size:15px; font-weight:900; cursor:pointer; font-family:inherit; }
     .btn-pri{ background:var(--navy); color:#fff; width:100%; }
@@ -145,40 +142,44 @@
       <div class="cogsblock">
         <div class="lb" data-t="rankManager">マネージャー</div>
         <div class="cogsinputs rank3">
-          <div class="cogsfield fwage"><span class="sym">₱</span><input type="number" id="pMgrWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
-          <div class="cogsfield fcount"><input type="number" id="pMgrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
-          <div class="cogsfield fhours"><input type="number" id="pMgrHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
+          <div class="cogsfield"><input type="number" id="pMgrDailyWage" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDailyWage">₱/日</span></div>
+          <div class="cogsfield"><input type="number" id="pMgrHoursPerDay" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
+          <div class="cogsfield"><input type="number" id="pMgrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield"><input type="number" id="pMgrDays" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
         <div class="muted" id="mgrSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
       <div class="cogsblock" style="margin-top:10px;">
         <div class="lb" data-t="rankSenior">一般上級</div>
         <div class="cogsinputs rank3">
-          <div class="cogsfield fwage"><span class="sym">₱</span><input type="number" id="pSrWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
-          <div class="cogsfield fcount"><input type="number" id="pSrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
-          <div class="cogsfield fhours"><input type="number" id="pSrHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
+          <div class="cogsfield"><input type="number" id="pSrDailyWage" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDailyWage">₱/日</span></div>
+          <div class="cogsfield"><input type="number" id="pSrHoursPerDay" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
+          <div class="cogsfield"><input type="number" id="pSrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield"><input type="number" id="pSrDays" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
         <div class="muted" id="srSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
       <div class="cogsblock" style="margin-top:10px;">
         <div class="lb" data-t="rankMid">一般中級</div>
         <div class="cogsinputs rank3">
-          <div class="cogsfield fwage"><span class="sym">₱</span><input type="number" id="pMidWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
-          <div class="cogsfield fcount"><input type="number" id="pMidCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
-          <div class="cogsfield fhours"><input type="number" id="pMidHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
+          <div class="cogsfield"><input type="number" id="pMidDailyWage" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDailyWage">₱/日</span></div>
+          <div class="cogsfield"><input type="number" id="pMidHoursPerDay" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
+          <div class="cogsfield"><input type="number" id="pMidCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield"><input type="number" id="pMidDays" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
         <div class="muted" id="midSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
       <div class="cogsblock" style="margin-top:10px;">
         <div class="lb" data-t="rankJunior">一般初級</div>
         <div class="cogsinputs rank3">
-          <div class="cogsfield fwage"><span class="sym">₱</span><input type="number" id="pJrWage" min="0" step="any" placeholder="0" oninput="calc()"></div>
-          <div class="cogsfield fcount"><input type="number" id="pJrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
-          <div class="cogsfield fhours"><input type="number" id="pJrHours" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHours">h/月</span></div>
+          <div class="cogsfield"><input type="number" id="pJrDailyWage" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDailyWage">₱/日</span></div>
+          <div class="cogsfield"><input type="number" id="pJrHoursPerDay" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
+          <div class="cogsfield"><input type="number" id="pJrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield"><input type="number" id="pJrDays" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
         <div class="muted" id="jrSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
-      <div class="hint" data-t="salaryHint">各ランクの時給・人数・1人あたりの月間勤務時間を入力すると、給与総額を自動計算します（13か月給与の月割り積立分も自動的に含めて計算します）。</div>
+      <div class="hint" data-t="salaryHint">各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分も自動的に含めて計算します）。</div>
       <div class="exprow locked">
         <span class="lb" data-t="salaryTotalLabel">給与合計</span>
         <div class="amtwrap"><span class="sym" id="symSalaryTotal">₱</span><input type="number" id="pSalaryTotalDisp" readonly tabindex="-1"></div>
@@ -253,10 +254,10 @@
     var SETTINGS_MAP = {
       pRevenue:'profitSimRevenue', pRent:'profitSimRent', pElec:'profitSimElec', pWater:'profitSimWater',
       pGas:'profitSimGas', pNet:'profitSimNet',
-      pMgrWage:'profitSimMgrWage', pMgrCount:'profitSimMgrCount', pMgrHours:'profitSimMgrHours',
-      pSrWage:'profitSimSrWage', pSrCount:'profitSimSrCount', pSrHours:'profitSimSrHours',
-      pMidWage:'profitSimMidWage', pMidCount:'profitSimMidCount', pMidHours:'profitSimMidHours',
-      pJrWage:'profitSimJrWage', pJrCount:'profitSimJrCount', pJrHours:'profitSimJrHours',
+      pMgrDailyWage:'profitSimMgrDailyWage', pMgrHoursPerDay:'profitSimMgrHoursPerDay', pMgrCount:'profitSimMgrCount', pMgrDays:'profitSimMgrDays',
+      pSrDailyWage:'profitSimSrDailyWage', pSrHoursPerDay:'profitSimSrHoursPerDay', pSrCount:'profitSimSrCount', pSrDays:'profitSimSrDays',
+      pMidDailyWage:'profitSimMidDailyWage', pMidHoursPerDay:'profitSimMidHoursPerDay', pMidCount:'profitSimMidCount', pMidDays:'profitSimMidDays',
+      pJrDailyWage:'profitSimJrDailyWage', pJrHoursPerDay:'profitSimJrHoursPerDay', pJrCount:'profitSimJrCount', pJrDays:'profitSimJrDays',
       pSssRate:'profitSimSssRate', pSss:'profitSimSss', pOtherStaff:'profitSimOtherStaff', pKaraoke:'profitSimKaraoke',
       pPayFee:'profitSimPayFee', pPermits:'profitSimPermits', pInsurance:'profitSimInsurance',
       pDrinkRevenuePct:'profitSimDrinkRevenuePct',
@@ -291,14 +292,16 @@
     window.recalcDrinkCogs = function(){ _recalcVariableAmt('pDrinkCogsRate','pDrinkCogsAmt', _drinkRevenue()); calc(); };
     window.recalcDrinkBack = function(){ _recalcVariableAmt('pDrinkBackRate','pDrinkBackAmt', _drinkRevenue()); calc(); };
 
-    // 給与（ランク別）：各ランクの 時給×人数×月間勤務時間 の合計を給与合計とする。
+    // 給与（ランク別）：各ランクの 日給×人数×月間出勤日数 の合計を給与合計とする。
+    // 1日の勤務時間は「時給換算（日給÷1日勤務時間）」を表示するための参考入力で、給与合計の計算には使わない。
     var RANKS = [
-      { wage:'pMgrWage', count:'pMgrCount', hours:'pMgrHours', sub:'mgrSubtotal' },
-      { wage:'pSrWage',  count:'pSrCount',  hours:'pSrHours',  sub:'srSubtotal'  },
-      { wage:'pMidWage', count:'pMidCount', hours:'pMidHours', sub:'midSubtotal' },
-      { wage:'pJrWage',  count:'pJrCount',  hours:'pJrHours',  sub:'jrSubtotal'  }
+      { daily:'pMgrDailyWage', hpd:'pMgrHoursPerDay', count:'pMgrCount', days:'pMgrDays', sub:'mgrSubtotal' },
+      { daily:'pSrDailyWage',  hpd:'pSrHoursPerDay',  count:'pSrCount',  days:'pSrDays',  sub:'srSubtotal'  },
+      { daily:'pMidDailyWage', hpd:'pMidHoursPerDay', count:'pMidCount', days:'pMidDays', sub:'midSubtotal' },
+      { daily:'pJrDailyWage',  hpd:'pJrHoursPerDay',  count:'pJrCount',  days:'pJrDays',  sub:'jrSubtotal'  }
     ];
-    function _rankSubtotal(r){ return num(r.wage) * num(r.count) * num(r.hours); }
+    function _rankSubtotal(r){ return num(r.daily) * num(r.count) * num(r.days); }
+    function _rankHourly(r){ var h = num(r.hpd); return h > 0 ? (num(r.daily) / h) : 0; }
     function _salaryTotal(){
       var t = 0;
       RANKS.forEach(function(r){ t += _rankSubtotal(r); });
@@ -312,7 +315,10 @@
         var sub = _rankSubtotal(r);
         total += sub;
         var el = document.getElementById(r.sub);
-        if (el) el.innerText = money(sub);
+        if (el) {
+          var hourly = _rankHourly(r);
+          el.innerText = money(sub) + (hourly > 0 ? ('　（' + I18n.t('hourlyPrefix') + ' ' + money(hourly) + '）') : '');
+        }
       });
       document.getElementById('pSalaryTotalDisp').value = Math.round(total);
       return total;
@@ -466,8 +472,8 @@
         eDrinkBack:'ドリンクバック', drinkBackHint:'ドリンク売上に対する割合(%)を入力すると自動計算します（ホスト/ホステス等へのドリンク歩合）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。', drinkBackRecalc:'🔄 割合から再計算',
         eRent:'賃料', eElec:'電気代', eWater:'水道代', eGas:'ガス代（LPG）', eNet:'通信費（ネット等）',
         salaryTitle:'👥 給与（月額・ランク別）', rankManager:'マネージャー', rankSenior:'一般上級', rankMid:'一般中級', rankJunior:'一般初級',
-        unitPeople:'名', unitHours:'h/月',
-        salaryHint:'各ランクの時給・人数・1人あたりの月間勤務時間を入力すると、給与総額を自動計算します（13か月給与の月割り積立分も自動的に含めて計算します）。',
+        unitPeople:'名', unitDailyWage:'₱/日', unitHoursPerDay:'h/日', unitDays:'日/月', hourlyPrefix:'時給換算',
+        salaryHint:'各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分も自動的に含めて計算します）。',
         salaryTotalLabel:'給与合計',
         eSss:'社会保険料（SSS/PhilHealth/Pag-IBIG）', sssHint:'給与合計に対する割合(%)を入力すると自動計算します（初期値13%）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。',
         eOtherStaff:'その他人件費（弁護士／経理など）', eKaraoke:'カラオケレンタル',
@@ -495,8 +501,8 @@
         eDrinkBack:'Drink back', drinkBackHint:'Enter a percentage (%) of drink revenue to auto-calculate (commission paid to hosts/hostesses on drink sales). The resulting amount can be freely overwritten afterward (changing the % or pressing "Recalculate from %" recalculates it).', drinkBackRecalc:'🔄 Recalculate from %',
         eRent:'Rent', eElec:'Electricity', eWater:'Water', eGas:'Gas (LPG)', eNet:'Internet / telecom',
         salaryTitle:'👥 Salary (monthly, by rank)', rankManager:'Manager', rankSenior:'General - Senior', rankMid:'General - Mid', rankJunior:'General - Junior',
-        unitPeople:'people', unitHours:'h/mo',
-        salaryHint:'Enter the hourly wage, headcount, and monthly hours per person for each rank to auto-calculate total salary (the monthly accrual for 13th-month pay is automatically included as well).',
+        unitPeople:'people', unitDailyWage:'₱/day', unitHoursPerDay:'h/day', unitDays:'days/mo', hourlyPrefix:'≈ hourly',
+        salaryHint:'Enter the daily wage, hours worked per day, headcount, and workdays per month for each rank to auto-calculate the equivalent hourly wage and total salary (the monthly accrual for 13th-month pay is automatically included as well).',
         salaryTotalLabel:'Total salary',
         eSss:'Social contributions (SSS/PhilHealth/Pag-IBIG)', sssHint:'Enter a percentage (%) of total salary to auto-calculate (default 13%). The resulting amount can be freely overwritten afterward (changing the % or pressing "Recalculate from %" recalculates it).',
         eOtherStaff:'Other personnel costs (lawyer/accounting, etc.)', eKaraoke:'Karaoke rental',
