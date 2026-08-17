@@ -67,10 +67,12 @@
   <div class="head"><h1 data-t="title">📐 営業利益シミュレーション</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
   <div class="wrap">
 
+    <div class="alert" id="validationMsg"></div>
+
     <div class="card">
       <div class="card-title" data-t="revTitle">💰 売上</div>
       <div class="row2">
-        <div class="fg"><label class="form-label" data-t="revenue">月間売上（想定）</label><input id="pRevenue" type="number" min="0" step="any" class="fc" placeholder="0" oninput="calc()"></div>
+        <div class="fg"><label class="form-label" data-t="revenue">月間売上（想定）</label><input id="pRevenue" type="number" min="0" step="any" class="fc" placeholder="0" oninput="onRevenueConditionChanged()"></div>
       </div>
       <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <input id="pMonth" type="month" class="fc" style="width:auto;flex:0 0 auto;">
@@ -98,16 +100,16 @@
       <div class="fg">
         <label class="form-label" data-t="drinkRevPctLabel">売上のうちドリンクの割合</label>
         <div style="display:flex;gap:8px;align-items:center;">
-          <input type="number" id="pDrinkRevenuePct" min="0" max="100" step="any" class="fc" style="max-width:110px;" placeholder="50" oninput="calc()"><span class="sym">%</span>
+          <input type="number" id="pDrinkRevenuePct" min="0" max="100" step="any" class="fc" style="max-width:110px;" placeholder="50" oninput="onRevenueConditionChanged()"><span class="sym">%</span>
         </div>
       </div>
       <div class="muted" id="revSplitDetail" style="font-size:11.5px;margin-bottom:8px;"></div>
       <div class="cogsblock">
         <div class="lb" data-t="eFoodCogs">フード原価</div>
         <div class="cogsinputs">
-          <div class="cogsfield"><input type="number" id="pFoodCogsRate" min="0" step="any" placeholder="30" oninput="recalcFoodCogs()"><span class="sym">%</span></div>
+          <div class="cogsfield"><input type="number" id="pFoodCogsRate" min="0" max="100" step="any" placeholder="30" oninput="recalcFoodCogs()"><span class="sym">%</span></div>
           <span class="cogsarrow">→</span>
-          <div class="cogsfield"><span class="sym" id="symFoodCogs">₱</span><input type="number" id="pFoodCogsAmt" min="0" step="any" oninput="calc()"></div>
+          <div class="cogsfield"><span class="sym" id="symFoodCogs">₱</span><input type="number" id="pFoodCogsAmt" min="0" step="any" oninput="onAmtManualEdit('pFoodCogsRate')"></div>
         </div>
       </div>
       <div class="hint" data-t="foodCogsHint">フード売上（売上×(100−ドリンク割合)%）に対する割合(%)を入力すると自動計算します。</div>
@@ -115,9 +117,9 @@
       <div class="cogsblock" style="margin-top:10px;">
         <div class="lb" data-t="eDrinkCogs">ドリンク原価</div>
         <div class="cogsinputs">
-          <div class="cogsfield"><input type="number" id="pDrinkCogsRate" min="0" step="any" placeholder="20" oninput="recalcDrinkCogs()"><span class="sym">%</span></div>
+          <div class="cogsfield"><input type="number" id="pDrinkCogsRate" min="0" max="100" step="any" placeholder="20" oninput="recalcDrinkCogs()"><span class="sym">%</span></div>
           <span class="cogsarrow">→</span>
-          <div class="cogsfield"><span class="sym" id="symDrinkCogs">₱</span><input type="number" id="pDrinkCogsAmt" min="0" step="any" oninput="calc()"></div>
+          <div class="cogsfield"><span class="sym" id="symDrinkCogs">₱</span><input type="number" id="pDrinkCogsAmt" min="0" step="any" oninput="onAmtManualEdit('pDrinkCogsRate')"></div>
         </div>
       </div>
       <div class="hint" data-t="drinkCogsHint">ドリンク売上（売上×ドリンク割合%）に対する割合(%)を入力すると自動計算します。</div>
@@ -125,9 +127,9 @@
       <div class="cogsblock" style="margin-top:10px;">
         <div class="lb" data-t="eDrinkBack">ドリンクバック</div>
         <div class="cogsinputs">
-          <div class="cogsfield"><input type="number" id="pDrinkBackRate" min="0" step="any" placeholder="10" oninput="recalcDrinkBack()"><span class="sym">%</span></div>
+          <div class="cogsfield"><input type="number" id="pDrinkBackRate" min="0" max="100" step="any" placeholder="10" oninput="recalcDrinkBack()"><span class="sym">%</span></div>
           <span class="cogsarrow">→</span>
-          <div class="cogsfield"><span class="sym" id="symDrinkBack">₱</span><input type="number" id="pDrinkBackAmt" min="0" step="any" oninput="calc()"></div>
+          <div class="cogsfield"><span class="sym" id="symDrinkBack">₱</span><input type="number" id="pDrinkBackAmt" min="0" step="any" oninput="onAmtManualEdit('pDrinkBackRate')"></div>
         </div>
       </div>
       <div class="hint" data-t="drinkBackHint">ドリンク売上に対する割合(%)を入力すると自動計算します（ホスト/ホステス等へのドリンク歩合）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。</div>
@@ -142,40 +144,40 @@
       <div class="cogsblock">
         <div class="lb" data-t="rankManager">マネージャー</div>
         <div class="cogsinputs rank3">
-          <div class="cogsfield"><input type="number" id="pMgrDailyWage" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDailyWage">₱/日</span></div>
-          <div class="cogsfield"><input type="number" id="pMgrHoursPerDay" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
-          <div class="cogsfield"><input type="number" id="pMgrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
-          <div class="cogsfield"><input type="number" id="pMgrDays" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDays">日/月</span></div>
+          <div class="cogsfield"><input type="number" id="pMgrDailyWage" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDailyWage">₱/日</span></div>
+          <div class="cogsfield"><input type="number" id="pMgrHoursPerDay" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
+          <div class="cogsfield"><input type="number" id="pMgrCount" min="0" step="1" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield"><input type="number" id="pMgrDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
         <div class="muted" id="mgrSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
       <div class="cogsblock" style="margin-top:10px;">
         <div class="lb" data-t="rankSenior">一般上級</div>
         <div class="cogsinputs rank3">
-          <div class="cogsfield"><input type="number" id="pSrDailyWage" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDailyWage">₱/日</span></div>
-          <div class="cogsfield"><input type="number" id="pSrHoursPerDay" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
-          <div class="cogsfield"><input type="number" id="pSrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
-          <div class="cogsfield"><input type="number" id="pSrDays" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDays">日/月</span></div>
+          <div class="cogsfield"><input type="number" id="pSrDailyWage" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDailyWage">₱/日</span></div>
+          <div class="cogsfield"><input type="number" id="pSrHoursPerDay" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
+          <div class="cogsfield"><input type="number" id="pSrCount" min="0" step="1" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield"><input type="number" id="pSrDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
         <div class="muted" id="srSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
       <div class="cogsblock" style="margin-top:10px;">
         <div class="lb" data-t="rankMid">一般中級</div>
         <div class="cogsinputs rank3">
-          <div class="cogsfield"><input type="number" id="pMidDailyWage" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDailyWage">₱/日</span></div>
-          <div class="cogsfield"><input type="number" id="pMidHoursPerDay" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
-          <div class="cogsfield"><input type="number" id="pMidCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
-          <div class="cogsfield"><input type="number" id="pMidDays" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDays">日/月</span></div>
+          <div class="cogsfield"><input type="number" id="pMidDailyWage" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDailyWage">₱/日</span></div>
+          <div class="cogsfield"><input type="number" id="pMidHoursPerDay" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
+          <div class="cogsfield"><input type="number" id="pMidCount" min="0" step="1" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield"><input type="number" id="pMidDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
         <div class="muted" id="midSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
       <div class="cogsblock" style="margin-top:10px;">
         <div class="lb" data-t="rankJunior">一般初級</div>
         <div class="cogsinputs rank3">
-          <div class="cogsfield"><input type="number" id="pJrDailyWage" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDailyWage">₱/日</span></div>
-          <div class="cogsfield"><input type="number" id="pJrHoursPerDay" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
-          <div class="cogsfield"><input type="number" id="pJrCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPeople">名</span></div>
-          <div class="cogsfield"><input type="number" id="pJrDays" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitDays">日/月</span></div>
+          <div class="cogsfield"><input type="number" id="pJrDailyWage" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDailyWage">₱/日</span></div>
+          <div class="cogsfield"><input type="number" id="pJrHoursPerDay" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
+          <div class="cogsfield"><input type="number" id="pJrCount" min="0" step="1" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitPeople">名</span></div>
+          <div class="cogsfield"><input type="number" id="pJrDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
         <div class="muted" id="jrSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
@@ -188,9 +190,9 @@
       <div class="cogsblock">
         <div class="lb" data-t="eSss">社会保険料（SSS/PhilHealth/Pag-IBIG）</div>
         <div class="cogsinputs">
-          <div class="cogsfield"><input type="number" id="pSssRate" min="0" step="any" placeholder="13" oninput="recalcSss()"><span class="sym">%</span></div>
+          <div class="cogsfield"><input type="number" id="pSssRate" min="0" max="100" step="any" placeholder="13" oninput="recalcSss()"><span class="sym">%</span></div>
           <span class="cogsarrow">→</span>
-          <div class="cogsfield"><span class="sym" id="symSss">₱</span><input type="number" id="pSss" min="0" step="any" oninput="calc()"></div>
+          <div class="cogsfield"><span class="sym" id="symSss">₱</span><input type="number" id="pSss" min="0" step="any" oninput="onAmtManualEdit('pSssRate')"></div>
         </div>
       </div>
       <div class="hint" data-t="sssHint">給与合計に対する割合(%)を入力すると自動計算します（初期値13%）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。</div>
@@ -250,7 +252,8 @@
 
     // pService（サービス代）はユーザー判断により経費合計から除外（参考表示のみ）。
     // pSalary（給与総額）はランク別入力（_salaryTotal()）に置き換わったため FIELD_IDS には含めない。
-    var FIELD_IDS = ['pVat','pFoodCogsAmt','pDrinkCogsAmt','pDrinkBackAmt','pRent','pElec','pWater','pGas','pNet','pSss','pOtherStaff','pKaraoke','pPayFee','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
+    // pVat（VAT）は内税/外税で扱いが異なるため FIELD_IDS には含めず、calc()内で内税の場合のみ個別に加算する。
+    var FIELD_IDS = ['pFoodCogsAmt','pDrinkCogsAmt','pDrinkBackAmt','pRent','pElec','pWater','pGas','pNet','pSss','pOtherStaff','pKaraoke','pPayFee','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
     var SETTINGS_MAP = {
       pRevenue:'profitSimRevenue', pRent:'profitSimRent', pElec:'profitSimElec', pWater:'profitSimWater',
       pGas:'profitSimGas', pNet:'profitSimNet',
@@ -283,7 +286,8 @@
     function _drinkRevenue(){ return num('pRevenue') * num('pDrinkRevenuePct') / 100; }
     function _foodRevenue(){ return num('pRevenue') - _drinkRevenue(); }
 
-    // rateId(%) × baseAmount（フード売上／ドリンク売上など）から amtId の金額を自動計算する共通処理
+    // rateId(%) × baseAmount（フード売上／ドリンク売上など）から amtId の金額を自動計算する共通処理。
+    // これはプログラムによる更新（割合が優先＝割合指定モード）であり、対応する割合欄は消さない。
     function _recalcVariableAmt(rateId, amtId, baseAmount){
       var rate = num(rateId);
       document.getElementById(amtId).value = Math.round(baseAmount * rate / 100);
@@ -291,6 +295,26 @@
     window.recalcFoodCogs = function(){ _recalcVariableAmt('pFoodCogsRate','pFoodCogsAmt', _foodRevenue()); calc(); };
     window.recalcDrinkCogs = function(){ _recalcVariableAmt('pDrinkCogsRate','pDrinkCogsAmt', _drinkRevenue()); calc(); };
     window.recalcDrinkBack = function(){ _recalcVariableAmt('pDrinkBackRate','pDrinkBackAmt', _drinkRevenue()); calc(); };
+
+    // ユーザーが金額欄を直接編集した場合のみ、対応する割合欄を空欄にして「固定金額モード」へ切り替える。
+    // （_recalcVariableAmt等によるプログラム的な value 代入は input イベントを発火しないため、ここが呼ばれるのは
+    //   ユーザーが実際にキーボード等で金額欄を編集したときだけ＝割合/固定金額の排他制御として機能する）
+    function onAmtManualEdit(rateId){
+      document.getElementById(rateId).value = '';
+      calc();
+    }
+
+    // 売上またはドリンク比率が変わったとき、割合指定モード（割合欄に値がある）の項目だけ、
+    // 新しい売上・ドリンク/フード按分に合わせて金額を再計算する。calc()はまとめて1回だけ呼ぶ。
+    function recalcRevenueLinkedAmounts(){
+      if (num('pFoodCogsRate') > 0) { _recalcVariableAmt('pFoodCogsRate','pFoodCogsAmt', _foodRevenue()); }
+      if (num('pDrinkCogsRate') > 0) { _recalcVariableAmt('pDrinkCogsRate','pDrinkCogsAmt', _drinkRevenue()); }
+      if (num('pDrinkBackRate') > 0) { _recalcVariableAmt('pDrinkBackRate','pDrinkBackAmt', _drinkRevenue()); }
+    }
+    function onRevenueConditionChanged(){
+      recalcRevenueLinkedAmounts();
+      calc();
+    }
 
     // 給与（ランク別）：各ランクの 日給×人数×月間出勤日数 の合計を給与合計とする。
     // 1日の勤務時間は「時給換算（日給÷1日勤務時間）」を表示するための参考入力で、給与合計の計算には使わない。
@@ -325,6 +349,13 @@
     }
     window.recalcSss = function(){ _recalcVariableAmt('pSssRate','pSss', _salaryTotal()); calc(); };
 
+    // 給与（時給・人数・勤務時間・日数、全ランク共通）を変更したとき、社会保険料が割合指定モードなら
+    // 新しい給与合計に合わせて再計算する（固定金額モード＝割合欄が空欄の場合は変更しない）。
+    function onSalaryInputChanged(){
+      if (num('pSssRate') > 0) { _recalcVariableAmt('pSssRate','pSss', _salaryTotal()); }
+      calc();
+    }
+
     var FIXED_FIELD_IDS = ['pRent','pElec','pWater','pGas','pNet','pSss','pOtherStaff','pKaraoke','pPayFee','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt'];
 
     // VATは常に売上に対する率として（内税/外税設定に応じた実効率）、フード原価・ドリンク原価・ドリンクバックは
@@ -345,7 +376,10 @@
       if (foodCogsRate > 0) { foodCogsEffPct = foodPct * foodCogsRate; } else { fixed += num('pFoodCogsAmt'); }
       if (drinkCogsRate > 0) { drinkCogsEffPct = drinkPct * drinkCogsRate; } else { fixed += num('pDrinkCogsAmt'); }
       if (dbRate > 0) { dbEffPct = drinkPct * dbRate; } else { fixed += num('pDrinkBackAmt'); }
-      var varRatePct = _effRate(VAT_RATE, TAX_INCLUSIVE) + foodCogsEffPct + drinkCogsEffPct + dbEffPct;
+      // 内税の場合のみ、売上に含まれるVATを変動費率として算入する（外税は顧客から別途徴収するだけで、
+      // 入力売上＝税抜小計に対する損益には影響しないため含めない）。
+      var vatVarPct = TAX_INCLUSIVE ? _effRate(VAT_RATE, true) : 0;
+      var varRatePct = vatVarPct + foodCogsEffPct + drinkCogsEffPct + dbEffPct;
       return { fixed: fixed, varRatePct: varRatePct };
     }
     // 目標粗利を達成するのに必要な売上 = (固定費 + 目標粗利) / (1 - 変動費率)。目標粗利0円なら損益分岐点売上と同じ。
@@ -356,7 +390,68 @@
     }
     function calcBreakeven(){ return calcRevenueForProfit(0); }
 
+    // 入力値バリデーション：売上・経費・給与関連は0以上、割合系は0〜100%。
+    // 空欄は「未入力＝0扱い」として許容し、エラーにはしない。
+    var RANK_I18N_KEYS = ['rankManager','rankSenior','rankMid','rankJunior'];
+    var VALIDATION_FIELDS = [
+      { id:'pRevenue', label:function(){ return I18n.t('revenue'); }, type:'min0' },
+      { id:'pRent', label:function(){ return I18n.t('eRent'); }, type:'min0' },
+      { id:'pElec', label:function(){ return I18n.t('eElec'); }, type:'min0' },
+      { id:'pWater', label:function(){ return I18n.t('eWater'); }, type:'min0' },
+      { id:'pGas', label:function(){ return I18n.t('eGas'); }, type:'min0' },
+      { id:'pNet', label:function(){ return I18n.t('eNet'); }, type:'min0' },
+      { id:'pOtherStaff', label:function(){ return I18n.t('eOtherStaff'); }, type:'min0' },
+      { id:'pKaraoke', label:function(){ return I18n.t('eKaraoke'); }, type:'min0' },
+      { id:'pPayFee', label:function(){ return I18n.t('ePayFee'); }, type:'min0' },
+      { id:'pPermits', label:function(){ return I18n.t('ePermits'); }, type:'min0' },
+      { id:'pInsurance', label:function(){ return I18n.t('eInsurance'); }, type:'min0' },
+      { id:'pC1Amt', label:function(){ return document.getElementById('pC1Label').value || I18n.t('phCustom1'); }, type:'min0' },
+      { id:'pC2Amt', label:function(){ return document.getElementById('pC2Label').value || I18n.t('phCustom2'); }, type:'min0' },
+      { id:'pC3Amt', label:function(){ return document.getElementById('pC3Label').value || I18n.t('phCustom3'); }, type:'min0' },
+      { id:'pC4Amt', label:function(){ return document.getElementById('pC4Label').value || I18n.t('phCustom4'); }, type:'min0' },
+      { id:'pC5Amt', label:function(){ return document.getElementById('pC5Label').value || I18n.t('phCustom5'); }, type:'min0' },
+      { id:'pFoodCogsAmt', label:function(){ return I18n.t('eFoodCogs'); }, type:'min0' },
+      { id:'pDrinkCogsAmt', label:function(){ return I18n.t('eDrinkCogs'); }, type:'min0' },
+      { id:'pDrinkBackAmt', label:function(){ return I18n.t('eDrinkBack'); }, type:'min0' },
+      { id:'pSss', label:function(){ return I18n.t('eSss'); }, type:'min0' },
+      { id:'pDrinkRevenuePct', label:function(){ return I18n.t('drinkRevPctLabel'); }, type:'pct' },
+      { id:'pFoodCogsRate', label:function(){ return I18n.t('eFoodCogs') + ' %'; }, type:'pct' },
+      { id:'pDrinkCogsRate', label:function(){ return I18n.t('eDrinkCogs') + ' %'; }, type:'pct' },
+      { id:'pDrinkBackRate', label:function(){ return I18n.t('eDrinkBack') + ' %'; }, type:'pct' },
+      { id:'pSssRate', label:function(){ return I18n.t('eSss') + ' %'; }, type:'pct' }
+    ];
+    RANKS.forEach(function(r, idx){
+      var rk = RANK_I18N_KEYS[idx];
+      VALIDATION_FIELDS.push({ id:r.daily, label:function(){ return I18n.t(rk) + ' ' + I18n.t('unitDailyWage'); }, type:'min0' });
+      VALIDATION_FIELDS.push({ id:r.hpd,   label:function(){ return I18n.t(rk) + ' ' + I18n.t('unitHoursPerDay'); }, type:'min0' });
+      VALIDATION_FIELDS.push({ id:r.count, label:function(){ return I18n.t(rk) + ' ' + I18n.t('unitPeople'); }, type:'min0' });
+      VALIDATION_FIELDS.push({ id:r.days,  label:function(){ return I18n.t(rk) + ' ' + I18n.t('unitDays'); }, type:'min0' });
+    });
+    function validateInputs(){
+      var errors = [];
+      VALIDATION_FIELDS.forEach(function(f){
+        var raw = document.getElementById(f.id).value;
+        if (raw === '') return;
+        var v = Number(raw);
+        if (isNaN(v)) { errors.push(f.label()); return; }
+        if (f.type === 'min0' && v < 0) errors.push(f.label());
+        if (f.type === 'pct' && (v < 0 || v > 100)) errors.push(f.label());
+      });
+      return errors;
+    }
+
     function calc(){
+      var errors = validateInputs();
+      var vEl = document.getElementById('validationMsg');
+      if (errors.length){
+        vEl.style.display = 'block';
+        vEl.style.background = '#fee2e2';
+        vEl.style.color = '#b91c1c';
+        var sep = (window.I18n && I18n.lang() === 'en') ? ', ' : '、';
+        vEl.innerText = I18n.t('validationPrefix') + ' ' + errors.join(sep);
+        return;
+      }
+      vEl.style.display = 'none';
       var revenue = num('pRevenue');
       // VATは売上に対する固定率（設定画面の値）で自動計算、編集不可。
       // 内税（価格に税込）の場合は売上に既に含まれる税額を rate/(100+rate) で抽出し、
@@ -370,14 +465,21 @@
       // 13か月給与（月割り・非表示項目）を給与合計に加算して経費合計に含める。
       var expTotal = salaryTotal + _thirteenthMonth();
       FIELD_IDS.forEach(function(id){ expTotal += num(id); });
-      var profit = revenue - expTotal;
-      var rate = revenue > 0 ? Math.round(profit/revenue*1000)/10 : 0;
-      document.getElementById('rRevenue').innerText = money(revenue);
-      document.getElementById('rExpTotal').innerText = '− ' + money(expTotal);
-      document.getElementById('rProfit').innerText = money(profit);
+      // VATは内税（売上に含まれる税額を除外する必要がある）の場合のみ経費として加算する。
+      // 外税（税抜小計＋別途徴収）の場合は入力売上自体に含まれていないため加算しない。
+      if (TAX_INCLUSIVE) { expTotal += num('pVat'); }
+      // 丸め誤差により「表示売上－表示経費合計≠表示営業利益」とならないよう、
+      // 売上・経費合計を先に丸めてから営業利益を差分として求める（営業利益だけを別途丸めない）。
+      var revenueR = Math.round(revenue);
+      var expTotalR = Math.round(expTotal);
+      var profitR = revenueR - expTotalR;
+      var rate = revenueR > 0 ? Math.round(profitR/revenueR*1000)/10 : 0;
+      document.getElementById('rRevenue').innerText = money(revenueR);
+      document.getElementById('rExpTotal').innerText = '− ' + money(expTotalR);
+      document.getElementById('rProfit').innerText = money(profitR);
       document.getElementById('rRate').innerText = I18n.t('rateLabel') + ' ' + rate + '%';
       var box = document.getElementById('profitBox');
-      box.className = 'profit' + (profit < 0 ? ' neg' : '');
+      box.className = 'profit' + (profitR < 0 ? ' neg' : '');
       var bi = _beInputs();
       var be = calcRevenueForProfit(0);
       document.getElementById('rBreakeven').innerText = (be === null) ? I18n.t('beNA') : money(be);
@@ -395,9 +497,7 @@
       document.getElementById('pRevenue').value = Math.round(rev);
       // フード原価・ドリンク原価・ドリンクバックが割合(%)指定（変動費）の場合、逆算した売上に合わせて
       // 金額も再計算しないと計算結果の営業利益が目標とズレるため、該当する項目だけ再計算してからcalc()を1回呼ぶ。
-      if (num('pFoodCogsRate') > 0) _recalcVariableAmt('pFoodCogsRate','pFoodCogsAmt', _foodRevenue());
-      if (num('pDrinkCogsRate') > 0) _recalcVariableAmt('pDrinkCogsRate','pDrinkCogsAmt', _drinkRevenue());
-      if (num('pDrinkBackRate') > 0) _recalcVariableAmt('pDrinkBackRate','pDrinkBackAmt', _drinkRevenue());
+      recalcRevenueLinkedAmounts();
       calc();
       msg('wantMsg', I18n.t('wantOk') + ' ' + money(rev), true);
     };
@@ -420,8 +520,20 @@
         document.getElementById('pRent').value = Math.round(e['賃料']||0);
         document.getElementById('pElec').value = Math.round(e['電気代']||0);
         document.getElementById('pWater').value = Math.round(e['水道代']||0);
-        // 実績の仕入額はフード/ドリンク別に記録されていないため、一旦フード原価欄にまとめて反映します（必要に応じて按分してください）。
-        if (e['商品仕入']) document.getElementById('pFoodCogsAmt').value = Math.round(e['商品仕入']);
+        // 実績の仕入額はフード/ドリンク別に記録されていないため、フード原価欄にまとめて反映する。
+        // ドリンク原価は二重計上を避けるため0にし、両方とも固定金額モード（割合欄を空欄）に切り替える。
+        if (e['商品仕入'] != null && e['商品仕入'] !== '') {
+          document.getElementById('pFoodCogsAmt').value = Math.round(e['商品仕入']);
+          document.getElementById('pFoodCogsRate').value = '';
+          document.getElementById('pDrinkCogsAmt').value = 0;
+          document.getElementById('pDrinkCogsRate').value = '';
+        } else {
+          // 仕入実績が無い場合、既に割合指定モードの項目のみ新しい売上に合わせて再計算する。
+          if (num('pFoodCogsRate') > 0) _recalcVariableAmt('pFoodCogsRate','pFoodCogsAmt', _foodRevenue());
+          if (num('pDrinkCogsRate') > 0) _recalcVariableAmt('pDrinkCogsRate','pDrinkCogsAmt', _drinkRevenue());
+        }
+        // ドリンクバックは仕入実績と無関係。割合指定モードなら新しい売上に合わせて再計算する。
+        if (num('pDrinkBackRate') > 0) _recalcVariableAmt('pDrinkBackRate','pDrinkBackAmt', _drinkRevenue());
         calc();
         // 給与はランク別入力に置き換えたため自動入力せず、実績額を参考情報として表示するのみ。
         var wageNote = (d.wages != null) ? (' ' + I18n.t('loadWageNote') + ' ' + money(d.wages) + ')') : '';
@@ -450,6 +562,11 @@
         var key = SETTINGS_MAP[id];
         if (s[key] !== undefined && s[key] !== '') document.getElementById(id).value = s[key];
       });
+      // 保存されていた「割合」と「金額」が古い売上を基準にしたものでズレている可能性があるため、
+      // 割合指定モード（割合欄に値がある）の項目は、読み込んだ現在の売上・給与合計を基準に金額を再計算して補正する。
+      // 割合欄が空欄（固定金額モード）の項目は、保存されていた金額をそのまま維持する。
+      recalcRevenueLinkedAmounts();
+      if (num('pSssRate') > 0) { _recalcVariableAmt('pSssRate','pSss', _salaryTotal()); }
       calc();
     }).catch(function(e){ /* ログイン不要ページのため失敗しても遷移せず、既定値のまま利用可能にする */ })
       .finally(function(){ API.loading.hide(); });
@@ -487,7 +604,8 @@
         wantProfitHint:'現在の固定費・VAT率・フード原価率・ドリンク原価率・ドリンクバック率（%指定時）をもとに、指定した営業利益を達成するために必要な売上を計算し、上の「月間売上」欄に反映します。',
         wantNeedValue:'欲しい営業利益の金額を入力してください', wantOk:'✅ 売上に反映しました：',
         saveBtn:'💾 現在の値を既定値として保存', saveHint:'保存すると、次回この画面を開いたときに同じ数字が自動で入力されます（売上だけ毎回入力すればOK）。',
-        saved:'✅ 保存しました', errPrefix:'エラー: ', needMonth:'対象月を選択してください', loadConfirm:'現在入力中の売上・賃料・電気代・水道代を、その月の実績で上書きします。よろしいですか？', loadFail:'データを取得できませんでした', loadOk:'✅ 実績を読み込みました', loadWageNote:'（参考：その月の給与実績' },
+        saved:'✅ 保存しました', errPrefix:'エラー: ', needMonth:'対象月を選択してください', loadConfirm:'現在入力中の売上・賃料・電気代・水道代を、その月の実績で上書きします。仕入実績がある場合はフード原価・ドリンク原価の金額も上書きされることがあります。よろしいですか？', loadFail:'データを取得できませんでした', loadOk:'✅ 実績を読み込みました', loadWageNote:'（参考：その月の給与実績',
+        validationPrefix:'⚠️ 入力値を確認してください：' },
       en:{ title:'📐 Operating Profit Simulator', back:'← Manage',
         revTitle:'💰 Revenue', revenue:'Monthly revenue (projected)', loadActual:'📥 Load actuals for that month',
         loadHint:'Fills revenue, rent, electricity, and water with the actual recorded figures (confirmation before overwrite). Actual salary is no longer auto-filled since salary is now entered by rank, but is shown as a reference figure.',
@@ -516,7 +634,8 @@
         wantProfitHint:'Using the current fixed costs, VAT rate, food COGS rate, drink COGS rate, and drink back rate (if % is set), calculates the revenue needed to reach the target operating profit and fills it into "Monthly revenue" above.',
         wantNeedValue:'Please enter a target operating profit amount', wantOk:'✅ Applied to revenue:',
         saveBtn:'💾 Save current values as defaults', saveHint:'Once saved, the same figures will be pre-filled next time you open this screen (just enter revenue each time).',
-        saved:'✅ Saved', errPrefix:'Error: ', needMonth:'Please select a month', loadConfirm:'This will overwrite the currently entered revenue, rent, electricity, and water with the actual figures for that month. Continue?', loadFail:'Could not load data', loadOk:'✅ Actuals loaded', loadWageNote:'(Reference: actual salary for that month' }
+        saved:'✅ Saved', errPrefix:'Error: ', needMonth:'Please select a month', loadConfirm:'This will overwrite the currently entered revenue, rent, electricity, and water with the actual figures for that month. Food and drink COGS amounts may also be overwritten if purchase data exists for that month. Continue?', loadFail:'Could not load data', loadOk:'✅ Actuals loaded', loadWageNote:'(Reference: actual salary for that month',
+        validationPrefix:'⚠️ Please check the following input(s):' }
     }, function(){ updateRateNotes(); calc(); });
   </script>
 </body>
