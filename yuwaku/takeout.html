@@ -66,7 +66,7 @@
 </head>
 <body>
   <a class="lang-btn lang-fab" id="mgmtBack" href="./manage.html" style="display:none;left:12px;right:auto;">← 管理</a>
-  <button class="lang-btn lang-fab" id="langToggle" onclick="toggleLang()">JP/EN</button>
+  <button class="lang-btn lang-fab" id="langToggle" data-tlang onclick="I18n.toggle()">JP/EN</button>
   <script>try{if(localStorage.getItem('mgmtToken')){var _mb=document.getElementById('mgmtBack');if(_mb)_mb.style.display='block';}}catch(e){}</script>
   <img id="banner" class="to-banner" alt="">
   <div class="to-head">
@@ -116,12 +116,14 @@
 
   <script src="./config.js"></script>
   <script src="./api.js"></script>
+  <script src="./i18n.js"></script>
   <script>
     var MENU = [], SETTINGS = {}, PAYMONGO = false;
     var cart = {}, curCat = null, payMethod = 'card';
     var pendingOrder = null, pollTimer = null, takeoutCoupon = null, payPollCount = 0;
     var PAY_POLL_MAX = 150; // 4秒間隔×150回＝約10分でタイムアウトし、決済確認ポーリングを打ち切る（外部決済APIへの無期限リトライを防止）
-    var lang = (localStorage.getItem('lang') || '').match(/^(ja|en)$/) ? localStorage.getItem('lang') : '';
+    // 言語の切替・優先順位・永続化は共通部品I18nに統一。lang はI18n.init()のonChangeコールバック経由で更新するミラー。
+    var lang = 'en';
 
     var T = {
       ja: { cart:'カート', order:'注文へ進む', pickup:'受取情報', name:'お名前 *', phone:'電話番号（任意）', pickupT:'受取時刻',
@@ -143,7 +145,7 @@
             confirmPay:'I have paid', opening:'Opening payment window…', pickupLabel:'Pickup', totalLabel:'Total',
             coupon:'Coupon (optional)', apply:'Apply', cpApplied:'Applied', cpNotfound:'Code not found', cpInactive:'Not available', cpExpired:'Expired', cpLimit:'Usage limit reached', cpMin:'Minimum order not met', cpInvalid:'Invalid code', discountLabel:'Discount', loading:'Loading…', loadErr:'Could not load the menu' }
     };
-    function tt(){ return T[lang] || T.en; }
+    function tt(){ return I18n.d(); }
     function sym(){ return SETTINGS.currencySymbol || '₱'; }
     function money(n){ return sym() + (Number(n)||0).toLocaleString(); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
@@ -316,7 +318,10 @@
       closeCheckout(); renderMenu(); updateCart();
     };
 
-    function applyLang(){
+    // I18n.init()のonChangeコールバック（手動切替時・店舗既定言語の反映時の両方で呼ばれる）。
+    // ボタンの表示テキストは共通部品I18n（data-tlang）が管理するため、ここでは触らない（他画面と統一）。
+    function onLangChange(l){
+      lang = l;
       var t = tt();
       document.getElementById('shopName').innerText = SETTINGS.shopName || 'Takeout';
       document.getElementById('tagTakeout').innerText = t.tag;
@@ -333,19 +338,18 @@
       document.getElementById('coCancel').innerText = t.cancel;
       updateCart();
     }
-    window.toggleLang = function(){ lang = (lang==='ja'?'en':'ja'); try{localStorage.setItem('lang',lang);}catch(e){} applyLang(); };
 
     function boot(){
+      // 言語の初期化・切替・永続化は共通部品I18nに一本化（他画面と同じ仕組み）。
+      I18n.init(T, onLangChange);
       API.post('bootstrap', {}).then(function(r){
         SETTINGS = r.settings || {}; MENU = r.menu || []; PAYMONGO = !!r.paymongo;
-        if (!lang) lang = SETTINGS.defaultLang || 'en';
         var bid = SETTINGS.menuTopImageId;
         if (bid){ var b=document.getElementById('banner'); b.src='https://lh3.googleusercontent.com/d/'+bid; b.style.display='block'; }
-        renderCats(); renderMenu(); applyLang(); updateCart();
+        renderCats(); renderMenu(); onLangChange(I18n.lang()); updateCart();
       }).catch(function(){
-        if (!lang) lang='en';
         document.getElementById('loadMsg').innerText = tt().loadErr;
-        applyLang();
+        onLangChange(I18n.lang());
       });
       if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(function(){}); }
     }

@@ -4,7 +4,7 @@
 //   ヘッダに <button data-tlang onclick="I18n.toggle()">EN</button> を置く。
 //   翻訳したい要素に data-t="key"（テキスト）/ data-tph="key"（placeholder）を付ける。
 //   I18n.init({ ja:{key:'日本語'}, en:{key:'English'} }, function(lang){ /* 動的部分を再描画 */ });
-//   動的文字列は I18n.t('key') で取得。
+//   動的文字列は I18n.t('key') で取得（t().key スタイルで多用する画面は I18n.d() で辞書全体を取得してもよい）。
 //   言語の優先順位: ①ユーザーが手動で切替済み（localStorage.lang）②店舗設定の「既定言語」
 //   （localStorage.langDefaultCacheに直近値をキャッシュしつつ、毎回バックグラウンドで最新値を取得・反映）③最終フォールバックはEnglish。
 //   （以前は②③が無く、未設定時は常に日本語だった。店舗設定の既定言語を無視してしまう不具合のため統一）
@@ -25,7 +25,9 @@
     init: function (dict, onChange) { DICT = dict || {}; cb = onChange || null; apply(); fetchDefaultLang(); },
     toggle: function () { try { localStorage.setItem('lang', lang() === 'ja' ? 'en' : 'ja'); } catch (e) {} apply(); },
     lang: lang,
-    t: function (k) { var d = DICT[lang()] || {}; return d[k] != null ? d[k] : k; }
+    t: function (k) { var d = DICT[lang()] || {}; return d[k] != null ? d[k] : k; },
+    // 現在言語の辞書オブジェクト全体を返す（t(key)ではなく t().key スタイルで多数参照する画面向け）。
+    d: function () { return DICT[lang()] || {}; }
   };
 
   // 店舗設定の「既定言語」をバックグラウンドで取得し、ユーザーが手動切替していない場合のみ反映する。

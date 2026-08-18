@@ -107,6 +107,19 @@
     </div>
 
     <div class="card">
+      <div class="card-title" data-t="entryTitle">🎫 入場料・延長料</div>
+      <div class="grid2">
+        <div class="fg"><label class="form-label" data-t="entryFeeAmount">入場料（1人あたり）</label><input id="entryFeeAmount" type="number" min="0" step="any" class="fc"></div>
+        <div class="fg"><label class="form-label" data-t="baseUsageMinutes">基本利用時間（分）</label><input id="baseUsageMinutes" type="number" min="0" step="1" class="fc"></div>
+        <div class="fg"><label class="form-label" data-t="extensionFeeAmount">延長料（1人・1単位あたり）</label><input id="extensionFeeAmount" type="number" min="0" step="any" class="fc"></div>
+        <div class="fg"><label class="form-label" data-t="extensionUnitMinutes">延長時間の単位（分）</label><input id="extensionUnitMinutes" type="number" min="1" step="1" class="fc"></div>
+      </div>
+      <div class="form-hint" data-t="entryHint" style="margin:6px 0 10px;">入場料・延長料はいずれも「1円以上」設定されている場合のみ会計画面に表示・請求されます（0円のままなら従来どおり請求されません）。延長料は、卓/カウンター選択時にお客様が入力した人数と入店時刻を基準に、基本利用時間を超えた分を延長時間の単位で切り上げて自動計算します。</div>
+      <button class="btn" onclick="saveEntryFee()" data-t="save">💾 保存</button>
+      <div class="st" id="st-entry"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title" data-t="payTitle">💳 PayMongo（オンライン決済）</div>
       <div class="row" style="margin-bottom:8px;"><span data-t="status">状態:</span> <span class="badge offb" id="payBadge" data-t="unset">未設定</span></div>
       <div class="fg"><label class="form-label" data-t="payKey">シークレットキー（sk_live_… / sk_test_…）</label><input id="payKey" type="password" class="fc" autocomplete="off" placeholder="貼り付けて保存" data-tph="phPaste"><div class="hint" data-t="payHint">保存後はキー自体は表示されません（状態のみ）。</div></div>
@@ -363,6 +376,11 @@
     // 時・分（数値）からtime input用の"HH:MM"文字列を作る。
     function _fmtTime(h,m){ h=parseInt(h,10)||0; m=parseInt(m,10)||0; return (h<10?'0':'')+h+':'+(m<10?'0':'')+m; }
     window.saveLocale = function(){ var bc=_splitTime($('bizDayCutoff').value); rpc('saveSettings',[{ currencyCode:$('currencyCode').value, currencySymbol:$('currencySymbol').value, serviceRate:$('serviceRate').value, taxRate:$('taxRate').value, serviceInclusive:$('serviceInclusive').checked?'true':'false', taxInclusive:$('taxInclusive').checked?'true':'false', defaultLang:$('defaultLang').value, accentColor:$('accentColor').value, bizDayCutoffHour:bc[0], bizDayCutoffMin:bc[1] }]).then(function(){ st('st-locale',I18n.t('saved'), true); }).catch(function(e){ st('st-locale',I18n.t('errPrefix')+(e.message||e), false); }); };
+    window.saveEntryFee = function(){
+      rpc('saveSettings',[{ entryFeeAmount:Number($('entryFeeAmount').value)||0, baseUsageMinutes:Number($('baseUsageMinutes').value)||0,
+        extensionFeeAmount:Number($('extensionFeeAmount').value)||0, extensionUnitMinutes:Number($('extensionUnitMinutes').value)||0 }])
+        .then(function(){ st('st-entry',I18n.t('saved'), true); }).catch(function(e){ st('st-entry',I18n.t('errPrefix')+(e.message||e), false); });
+    };
     window.savePayKey = function(){ var k=$('payKey').value.trim(); if(!k){ st('st-pay',I18n.t('needKey'), false); return; } rpc('savePaymongoKey',[k]).then(function(){ $('payKey').value=''; st('st-pay',I18n.t('saved'), true); return rpc('getPaymongoKeyStatus',[]); }).then(function(s){ if(s) setBadge('payBadge', s.configured); }).catch(function(e){ st('st-pay',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.saveGemKey = function(){ var k=$('gemKey').value.trim(); if(!k){ st('st-gem',I18n.t('needKey'), false); return; } rpc('saveGeminiKey',[k]).then(function(){ $('gemKey').value=''; st('st-gem',I18n.t('saved'), true); return rpc('getGeminiKeyStatus',[]); }).then(function(s){ if(s) setBadge('gemBadge', s.configured); }).catch(function(e){ st('st-gem',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.saveCseKey = function(){
@@ -425,6 +443,8 @@
       $('defaultLang').value = d.defaultLang || 'en';
       $('accentColor').value = d.accentColor || '#0f172a';
       $('bizDayCutoff').value = _fmtTime(d.bizDayCutoffHour, d.bizDayCutoffMin);
+      $('entryFeeAmount').value = d.entryFeeAmount || ''; $('baseUsageMinutes').value = d.baseUsageMinutes || '';
+      $('extensionFeeAmount').value = d.extensionFeeAmount || ''; $('extensionUnitMinutes').value = d.extensionUnitMinutes || '';
       $('storeLat').value = d.storeLat || ''; $('storeLng').value = d.storeLng || ''; $('storeRadius').value = d.storeRadius || '';
       $('loyaltyEnabled').checked = (d.loyaltyEnabled==='on'||d.loyaltyEnabled===true||d.loyaltyEnabled==='true');
       $('loyaltyEarnRate').value = d.loyaltyEarnRate || ''; $('loyaltyRedeemValue').value = d.loyaltyRedeemValue || '';
@@ -449,6 +469,8 @@
         localeTitle:'🌐 表示・地域', curCode:'通貨コード', curSym:'通貨記号', svcRate:'サービス料 (%)', taxRate:'税率 (%)', defLang:'既定言語', accent:'アクセント色',
         svcInclLabel:'内税（価格に含む）', taxInclLabel:'内税（価格に含む）', chargesHint:'チェックなし＝外税（表示価格に加算）。チェックあり＝内税（表示価格に含む）。一般的には税＝内税、サービス料＝外税です。',
         bizCutoff:'営業日切替時刻', bizCutoffHint:'深夜営業の場合に設定してください。例：2:30を設定すると、午前2時30分までの売上は前日の営業日として日報・週報・月報・売上集計に計上されます。0:00＝通常どおり午前0時で区切り。指定できるのは0:00〜11:59の範囲です（それ以外は0:00として扱われます）。',
+        entryTitle:'🎫 入場料・延長料', entryFeeAmount:'入場料（1人あたり）', baseUsageMinutes:'基本利用時間（分）', extensionFeeAmount:'延長料（1人・1単位あたり）', extensionUnitMinutes:'延長時間の単位（分）',
+        entryHint:'入場料・延長料はいずれも「1円以上」設定されている場合のみ会計画面に表示・請求されます（0円のままなら従来どおり請求されません）。延長料は、卓/カウンター選択時にお客様が入力した人数と入店時刻を基準に、基本利用時間を超えた分を延長時間の単位で切り上げて自動計算します。',
         payTitle:'💳 PayMongo（オンライン決済）', payKey:'シークレットキー（sk_live_… / sk_test_…）', payHint:'保存後はキー自体は表示されません（状態のみ）。',
         gemTitle:'🤖 Gemini APIキー（画像検索・在庫AIスキャン用・任意）', apiKey:'APIキー',
         cseTitle:'🔍 Pexels画像検索（メニュー画像・任意）', cseApiKey:'APIキー', cseHint:'メニュー編集画面の商品画像を、無料ストック写真サイトPexelsから検索して選べるようにします。pexels.com/api にアクセスし、無料アカウントでログイン後「Your API Key」ページに表示されるキーを貼り付けてください（即時発行・審査なし）。無料枠は1時間200件・1か月20,000件です。',
@@ -467,6 +489,8 @@
         localeTitle:'🌐 Display & region', curCode:'Currency code', curSym:'Currency symbol', svcRate:'Service charge (%)', taxRate:'Tax (%)', defLang:'Default language', accent:'Accent color',
         svcInclLabel:'Tax-inclusive (included in price)', taxInclLabel:'Tax-inclusive (included in price)', chargesHint:'Unchecked = exclusive (added on top of the listed price). Checked = inclusive (already included in the listed price). Typically tax is inclusive and the service charge is exclusive.',
         bizCutoff:'Business day cutoff time', bizCutoffHint:'Set this if you stay open past midnight. E.g. setting 2:30 means sales up to 2:30am count toward the previous day’s business day in the daily/weekly/monthly reports and sales totals. 0:00 = normal midnight cutoff. Valid range is 0:00–11:59 (anything else is treated as 0:00).',
+        entryTitle:'🎫 Entry & extension fee', entryFeeAmount:'Entry fee (per person)', baseUsageMinutes:'Base usage time (minutes)', extensionFeeAmount:'Extension fee (per person, per unit)', extensionUnitMinutes:'Extension unit (minutes)',
+        entryHint:'Both the entry fee and the extension fee are only shown/charged at checkout when set to 1 or more (leave at 0 to keep charging them off, as before). The extension fee is calculated automatically from the party size and entry time the guest entered when picking their table/counter, rounding up any time past the base usage time to whole extension units.',
         payTitle:'💳 PayMongo (online payment)', payKey:'Secret key (sk_live_… / sk_test_…)', payHint:'The key itself is not shown after saving (status only).',
         gemTitle:'🤖 Gemini API key (image search & inventory AI scan, optional)', apiKey:'API key',
         cseTitle:'🔍 Pexels Image Search (menu images, optional)', cseApiKey:'API key', cseHint:'Lets you search free stock photos (Pexels) for product images right from the menu editor. Go to pexels.com/api, log in with a free account, and paste the key shown on the "Your API Key" page (issued instantly, no approval needed). Free tier is 200 requests/hour, 20,000/month.',

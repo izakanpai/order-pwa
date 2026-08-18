@@ -69,9 +69,10 @@
   <div class="head">
     <h1 id="title">注文管理</h1>
     <div class="r">
+      <span class="cnt" id="headClock" style="background:transparent;font-weight:700;font-variant-numeric:tabular-nums;"></span>
       <a class="hbtn" href="./manage.html">← 管理</a>
       <span class="cnt" id="cnt">0</span>
-      <button class="hbtn" id="langBtn" onclick="toggleLang()">EN</button>
+      <button class="hbtn" id="langBtn" data-tlang onclick="I18n.toggle()">EN</button>
       <button class="hbtn" id="refreshBtn" onclick="manualRefresh()">↻</button>
     </div>
   </div>
@@ -168,6 +169,7 @@
 
   <script src="./config.js"></script>
   <script src="./api.js"></script>
+  <script src="./i18n.js"></script>
   <script>
     // [P0-2] 会計・注文操作はスタッフ操作のため、事前ログイン（1回のみ）を必須にする。
     var TOKEN = localStorage.getItem('mgmtToken') || '';
@@ -176,12 +178,12 @@
     var autoOn = (function(){ try{ var v=localStorage.getItem('adminAuto'); return v===null?true:(v==='1'); }catch(e){ return true; } })();
     var refreshSec = (function(){ try{ var v=parseInt(localStorage.getItem('adminRefreshSec'),10); return (v===10||v===30||v===60)?v:30; }catch(e){ return 30; } })();
     var refreshTimer = null;
-    // 言語の優先順位: ①ユーザーが手動で切替済み（localStorage.lang）②店舗設定の既定言語（起動時にbootstrapで取得しキャッシュ）③英語。
-    // 以前は未設定時に常に日本語固定だったため、店舗設定の既定言語を無視してしまう不具合があった（統一対応）。
-    function explicitLang(){ try{ var v=localStorage.getItem('lang'); return (v==='en'||v==='ja')?v:null; }catch(e){ return null; } }
-    function cachedDefaultLang(){ try{ var v=localStorage.getItem('langDefaultCache'); return (v==='en'||v==='ja')?v:null; }catch(e){ return null; } }
-    var lang = explicitLang() || cachedDefaultLang() || 'en';
+    // 言語の切替・優先順位・永続化は共通部品 i18n.js（I18n）に統一。この画面は現在言語を表す
+    // ローカル変数 lang を持つのみで、実際の切替ロジックはI18n.init()のonChangeコールバック経由で更新する
+    // （他画面（kds.html/register.html/inventory.html/settings.html/expenses.html等）と同じ仕組みを利用）。
+    var lang = 'en'; // I18n.init()完了後、正しい値に更新される（初期値は暫定）
     var payTable = '', payTotal = 0, payCheckoutId = null, payMethod = 'cash', paySub = 0, payBase = null, payOrderIds = null, partTable = '';
+    var payEntryFee = 0, payExtensionFee = 0, payPartySize = 0; // [要望対応] 入場料・延長料のプレビュー
 
     var i18n = {
       ja: { title:'注文管理', served:'✓ 提供済', servedBtn:'提供済にする', pay:'💳 会計する', noOrder:'未会計の注文はありません',
@@ -190,16 +192,18 @@
             noKey:'オンライン決済は未設定です。', cashRecv:'現金を受け取りましたか？', confirmed:'支払い完了', done:'完了（会計済にする）', processing:'処理中…', lang:'EN',
             disc:'シニア/PWD割引', senior:'シニア', idPh:'ID番号', eligPh:'対象額', discLine:'割引', vatNote:'うちVAT', orLbl:'レシート番号', printBtn:'🖨️ レシート印刷', close:'閉じる', tableW:'卓', totalW:'合計',
             partial:'🧾 一部会計', partTitle:'一部会計 — 明細を選択', selected:'選択', selPay:'選択分を会計', splitLbl:'割り勘 ÷', each:'/人',
-            callHdr:'🔔 呼び出し', callLbl:'スタッフ呼出', billLbl:'お会計希望', resolve:'対応済', agoMin:'分前', stay:'滞在', voidBtn:'取消', voidT:'注文の取消', reason:'取消理由', approver:'承認者（責任者ログイン）', loginPh:'ログインID', passPh:'パスワード', voidGo:'取消を承認', needReason:'取消理由を入力してください', authFail:'ログインIDまたはパスワードが違います', voided:'取消しました', alreadySettled:'会計済のため取消できません', eReceipt:'eレシート送信先メール（任意）' },
+            callHdr:'🔔 呼び出し', callLbl:'スタッフ呼出', billLbl:'お会計希望', resolve:'対応済', agoMin:'分前', stay:'滞在', voidBtn:'取消', voidT:'注文の取消', reason:'取消理由', approver:'承認者（責任者ログイン）', loginPh:'ログインID', passPh:'パスワード', voidGo:'取消を承認', needReason:'取消理由を入力してください', authFail:'ログインIDまたはパスワードが違います', voided:'取消しました', alreadySettled:'会計済のため取消できません', eReceipt:'eレシート送信先メール（任意）',
+            entryFeeLbl:'入場料', extFeeLbl:'延長料' },
       en: { title:'Orders', served:'✓ Served', servedBtn:'Mark served', pay:'💳 Checkout', noOrder:'No open orders',
             cash:'Cash', card:'Card', cancel:'Cancel', pTitle:'Payment', sub:'Subtotal', svc:'Service', tax:'Tax',
             openPay:'Open payment page', checkBtn:'Check status', checking:'Checking…', notYet:'Payment not confirmed yet.',
             noKey:'Online payment is not set up.', cashRecv:'Cash received?', confirmed:'Paid', done:'Done (settle)', processing:'Processing…', lang:'JP',
             disc:'Senior/PWD discount', senior:'Senior', idPh:'ID no.', eligPh:'Eligible amt', discLine:'Discount', vatNote:'incl. VAT', orLbl:'Receipt no.', printBtn:'🖨️ Print receipt', close:'Close', tableW:'Table', totalW:'TOTAL',
             partial:'🧾 Partial', partTitle:'Partial checkout — select items', selected:'Selected', selPay:'Checkout selected', splitLbl:'Split ÷', each:'/person',
-            callHdr:'🔔 Requests', callLbl:'Call staff', billLbl:'Bill please', resolve:'Done', agoMin:'m ago', stay:'Seated', voidBtn:'Void', voidT:'Void order', reason:'Reason', approver:'Approver (manager login)', loginPh:'Login ID', passPh:'Password', voidGo:'Approve void', needReason:'Please enter a reason', authFail:'Wrong login ID or password', voided:'Order voided', alreadySettled:'Cannot void a settled order', eReceipt:'e-receipt email (optional)' }
+            callHdr:'🔔 Requests', callLbl:'Call staff', billLbl:'Bill please', resolve:'Done', agoMin:'m ago', stay:'Seated', voidBtn:'Void', voidT:'Void order', reason:'Reason', approver:'Approver (manager login)', loginPh:'Login ID', passPh:'Password', voidGo:'Approve void', needReason:'Please enter a reason', authFail:'Wrong login ID or password', voided:'Order voided', alreadySettled:'Cannot void a settled order', eReceipt:'e-receipt email (optional)',
+            entryFeeLbl:'Entry fee', extFeeLbl:'Extension fee' }
     };
-    function t(){ return i18n[lang]; }
+    function t(){ return I18n.d(); }
     function sym(){ return SETTINGS.currencySymbol || '₱'; }
     function money(v){ return sym() + (Number(v)||0).toLocaleString(); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
@@ -238,8 +242,13 @@
       return { discountAmount: totalDiscount, vat: vatDisplay, total: total };
     }
 
-    window.toggleLang = function(){ lang = (lang==='ja'?'en':'ja'); try{localStorage.setItem('lang',lang);}catch(e){} applyLang(); render(); renderCalls(); renderAuto(); };
-    function applyLang(){ document.getElementById('title').innerText=t().title; document.getElementById('langBtn').innerText=t().lang; var hl=document.getElementById('histLbl'); if(hl) hl.innerText=(lang==='en'?'History':'履歴'); }
+    // I18n.init()のonChangeコールバックから呼ばれる（手動切替時・店舗既定言語の反映時の両方）。
+    function onLangChange(l){
+      lang = l;
+      document.getElementById('title').innerText=t().title;
+      var hl=document.getElementById('histLbl'); if(hl) hl.innerText=(lang==='en'?'History':'履歴');
+      render(); renderCalls(); renderAuto();
+    }
 
     function dwellStr(ms){
       var m = Math.floor(ms/60000); if(m<1) return '';
@@ -409,10 +418,27 @@
     window.setInt=function(s){ refreshSec=s; try{localStorage.setItem('adminRefreshSec',String(s));}catch(e){} renderAuto(); resetTimer(); };
 
     // ── Payment ──
+    // [要望対応] 入場料・延長料のプレビュー計算（サーバー側_computeEntryFeesと同じ考え方）。
+    // 分割会計（orderIds指定）では二重請求防止のため常に0（サーバー側と挙動を合わせる）。
+    function computeEntryFeesPreview(party){
+      var entryUnit = Number(SETTINGS.entryFeeAmount)||0, extUnit = Number(SETTINGS.extensionFeeAmount)||0;
+      if (payOrderIds || (entryUnit<1 && extUnit<1) || !party || !(Number(party.count)>0)) return { entryFee:0, extensionFee:0, partySize:0, extensionUnits:0 };
+      var count = Number(party.count)||0;
+      var entryFee = entryUnit>=1 ? Math.round(entryUnit*count) : 0;
+      var extensionFee = 0, extensionUnits = 0;
+      if (extUnit>=1 && party.enteredAt){
+        var baseMin = Math.max(0, Number(SETTINGS.baseUsageMinutes)||0);
+        var unitMin = Math.max(1, Number(SETTINGS.extensionUnitMinutes)||0) || 30;
+        var extraMin = (Date.now() - Number(party.enteredAt))/60000 - baseMin;
+        if (extraMin > 0){ extensionUnits = Math.ceil(extraMin/unitMin); extensionFee = Math.round(extUnit*count*extensionUnits); }
+      }
+      return { entryFee: entryFee, extensionFee: extensionFee, partySize: count, extensionUnits: extensionUnits };
+    }
     window.openPay = function(tn, subtotal, orderIds){
       resetPs3();
       payMethod = 'cash';
       payTable = tn; payCheckoutId = null; payOrderIds = (orderIds && orderIds.length) ? orderIds : null; paySub = Number(subtotal)||0; payBase = breakdown(paySub);
+      payEntryFee = 0; payExtensionFee = 0; payPartySize = 0;
       document.getElementById('dcOn').checked = false; document.getElementById('dcId').value=''; document.getElementById('dcElig').value=''; document.getElementById('dcName').value='';
       var _pe=document.getElementById('payEmail'); if(_pe){ _pe.value=''; _pe.placeholder=t().eReceipt; }
       document.getElementById('splitN').value = 1; document.getElementById('splitLbl').innerText = t().splitLbl;
@@ -426,6 +452,14 @@
       recompPay();
       step(1);
       document.getElementById('payModal').classList.add('on');
+      if (!payOrderIds){
+        API.post('getTablePartySize', { table: tn }).then(function(r){
+          if (payTable !== tn) return; // その間にモーダルが閉じ/別卓が開かれていたら無視
+          var f = computeEntryFeesPreview(r && r.data);
+          payEntryFee = f.entryFee; payExtensionFee = f.extensionFee; payPartySize = f.partySize;
+          recompPay();
+        }).catch(function(){});
+      }
     };
     window.recompPay = function(){
       if (!payBase) return;
@@ -441,17 +475,20 @@
       var spc = on ? seniorPwdCalc(sub, eligible, b) : null;
       if (on) { disc = spc.discountAmount; vat = spc.vat; }
       else { vat = b.tax; }
-      var total = on ? spc.total : Math.max(0, (b.total||0));
+      var total = (on ? spc.total : Math.max(0, (b.total||0))) + payEntryFee + payExtensionFee;
       payTotal = total;
-      // 表示用のプレビュー計算（実際の会計金額はサーバー側finalizeBillが対象注文の登録価格から再計算する。
-      // クライアントのこの値は画面表示のみに使い、送信するのは種別・対象額・氏名・ID番号のみ）。
+      // 表示用のプレビュー計算（実際の会計金額はサーバー側finalizeBillが対象注文の登録価格・卓の人数/入店時刻
+      // から再計算する。クライアントのこの値は画面表示のみに使い、送信するのは種別・対象額・氏名・ID番号のみ）。
       window._bill = { subtotal: sub, vat: vat, service: b.service, discountType: on?dtype:'', discountId: on?document.getElementById('dcId').value:'',
-        discountName: on?document.getElementById('dcName').value:'', discountEligible: on?eligible:0, discountAmount: disc, total: total };
+        discountName: on?document.getElementById('dcName').value:'', discountEligible: on?eligible:0, discountAmount: disc, total: total,
+        entryFee: payEntryFee, extensionFee: payExtensionFee };
       var html = '<div style="font-weight:900;font-size:15px;margin-bottom:8px;">🪑 '+esc(seatLabel(payTable))+'</div>';
       html += '<div class="sr"><span>'+t().sub+'</span><span>'+money(sub)+'</span></div>';
       if (b.service>0) html += '<div class="sr"><span>'+t().svc+'</span><span>'+money(b.service)+'</span></div>';
       if (b.tax>0) html += '<div class="sr"><span>'+t().tax+'</span><span>'+money(b.tax)+'</span></div>';
       if (disc>0) html += '<div class="sr" style="color:#b91c1c;"><span>'+t().discLine+' ('+(dtype==='pwd'?'PWD':t().senior)+')</span><span>− '+money(disc)+'</span></div>';
+      if (payEntryFee>0) html += '<div class="sr"><span>'+t().entryFeeLbl+' × '+payPartySize+'</span><span>'+money(payEntryFee)+'</span></div>';
+      if (payExtensionFee>0) html += '<div class="sr"><span>'+t().extFeeLbl+'</span><span>'+money(payExtensionFee)+'</span></div>';
       html += '<div class="big">'+money(total)+'</div>';
       document.getElementById('paySum').innerHTML = html;
       document.getElementById('dcNote').innerText = on ? (t().vatNote+' '+money(vat)) : '';
@@ -580,16 +617,22 @@
       }).catch(function(e){ btn.disabled=false; btn.innerText=t().done; alert('Error: '+(e.message||e)); });
     };
 
+    // ヘッダの現在日時表示
+    function _pad2(n){ return (n<10?'0':'')+n; }
+    function updateHeadClock(){
+      var el = document.getElementById('headClock'); if(!el) return;
+      var d = new Date();
+      el.textContent = d.getFullYear()+'-'+_pad2(d.getMonth()+1)+'-'+_pad2(d.getDate())+' '+_pad2(d.getHours())+':'+_pad2(d.getMinutes());
+    }
+
     function boot(){
-      applyLang();
-      renderAuto();
+      // 言語の初期化・切替・永続化は共通部品I18nに一本化（他のスタッフ向け画面と同じ仕組み）。
+      I18n.init(i18n, onLangChange);
+      updateHeadClock();
+      setInterval(updateHeadClock, 15000);
       API.post('bootstrap', {}).then(function(r){
         SETTINGS = r.settings || {}; PAYMONGO = !!r.paymongo;
         (r.menu||[]).forEach(function(m){ var jp=m['商品名'], en=m['商品名_EN']; if(jp && en) MENU_MAP[String(jp)]=String(en); });
-        // ユーザーが手動切替していなければ、店舗設定の既定言語をキャッシュ・反映する
-        var def = (SETTINGS.defaultLang === 'ja') ? 'ja' : 'en';
-        try{ localStorage.setItem('langDefaultCache', def); }catch(e){}
-        if (!explicitLang() && lang !== def) { lang = def; applyLang(); render(); renderCalls(); renderAuto(); }
         load();
       }).catch(function(){ load(); });
       loadCalls();

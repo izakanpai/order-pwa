@@ -32,6 +32,11 @@ body {
   background: rgba(255,255,255,.18); border-radius: 999px;
   padding: 4px 12px; font-size: 13px; font-weight: 700;
 }
+.appbar .clock {
+  font-size: 12px; font-weight: 700; opacity: .9; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 380px) { .appbar .clock { display: none; } }
 .lang-btn {
   background: rgba(255,255,255,.16); color:#fff; border: none;
   border-radius: 999px; padding: 7px 13px; font-size: 13px; font-weight: 700; cursor: pointer;
@@ -88,7 +93,12 @@ body.offline .net-banner.offline-b { display: flex; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 4px 14px 20px; }
 .card {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
-  box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; position: relative;
+}
+.rank-badge {
+  position: absolute; top: 6px; left: 6px; z-index: 2;
+  background: var(--navy, #0f172a); color: #fff; font-size: 11px; font-weight: 900;
+  padding: 3px 8px; border-radius: 999px; box-shadow: 0 1px 4px rgba(0,0,0,.25);
 }
 .card .thumb {
   width: 100%; aspect-ratio: 4/3; object-fit: cover; background: #eef2f7; display: block;
