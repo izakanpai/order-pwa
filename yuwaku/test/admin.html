@@ -535,7 +535,9 @@
       document.getElementById('ps2loading').style.display='block';
       document.getElementById('payAlert').style.display='none';
       step(2);
-      API.post('createCheckout', { amount: payTotal, desc: 'Table '+payTable, method: method, token: TOKEN }).then(function(r){
+      // [再修正確認テストH-NEW-3対応] 決済台帳に対象（卓・注文ID）を紐付けて記録できるよう、
+      // table/orderIdsも一緒に送る。
+      API.post('createCheckout', { amount: payTotal, desc: 'Table '+payTable, method: method, token: TOKEN, table: payTable, orderIds: payOrderIds }).then(function(r){
         var d = r.data || {};
         document.getElementById('ps2loading').style.display='none';
         if (d.error){ var a=document.getElementById('payAlert'); a.style.display='block'; a.style.background='#fce8e6'; a.style.color='#b71c1c'; a.innerText = d.error==='no_api_key'?t().noKey:d.error; return; }
