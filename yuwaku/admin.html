@@ -106,6 +106,14 @@
               <input id="dcElig" type="number" min="0" step="any" placeholder="対象額" style="width:120px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;" oninput="recompPay()">
             </div>
             <div id="dcNote" style="color:#64748b;margin-top:6px;"></div>
+            <div id="dcApprBox" style="margin-top:10px;padding-top:10px;border-top:1px dashed #e5e7eb;">
+              <div id="dcApprL" style="font-size:12px;font-weight:800;margin-bottom:4px;">承認者（マネージャー以上のログイン）</div>
+              <div style="display:flex;gap:8px;">
+                <input id="dcApprLogin" placeholder="ログインID" autocomplete="off" style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;">
+                <input id="dcApprPass" type="password" placeholder="パスワード" autocomplete="off" style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;">
+              </div>
+              <div id="dcApprAlert" style="display:none;color:#b91c1c;margin-top:6px;font-weight:700;"></div>
+            </div>
           </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;font-size:13px;">
@@ -193,7 +201,8 @@
             disc:'シニア/PWD割引', senior:'シニア', idPh:'ID番号', eligPh:'対象額', discLine:'割引', vatNote:'うちVAT', orLbl:'レシート番号', printBtn:'🖨️ レシート印刷', close:'閉じる', tableW:'卓', totalW:'合計',
             partial:'🧾 一部会計', partTitle:'一部会計 — 明細を選択', selected:'選択', selPay:'選択分を会計', splitLbl:'割り勘 ÷', each:'/人',
             callHdr:'🔔 呼び出し', callLbl:'スタッフ呼出', billLbl:'お会計希望', resolve:'対応済', agoMin:'分前', stay:'滞在', voidBtn:'取消', voidT:'注文の取消', reason:'取消理由', approver:'承認者（責任者ログイン）', loginPh:'ログインID', passPh:'パスワード', voidGo:'取消を承認', needReason:'取消理由を入力してください', authFail:'ログインIDまたはパスワードが違います', voided:'取消しました', alreadySettled:'会計済のため取消できません', eReceipt:'eレシート送信先メール（任意）',
-            entryFeeLbl:'入場料', extFeeLbl:'延長料' },
+            entryFeeLbl:'入場料', extFeeLbl:'延長料',
+            discApprover:'承認者（マネージャー以上のログイン）', discNeedAppr:'承認者のログインID・パスワードを入力してください', discNotManager:'マネージャー以上の権限が必要です', discDisabled:'シニア/PWD割引は現在無効化されています', discVerifying:'承認確認中…' },
       en: { title:'Orders', served:'✓ Served', servedBtn:'Mark served', pay:'💳 Checkout', noOrder:'No open orders',
             cash:'Cash', card:'Card', cancel:'Cancel', pTitle:'Payment', sub:'Subtotal', svc:'Service', tax:'Tax',
             openPay:'Open payment page', checkBtn:'Check status', checking:'Checking…', notYet:'Payment not confirmed yet.',
@@ -201,7 +210,8 @@
             disc:'Senior/PWD discount', senior:'Senior', idPh:'ID no.', eligPh:'Eligible amt', discLine:'Discount', vatNote:'incl. VAT', orLbl:'Receipt no.', printBtn:'🖨️ Print receipt', close:'Close', tableW:'Table', totalW:'TOTAL',
             partial:'🧾 Partial', partTitle:'Partial checkout — select items', selected:'Selected', selPay:'Checkout selected', splitLbl:'Split ÷', each:'/person',
             callHdr:'🔔 Requests', callLbl:'Call staff', billLbl:'Bill please', resolve:'Done', agoMin:'m ago', stay:'Seated', voidBtn:'Void', voidT:'Void order', reason:'Reason', approver:'Approver (manager login)', loginPh:'Login ID', passPh:'Password', voidGo:'Approve void', needReason:'Please enter a reason', authFail:'Wrong login ID or password', voided:'Order voided', alreadySettled:'Cannot void a settled order', eReceipt:'e-receipt email (optional)',
-            entryFeeLbl:'Entry fee', extFeeLbl:'Extension fee' }
+            entryFeeLbl:'Entry fee', extFeeLbl:'Extension fee',
+            discApprover:'Approver (manager-or-above login)', discNeedAppr:'Please enter the approver login ID and password', discNotManager:'Manager-level login required', discDisabled:'Senior/PWD discount is currently disabled', discVerifying:'Verifying approval…' }
     };
     function t(){ return I18n.d(); }
     function sym(){ return SETTINGS.currencySymbol || '₱'; }
@@ -440,6 +450,11 @@
       payTable = tn; payCheckoutId = null; payOrderIds = (orderIds && orderIds.length) ? orderIds : null; paySub = Number(subtotal)||0; payBase = breakdown(paySub);
       payEntryFee = 0; payExtensionFee = 0; payPartySize = 0;
       document.getElementById('dcOn').checked = false; document.getElementById('dcId').value=''; document.getElementById('dcElig').value=''; document.getElementById('dcName').value='';
+      document.getElementById('dcApprLogin').value=''; document.getElementById('dcApprPass').value='';
+      var _da=document.getElementById('dcApprAlert'); _da.style.display='none';
+      // [要望対応] シニア/PWD割引は設定で無効化されている場合、選択肢自体を非表示にする
+      // （従業員が不正に操作することを防ぐため、UI上に触れる余地を残さない）。
+      document.getElementById('payDisc').style.display = (SETTINGS.seniorDiscountEnabled==='on') ? '' : 'none';
       var _pe=document.getElementById('payEmail'); if(_pe){ _pe.value=''; _pe.placeholder=t().eReceipt; }
       document.getElementById('splitN').value = 1; document.getElementById('splitLbl').innerText = t().splitLbl;
       document.getElementById('ps1t').innerText = t().pTitle;
@@ -449,6 +464,9 @@
       document.getElementById('dcSenior').innerText = ' '+t().senior;
       document.getElementById('dcId').placeholder = t().idPh;
       document.getElementById('dcElig').placeholder = t().eligPh;
+      document.getElementById('dcApprL').innerText = t().discApprover;
+      document.getElementById('dcApprLogin').placeholder = t().loginPh;
+      document.getElementById('dcApprPass').placeholder = t().passPh;
       recompPay();
       step(1);
       document.getElementById('payModal').classList.add('on');
@@ -558,33 +576,56 @@
         + '<button class="cancel" onclick="closePay()" id="cxl3">'+t().cancel+'</button>';
     }
 
+    // [要望対応] シニア/PWD割引を使う場合、実際の支払い開始（現金確定・オンライン決済QR発行）より前に
+    // 責任者（マネージャー以上）の承認を必須にする。オンライン決済は先に決済が動いてしまうため、
+    // finalizeBillでの検証だけに頼らず、ここで事前確認する（finalizeBill側も二重防御として必ず再検証する）。
+    function _dcAlert(msg){ var a=document.getElementById('dcApprAlert'); a.style.display='block'; a.innerText=msg; }
+    function _dcVerifyThenGo(proceedFn){
+      var on = document.getElementById('dcOn').checked;
+      if (!on) { proceedFn(); return; }
+      var login = document.getElementById('dcApprLogin').value.trim();
+      var pass = document.getElementById('dcApprPass').value;
+      if (!login || !pass) { _dcAlert(t().discNeedAppr); return; }
+      document.getElementById('dcApprAlert').style.display='none';
+      API.post('verifyManagerApproval', { login: login, pass: pass, token: TOKEN }).then(function(r){
+        var d = r.data || {};
+        if (d.error==='discount_auth'){ _dcAlert(t().authFail); return; }
+        if (d.error==='discount_not_manager'){ _dcAlert(t().discNotManager); return; }
+        if (d.error){ _dcAlert('Error: '+d.error); return; }
+        proceedFn();
+      }).catch(function(e){ _dcAlert('Error: '+(e.message||e)); });
+    }
     window.cashPay = function(){
-      payMethod = 'cash';
-      document.getElementById('ps3lbl').innerText = t().cashRecv;
-      document.getElementById('ps3amt').innerText = money(payTotal)+' — '+seatLabel(payTable);
-      document.getElementById('doneBtn').innerText = t().done;
-      step(3);
+      _dcVerifyThenGo(function(){
+        payMethod = 'cash';
+        document.getElementById('ps3lbl').innerText = t().cashRecv;
+        document.getElementById('ps3amt').innerText = money(payTotal)+' — '+seatLabel(payTable);
+        document.getElementById('doneBtn').innerText = t().done;
+        step(3);
+      });
     };
     window.startOnline = function(method){
-      payMethod = method;
-      document.getElementById('ps2t').innerText = method==='gcash'?'GCash':t().card;
-      document.getElementById('payQr').style.display='none';
-      document.getElementById('ps2loading').style.display='block';
-      document.getElementById('payAlert').style.display='none';
-      step(2);
-      // [再修正確認テストH-NEW-3対応] 決済台帳に対象（卓・注文ID）を紐付けて記録できるよう、
-      // table/orderIdsも一緒に送る。
-      API.post('createCheckout', { amount: payTotal, desc: 'Table '+payTable, method: method, token: TOKEN, table: payTable, orderIds: payOrderIds }).then(function(r){
-        var d = r.data || {};
-        document.getElementById('ps2loading').style.display='none';
-        if (d.error){ var a=document.getElementById('payAlert'); a.style.display='block'; a.style.background='#fce8e6'; a.style.color='#b71c1c'; a.innerText = d.error==='no_api_key'?t().noKey:d.error; return; }
-        payCheckoutId = d.checkoutId;
-        document.getElementById('payQr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(d.checkoutUrl);
-        document.getElementById('payQr').style.display='block';
-        document.getElementById('payLink').href = d.checkoutUrl;
-        document.getElementById('payLink').innerText = t().openPay;
-        document.getElementById('checkBtn').innerText = t().checkBtn;
-      }).catch(function(e){ document.getElementById('ps2loading').style.display='none'; var a=document.getElementById('payAlert'); a.style.display='block'; a.style.background='#fce8e6'; a.style.color='#b71c1c'; a.innerText='Error: '+(e.message||e); });
+      _dcVerifyThenGo(function(){
+        payMethod = method;
+        document.getElementById('ps2t').innerText = method==='gcash'?'GCash':t().card;
+        document.getElementById('payQr').style.display='none';
+        document.getElementById('ps2loading').style.display='block';
+        document.getElementById('payAlert').style.display='none';
+        step(2);
+        // [再修正確認テストH-NEW-3対応] 決済台帳に対象（卓・注文ID）を紐付けて記録できるよう、
+        // table/orderIdsも一緒に送る。
+        API.post('createCheckout', { amount: payTotal, desc: 'Table '+payTable, method: method, token: TOKEN, table: payTable, orderIds: payOrderIds }).then(function(r){
+          var d = r.data || {};
+          document.getElementById('ps2loading').style.display='none';
+          if (d.error){ var a=document.getElementById('payAlert'); a.style.display='block'; a.style.background='#fce8e6'; a.style.color='#b71c1c'; a.innerText = d.error==='no_api_key'?t().noKey:d.error; return; }
+          payCheckoutId = d.checkoutId;
+          document.getElementById('payQr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(d.checkoutUrl);
+          document.getElementById('payQr').style.display='block';
+          document.getElementById('payLink').href = d.checkoutUrl;
+          document.getElementById('payLink').innerText = t().openPay;
+          document.getElementById('checkBtn').innerText = t().checkBtn;
+        }).catch(function(e){ document.getElementById('ps2loading').style.display='none'; var a=document.getElementById('payAlert'); a.style.display='block'; a.style.background='#fce8e6'; a.style.color='#b71c1c'; a.innerText='Error: '+(e.message||e); });
+      });
     };
     window.checkPay = function(){
       if (!payCheckoutId) return;
@@ -605,10 +646,15 @@
       // ここで送るのは対象(orderIds/table)・支払方法・割引の入力値（種別/対象額/ID/氏名）・メールのみ。
       // [修正点一覧C-1対応] card/gcashはサーバー側が決済台帳とPayMongoの実際の支払状況を突き合わせて検証する
       // ため、発行済みのcheckoutIdも一緒に送る。
+      var discOn = document.getElementById('dcOn').checked;
       var req = { table: payTable, method: payMethod, orderIds: payOrderIds, email: email, token: TOKEN, checkoutId: payCheckoutId,
-        discountType: pv.discountType||'', discountId: pv.discountId||'', discountName: pv.discountName||'', discountEligible: pv.discountEligible||0 };
+        discountType: pv.discountType||'', discountId: pv.discountId||'', discountName: pv.discountName||'', discountEligible: pv.discountEligible||0,
+        discountApproverLogin: discOn?document.getElementById('dcApprLogin').value.trim():'', discountApproverPass: discOn?document.getElementById('dcApprPass').value:'' };
       API.post('finalizeBill', req).then(function(r){
         btn.disabled=false; btn.innerText=t().done; var d=r.data||{};
+        if (d.error==='discount_auth'){ alert(t().authFail); return; }
+        if (d.error==='discount_not_manager'){ alert(t().discNotManager); return; }
+        if (d.error==='senior_discount_disabled'){ alert(t().discDisabled); return; }
         if (d.error){ alert('Error: '+d.error); return; }
         // 表示・印刷・eレシートは全てサーバーが再計算した金額を正とする。
         var bill = { table: payTable, method: payMethod, subtotal: d.subtotal, vat: d.vat, service: d.service,
