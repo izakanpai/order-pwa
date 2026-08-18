@@ -86,25 +86,26 @@
     </div>
   </div>
 
-  <!-- Table picker (shown when no ?table= in URL) -->
+  <!-- Table picker + party size (headcount), combined into a single step.
+       [応答速度対応] 以前は「卓選択」→（サーバへ既存人数を確認）→「人数入力」→（サーバへ保存）の
+       2画面・2回の逐次サーバ往復だった。卓選択と人数入力を同じ画面にまとめ、既存人数の事前確認は
+       行わず、送信は1回（人数機能を使わない店舗では0回）にすることで体感速度を上げる。
+       tableSelectWrap: ?table=なし（店員のオーダー入力）でのみ表示。partySection: 入場料/延長料の
+       設定（entryFeeAmount/extensionFeeAmount）がどちらも0の店舗では丸ごと非表示・サーバ往復なし。 -->
   <div class="overlay" id="tableOverlay">
     <div class="sheet">
       <div class="emoji">🪑</div>
       <h3 id="tblTitle">Select your table</h3>
       <p id="tblMsg"></p>
-      <select id="tableSelect" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);font-size:16px;margin:14px 0;background:#fff;"></select>
+      <div id="tableSelectWrap">
+        <select id="tableSelect" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);font-size:16px;margin:14px 0;background:#fff;"></select>
+      </div>
+      <div id="partySection" style="display:none;">
+        <label id="partyLabel" style="display:block;font-size:13px;font-weight:800;margin:10px 0 4px;text-align:left;">Guests</label>
+        <input type="number" id="partyCount" min="1" max="99" step="1" inputmode="numeric" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);font-size:16px;margin:0 0 6px;background:#fff;text-align:center;">
+        <p id="partyMsg" style="font-size:12px;margin:0 0 8px;"></p>
+      </div>
       <button class="btn-send ok" id="tblGo" style="width:100%;">Start</button>
-    </div>
-  </div>
-
-  <!-- Party size (headcount) input — used for entry-fee / extension-fee billing -->
-  <div class="overlay" id="partyOverlay">
-    <div class="sheet">
-      <div class="emoji">🧑‍🤝‍🧑</div>
-      <h3 id="partyTitle">How many guests?</h3>
-      <p id="partyMsg"></p>
-      <input type="number" id="partyCount" min="1" max="99" step="1" inputmode="numeric" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);font-size:16px;margin:14px 0;background:#fff;text-align:center;">
-      <button class="btn-send ok" id="partyGo" style="width:100%;">OK</button>
     </div>
   </div>
 

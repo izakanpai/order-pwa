@@ -22,9 +22,13 @@
     .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
     .card-title{ font-weight:900; font-size:15px; margin-bottom:12px; }
     .chart-wrap{ height:220px; }
-    table{ width:100%; border-collapse:collapse; font-size:13px; }
-    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; }
+    /* [iPhone表示対応] min-widthで表全体の最小幅を確保し、外側のoverflow:autoラッパーで横スクロールさせる
+       （分析テーブルは列数が多いため700px。#monthlyは元々ラッパー無しだったのでここで追加する）。 */
+    table{ width:100%; min-width:700px; border-collapse:collapse; font-size:13px; }
+    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
     th{ font-size:11px; color:var(--text-3); }
+    #monthly{ overflow:auto; }
+    #monthly table{ min-width:0; } /* 月別サマリーは2列のみのため表全体の最小幅制約は不要 */
     .form-label{ font-size:13px; font-weight:700; }
     .fc{ padding:10px; border:1px solid var(--border); border-radius:10px; font-size:15px; font-family:inherit; }
     .btn{ border:0; border-radius:10px; padding:11px 16px; font-size:14px; font-weight:800; background:var(--navy); color:#fff; cursor:pointer; font-family:inherit; }

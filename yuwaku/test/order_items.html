@@ -21,8 +21,9 @@
     .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
     .card-title{ font-weight:900; font-size:15px; margin-bottom:12px; }
     .hint{ color:var(--text-3); font-size:13px; line-height:1.7; margin-bottom:12px; }
-    table{ width:100%; border-collapse:collapse; font-size:13px; }
-    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; }
+    /* [iPhone表示対応] min-widthで表全体の最小幅を確保し、外側のoverflow:autoラッパーで横スクロールさせる。 */
+    table{ width:100%; min-width:560px; border-collapse:collapse; font-size:13px; }
+    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
     th{ font-size:11px; color:var(--text-3); white-space:nowrap; }
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .fg{ margin-bottom:8px; } .form-label{ font-size:12px; font-weight:700; display:block; margin-bottom:4px; }
@@ -80,7 +81,7 @@
       if(!ITEMS.length){ document.getElementById('rows').innerHTML='<tr><td colspan="5" style="color:#aaa;padding:14px;text-align:center;">'+I18n.t('empty')+'</td></tr>'; return; }
       document.getElementById('rows').innerHTML = ITEMS.map(function(it){
         var nmCell = esc(it.name)+(it.nameEn?' <span style="color:var(--text-3);">('+esc(it.nameEn)+')</span>':'');
-        return '<tr><td style="font-weight:800;">'+nmCell+'</td><td>'+esc(it.unit)+'</td><td>'+esc(it.supplier)+'</td><td style="color:var(--text-3);">'+esc(it.memo)+'</td>'+
+        return '<tr><td style="font-weight:800;">'+nmCell+'</td><td>'+esc(it.unit)+'</td><td>'+esc(it.supplier)+'</td><td style="color:var(--text-3);white-space:normal;max-width:200px;">'+esc(it.memo)+'</td>'+
           '<td><button class="btn-sm" onclick="edit(\''+it.id+'\')">'+I18n.t('edit')+'</button> <button class="btn-sm" style="background:#fee2e2;color:#b91c1c;" onclick="del(\''+it.id+'\')">'+I18n.t('del')+'</button></td></tr>';
       }).join('');
     }
