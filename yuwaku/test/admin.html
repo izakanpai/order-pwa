@@ -338,7 +338,8 @@
     window.load = function(force){
       if (_loadInFlight) return Promise.resolve(); // 前回リクエストが残っていれば重複送信しない（会計中呼び出し等が重ならないように）
       _loadInFlight = true;
-      var payload = (force || _opsVersion == null) ? {} : { sinceVersion: _opsVersion };
+      // [修正点一覧C-2対応] getOperationsDelta/getOrders/getStaffCallsが認証必須になったため、tokenを送る。
+      var payload = (force || _opsVersion == null) ? { token: TOKEN } : { sinceVersion: _opsVersion, token: TOKEN };
       return API.post('getOperationsDelta', payload).then(function(r){
         _loadInFlight = false;
         var d = r.data || {};
@@ -563,7 +564,9 @@
       var pv = window._bill||{};
       // [P0-1] 会計金額はクライアントから送らず、サーバーが対象注文から再計算する。
       // ここで送るのは対象(orderIds/table)・支払方法・割引の入力値（種別/対象額/ID/氏名）・メールのみ。
-      var req = { table: payTable, method: payMethod, orderIds: payOrderIds, email: email, token: TOKEN,
+      // [修正点一覧C-1対応] card/gcashはサーバー側が決済台帳とPayMongoの実際の支払状況を突き合わせて検証する
+      // ため、発行済みのcheckoutIdも一緒に送る。
+      var req = { table: payTable, method: payMethod, orderIds: payOrderIds, email: email, token: TOKEN, checkoutId: payCheckoutId,
         discountType: pv.discountType||'', discountId: pv.discountId||'', discountName: pv.discountName||'', discountEligible: pv.discountEligible||0 };
       API.post('finalizeBill', req).then(function(r){
         btn.disabled=false; btn.innerText=t().done; var d=r.data||{};

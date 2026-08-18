@@ -173,7 +173,8 @@
     window.load = function(force){
       if (_loadInFlight) return; // 前回リクエストが残っていれば重複送信しない
       _loadInFlight = true;
-      var payload = (force || _opsVersion == null) ? {} : { sinceVersion: _opsVersion };
+      // [修正点一覧C-2対応] getOperationsDelta/getOrders/getStaffCallsが認証必須になったため、tokenを送る。
+      var payload = (force || _opsVersion == null) ? { token: TOKEN } : { sinceVersion: _opsVersion, token: TOKEN };
       return API.post('getOperationsDelta', payload).then(function(r){
         _loadInFlight = false;
         __booted = true;
