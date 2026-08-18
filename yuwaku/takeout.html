@@ -283,7 +283,9 @@
         var st = r.data || {};
         if (st && (st.paymentStatus==='paid' || st.status==='paid')){
           if (pollTimer){ clearInterval(pollTimer); pollTimer=null; }
-          var o = pendingOrder.order; o.paid = true; pendingOrder = null;
+          // [修正点一覧C-1対応] o.paid=trueというクライアント申告はサーバーはもう信用しない。
+          // サーバー側がcheckoutIdを決済台帳・PayMongo双方と突き合わせて検証してから支払済みとする。
+          var o = pendingOrder.order; o.checkoutId = pendingOrder.checkoutId; pendingOrder = null;
           API.post('submitTakeout', { order: o }).then(function(rr){ onOrdered(rr.data, true); })
             .catch(function(e){ showAlert(String(e.message||e), false); });
         }
