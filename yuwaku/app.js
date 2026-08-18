@@ -10,7 +10,7 @@
       offline:'Offline — orders will be sent automatically when back online', lang:'JP',
       svc:'Service', tax:'Tax', ranking:'🏆 Ranking',
       tblTitle:'Select your table', tblMsg:'Scan the QR at your table, or pick your table number.', tblGo:'Start',
-      partyTitle:'How many guests?', partyMsg:'Please enter your party size (used for entry/extension fee billing).', partyGo:'OK',
+      partyTitle:'How many guests?', partyLabel:'Guests', partyMsg:'Used for entry/extension fee billing.', partyGo:'OK',
       payTitle:'How would you like to pay?', payLater:'👤 Pay at counter', payCard:'💳 Card', payProcessing:'Preparing…', payScan:'Scan the QR to pay', payNotYet:'Payment not confirmed yet.', payNoKey:'Online payment is not set up.', payTimeout:'Payment confirmation timed out. If you already paid, please tell a staff member.', paidTitle:'Paid & ordered', paidMsg:'Payment received. Your order was sent.', cancel:'Cancel',
       memberTitle:'Member (points)', memberSub:'Enter your phone to earn / use points.', check:'Check', usePoints:'Use points', points:'pts', discountLbl:'Points', earned:'pts earned',
       couponTitle:'Coupon / Voucher', couponSub:'Enter a code to get a discount.', apply:'Apply', remove:'Remove coupon', close:'Close', couponLbl:'Coupon',
@@ -34,7 +34,7 @@
       offline:'オフライン — 復帰時に自動送信します', lang:'EN',
       svc:'サービス料', tax:'税', ranking:'🏆 ランキング',
       tblTitle:'テーブルを選択', tblMsg:'QRを読み取るか、テーブル番号を選んでください。', tblGo:'開始',
-      partyTitle:'ご来店人数は？', partyMsg:'ご人数を入力してください（入場料・延長料の請求に使用します）。', partyGo:'OK',
+      partyTitle:'ご来店人数は？', partyLabel:'人数', partyMsg:'入場料・延長料の請求に使用します。', partyGo:'OK',
       payTitle:'お支払い方法', payLater:'👤 店員に支払う（後会計）', payCard:'💳 カード', payProcessing:'準備中…', payScan:'QRを読み取ってお支払い', payNotYet:'まだ支払いが確認できません。', payNoKey:'オンライン決済は未設定です。', payTimeout:'決済確認がタイムアウトしました。お支払い済みの場合は店員にお伝えください。', paidTitle:'支払い完了・注文しました', paidMsg:'お支払いを受け付けました。注文を送信しました。', cancel:'キャンセル',
       memberTitle:'会員（ポイント）', memberSub:'電話番号を入力するとポイントが貯まる/使えます。', check:'確認', usePoints:'ポイントを使う', points:'pt', discountLbl:'ポイント割引', earned:'pt 獲得',
       couponTitle:'クーポン／バウチャー', couponSub:'コードを入力すると割引されます。', apply:'適用', remove:'クーポンを外す', close:'閉じる', couponLbl:'クーポン',
@@ -675,59 +675,62 @@
     var c = s.match(/^カウンター(\d+)$/); if (c) return (x.counter || 'Counter') + ' ' + c[1];
     return s;
   }
-  function showTablePicker(tables) {
-    var sel = $('tableSelect');
-    sel.innerHTML = '';
-    (tables || []).forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = seatLabel(n); sel.appendChild(o); });
+  // 入場料・延長料機能をこの店舗が使っているか（設定のいずれかが1以上）。
+  // 使っていなければ人数入力欄は一切表示せず、関連のサーバ往復も発生させない。
+  function _partyFeeEnabled() {
+    var s = state.settings || {};
+    return (Number(s.entryFeeAmount) > 0) || (Number(s.extensionFeeAmount) > 0);
+  }
+  // [応答速度対応] 以前は「卓選択」（店員操作）→ maybeAskPartySize()がサーバへ既存人数の
+  // 有無を確認 → 未記録なら別画面で人数入力 → サーバへ保存、という2画面・最大2回の逐次サーバ
+  // 往復だった。卓選択と人数入力を1つの画面にまとめ、既存人数の事前確認は行わず（多少の
+  // 再入力の手間より速さを優先）、送信は1回（人数機能を使わない店舗では0回）にする。
+  // tables を渡すと卓選択欄を表示（店員のオーダー入力＝?table=なし）。省略時は卓は確定済み
+  // （QR固定客）として人数入力欄のみを表示する。
+  function showTableAndPartyPicker(tables) {
     var x = t();
-    $('tblTitle').textContent = x.tblTitle;
-    $('tblMsg').textContent = x.tblMsg;
+    var needTable = !!tables;
+    var needParty = _partyFeeEnabled();
+    if (!needTable && !needParty) return; // どちらも不要なら画面自体を出さない
+    $('tableSelectWrap').style.display = needTable ? '' : 'none';
+    $('partySection').style.display = needParty ? '' : 'none';
+    if (needTable) {
+      var sel = $('tableSelect');
+      sel.innerHTML = '';
+      (tables || []).forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = seatLabel(n); sel.appendChild(o); });
+    }
+    $('tblTitle').textContent = needTable ? x.tblTitle : x.partyTitle;
+    $('tblMsg').textContent = needTable ? x.tblMsg : x.partyMsg;
+    $('partyLabel').textContent = x.partyLabel;
+    $('partyMsg').textContent = needTable ? x.partyMsg : '';
+    $('partyCount').value = '';
     $('tblGo').textContent = x.tblGo;
     $('tableOverlay').classList.add('show');
     $('tblGo').onclick = function () {
-      var v = sel.value; if (!v) return;
+      var v = needTable ? $('tableSelect').value : state.table;
+      if (needTable && !v) return;
+      var n = 0;
+      if (needParty) { n = Number($('partyCount').value); if (!n || n < 1) return; }
       var prev = state.table;
-      state.table = String(v);
-      // 卓を切り替えたらカートをリセット（店員の口頭注文で別卓に入れ間違えない）
-      if (prev && prev !== state.table) {
-        state.cart = {}; state.optLines = []; state.coupon = null;
-        updateCouponBtn(); renderMenu(); updateTotal();
+      if (needTable) {
+        state.table = String(v);
+        // 卓を切り替えたらカートをリセット（店員の口頭注文で別卓に入れ間違えない）
+        if (prev && prev !== state.table) {
+          state.cart = {}; state.optLines = []; state.coupon = null;
+          updateCouponBtn(); renderMenu(); updateTotal();
+        }
+        // 別卓に切り替えた場合、その卓の会計済み状態を基準に取り直す（ロック状態をリセット）
+        state.sessionEnded = false;
+        $('doneOverlay').classList.remove('show');
+        $('sendBtn').disabled = false;
+        startSessionWatch();
       }
-      // 別卓に切り替えた場合、その卓の会計済み状態を基準に取り直す（ロック状態をリセット）
-      state.sessionEnded = false;
-      $('doneOverlay').classList.remove('show');
-      $('sendBtn').disabled = false;
-      startSessionWatch();
+      if (needParty) {
+        state.partySize = n;
+        API.post('setTablePartySize', { table: state.table, count: n }).catch(function () {});
+      }
       $('tableOverlay').classList.remove('show');
       renderTexts();
-      maybeAskPartySize();
-    };
-  }
-
-  // ---- 人数入力（入場料・延長料の請求用） ----
-  // 卓/カウンターが確定したタイミング（店員の卓選択、またはQR固定客の初回起動時）で
-  // まだ人数が記録されていなければ入力を促す。既に記録済みなら何もしない。
-  function maybeAskPartySize() {
-    if (!state.table) return;
-    API.post('getTablePartySize', { table: state.table }).then(function (r) {
-      var d = (r && r.data) || {};
-      if (d && d.count) { state.partySize = d.count; return; }
-      showPartyPicker();
-    }).catch(function () {});
-  }
-  function showPartyPicker() {
-    var x = t();
-    $('partyTitle').textContent = x.partyTitle;
-    $('partyMsg').textContent = x.partyMsg;
-    $('partyGo').textContent = x.partyGo;
-    $('partyCount').value = '';
-    $('partyOverlay').classList.add('show');
-    $('partyGo').onclick = function () {
-      var n = Number($('partyCount').value);
-      if (!n || n < 1) return;
-      state.partySize = n;
-      API.post('setTablePartySize', { table: state.table, count: n }).catch(function () {});
-      $('partyOverlay').classList.remove('show');
     };
   }
 
@@ -869,8 +872,8 @@
     if (_bid) { var _b = $('shopBanner'); _b.src = 'https://lh3.googleusercontent.com/d/' + _bid; _b.style.display = 'block'; }
     state.tables = r.tables || [];   // 卓一覧を保持（卓チップから選び直せるように）
     renderTexts(); renderCats(); renderMenu(); updateTotal();
-    if (!state.table) showTablePicker(state.tables); // QR無し（店員のオーダー入力）時はテーブル選択を促す
-    else maybeAskPartySize(); // QR固定客：卓は確定済みなので人数だけ未記録なら入力を促す
+    if (!state.table) showTableAndPartyPicker(state.tables); // QR無し（店員のオーダー入力）時はテーブル選択（＋必要なら人数）を促す
+    else showTableAndPartyPicker(); // QR固定客：卓は確定済みなので、必要なら人数入力のみ表示
     loadRanking();
   }
 
@@ -923,7 +926,7 @@
     $('stClose').addEventListener('click', function () { $('statusModal').classList.remove('show'); });
     $('fbBtn').addEventListener('click', openFeedback);
     // 卓チップをタップで卓を選び直す（店員が口頭注文を別卓に入力する用・QR経由の客セッションでは無効）
-    $('tableChip').addEventListener('click', function () { if (!state.tableLocked && state.tables && state.tables.length) showTablePicker(state.tables); });
+    $('tableChip').addEventListener('click', function () { if (!state.tableLocked && state.tables && state.tables.length) showTableAndPartyPicker(state.tables); });
     $('fbSend').addEventListener('click', sendFeedback);
     $('fbClose').addEventListener('click', function () { $('fbModal').classList.remove('show'); });
     Array.prototype.forEach.call($('fbStars').querySelectorAll('span'), function (s) {

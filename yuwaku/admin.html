@@ -182,7 +182,7 @@
     // [P0-2] 会計・注文操作はスタッフ操作のため、事前ログイン（1回のみ）を必須にする。
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
-    var SETTINGS = {}, PAYMONGO = false, orders = [], calls = [], voidId = '', MENU_MAP = {};
+    var SETTINGS = {}, PAYMONGO = false, orders = [], calls = [], voidId = '', MENU_MAP = {}, PARTY_SIZES = {};
     var autoOn = (function(){ try{ var v=localStorage.getItem('adminAuto'); return v===null?true:(v==='1'); }catch(e){ return true; } })();
     var refreshSec = (function(){ try{ var v=parseInt(localStorage.getItem('adminRefreshSec'),10); return (v===10||v===30||v===60)?v:30; }catch(e){ return 30; } })();
     var refreshTimer = null;
@@ -276,7 +276,11 @@
       var html = '';
       order.forEach(function(tn){
         var rows = map[tn];
-        var total = rows.reduce(function(s,o){ return s + (Number(o.price)||0); }, 0);
+        // subtotal＝品目の小計のみ。openPay()にはこれまで通り小計を渡す（内部でbreakdown()し直すため）。
+        // 一覧表示（見出し・お会計ボタン）は、実際に請求される金額（サービス料・入場料込み）と
+        // 食い違って見えないよう、computeGroupTotal()で同じ計算式を使って表示用の合計を出す。
+        var subtotal = rows.reduce(function(s,o){ return s + (Number(o.price)||0); }, 0);
+        var total = computeGroupTotal(subtotal, tn);
         // 滞在タイマー：この卓の最古の注文時刻から経過
         var minT = Infinity; rows.forEach(function(o){ var d=new Date(o.date).getTime(); if(!isNaN(d)&&d<minT) minT=d; });
         var dwell = (minT!==Infinity) ? dwellStr(now-minT) : '';
@@ -291,7 +295,7 @@
             '<button class="b-xs" style="background:#fee2e2;color:#b91c1c;margin-left:4px;" onclick="askVoid(\''+o.id+'\')">'+t().voidBtn+'</button>'+
             '</div></div>';
         });
-        html += '<div class="tg-a"><button class="b-pay" onclick="openPay(\''+esc(tn).replace(/'/g,"\\'")+'\','+total+')">'+t().pay+' '+money(total)+'</button>'+
+        html += '<div class="tg-a"><button class="b-pay" onclick="openPay(\''+esc(tn).replace(/'/g,"\\'")+'\','+subtotal+')">'+t().pay+' '+money(total)+'</button>'+
           '<button class="b-xs" style="margin-top:6px;width:100%;background:#eef2f7;color:#0f172a;border:0;border-radius:9px;padding:9px;font-weight:800;cursor:pointer;" onclick="openPartial(\''+esc(tn).replace(/'/g,"\\'")+'\')">'+t().partial+'</button></div></div>';
       });
       el.innerHTML = html;
@@ -365,6 +369,7 @@
         _opsVersion = d.version != null ? d.version : _opsVersion;
         if (d.unchanged) return; // 変化なし：再描画不要
         orders = d.orders || []; calls = d.calls || [];
+        if (d.partySizes) PARTY_SIZES = d.partySizes;
         render(); renderCalls();
       }).catch(function(){
         _loadInFlight = false;
@@ -430,9 +435,11 @@
     // ── Payment ──
     // [要望対応] 入場料・延長料のプレビュー計算（サーバー側_computeEntryFeesと同じ考え方）。
     // 分割会計（orderIds指定）では二重請求防止のため常に0（サーバー側と挙動を合わせる）。
-    function computeEntryFeesPreview(party){
+    // skipForSplit引数はopenPay（会計モーダル）専用。一覧表示（render）ではpayOrderIdsという
+    // グローバル状態を参照すべきでないため、明示的な引数として切り出した。
+    function computeEntryFeesPreview(party, skipForSplit){
       var entryUnit = Number(SETTINGS.entryFeeAmount)||0, extUnit = Number(SETTINGS.extensionFeeAmount)||0;
-      if (payOrderIds || (entryUnit<1 && extUnit<1) || !party || !(Number(party.count)>0)) return { entryFee:0, extensionFee:0, partySize:0, extensionUnits:0 };
+      if (skipForSplit || (entryUnit<1 && extUnit<1) || !party || !(Number(party.count)>0)) return { entryFee:0, extensionFee:0, partySize:0, extensionUnits:0 };
       var count = Number(party.count)||0;
       var entryFee = entryUnit>=1 ? Math.round(entryUnit*count) : 0;
       var extensionFee = 0, extensionUnits = 0;
@@ -443,6 +450,15 @@
         if (extraMin > 0){ extensionUnits = Math.ceil(extraMin/unitMin); extensionFee = Math.round(extUnit*count*extensionUnits); }
       }
       return { entryFee: entryFee, extensionFee: extensionFee, partySize: count, extensionUnits: extensionUnits };
+    }
+    // [要望対応] 注文一覧（卓ごとのグループ見出し・お会計ボタン）に表示する金額が、品目小計のみで
+    // サービス料・入場料を含んでおらず、実際の会計金額と食い違って見える不具合の修正。
+    // breakdown()（サービス料・税）とcomputeEntryFeesPreview()（入場料・延長料）を使い、
+    // openPay/recompPayと同じ計算式で「実際に請求される合計」を一覧側でも表示する。
+    function computeGroupTotal(subtotal, table){
+      var b = breakdown(subtotal);
+      var f = computeEntryFeesPreview(PARTY_SIZES[table], false);
+      return b.total + f.entryFee + f.extensionFee;
     }
     window.openPay = function(tn, subtotal, orderIds){
       resetPs3();
@@ -473,7 +489,7 @@
       if (!payOrderIds){
         API.post('getTablePartySize', { table: tn }).then(function(r){
           if (payTable !== tn) return; // その間にモーダルが閉じ/別卓が開かれていたら無視
-          var f = computeEntryFeesPreview(r && r.data);
+          var f = computeEntryFeesPreview(r && r.data, !!payOrderIds);
           payEntryFee = f.entryFee; payExtensionFee = f.extensionFee; payPartySize = f.partySize;
           recompPay();
         }).catch(function(){});

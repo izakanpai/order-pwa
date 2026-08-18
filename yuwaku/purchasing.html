@@ -21,8 +21,9 @@
     .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
     .card-title{ font-weight:900; font-size:15px; margin-bottom:12px; }
     .muted{ color:var(--text-3); font-size:12px; }
-    table{ width:100%; border-collapse:collapse; font-size:13px; }
-    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; }
+    /* [iPhone表示対応] min-widthで表全体の最小幅を確保し、外側のoverflow:autoラッパーで横スクロールさせる。 */
+    table{ width:100%; min-width:640px; border-collapse:collapse; font-size:13px; }
+    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
     th{ font-size:11px; color:var(--text-3); white-space:nowrap; }
     td.num,th.num{ text-align:right; font-variant-numeric:tabular-nums; }
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -229,7 +230,7 @@
       if(!SUPS.length){ document.getElementById('supRows').innerHTML='<tr><td colspan="6" class="muted" style="padding:14px;text-align:center;">'+I18n.t('supEmpty')+'</td></tr>'; return; }
       document.getElementById('supRows').innerHTML = SUPS.map(function(s){
         var nmCell = '<td style="font-weight:800;">'+esc(s.name)+(s.nameEn?' <span class="muted" style="font-weight:400;">('+esc(s.nameEn)+')</span>':'')+'</td>';
-        return '<tr>'+nmCell+'<td>'+esc(s.contact)+'</td><td class="muted">'+esc(s.email||'')+'</td><td class="muted">'+esc(langLabel(s.language))+'</td><td class="muted">'+esc(s.items)+'</td>'+
+        return '<tr>'+nmCell+'<td>'+esc(s.contact)+'</td><td class="muted">'+esc(s.email||'')+'</td><td class="muted">'+esc(langLabel(s.language))+'</td><td class="muted" style="white-space:normal;max-width:200px;">'+esc(s.items)+'</td>'+
           '<td><button class="btn-sm" onclick="edit(\''+s.id+'\')">'+I18n.t('edit')+'</button> <button class="btn-sm" style="background:#fee2e2;color:#b91c1c;" onclick="del(\''+s.id+'\')">'+I18n.t('del')+'</button></td></tr>';
       }).join('');
     }

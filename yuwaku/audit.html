@@ -19,8 +19,10 @@
     .hbtn{ background:rgba(255,255,255,.14); color:#fff; border:0; border-radius:9px; padding:8px 12px; font-size:13px; font-weight:800; cursor:pointer; text-decoration:none; }
     .wrap{ padding:16px; max-width:960px; margin:0 auto; }
     .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; }
-    table{ width:100%; border-collapse:collapse; font-size:13px; }
-    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    /* [iPhone表示対応] min-widthで表全体の最小幅を確保し、外側のoverflow:autoラッパーで横スクロールさせる
+       （狭い画面に全列を無理に収めようとして文字が縮小・ズレるのを防ぐ）。 */
+    table{ width:100%; min-width:760px; border-collapse:collapse; font-size:13px; }
+    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; white-space:nowrap; }
     th{ font-size:11px; color:var(--text-3); white-space:nowrap; }
     td.num,th.num{ text-align:right; font-variant-numeric:tabular-nums; }
     .muted{ color:var(--text-3); }

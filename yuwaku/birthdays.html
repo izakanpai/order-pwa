@@ -23,8 +23,9 @@
     .fc{ padding:10px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); }
     .form-label{ font-size:12px; font-weight:700; display:block; margin-bottom:4px; }
     .muted{ color:var(--text-3); font-size:12px; }
+    /* [iPhone表示対応] nowrapで、狭い画面幅に列が無理に収まろうとして文字が縮小・ズレるのを防ぐ。 */
     table{ width:100%; border-collapse:collapse; font-size:13px; }
-    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; }
+    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
     th{ font-size:11px; color:var(--text-3); }
     .btn-sm{ background:#0f172a; color:#fff; border:0; border-radius:8px; padding:7px 11px; font-weight:800; cursor:pointer; }
     .code{ font-family:monospace; font-weight:800; color:#15803d; }

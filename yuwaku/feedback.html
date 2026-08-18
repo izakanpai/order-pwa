@@ -23,8 +23,9 @@
     .avg{ font-size:34px; font-weight:900; } .avg small{ font-size:15px; color:var(--text-3); font-weight:700; }
     .bar{ display:flex; align-items:center; gap:6px; font-size:12px; margin:2px 0; }
     .bar .track{ flex:1; height:8px; background:#eef2f7; border-radius:6px; overflow:hidden; } .bar .fill{ height:100%; background:#f59e0b; }
-    table{ width:100%; border-collapse:collapse; font-size:13px; }
-    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    /* [iPhone表示対応] min-widthで表全体の最小幅を確保し、外側のoverflow:autoラッパーで横スクロールさせる。 */
+    table{ width:100%; min-width:480px; border-collapse:collapse; font-size:13px; }
+    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; white-space:nowrap; }
     th{ font-size:11px; color:var(--text-3); white-space:nowrap; }
     .muted{ color:var(--text-3); }
     .stars{ color:#f59e0b; white-space:nowrap; }
@@ -60,7 +61,7 @@
       document.getElementById('kpi').innerHTML = '<div><div class="avg">'+(d.avg||0)+' <small>/ 5</small></div><div class="muted">'+I18n.t('count')+': '+(d.count||0)+'</div></div><div style="flex:1;min-width:200px;">'+bars+'</div>';
       if(!d.rows.length){ document.getElementById('rows').innerHTML='<tr><td colspan="4" class="muted" style="padding:16px;text-align:center;">'+I18n.t('empty')+'</td></tr>'; return; }
       document.getElementById('rows').innerHTML = d.rows.map(function(r){
-        return '<tr><td class="muted" style="white-space:nowrap;">'+esc(fmt(r.ts))+'</td><td>'+esc(r.table)+'</td><td class="stars">'+stars(r.rating)+'</td><td>'+esc(r.comment)+'</td></tr>';
+        return '<tr><td class="muted" style="white-space:nowrap;">'+esc(fmt(r.ts))+'</td><td>'+esc(r.table)+'</td><td class="stars">'+stars(r.rating)+'</td><td style="white-space:normal;max-width:260px;">'+esc(r.comment)+'</td></tr>';
       }).join('');
     }
     window.reload = function(){ rpc('getFeedback',[200]).then(function(d){ DATA=d||DATA; render(); }).catch(function(){}); };

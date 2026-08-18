@@ -26,8 +26,12 @@
     .fc{ width:100%; padding:10px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); }
     .btn{ border:0; border-radius:11px; padding:12px 16px; font-size:15px; font-weight:900; cursor:pointer; font-family:inherit; background:var(--navy); color:#fff; }
     .btn-sm{ background:#fee2e2; color:#b91c1c; border:0; border-radius:8px; padding:7px 10px; font-weight:800; cursor:pointer; }
-    table{ width:100%; border-collapse:collapse; font-size:13px; }
-    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; }
+    /* [iPhone表示対応] table{width:100%}のみだと、狭い画面幅に全列が無理に収まろうとして
+       文字が縮小・折り返しでズレて見える。min-widthで表全体の最小幅を確保し、外側の
+       overflow:autoラッパー（HTML側）で横スクロールさせる。th,tdはnowrapで折り返しによる
+       行内ズレを防ぐ（メモ列のみ長文を想定しrender()側で個別にwhite-space:normalを指定）。 */
+    table{ width:100%; min-width:760px; border-collapse:collapse; font-size:13px; }
+    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
     th{ font-size:11px; color:var(--text-3); white-space:nowrap; }
     td.num,th.num{ text-align:right; font-variant-numeric:tabular-nums; }
     .tot{ font-weight:900; font-size:16px; }
@@ -110,7 +114,7 @@
         var receiptCell = e.receiptImageUrl ? ('<a href="'+esc(e.receiptImageUrl)+'" target="_blank" rel="noopener"><img src="'+esc(e.receiptImageUrl)+'" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"></a>') : '';
         return '<tr><td>'+esc(e.date)+'</td><td>'+esc(catLabel(e.category))+'</td><td>'+esc(e.item)+'</td>'+
           '<td class="num">'+SYM+(Number(e.amount)||0).toLocaleString()+'</td><td>'+esc(e.purchaser||'')+'</td>'+
-          '<td>'+receiptCell+'</td><td class="muted">'+esc(e.memo||'')+'</td>'+
+          '<td>'+receiptCell+'</td><td class="muted" style="white-space:normal;max-width:180px;">'+esc(e.memo||'')+'</td>'+
           '<td><button class="btn-sm" onclick="edit(\''+e.id+'\')">'+I18n.t('edit')+'</button> '+
           '<button class="btn-sm" onclick="del(\''+e.id+'\')">'+I18n.t('del')+'</button></td></tr>';
       }).join('');

@@ -23,8 +23,9 @@
     .fc{ padding:10px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); }
     .form-label{ font-size:12px; font-weight:700; display:block; margin-bottom:4px; }
     .muted{ color:var(--text-3); font-size:12px; }
-    table{ width:100%; border-collapse:collapse; font-size:13px; }
-    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; }
+    /* [iPhone表示対応] min-widthで表全体の最小幅を確保し、外側のoverflow:autoラッパーで横スクロールさせる。 */
+    table{ width:100%; min-width:760px; border-collapse:collapse; font-size:13px; }
+    th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
     th{ font-size:11px; color:var(--text-3); white-space:nowrap; }
     td.num,th.num{ text-align:right; font-variant-numeric:tabular-nums; }
     .b-in{ background:#dcfce7; color:#15803d; } .b-waste{ background:#fee2e2; color:#b91c1c; } .b-count{ background:#e0e7ff; color:#3730a3; }
