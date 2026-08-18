@@ -41,7 +41,7 @@
   API.loading = _load; // 手動利用も可（API.loading.show('...') / .hide()）
 
   // 定期ポーリング等、待機表示を出さない（点滅防止）アクション
-  const BG_ACTIONS = { checkToken: 1, getOrders: 1, checkoutStatus: 1, bootstrap: 1, getSettings: 1, getStaffCalls: 1, getTableCheckoutStamp: 1 };
+  const BG_ACTIONS = { checkToken: 1, getOrders: 1, getOperationsDelta: 1, checkoutStatus: 1, bootstrap: 1, getSettings: 1, getStaffCalls: 1, getTableCheckoutStamp: 1 };
   const BG_RPC = { getPrintQueue: 1, getPrintQueueCounts: 1, getSettings: 1 };
 
   // ---- 通信エラー時の自動リトライ＋再読み込み案内バナー（全アクション共通）----
@@ -50,7 +50,7 @@
   // それでも失敗した場合は控えめなバナーで案内する（次に何か1回でも成功すれば自動的に消える）。
   const _FETCH_TIMEOUT_MS = 25000;
   const _RETRY_DELAY_MS = 1200;
-  const _READ_ACTIONS = { getSettings: 1, checkToken: 1, bootstrap: 1, checkoutStatus: 1, getStaffCalls: 1, getTableCheckoutStamp: 1 };
+  const _READ_ACTIONS = { getSettings: 1, checkToken: 1, bootstrap: 1, checkoutStatus: 1, getStaffCalls: 1, getTableCheckoutStamp: 1, getOperationsDelta: 1 };
   function _isReadOnly(action, fn) {
     if (action === 'rpc') return /^(get|check|list|count|fetch)/i.test(fn || '');
     return !!_READ_ACTIONS[action];
@@ -184,6 +184,8 @@
     try {
       const res = await API.post('submitOrder', { order: order });
       const d = res && res.data;
+      // [H4] ロック競合による一時的な失敗はサーバー未登録なので再送キューへ（「拒否」扱いにしない）。
+      if (d === 'Locked, please retry') { await API.queuePut({ id: order.clientId, order: order, ts: Date.now(), attempts: 0 }); return 'queued'; }
       if (d && d !== 'OK') { return 'rejected:' + d; }   // サーバが拒否（例: Invalid table）。キューせず即エラー通知
       return 'sent';
     } catch (err) {

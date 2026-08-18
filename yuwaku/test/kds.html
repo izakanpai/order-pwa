@@ -163,11 +163,28 @@
         stale.map(function(o){ return esc(o.table) + '(' + Math.floor((Date.now()-new Date(o.date).getTime())/60000) + 'm)'; }).join(', ');
     }
     window.setStatus = function(id, status){
-      API.post('updateOrderStatus', { id: id, status: status, token: TOKEN }).then(function(){ load(); }).catch(function(){ load(); });
+      API.post('updateOrderStatus', { id: id, status: status, token: TOKEN }).then(function(){ load(true); }).catch(function(){ load(true); });
     };
-    window.load = function(){
-      API.post('getOrders', {}).then(function(r){ __booted=true; render(r.data || []); })
-        .catch(function(){ var lm=document.getElementById('loadMsg'); if(lm) lm.innerText=I18n.t('connErr'); });
+    // [P0] getOrdersの単独ポーリングをやめ、getOperationsDelta（KDS/admin共通の統合API）を使う。
+    // 直前に見たバージョン番号を送り、サーバー側で変化が無ければunchanged:trueだけが返るため、
+    // 平常時（8秒ごと・変化なし）はSpreadsheet読込自体が省略され、GAS実行が軽くなる。
+    var _opsVersion = null;
+    var _loadInFlight = false;
+    window.load = function(force){
+      if (_loadInFlight) return; // 前回リクエストが残っていれば重複送信しない
+      _loadInFlight = true;
+      var payload = (force || _opsVersion == null) ? {} : { sinceVersion: _opsVersion };
+      return API.post('getOperationsDelta', payload).then(function(r){
+        _loadInFlight = false;
+        __booted = true;
+        var d = r.data || {};
+        _opsVersion = d.version != null ? d.version : _opsVersion;
+        if (d.unchanged) return; // 変化なし：再描画不要
+        render(d.orders || []);
+      }).catch(function(){
+        _loadInFlight = false;
+        var lm=document.getElementById('loadMsg'); if(lm) lm.innerText=I18n.t('connErr');
+      });
     };
 
     var _actx = null;
@@ -185,11 +202,20 @@
     function updateSoundBtn(){ var b = document.getElementById('soundBtn'); b.className = 'kbtn' + (soundOn?' on':''); b.innerText = soundOn ? I18n.t('soundOn') : I18n.t('soundOff'); }
     window.toggleSound = function(){ soundOn = !soundOn; updateSoundBtn(); if (soundOn) beep(); };
 
-    window.reloadAll = function(){ loadMenu(); load(); };
+    window.reloadAll = function(){ loadMenu(); load(true); };
+    // [P0] タブが非表示（他アプリ切替・画面ロック等）の間はポーリング間隔を落とし、無駄なGAS実行を減らす。
+    // 再表示時は即座に最新化する。
+    var _pollTimer = null;
+    function _pollInterval(){ return (document.visibilityState === 'hidden') ? 45000 : 8000; }
+    function _resetPoll(){ if (_pollTimer) clearInterval(_pollTimer); _pollTimer = setInterval(load, _pollInterval()); }
+    document.addEventListener('visibilitychange', function(){
+      _resetPoll();
+      if (document.visibilityState === 'visible') load(true);
+    });
     function boot(){
       loadMenu();
       load();
-      setInterval(load, 8000);   // 旧: 8秒/60秒の二重登録だった重複バグを解消（loadが2倍の頻度で呼ばれていた）
+      _resetPoll();   // 旧: 8秒/60秒の二重登録だった重複バグを解消（loadが2倍の頻度で呼ばれていた）
       setInterval(loadMenu, 300000); // メニュー設定（厨房表示ON/OFF）の変更を数分以内に反映
       if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(function(){}); }
     }

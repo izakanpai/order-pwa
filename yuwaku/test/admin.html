@@ -215,7 +215,27 @@
       else { svc = Math.round(s * (svcRate/100)); afterSvc = s + svc; }
       if (taxIncl) { tax = Math.round(s - s/(1+taxRate/100)); total = afterSvc; }
       else { tax = Math.round(afterSvc * (taxRate/100)); total = afterSvc + tax; }
-      return { sub:s, service:svc, tax:tax, total:total };
+      return { sub:s, service:svc, afterSvc:afterSvc, tax:tax, total:total };
+    }
+    // [C1修正] Senior/PWD割引の計算式。ManagementSystemDev/code.js の _seniorPwdCalc と必ず同じ式にすること
+    // （画面プレビューと会計確定額がズレていた不具合の修正。片方だけ直すと再びズレる）。
+    function seniorPwdCalc(subtotal, eligible, b){
+      var taxRate = Number(SETTINGS.taxRate)||0, taxIncl = String(SETTINGS.taxInclusive)==='true';
+      var r = taxRate/100;
+      var netEligible = taxIncl ? (eligible/(1+r)) : eligible;
+      var discount20 = Math.round(netEligible*0.20);
+      var vatExempt;
+      if (taxIncl){ vatExempt = Math.round(eligible - netEligible); }
+      else {
+        var nonEligibleAfterSvc = Math.max(0, b.afterSvc - eligible);
+        var vatCorrect = Math.round(nonEligibleAfterSvc*r);
+        vatExempt = Math.max(0, b.tax - vatCorrect);
+      }
+      var totalDiscount = discount20 + vatExempt;
+      var nonEligibleSub = Math.max(0, subtotal - eligible);
+      var vatDisplay = taxIncl ? Math.round(nonEligibleSub - nonEligibleSub/(1+r)) : Math.round(nonEligibleSub*r);
+      var total = Math.max(0, b.total - totalDiscount);
+      return { discountAmount: totalDiscount, vat: vatDisplay, total: total };
     }
 
     window.toggleLang = function(){ lang = (lang==='ja'?'en':'ja'); try{localStorage.setItem('lang',lang);}catch(e){} applyLang(); render(); renderCalls(); renderAuto(); };
@@ -272,8 +292,9 @@
       });
       w.innerHTML = html + '</div>';
     }
-    window.resolveCall = function(id){ API.post('resolveCall', { id:id, token: TOKEN }).then(loadCalls).catch(function(){}); };
-    function loadCalls(){ return API.post('getStaffCalls', {}).then(function(r){ calls = r.data || []; renderCalls(); }).catch(function(){}); }
+    window.resolveCall = function(id){ API.post('resolveCall', { id:id, token: TOKEN }).then(function(){ load(true); }).catch(function(){}); };
+    // [P0] getStaffCalls単独ポーリングは廃止し、getOperationsDelta（注文と統合）から呼び出しも一緒に受け取る。
+    function loadCalls(){ return load(); }
 
     // ── 注文取消（承認制） ──
     window.askVoid = function(id){
@@ -309,10 +330,26 @@
       }).catch(function(e){ btn.disabled=false; vdErr('Error: '+(e.message||e)); });
     };
 
-    window.setServed = function(id){ API.post('updateOrderStatus', { id:id, status:'提供済', token: TOKEN }).then(load).catch(load); };
-    window.load = function(){
-      return API.post('getOrders', {}).then(function(r){ orders = r.data || []; render(); })
-        .catch(function(){ var lm=document.getElementById('loadMsg'); if(lm) lm.innerText='接続できません（自動再試行します）'; });
+    window.setServed = function(id){ API.post('updateOrderStatus', { id:id, status:'提供済', token: TOKEN }).then(function(){ load(true); }).catch(function(){ load(true); }); };
+    // [P0] getOrders・getStaffCallsの別々ポーリングをやめ、getOperationsDelta（統合API）を1本使う。
+    // 直前に見たバージョンを送り、変化が無ければunchanged:trueだけ返る＝Spreadsheet読込自体を省略できる。
+    var _opsVersion = null;
+    var _loadInFlight = false;
+    window.load = function(force){
+      if (_loadInFlight) return Promise.resolve(); // 前回リクエストが残っていれば重複送信しない（会計中呼び出し等が重ならないように）
+      _loadInFlight = true;
+      var payload = (force || _opsVersion == null) ? {} : { sinceVersion: _opsVersion };
+      return API.post('getOperationsDelta', payload).then(function(r){
+        _loadInFlight = false;
+        var d = r.data || {};
+        _opsVersion = d.version != null ? d.version : _opsVersion;
+        if (d.unchanged) return; // 変化なし：再描画不要
+        orders = d.orders || []; calls = d.calls || [];
+        render(); renderCalls();
+      }).catch(function(){
+        _loadInFlight = false;
+        var lm=document.getElementById('loadMsg'); if(lm) lm.innerText='接続できません（自動再試行します）';
+      });
     };
     // 手動更新ボタン：getOrders自体はポーリング用に静音（ローディング非表示）のため、
     // 押した手応えが分かるようアイコンを一瞬回転させ、完了後トーストを出す。
@@ -389,20 +426,13 @@
         var sel = document.querySelector('input[name=dcType]:checked'); dtype = sel ? sel.value : 'senior';
         var ei = Number(document.getElementById('dcElig').value);
         eligible = (ei>0) ? Math.min(ei, sub) : sub;
-        disc = Math.round(eligible - eligible/1.12*0.8);   // VAT免除＋20%引き
       }
-      var total = Math.max(0, (b.total||0) - disc);
-      payTotal = total;
-      // VATは設定の税率・内税/外税に従って計算する（従来は12%固定のシニア/PWD免税式を流用していたため、
-      // 設定税率と食い違い・内税時に不正確な値になる不具合があった）。
-      var taxRate = Number(SETTINGS.taxRate)||0, taxIncl = String(SETTINGS.taxInclusive)==='true';
       var vat;
-      if (on) {
-        var vatBase = sub - eligible; // シニア/PWD免税対象額を除いた残りに対する税額
-        vat = taxIncl ? Math.round(vatBase - vatBase/(1+taxRate/100)) : Math.round(vatBase*(taxRate/100));
-      } else {
-        vat = b.tax;
-      }
+      var spc = on ? seniorPwdCalc(sub, eligible, b) : null;
+      if (on) { disc = spc.discountAmount; vat = spc.vat; }
+      else { vat = b.tax; }
+      var total = on ? spc.total : Math.max(0, (b.total||0));
+      payTotal = total;
       // 表示用のプレビュー計算（実際の会計金額はサーバー側finalizeBillが対象注文の登録価格から再計算する。
       // クライアントのこの値は画面表示のみに使い、送信するのは種別・対象額・氏名・ID番号のみ）。
       window._bill = { subtotal: sub, vat: vat, service: b.service, discountType: on?dtype:'', discountId: on?document.getElementById('dcId').value:'',
@@ -551,6 +581,10 @@
       loadCalls();
       resetTimer();
       setInterval(function(){ if(autoOn && !paused()) loadCalls(); }, 8000);   // 自動更新OFF・会計中は呼び出しポーリングも停止
+      // [P0] タブが非表示の間はポーリングを止め、再表示時に即最新化する（無駄なGAS実行を削減）。
+      document.addEventListener('visibilitychange', function(){
+        if (document.visibilityState === 'visible' && autoOn && !paused()) load(true);
+      });
       if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(function(){}); }
     }
     document.addEventListener('DOMContentLoaded', boot);

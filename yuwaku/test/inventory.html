@@ -54,6 +54,7 @@
     <button class="btn btn-sec" onclick="openAiScan()" data-t="aiScanBtn">🤖 AIスキャン</button>
     <button class="btn btn-sec" onclick="openLinkPicker(-1)" data-t="linkFromMenuBtn">🔗 メニューから追加</button>
     <button class="btn btn-pri" id="saveBtn" onclick="save()" data-t="save">💾 保存</button>
+    <button class="btn btn-sec" id="translateBtn" onclick="translateMissing()" data-t="translateBtn">🌐 未翻訳を一括翻訳</button>
     <div class="alert" id="msg"></div>
   </div></div>
 
@@ -191,6 +192,14 @@
         .catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
     function msg(text, ok){ var m=document.getElementById('msg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
+    // [性能改善] 一覧の読込では翻訳しない（読込を遅くしないため）。未翻訳分はここで明示的にまとめて翻訳する。
+    window.translateMissing = function(){
+      var btn = document.getElementById('translateBtn'); btn.disabled=true;
+      rpc('translateMissingDrinkInventory',[]).then(function(r){
+        btn.disabled=false; msg((I18n.t('translated')||'翻訳しました：')+(r&&r.updated!=null?r.updated:0), true);
+        return rpc('getDrinkInventory',[]).then(function(list){ window.rows=(list||[]).slice(); render(); });
+      }).catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
+    };
 
     // ── 在庫変動（入荷・廃棄・棚卸） ──
     var mvIdx = -1, mvKind = 'in';
@@ -457,13 +466,13 @@
         linkFromMenuBtn:'🔗 メニューから追加', linkConfirmBtn:'🔗 リンク', linkPickPh:'メニューを選択…', linkNeedSel:'メニューを選択してください', linkRowNeedName:'先に商品名を入力してください',
         linkNewTitle:'🔗 メニューから在庫を追加', linkNewHint:'選んだメニューの商品名でそのまま在庫アイテムを追加し、紐づけます（在庫数・最小在庫は追加後に入力してください）。',
         linkExistingTitle:'🔗 メニューと紐づけ', linkExistingHint:'紐づけるメニューを選択: ', linkDone:'✅ 紐づけました', linkAddedNeedSave:'✅ 在庫に追加・紐づけしました（「💾 保存」で確定してください）',
-        linkedWith:'紐づくメニュー: ', linkBtnTitle:'メニューと紐づけ（未設定）' },
+        linkedWith:'紐づくメニュー: ', linkBtnTitle:'メニューと紐づけ（未設定）', translateBtn:'🌐 未翻訳を一括翻訳', translated:'翻訳しました：' },
       en:{ title:'📦 Inventory', back:'← Manage', movesLink:'📋 History', hint:'Track drinks, ingredients and supplies together by quantity. Rows below the minimum turn red and appear as low-stock in reports. Auto-deducted on orders via recipes (material-name match). Use “Move” to log receiving, waste and stocktake — all kept in history.', scrollHint:'👉 Swipe sideways to see the whole table', thName:'Item', thCat:'Category', thSupplier:'Supplier', thUnit:'Unit', thStock:'Stock', thMin:'Min stock', thCost:'Cost', addRow:'＋ Add row', save:'💾 Save', loading:'Loading…', empty:'Tap “＋ Add row” to register', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ', moveBtn:'Move', mvIn:'＋ Receive', mvWaste:'− Waste', mvCount:'Stocktake', mvQty:'Quantity', mvCounted:'Counted qty', mvCostL:'Cost (optional, updates unit cost)', mvReasonL:'Reason', mvStockNow:'Current', mvGo:'Apply', mvClose:'Close', mvDone:'✅ Recorded', mvBad:'Please check the quantity', mvNeedSave:'Please save the item first', camHintShoot:'Tap 📸 to capture, then tap each item to count', camHintTap:'Tap each item. ↩ to undo, ✓ to use the count', camNoCam:'Camera unavailable (check permission/support)',
         aiScanBtn:'🤖 AI Scan', aiTitle:'🤖 AI Stocktake Scan', aiTapText:'Tap to take a photo', aiAnalyzeBtn:'🤖 Analyze with AI', aiAnalyzing:'Analyzing…', aiResultTitle:'AI results — item name & quantity are fully editable', aiResultHint:'Edit the name directly, or pick an existing item from the dropdown below to auto-fill it. Use ✕ to skip a single row.', aiApplyBtn:'✅ Apply to inventory', aiNoApiKey:'Gemini API key not set. Add it in Settings.', aiNoDetect:'No drinks detected. Try a different angle.', aiSkip:'Skip this item', aiPickPh:'(Pick from existing items)', aiApplied:'✅ Applied (press “💾 Save” to confirm)',
         linkFromMenuBtn:'🔗 Add from menu', linkConfirmBtn:'🔗 Link', linkPickPh:'Select a menu item…', linkNeedSel:'Please select a menu item', linkRowNeedName:'Please enter an item name first',
         linkNewTitle:'🔗 Add inventory item from menu', linkNewHint:'Adds a new inventory item using the selected menu item’s name and links it (fill in stock/min after adding).',
         linkExistingTitle:'🔗 Link to a menu item', linkExistingHint:'Choose a menu item to link: ', linkDone:'✅ Linked', linkAddedNeedSave:'✅ Added and linked (press “💾 Save” to confirm)',
-        linkedWith:'Linked menu items: ', linkBtnTitle:'Link to a menu item (not set)' }
+        linkedWith:'Linked menu items: ', linkBtnTitle:'Link to a menu item (not set)', translateBtn:'🌐 Translate missing', translated:'Translated: ' }
     }, function(){ if(__loaded) render(); });
   </script>
   <datalist id="catList"></datalist>
