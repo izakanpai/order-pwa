@@ -153,7 +153,12 @@
     };
     window.removeReq = function(id){
       if (!confirm(I18n.t('confirmDelete'))) return;
-      rpc('deleteRequest',[id]).then(function(){ ROWS = ROWS.filter(function(r){ return r.id!==id; }); render(); }).catch(function(){});
+      // [負荷試験レビュー対応/優先#6] deleteRequestも失敗時は例外を投げず{success:false}を返すため、
+      // 結果を見ずに一覧から消していたのを修正。
+      rpc('deleteRequest',[id]).then(function(r){
+        if (r && r.success) { ROWS = ROWS.filter(function(r2){ return r2.id!==id; }); render(); }
+        else { var e = $('subErr'); if (e) { e.textContent = I18n.t('errPrefix')+((r&&r.error)||'delete_failed'); e.style.display='block'; } }
+      }).catch(function(){});
     };
     window.reload = function(){
       return rpc('getRequests',[]).then(function(l){ ROWS=l||[]; render(); });

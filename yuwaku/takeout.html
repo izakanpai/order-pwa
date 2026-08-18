@@ -161,7 +161,10 @@
     function renderMenu(){
       var list = MENU.filter(function(it){ return it['カテゴリ']===curCat; });
       document.getElementById('menu').innerHTML = list.map(function(it){
-        var nm = it['商品名']; var q = cart[nm]||0;
+        // [負荷試験レビュー対応/優先#7] nmは注文送信・カートキー・サーバー側商品照合に使う「識別用の日本語名」で、
+        // 表示に使うラベルは別にdispNmとして持つ（EN切替時に商品名_ENがあればそちらを表示。無ければ日本語の
+        // ままフォールバック＝index.htmlのapp.jsと同じ考え方に統一）。
+        var nm = it['商品名']; var dispNm = (lang==='en' && it['商品名_EN']) ? it['商品名_EN'] : nm; var q = cart[nm]||0;
         var thumb = it.displayUrl ? '<img class="thumb" src="'+esc(it.displayUrl)+'" loading="lazy" alt="">' : '<div class="thumb"></div>';
         var unavail = it.soldOut===true || it.available===false;
         var tags = '';
@@ -172,7 +175,7 @@
           : (q>0
             ? '<button onclick="chg(\''+esc(nm).replace(/'/g,"\\'")+'\',-1)">−</button><span class="q">'+q+'</span><button class="add" onclick="chg(\''+esc(nm).replace(/'/g,"\\'")+'\',1)">＋</button>'
             : '<button class="add" onclick="chg(\''+esc(nm).replace(/'/g,"\\'")+'\',1)">＋</button>');
-        return '<div class="mi'+(unavail?' tk-off':'')+'">'+thumb+'<div class="info"><div class="nm">'+esc(nm)+'</div>'+
+        return '<div class="mi'+(unavail?' tk-off':'')+'">'+thumb+'<div class="info"><div class="nm">'+esc(dispNm)+'</div>'+
           (tags?'<div class="tk-tags">'+tags+'</div>':'')+
           (it['説明']?'<div class="ds">'+esc(it['説明'])+'</div>':'')+
           '<div class="pr">'+money(it['価格'])+'</div></div><div class="stp">'+stepper+'</div></div>';
@@ -181,6 +184,9 @@
     window.chg = function(nm, d){ cart[nm] = Math.max(0,(cart[nm]||0)+d); if(!cart[nm]) delete cart[nm]; renderMenu(); updateCart(); };
 
     function priceOf(nm){ for(var i=0;i<MENU.length;i++){ if(String(MENU[i]['商品名'])===String(nm)) return Number(MENU[i]['価格'])||0; } return 0; }
+    // [負荷試験レビュー対応/優先#7] カート・確認画面・注文完了画面いずれも商品名は識別用の日本語キー(nm)で
+    // 保持しつつ、表示だけEN切替時に商品名_ENへ差し替える（renderMenuのdispNmと同じ考え方を共通化）。
+    function dispNameOf(nm){ if(lang!=='en') return nm; for(var i=0;i<MENU.length;i++){ if(String(MENU[i]['商品名'])===String(nm)) return MENU[i]['商品名_EN']||nm; } return nm; }
     function cartItems(){ return Object.keys(cart).map(function(nm){ return { name:nm, count:cart[nm] }; }); }
     function cartTotal(){ return Object.keys(cart).reduce(function(s,nm){ return s + priceOf(nm)*cart[nm]; }, 0); }
     function cartCount(){ return Object.keys(cart).reduce(function(s,nm){ return s + cart[nm]; }, 0); }
@@ -208,7 +214,7 @@
       document.getElementById('fCoupon').value = '';
       document.getElementById('cpMsg').textContent = '';
       document.getElementById('coItems').innerHTML = cartItems().map(function(i){
-        return '<div class="cli"><span>'+esc(i.name)+' ×'+i.count+'</span><span>'+money(priceOf(i.name)*i.count)+'</span></div>';
+        return '<div class="cli"><span>'+esc(dispNameOf(i.name))+' ×'+i.count+'</span><span>'+money(priceOf(i.name)*i.count)+'</span></div>';
       }).join('');
       document.getElementById('coTotal').innerText = money(cartTotal());
       document.getElementById('pmWrap').style.display = PAYMONGO ? 'block' : 'none';
@@ -297,7 +303,7 @@
     function onOrdered(d, paid){
       var t = tt();
       if (!d || d.error){ showAlert((d&&d.error)||t.payFail, false); return; }
-      var itemsHtml = cartItems().map(function(i){ return '<div class="cli"><span>'+esc(i.name)+' ×'+i.count+'</span><span>'+money(priceOf(i.name)*i.count)+'</span></div>'; }).join('');
+      var itemsHtml = cartItems().map(function(i){ return '<div class="cli"><span>'+esc(dispNameOf(i.name))+' ×'+i.count+'</span><span>'+money(priceOf(i.name)*i.count)+'</span></div>'; }).join('');
       var pickup = document.getElementById('fPickup').value;
       document.getElementById('coForm').style.display='none';
       var s = document.getElementById('coSuccess'); s.style.display='block';
@@ -336,6 +342,7 @@
       document.getElementById('pmCardT').innerText = t.card;
       document.getElementById('lblTotal').innerText = t.total;
       document.getElementById('coCancel').innerText = t.cancel;
+      renderMenu(); // [優先#7] 言語切替時、一覧の商品名（dispNm）もEN/JAで再描画する
       updateCart();
     }
 
