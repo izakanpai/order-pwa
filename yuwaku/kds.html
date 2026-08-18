@@ -62,12 +62,16 @@
       <button class="kbtn" id="reloadBtn" onclick="reloadAll()">↻</button>
     </div>
   </div>
+  <div id="staleWrap" style="display:none;background:#fffbeb;border-bottom:2px solid #fcd34d;padding:8px 14px;font-size:13px;color:#92400e;font-weight:800;"></div>
   <div class="kgrid" id="grid"><div class="kempty" id="loadMsg" data-t="loading">読み込み中…</div></div>
 
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
   <script>
+    // [P0-2] 注文状態の変更はスタッフ操作のため、このKDS端末でも事前ログイン（1回のみ）を必須にする。
+    var TOKEN = localStorage.getItem('mgmtToken') || '';
+    if (!TOKEN) location.href = './manage.html';
     var soundOn = true, lastNewIds = {}, firstPaint = true;
     var KITCHEN_MAP = {}; // 商品名(基底名) -> true(キッチン表示)/false(非表示)。未取得/未登録の商品は常にtrue扱い（安全側）。
 
@@ -107,6 +111,10 @@
     function render(data){
       data = data || lastData || []; lastData = data;
       var active = data.filter(function(o){ return o.status === '未対応' || o.status === '調理中'; });
+      // [P1-4] 長時間放置された古い注文（stale）は通常のチケット一覧から隔離し、別枠で表示する。
+      var stale = active.filter(function(o){ return o.stale; });
+      active = active.filter(function(o){ return !o.stale; });
+      renderStale(stale);
       // キッチン非対象の商品のみで構成される注文はチケット自体を非表示にする
       active = active.map(function(o){ return { o:o, items: parseItems(o.details) }; }).filter(function(x){ return x.items.length > 0; });
       active.sort(function(a,b){ return new Date(a.o.date).getTime() - new Date(b.o.date).getTime(); });
@@ -118,6 +126,7 @@
 
       document.getElementById('kcount').innerText = active.length;
       if (!active.length){ document.getElementById('grid').innerHTML = '<div class="kempty">'+I18n.t('empty')+'</div>'; return; }
+
 
       var html = '';
       active.forEach(function(x){
@@ -145,8 +154,16 @@
       document.getElementById('grid').innerHTML = html;
     }
 
+    // [P1-4] 滞留（12時間超・未対応/調理中のまま）の注文一覧をバナー表示。個別の会計/取消は注文管理(admin)側で行う。
+    function renderStale(stale){
+      var w = document.getElementById('staleWrap');
+      if (!stale.length){ w.style.display='none'; w.innerHTML=''; return; }
+      w.style.display='block';
+      w.innerHTML = '⚠️ ' + stale.length + ' ' + I18n.t('staleNote') + '：' +
+        stale.map(function(o){ return esc(o.table) + '(' + Math.floor((Date.now()-new Date(o.date).getTime())/60000) + 'm)'; }).join(', ');
+    }
     window.setStatus = function(id, status){
-      API.post('updateOrderStatus', { id: id, status: status }).then(function(){ load(); }).catch(function(){ load(); });
+      API.post('updateOrderStatus', { id: id, status: status, token: TOKEN }).then(function(){ load(); }).catch(function(){ load(); });
     };
     window.load = function(){
       API.post('getOrders', {}).then(function(r){ __booted=true; render(r.data || []); })
@@ -178,8 +195,8 @@
     }
     var __booted = false;
     I18n.init({
-      ja:{ title:'キッチン', sub:'未提供オーダー', back:'← 管理', loading:'読み込み中…', empty:'✅ 未提供のオーダーはありません', new:'新規', cook:'調理中', min:'分', prepaid:'前払い済', startCook:'🔥 調理開始', done:'✓ 提供完了', backNew:'新規に戻す', soundOn:'🔔 音 ON', soundOff:'🔕 音 OFF', connErr:'接続できません（自動再試行します）' },
-      en:{ title:'Kitchen', sub:'Pending orders', back:'← Manage', loading:'Loading…', empty:'✅ No pending orders', new:'New', cook:'Cooking', min:'m', prepaid:'Prepaid', startCook:'🔥 Start', done:'✓ Served', backNew:'Back to new', soundOn:'🔔 Sound ON', soundOff:'🔕 Sound OFF', connErr:'Cannot connect (auto-retrying)' }
+      ja:{ title:'キッチン', sub:'未提供オーダー', back:'← 管理', loading:'読み込み中…', empty:'✅ 未提供のオーダーはありません', new:'新規', cook:'調理中', min:'分', prepaid:'前払い済', startCook:'🔥 調理開始', done:'✓ 提供完了', backNew:'新規に戻す', soundOn:'🔔 音 ON', soundOff:'🔕 音 OFF', connErr:'接続できません（自動再試行します）', staleNote:'件、長時間未処理の滞留注文があります（注文管理で確認してください）' },
+      en:{ title:'Kitchen', sub:'Pending orders', back:'← Manage', loading:'Loading…', empty:'✅ No pending orders', new:'New', cook:'Cooking', min:'m', prepaid:'Prepaid', startCook:'🔥 Start', done:'✓ Served', backNew:'Back to new', soundOn:'🔔 Sound ON', soundOff:'🔕 Sound OFF', connErr:'Cannot connect (auto-retrying)', staleNote:'stale order(s) pending too long — please check in Orders' }
     }, function(){ updateSoundBtn(); if(__booted) render(lastData); });
     document.addEventListener('DOMContentLoaded', boot);
   </script>

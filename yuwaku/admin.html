@@ -97,8 +97,11 @@
               <label style="cursor:pointer;"><input type="radio" name="dcType" value="senior" checked onchange="recompPay()"><span id="dcSenior"> シニア</span></label>
               <label style="cursor:pointer;"><input type="radio" name="dcType" value="pwd" onchange="recompPay()"> PWD</label>
             </div>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;gap:8px;margin-bottom:6px;">
+              <input id="dcName" placeholder="対象者氏名" style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;">
               <input id="dcId" placeholder="ID番号" style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;">
+            </div>
+            <div style="display:flex;gap:8px;">
               <input id="dcElig" type="number" min="0" step="any" placeholder="対象額" style="width:120px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;" oninput="recompPay()">
             </div>
             <div id="dcNote" style="color:#64748b;margin-top:6px;"></div>
@@ -166,6 +169,9 @@
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script>
+    // [P0-2] 会計・注文操作はスタッフ操作のため、事前ログイン（1回のみ）を必須にする。
+    var TOKEN = localStorage.getItem('mgmtToken') || '';
+    if (!TOKEN) location.href = './manage.html';
     var SETTINGS = {}, PAYMONGO = false, orders = [], calls = [], voidId = '', MENU_MAP = {};
     var autoOn = (function(){ try{ var v=localStorage.getItem('adminAuto'); return v===null?true:(v==='1'); }catch(e){ return true; } })();
     var refreshSec = (function(){ try{ var v=parseInt(localStorage.getItem('adminRefreshSec'),10); return (v===10||v===30||v===60)?v:30; }catch(e){ return 30; } })();
@@ -266,7 +272,7 @@
       });
       w.innerHTML = html + '</div>';
     }
-    window.resolveCall = function(id){ API.post('resolveCall', { id:id }).then(loadCalls).catch(function(){}); };
+    window.resolveCall = function(id){ API.post('resolveCall', { id:id, token: TOKEN }).then(loadCalls).catch(function(){}); };
     function loadCalls(){ return API.post('getStaffCalls', {}).then(function(r){ calls = r.data || []; renderCalls(); }).catch(function(){}); }
 
     // ── 注文取消（承認制） ──
@@ -303,7 +309,7 @@
       }).catch(function(e){ btn.disabled=false; vdErr('Error: '+(e.message||e)); });
     };
 
-    window.setServed = function(id){ API.post('updateOrderStatus', { id:id, status:'提供済' }).then(load).catch(load); };
+    window.setServed = function(id){ API.post('updateOrderStatus', { id:id, status:'提供済', token: TOKEN }).then(load).catch(load); };
     window.load = function(){
       return API.post('getOrders', {}).then(function(r){ orders = r.data || []; render(); })
         .catch(function(){ var lm=document.getElementById('loadMsg'); if(lm) lm.innerText='接続できません（自動再試行します）'; });
@@ -360,7 +366,7 @@
       resetPs3();
       payMethod = 'cash';
       payTable = tn; payCheckoutId = null; payOrderIds = (orderIds && orderIds.length) ? orderIds : null; paySub = Number(subtotal)||0; payBase = breakdown(paySub);
-      document.getElementById('dcOn').checked = false; document.getElementById('dcId').value=''; document.getElementById('dcElig').value='';
+      document.getElementById('dcOn').checked = false; document.getElementById('dcId').value=''; document.getElementById('dcElig').value=''; document.getElementById('dcName').value='';
       var _pe=document.getElementById('payEmail'); if(_pe){ _pe.value=''; _pe.placeholder=t().eReceipt; }
       document.getElementById('splitN').value = 1; document.getElementById('splitLbl').innerText = t().splitLbl;
       document.getElementById('ps1t').innerText = t().pTitle;
@@ -397,7 +403,10 @@
       } else {
         vat = b.tax;
       }
-      window._bill = { subtotal: sub, vat: vat, service: b.service, discountType: on?dtype:'', discountId: on?document.getElementById('dcId').value:'', discountAmount: disc, total: total };
+      // 表示用のプレビュー計算（実際の会計金額はサーバー側finalizeBillが対象注文の登録価格から再計算する。
+      // クライアントのこの値は画面表示のみに使い、送信するのは種別・対象額・氏名・ID番号のみ）。
+      window._bill = { subtotal: sub, vat: vat, service: b.service, discountType: on?dtype:'', discountId: on?document.getElementById('dcId').value:'',
+        discountName: on?document.getElementById('dcName').value:'', discountEligible: on?eligible:0, discountAmount: disc, total: total };
       var html = '<div style="font-weight:900;font-size:15px;margin-bottom:8px;">🪑 '+esc(seatLabel(payTable))+'</div>';
       html += '<div class="sr"><span>'+t().sub+'</span><span>'+money(sub)+'</span></div>';
       if (b.service>0) html += '<div class="sr"><span>'+t().svc+'</span><span>'+money(b.service)+'</span></div>';
@@ -486,7 +495,7 @@
       document.getElementById('ps2loading').style.display='block';
       document.getElementById('payAlert').style.display='none';
       step(2);
-      API.post('createCheckout', { amount: payTotal, desc: 'Table '+payTable, method: method }).then(function(r){
+      API.post('createCheckout', { amount: payTotal, desc: 'Table '+payTable, method: method, token: TOKEN }).then(function(r){
         var d = r.data || {};
         document.getElementById('ps2loading').style.display='none';
         if (d.error){ var a=document.getElementById('payAlert'); a.style.display='block'; a.style.background='#fce8e6'; a.style.color='#b71c1c'; a.innerText = d.error==='no_api_key'?t().noKey:d.error; return; }
@@ -512,9 +521,19 @@
     window.finalize = function(){
       var btn = document.getElementById('doneBtn'); btn.disabled=true; btn.innerText=t().processing;
       var _em=document.getElementById('payEmail'); var email=_em?_em.value.trim():'';
-      var bill = Object.assign({}, window._bill||{}, { table: payTable, method: payMethod, orderIds: payOrderIds, email: email });
-      API.post('finalizeBill', bill).then(function(r){ btn.disabled=false; btn.innerText=t().done; var d=r.data||{}; showReceipt(d.orNo||'', bill); })
-        .catch(function(e){ btn.disabled=false; btn.innerText=t().done; alert('Error: '+(e.message||e)); });
+      var pv = window._bill||{};
+      // [P0-1] 会計金額はクライアントから送らず、サーバーが対象注文から再計算する。
+      // ここで送るのは対象(orderIds/table)・支払方法・割引の入力値（種別/対象額/ID/氏名）・メールのみ。
+      var req = { table: payTable, method: payMethod, orderIds: payOrderIds, email: email, token: TOKEN,
+        discountType: pv.discountType||'', discountId: pv.discountId||'', discountName: pv.discountName||'', discountEligible: pv.discountEligible||0 };
+      API.post('finalizeBill', req).then(function(r){
+        btn.disabled=false; btn.innerText=t().done; var d=r.data||{};
+        if (d.error){ alert('Error: '+d.error); return; }
+        // 表示・印刷・eレシートは全てサーバーが再計算した金額を正とする。
+        var bill = { table: payTable, method: payMethod, subtotal: d.subtotal, vat: d.vat, service: d.service,
+          discountType: pv.discountType||'', discountId: pv.discountId||'', discountAmount: d.discountAmount, total: d.total };
+        showReceipt(d.orNo||'', bill);
+      }).catch(function(e){ btn.disabled=false; btn.innerText=t().done; alert('Error: '+(e.message||e)); });
     };
 
     function boot(){

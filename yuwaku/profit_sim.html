@@ -578,12 +578,28 @@
     //   target = R - fixed - revVarPct%×R - cogsVarPct%×(R－nonCogsRev)
     //   R = (target + fixed － cogsVarPct%×nonCogsRev) / (1 － revVarPct% － cogsVarPct%)
     // 目標粗利0円なら損益分岐点売上と同じ。
+    // [P1-3] 通常計算はCOGS対象売上=max(0, 売上－非COGS売上)の区分線形関数のため、逆算も区分線形として解く。
+    // 領域A: R >= 非COGS売上（COGS変動費が R－非COGS売上 に対して発生）。
+    //   target = R - fixed - revVarPct%×R - cogsVarPct%×(R－nonCogsRev)
+    //   R = (target + fixed － cogsVarPct%×nonCogsRev) / (1 － revVarPct% － cogsVarPct%)
+    // 領域B: R < 非COGS売上（COGS対象売上がゼロなのでCOGS変動費は発生しない）。
+    //   target = R - fixed - revVarPct%×R  →  R = (target + fixed) / (1 － revVarPct%)
+    // 候補売上が実際にその領域の前提（A: R>=nonCogsRev / B: R<nonCogsRev）を満たす場合のみ採用する。
+    // 変動費率が100%以上等、達成不可能な入力ではnullを返す（呼び出し側は保存・結果反映を行わない）。
     function calcRevenueForProfit(targetProfit){
       var b = _beInputs();
-      var denom = 1 - (b.revVarPct + b.cogsVarPct) / 100;
-      if (denom <= 0) return null;
-      var R = (targetProfit + b.fixed - (b.cogsVarPct / 100) * b.nonCogsRev) / denom;
-      return R;
+      var revVar = b.revVarPct / 100, cogsVar = b.cogsVarPct / 100, nonCogs = b.nonCogsRev;
+      var denomA = 1 - revVar - cogsVar;
+      if (denomA > 0) {
+        var Ra = (targetProfit + b.fixed - cogsVar * nonCogs) / denomA;
+        if (isFinite(Ra) && Ra >= nonCogs - 1e-6) return Ra;
+      }
+      var denomB = 1 - revVar;
+      if (denomB > 0) {
+        var Rb = (targetProfit + b.fixed) / denomB;
+        if (isFinite(Rb) && Rb >= 0 && Rb <= nonCogs + 1e-6) return Rb;
+      }
+      return null;
     }
     function calcBreakeven(){ return calcRevenueForProfit(0); }
 
@@ -926,7 +942,7 @@
         salaryHint:'各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分は基本給ベースで別項目として自動計算し、経費合計に含めます）。',
         premiumHint:'夜勤（22時〜翌6時）・残業（1日8時間超）は、上の「日数/月」に既に含まれる1日あたりの時間を入力してください（例：シフトのうち4時間が夜勤帯なら「4」。出勤日数を別途増やす必要はありません＝内数）。休日出勤（追加）は、通常の「日数/月」とは別に追加で出勤した日数を入力してください（＝外数、日給の130%で計算）。夜勤+10%、残業+25%、休日出勤+30%を仮定した概算です。実際の適用条件は労働法令・専門家にご確認ください。',
         salaryTotalLabel:'給与合計（12か月分・割増込み）',
-        salary13thLabel:'13か月給与積立金（月割り）',
+        salary13thLabel:'13か月給与積立金（月割り・概算）',
         eSss:'社会保険料（SSS/PhilHealth/Pag-IBIG）', sssHint:'給与合計（割増賃金込み）に対する割合(%)を入力すると自動計算します（初期値13%）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。',
         eOtherStaff:'その他人件費（弁護士／経理など）', eKaraoke:'カラオケレンタル',
         ePayFee:'決済手数料', unitCashlessPct:'キャッシュレス率%',
@@ -984,7 +1000,7 @@
         salaryHint:'Enter the daily wage, hours worked per day, headcount, and workdays per month for each rank to auto-calculate the equivalent hourly wage and total salary (the 13th-month pay accrual is based on basic pay and calculated as a separate line item, included in total expenses).',
         premiumHint:'For night shift (10pm–6am) and overtime (beyond 8h/day), enter the hours per day already included within the "days/mo" you entered above (e.g. if 4 hours of each shift fall in the night differential window, enter "4" — no extra workdays needed, since these hours are a subset of days already paid). For extra rest-day-worked, enter the number of ADDITIONAL days worked beyond the normal "days/mo" (paid at 130% of the daily rate). Assumes +10% night differential, +25% overtime, +30% rest-day premium — approximations only; confirm actual applicable rates with labor law / a professional.',
         salaryTotalLabel:'Total salary (12 months, incl. premiums)',
-        salary13thLabel:'13th-month pay accrual (monthly)',
+        salary13thLabel:'13th-month pay accrual (monthly, estimate)',
         eSss:'Social contributions (SSS/PhilHealth/Pag-IBIG)', sssHint:'Enter a percentage (%) of total salary (including premiums) to auto-calculate (default 13%). The resulting amount can be freely overwritten afterward (changing the % or pressing "Recalculate from %" recalculates it).',
         eOtherStaff:'Other personnel costs (lawyer/accounting, etc.)', eKaraoke:'Karaoke rental',
         ePayFee:'Payment processing fees', unitCashlessPct:'cashless share %',
