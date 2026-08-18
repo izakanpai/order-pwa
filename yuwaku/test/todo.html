@@ -134,13 +134,25 @@
       var row = ROWS.filter(function(r){ return r.id===id; })[0];
       var prevDone = row ? row.done : null, prevDoneAt = row ? row.doneAt : null;
       if (row) { row.done = done; row.doneAt = done ? todayStr() : ''; render(); } // 楽観的更新
-      rpc('toggleTodoDone',[id, done]).catch(function(){
+      // [負荷試験レビュー対応/優先#6] toggleTodoDoneは失敗時も例外を投げず{success:false}を返す実装のため、
+      // .catch()だけでは検知できず「保存できたつもり」のまま放置されていた。成功判定を明示的に行う。
+      rpc('toggleTodoDone',[id, done]).then(function(r){
+        if (!(r && r.success)) {
+          if (row) { row.done = prevDone; row.doneAt = prevDoneAt; render(); }
+          var e = $('addErr'); if (e) { e.textContent = I18n.t('errPrefix')+((r&&r.error)||'save_failed'); e.style.display='block'; }
+        }
+      }).catch(function(){
         if (row) { row.done = prevDone; row.doneAt = prevDoneAt; render(); } // 失敗時はロールバック
       });
     };
     window.removeTodo = function(id){
       if (!confirm(I18n.t('confirmDelete'))) return;
-      rpc('deleteTodo',[id]).then(function(){ ROWS = ROWS.filter(function(r){ return r.id!==id; }); render(); }).catch(function(){});
+      // [負荷試験レビュー対応/優先#6] deleteTodoも失敗時は例外を投げず{success:false}を返すため、
+      // 結果を見ずに一覧から消していた（削除に失敗しても画面上は消えたように見えてしまう）のを修正。
+      rpc('deleteTodo',[id]).then(function(r){
+        if (r && r.success) { ROWS = ROWS.filter(function(r2){ return r2.id!==id; }); render(); }
+        else { var e = $('addErr'); if (e) { e.textContent = I18n.t('errPrefix')+((r&&r.error)||'delete_failed'); e.style.display='block'; } }
+      }).catch(function(){});
     };
     window.reload = function(){
       return rpc('getTodos',[]).then(function(l){ ROWS=l||[]; render(); });

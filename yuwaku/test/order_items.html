@@ -90,7 +90,9 @@
 
     window.edit = function(id){ var it=ITEMS.filter(function(x){return x.id===id;})[0]; if(!it) return; document.getElementById('iId').value=it.id; document.getElementById('iName').value=it.name; document.getElementById('iNameEn').value=it.nameEn||''; document.getElementById('iUnit').value=it.unit||''; document.getElementById('iSupplier').value=it.supplier||''; document.getElementById('iMemo').value=it.memo||''; window.scrollTo({top:9999,behavior:'smooth'}); };
     // [応答速度対応] 削除成功時は全件再取得せず、ローカル配列からその1件だけ除去する。
-    window.del = function(id){ if(!confirm(I18n.t('delConfirm'))) return; rpc('deleteOrderItem',[id]).then(function(){ ITEMS = ITEMS.filter(function(x){ return x.id!==id; }); render(); }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); }); };
+    // [負荷試験レビュー対応/優先#6] deleteOrderItemは失敗時も例外を投げず{error:...}を返すため、
+    // 結果を見ずに一覧から消していたのを修正（成功時のみローカル配列から除去する）。
+    window.del = function(id){ if(!confirm(I18n.t('delConfirm'))) return; rpc('deleteOrderItem',[id]).then(function(r){ if(r && r.ok){ ITEMS = ITEMS.filter(function(x){ return x.id!==id; }); render(); } else { msg(I18n.t('errPrefix')+((r&&r.error)||'delete_failed'), false); } }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); }); };
     window.save = function(){
       var it = { id:document.getElementById('iId').value, name:document.getElementById('iName').value.trim(), nameEn:document.getElementById('iNameEn').value.trim(), unit:document.getElementById('iUnit').value.trim(), supplier:document.getElementById('iSupplier').value, memo:document.getElementById('iMemo').value.trim() };
       if(!it.name){ msg(I18n.t('needName'), false); return; }

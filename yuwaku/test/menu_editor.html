@@ -293,7 +293,10 @@
       m['売切日'] = makeSold ? _todayStr() : '';
       render();
       rpc('setSoldOut',[m['商品名'], makeSold]).then(function(res){
-        if(String(res).indexOf('Error')===0){ m['売切日']=prevVal; render(); msg(I18n.t('errPrefix')+res, false); }
+        // [負荷試験レビュー対応] setSoldOutは{success:true/false}を返すようになった（従来の文字列判定はしない）。
+        // success:falseを見逃して「保存できたつもり」のUIのまま放置しないよう、必ずロールバックしてエラー表示する。
+        var ok = res && (res.success === true || res.ok === true);
+        if (!ok) { m['売切日']=prevVal; render(); msg(I18n.t('errPrefix')+((res&&res.error)||'save_failed'), false); }
       }).catch(function(e){ m['売切日']=prevVal; render(); msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
     var SYM='₱';

@@ -140,10 +140,14 @@
       window.scrollTo({top:0,behavior:'smooth'});
     };
     // [応答速度対応] 削除成功時は全件再取得(getExpenses)せず、ローカル配列からその1件だけ除去する。
+    // [負荷試験レビュー対応/優先#6] deleteExpenseも失敗時は例外を投げず{success:false}を返すため、
+    // 結果を見ずに一覧から消していたのを修正。
     window.del = function(id){
       if(!confirm(I18n.t('delConfirm'))) return;
-      rpc('deleteExpense',[id]).then(function(){ ALL = ALL.filter(function(e){ return e.id!==id; }); render(); })
-        .catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
+      rpc('deleteExpense',[id]).then(function(r){
+        if (r && r.success) { ALL = ALL.filter(function(e){ return e.id!==id; }); render(); }
+        else { msg(I18n.t('errPrefix')+((r&&r.error)||'delete_failed'), false); }
+      }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
     // 画像ファイルをbase64化してアップロードし、fileIdを返す（uploadTopImage等と同じパターン）
     function fileToBase64(file){

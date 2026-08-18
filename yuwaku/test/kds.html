@@ -74,6 +74,10 @@
     if (!TOKEN) location.href = './manage.html';
     var soundOn = true, lastNewIds = {}, firstPaint = true;
     var KITCHEN_MAP = {}; // 商品名(基底名) -> true(キッチン表示)/false(非表示)。未取得/未登録の商品は常にtrue扱い（安全側）。
+    // [負荷試験レビュー対応/優先#7] 商品名(基底名) -> 商品名_EN。KDSはEN切替ボタンがUI文言のみに作用し、
+    // チケットの商品名は常に日本語のまま表示されていた。他画面（index.html/receipts.html等）と同様、
+    // 商品名_ENが登録されていればEN表示時にそちらを使う。
+    var MENU_EN = {};
 
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     // オプション付き商品名（例:「コーラ (氷なし)」）から基底の商品名を取り出す
@@ -88,15 +92,24 @@
       // ドリンク等、キッチン対応不要に設定された商品はキッチン画面の明細から除外
       return items.filter(function(it){ return KITCHEN_MAP[baseName(it.name)] !== false; });
     }
+    // [優先#7] 明細の商品名（オプション付きの場合あり）をEN表示用に変換。基底名で商品名_ENを引き、
+    // 見つかればオプション部分（括弧書き）はそのまま日本語で残して連結する（他画面と同じ簡易方式）。
+    function dispItemName(nm){
+      if (!(window.I18n && I18n.lang && I18n.lang()==='en')) return nm;
+      var base = baseName(nm); var en = MENU_EN[base];
+      if (!en) return nm;
+      return en + String(nm||'').slice(base.length);
+    }
     function loadMenu(){
       API.post('getMenu', {}).then(function(r){
         var list = (r && r.data) || [];
-        var map = {};
+        var map = {}, enMap = {};
         list.forEach(function(it){
           var v = it['厨房表示'];
           map[it['商品名']] = !(v === '0' || v === 0 || v === false);
+          if (it['商品名_EN']) enMap[it['商品名']] = it['商品名_EN'];
         });
-        KITCHEN_MAP = map;
+        KITCHEN_MAP = map; MENU_EN = enMap;
       }).catch(function(){});
     }
     function elapsedInfo(dateStr){
@@ -139,7 +152,7 @@
              +  '<span class="t-badge ' + (isNew?'b-new':'b-cook') + '">' + (isNew?I18n.t('new'):I18n.t('cook')) + '</span>'
              +  '<span class="t-elapsed ' + el.cls + '">' + el.mins + I18n.t('min') + '</span></div></div>';
         html += '<div class="t-items">';
-        items.forEach(function(it){ html += '<div class="t-item"><span class="nm">' + esc(it.name) + '</span><span class="qty">×' + it.qty + '</span></div>'; });
+        items.forEach(function(it){ html += '<div class="t-item"><span class="nm">' + esc(dispItemName(it.name)) + '</span><span class="qty">×' + it.qty + '</span></div>'; });
         if (o.paid) html += '<div class="t-prepaid">💳 '+I18n.t('prepaid')+'</div>';
         html += '</div>';
         html += '<div class="t-time">🕐 ' + fmtTime(o.date) + '</div>';
