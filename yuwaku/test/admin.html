@@ -385,7 +385,16 @@
       || document.getElementById('partModal').classList.contains('on')
       || document.getElementById('voidModal').classList.contains('on'); }
     function tick(){ if(!autoOn) return; if(paused()) return; load(); }
-    function resetTimer(){ if(refreshTimer) clearInterval(refreshTimer); refreshTimer = setInterval(tick, refreshSec*1000); }
+    // [慎重レビューH5対応] 従来は「refreshSec間隔のresetTimer」と「固定8秒のloadCalls用タイマー」の
+    // 2本が並存し、タイマーがずれると同じ統合API（getOperationsDelta）を二重に呼びうる状態だった
+    // （実害はload()側の多重リクエスト防止ガードで抑えていたが、タイマー自体の重複は無駄だった）。
+    // 1本のタイマーに統一し、間隔は「注文更新間隔設定（10/30/60秒）」と「呼び出し応答性のため最大8秒」の
+    // 短い方を採用する。非表示タブ中はさらに間隔を落とす。
+    function _pollIntervalMs(){
+      if (document.visibilityState === 'hidden') return 45000;
+      return Math.min(refreshSec * 1000, 8000);
+    }
+    function resetTimer(){ if(refreshTimer) clearInterval(refreshTimer); refreshTimer = setInterval(tick, _pollIntervalMs()); }
     function renderAuto(){
       var b=document.getElementById('autoBtn');
       var en=(lang==='en');
@@ -580,11 +589,14 @@
       }).catch(function(){ load(); });
       loadCalls();
       resetTimer();
-      setInterval(function(){ if(autoOn && !paused()) loadCalls(); }, 8000);   // 自動更新OFF・会計中は呼び出しポーリングも停止
-      // [P0] タブが非表示の間はポーリングを止め、再表示時に即最新化する（無駄なGAS実行を削減）。
+      // [P0][慎重レビューH5対応] タブが非表示の間はポーリング間隔を落とし、再表示時に即最新化する。
+      // 固定8秒の別タイマーは廃止し、resetTimer（_pollIntervalMs）へ一本化した。
       document.addEventListener('visibilitychange', function(){
+        resetTimer();
         if (document.visibilityState === 'visible' && autoOn && !paused()) load(true);
       });
+      // [慎重レビューH1対応] バージョン不一致検知に万一漏れがあっても数分以内に必ず復帰する安全弁。
+      setInterval(function(){ if(autoOn && !paused()) load(true); }, 180000); // 3分ごと強制フルリフレッシュ
       if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(function(){}); }
     }
     document.addEventListener('DOMContentLoaded', boot);
