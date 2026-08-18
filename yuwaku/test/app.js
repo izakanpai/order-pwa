@@ -8,8 +8,9 @@
       queuedTitle:'Saved (offline)', queuedMsg:'No connection now. It will be sent automatically when back online.',
       errTitle:'Error', ok:'OK', table:'Table', counter:'Counter', noTable:'No table number in the QR link.',
       offline:'Offline — orders will be sent automatically when back online', lang:'JP',
-      svc:'Service', tax:'Tax',
+      svc:'Service', tax:'Tax', ranking:'🏆 Ranking',
       tblTitle:'Select your table', tblMsg:'Scan the QR at your table, or pick your table number.', tblGo:'Start',
+      partyTitle:'How many guests?', partyMsg:'Please enter your party size (used for entry/extension fee billing).', partyGo:'OK',
       payTitle:'How would you like to pay?', payLater:'👤 Pay at counter', payCard:'💳 Card', payProcessing:'Preparing…', payScan:'Scan the QR to pay', payNotYet:'Payment not confirmed yet.', payNoKey:'Online payment is not set up.', payTimeout:'Payment confirmation timed out. If you already paid, please tell a staff member.', paidTitle:'Paid & ordered', paidMsg:'Payment received. Your order was sent.', cancel:'Cancel',
       memberTitle:'Member (points)', memberSub:'Enter your phone to earn / use points.', check:'Check', usePoints:'Use points', points:'pts', discountLbl:'Points', earned:'pts earned',
       couponTitle:'Coupon / Voucher', couponSub:'Enter a code to get a discount.', apply:'Apply', remove:'Remove coupon', close:'Close', couponLbl:'Coupon',
@@ -18,7 +19,7 @@
       soldOut:'Sold out', notNow:'Not available now', allergen:'Allergens',
       callTitle:'Staff called', callMsg:'A staff member will be with you shortly.', billTitle:'Bill requested', billMsg:'A staff member will bring your bill shortly.',
       callConfirm:'Call a staff member to your table?', billConfirm:'Request your bill?',
-      fbTitle:'How was it?', fbSub:'Your rating helps us improve.', fbComment:'Comment (optional)', fbSend:'Send', fbPick:'Please tap the stars to rate.', fbThanks:'Thank you!', fbThanksMsg:'Thanks for your feedback.',
+      fbTitle:'How was it?', fbSub:'Your rating helps us improve.', fbComment:'Comment', fbSend:'Send', fbPick:'Please tap the stars to rate.', fbCommentRequired:'Please enter a comment.', fbThanks:'Thank you!', fbThanksMsg:'Thanks for your feedback.',
       bdayLbl:'🎂 Register your birthday for a treat', bdaySave:'Save', bdaySaved:'Saved! 🎉', bdayBad:'Enter as MM-DD (e.g. 08-15)',
       stTitle:'My orders', stSubLbl:'Subtotal', stTotalLbl:'Unpaid total', stRefresh:'Refresh', stEmpty:'No orders yet for this table.', stPending:'Preparing', stServed:'Served',
       taxInclText:'Prices include VAT {v}%.', taxExclText:'VAT {v}% will be added at checkout.',
@@ -31,8 +32,9 @@
       queuedTitle:'保留しました（オフライン）', queuedMsg:'今は接続がありません。オンライン復帰時に自動送信します。',
       errTitle:'エラー', ok:'OK', table:'卓', counter:'カウンター', noTable:'QRリンクに卓番号がありません。',
       offline:'オフライン — 復帰時に自動送信します', lang:'EN',
-      svc:'サービス料', tax:'税',
+      svc:'サービス料', tax:'税', ranking:'🏆 ランキング',
       tblTitle:'テーブルを選択', tblMsg:'QRを読み取るか、テーブル番号を選んでください。', tblGo:'開始',
+      partyTitle:'ご来店人数は？', partyMsg:'ご人数を入力してください（入場料・延長料の請求に使用します）。', partyGo:'OK',
       payTitle:'お支払い方法', payLater:'👤 店員に支払う（後会計）', payCard:'💳 カード', payProcessing:'準備中…', payScan:'QRを読み取ってお支払い', payNotYet:'まだ支払いが確認できません。', payNoKey:'オンライン決済は未設定です。', payTimeout:'決済確認がタイムアウトしました。お支払い済みの場合は店員にお伝えください。', paidTitle:'支払い完了・注文しました', paidMsg:'お支払いを受け付けました。注文を送信しました。', cancel:'キャンセル',
       memberTitle:'会員（ポイント）', memberSub:'電話番号を入力するとポイントが貯まる/使えます。', check:'確認', usePoints:'ポイントを使う', points:'pt', discountLbl:'ポイント割引', earned:'pt 獲得',
       couponTitle:'クーポン／バウチャー', couponSub:'コードを入力すると割引されます。', apply:'適用', remove:'クーポンを外す', close:'閉じる', couponLbl:'クーポン',
@@ -41,7 +43,7 @@
       soldOut:'本日売切', notNow:'提供時間外', allergen:'アレルゲン',
       callTitle:'スタッフを呼びました', callMsg:'まもなくスタッフが伺います。', billTitle:'お会計を依頼しました', billMsg:'まもなくスタッフがお会計に伺います。',
       callConfirm:'スタッフを呼びますか？', billConfirm:'お会計を依頼しますか？',
-      fbTitle:'ご感想は？', fbSub:'評価は今後の改善に役立ちます。', fbComment:'コメント（任意）', fbSend:'送信', fbPick:'星をタップして評価してください。', fbThanks:'ありがとうございます！', fbThanksMsg:'ご意見ありがとうございました。',
+      fbTitle:'ご感想は？', fbSub:'評価は今後の改善に役立ちます。', fbComment:'コメント', fbSend:'送信', fbPick:'星をタップして評価してください。', fbCommentRequired:'コメントを入力してください。', fbThanks:'ありがとうございます！', fbThanksMsg:'ご意見ありがとうございました。',
       bdayLbl:'🎂 お誕生日を登録すると特典があります', bdaySave:'登録', bdaySaved:'登録しました！🎉', bdayBad:'MM-DD 形式で入力（例: 08-15）',
       stTitle:'注文状況', stSubLbl:'小計', stTotalLbl:'未会計 合計', stRefresh:'更新', stEmpty:'この卓の注文はまだありません。', stPending:'準備中', stServed:'提供済み',
       taxInclText:'表示価格はVAT{v}%込みです。', taxExclText:'お会計時に別途VAT{v}%を頂戴いたします。',
@@ -52,15 +54,18 @@
   };
 
   var state = {
-    lang: 'en', settings: {}, menu: [], cats: [], currentCat: 'all',
+    lang: 'en', settings: {}, menu: [], cats: [], currentCat: 'all', ranking: [],
     cart: {}, optLines: [], table: '', paymongo: false, member: null, usePoints: false, coupon: null,
     tableLocked: false,      // true = 卓番号はURLのQRで固定済み（客はタップで変更不可）
     checkoutStamp: 0,        // このセッション開始時点の「最終会計時刻」基準値
-    sessionEnded: false      // 基準値より新しい会計を検知＝このセッションは終了
+    sessionEnded: false,     // 基準値より新しい会計を検知＝このセッションは終了
+    partySize: 0             // 入場料/延長料の請求に使う人数（卓/カウンター選択時に入力）
   };
 
   function $(id) { return document.getElementById(id); }
-  function t() { return i18n[state.lang]; }
+  // 言語の切替・優先順位・永続化は共通部品 i18n.js（I18n）に統一（他画面と同じ仕組み）。
+  // state.lang は現在言語のミラーで、I18n.init()のonChangeコールバック経由で更新される。
+  function t() { return I18n.d(); }
 
   function qs(name) {
     var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search);
@@ -164,7 +169,7 @@
       $('tableChip').style.cursor = 'pointer';
       $('tableChip').title = (state.lang === 'en') ? 'Tap to change table' : '卓を選び直す';
     }
-    $('langBtn').textContent = x.lang;
+    // langBtnの表示テキストは共通部品I18n（data-tlang）が管理するため、ここでは触らない（他画面と統一）。
     if ($('mgmtBackBtn')) $('mgmtBackBtn').textContent = x.mgmtBack;
     $('totalLbl').textContent = x.total;
     $('sendLbl').textContent = x.send;
@@ -179,6 +184,20 @@
     if ($('doneMsg')) $('doneMsg').textContent = x.doneMsg;
     renderVatNotice();
     updateStickyOffsets();
+  }
+
+  // ヘッダの現在日時表示（1分ごとに更新）
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function updateClock() {
+    var el = $('appbarClock'); if (!el) return;
+    var d = new Date();
+    var ymd = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    var hm = pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    el.textContent = ymd + ' ' + hm;
+  }
+  function startClock() {
+    updateClock();
+    setInterval(updateClock, 15000);
   }
 
   // appbar／quickbarの実高さをCSS変数に反映し、.catsのsticky位置がズレないようにする。
@@ -212,6 +231,9 @@
     var x = t();
     var lab = function (c) { return (state.lang === 'en' && state.catLabels && state.catLabels[c]) ? state.catLabels[c] : c; };
     var html = '<div class="cat' + (state.currentCat === 'all' ? ' active' : '') + '" data-cat="all">' + x.all + '</div>';
+    if (state.ranking && state.ranking.length) {
+      html += '<div class="cat' + (state.currentCat === 'ranking' ? ' active' : '') + '" data-cat="ranking">' + x.ranking + '</div>';
+    }
     state.cats.forEach(function (c) {
       html += '<div class="cat' + (state.currentCat === c ? ' active' : '') + '" data-cat="' + escAttr(c) + '">' + escHtml(lab(c)) + '</div>';
     });
@@ -222,9 +244,22 @@
   }
 
   function renderMenu() {
-    var items = state.currentCat === 'all'
-      ? state.menu
-      : state.menu.filter(function (it) { return it['カテゴリ'] === state.currentCat; });
+    var rankOf = null; // key(商品名) -> 順位(1始まり)。ランキングタブの時だけ設定。
+    var items;
+    if (state.currentCat === 'ranking') {
+      rankOf = {};
+      var byName = {};
+      state.menu.forEach(function (it) { byName[it['商品名']] = it; });
+      items = [];
+      (state.ranking || []).forEach(function (r, i) {
+        var it = byName[r.name];
+        if (it) { rankOf[it['商品名']] = i + 1; items.push(it); }
+      });
+    } else {
+      items = state.currentCat === 'all'
+        ? state.menu
+        : state.menu.filter(function (it) { return it['カテゴリ'] === state.currentCat; });
+    }
     if (!items.length) { $('menuArea').innerHTML = '<div class="loading">—</div>'; return; }
     var html = '<div class="grid">';
     items.forEach(function (it) {
@@ -260,7 +295,8 @@
             '<button class="plus" data-n="' + escAttr(key) + '" data-d="1">＋</button>' +
           '</div>';
       }
-      html += '<div class="card' + (unavail ? ' unavail' : '') + '">' + thumb +
+      var rankBadge = (rankOf && rankOf[key]) ? '<div class="rank-badge">No.' + rankOf[key] + '</div>' : '';
+      html += '<div class="card' + (unavail ? ' unavail' : '') + '">' + rankBadge + thumb +
         '<div class="body">' +
           '<div class="name">' + escHtml(name) + '</div>' +
           tagsHtml +
@@ -483,8 +519,12 @@
   function sendFeedback() {
     var x = t();
     if (fbRating < 1) { showErr(x.fbPick); return; }
+    var _comment = $('fbComment').value.trim();
+    if (!_comment) { showErr(x.fbCommentRequired); return; }
     var btn = $('fbSend'); btn.disabled = true;
-    API.post('submitFeedback', { table: state.table, rating: fbRating, comment: $('fbComment').value }).then(function () {
+    API.post('submitFeedback', { table: state.table, rating: fbRating, comment: _comment }).then(function (r) {
+      var d = (r && r.data) || {};
+      if (d && d.error === 'comment_required') { showErr(x.fbCommentRequired); return; }
       $('fbModal').classList.remove('show');
       showOk(x.fbThanks, x.fbThanksMsg, '⭐');
     }).catch(function (e) { showErr(String(e && e.message || e)); })
@@ -660,6 +700,34 @@
       startSessionWatch();
       $('tableOverlay').classList.remove('show');
       renderTexts();
+      maybeAskPartySize();
+    };
+  }
+
+  // ---- 人数入力（入場料・延長料の請求用） ----
+  // 卓/カウンターが確定したタイミング（店員の卓選択、またはQR固定客の初回起動時）で
+  // まだ人数が記録されていなければ入力を促す。既に記録済みなら何もしない。
+  function maybeAskPartySize() {
+    if (!state.table) return;
+    API.post('getTablePartySize', { table: state.table }).then(function (r) {
+      var d = (r && r.data) || {};
+      if (d && d.count) { state.partySize = d.count; return; }
+      showPartyPicker();
+    }).catch(function () {});
+  }
+  function showPartyPicker() {
+    var x = t();
+    $('partyTitle').textContent = x.partyTitle;
+    $('partyMsg').textContent = x.partyMsg;
+    $('partyGo').textContent = x.partyGo;
+    $('partyCount').value = '';
+    $('partyOverlay').classList.add('show');
+    $('partyGo').onclick = function () {
+      var n = Number($('partyCount').value);
+      if (!n || n < 1) return;
+      state.partySize = n;
+      API.post('setTablePartySize', { table: state.table, count: n }).catch(function () {});
+      $('partyOverlay').classList.remove('show');
     };
   }
 
@@ -714,8 +782,16 @@
   function updateCouponBtn() {
     var el = $('couponBtn');
     if (!el) return;
-    if (state.coupon) { el.textContent = '🎟️' + state.coupon.code; el.classList.add('active'); }
-    else { el.textContent = '🎟️'; el.classList.remove('active'); }
+    // ico/lbl の子要素構造（renderTexts()がlblに言語ラベルを描画する）を壊さないよう、
+    // ボタン全体のtextContentは書き換えず、lblだけを差し替える。
+    var lbl = $('couponLbl') || el.querySelector('.lbl');
+    if (state.coupon) {
+      if (lbl) lbl.textContent = state.coupon.code;
+      el.classList.add('active');
+    } else {
+      if (lbl) lbl.textContent = t().btnCoupon;
+      el.classList.remove('active');
+    }
   }
   function openCoupon() {
     var x = t();
@@ -773,9 +849,9 @@
   function escAttr(s) { return escHtml(s); }
   function cssId(s) { return String(s).replace(/[^a-zA-Z0-9]/g, function (c) { return '_' + c.charCodeAt(0); }); }
 
-  function setLang(lang) {
-    state.lang = lang;
-    try { localStorage.setItem('lang', lang); } catch (e) {}
+  // I18n.init()のonChangeコールバック（手動切替・店舗既定言語の反映の両方で呼ばれる）
+  function onLangChange(l) {
+    state.lang = l;
     renderTexts(); renderCats(); renderMenu(); updateTotal();
   }
 
@@ -785,7 +861,6 @@
     state.menu = (r.menu || []);
     state.paymongo = !!r.paymongo;
     if (state.settings.loyaltyEnabled === 'on' || state.settings.loyaltyEnabled === true || state.settings.loyaltyEnabled === 'true') $('memberBtn').style.display = '';
-    if (!state.lang) state.lang = state.settings.defaultLang || 'en';
     var cats = [], catLabels = {};
     state.menu.forEach(function (it) { var c = it['カテゴリ']; if (c && cats.indexOf(c) === -1) cats.push(c); if (c && it['カテゴリ_EN'] && !catLabels[c]) catLabels[c] = it['カテゴリ_EN']; });
     state.cats = cats; state.catLabels = catLabels;
@@ -795,6 +870,16 @@
     state.tables = r.tables || [];   // 卓一覧を保持（卓チップから選び直せるように）
     renderTexts(); renderCats(); renderMenu(); updateTotal();
     if (!state.table) showTablePicker(state.tables); // QR無し（店員のオーダー入力）時はテーブル選択を促す
+    else maybeAskPartySize(); // QR固定客：卓は確定済みなので人数だけ未記録なら入力を促す
+    loadRanking();
+  }
+
+  // ---- 人気ランキング（直近30日・注文数量合計）----
+  function loadRanking() {
+    API.post('getMenuRanking', {}).then(function (r) {
+      state.ranking = (r && r.data) || [];
+      if (state.ranking.length) { renderCats(); if (state.currentCat === 'ranking') renderMenu(); }
+    }).catch(function () {});
   }
 
   // ---- 起動 ----
@@ -805,11 +890,12 @@
     // staffModeとして扱い、卓の選び直しを許可し、会計後ロック（ありがとうございました画面）も対象外にする。
     state.tableLocked = !!state.table;
     state.staffMode = !state.table;
-    state.lang = (localStorage.getItem('lang') || '').match(/^(ja|en)$/) ? localStorage.getItem('lang') : '';
+    // 言語の初期化・切替・永続化は共通部品I18nに一本化（他画面と同じ仕組み）。
+    I18n.init(i18n, onLangChange);
     // 管理メニューからログイン中の端末でだけ「← 管理へ」を表示（客のQRスキャンでは非表示）
     try { if (localStorage.getItem('mgmtToken') && $('mgmtBackBtn')) $('mgmtBackBtn').style.display = 'inline-block'; } catch (e) {}
 
-    $('langBtn').addEventListener('click', function () { setLang(state.lang === 'ja' ? 'en' : 'ja'); });
+    $('langBtn').addEventListener('click', function () { I18n.toggle(); });
     $('sendBtn').addEventListener('click', send);
     $('okBtn').addEventListener('click', function () { $('okOverlay').classList.remove('show'); });
     $('errBtn').addEventListener('click', function () { $('errOverlay').classList.remove('show'); });
@@ -859,6 +945,9 @@
     // 会計後の追加注文ブロック：起動時に基準スタンプを取得し、以後定期的に最新値と比較する。
     startSessionWatch();
 
+    // ヘッダの現在日時表示
+    startClock();
+
     API.post('bootstrap', {}).then(function (r) {
       try { localStorage.setItem('bootCache', JSON.stringify({ settings: r.settings, menu: r.menu, paymongo: r.paymongo, tables: r.tables })); } catch (e) {}
       applyBootstrap(r, false);
@@ -870,7 +959,6 @@
         document.body.classList.add('offline'); // キャッシュ表示中＝実質オフライン
         applyBootstrap(cached, true);            // 保存済みメニューで注文可能（送信はキューへ）
       } else {
-        if (!state.lang) state.lang = 'en';
         renderTexts();
         $('menuArea').innerHTML = '<div class="loading" style="color:var(--red)">' + escHtml(t().errTitle + ': ' + (err && err.message || err)) + '</div>';
       }
