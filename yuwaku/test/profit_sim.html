@@ -77,6 +77,13 @@
       <div class="row2">
         <div class="fg"><label class="form-label" data-t="revenue">月間売上（想定）</label><input id="pRevenue" type="number" min="0" step="any" class="fc" placeholder="0" oninput="onRevenueConditionChanged()"></div>
       </div>
+      <div class="divider"></div>
+      <div class="subhead" data-t="nonCogsRevTitle">🎟️ 原価対象外の売上（内訳・上の合計に含む）</div>
+      <div class="hint" data-t="nonCogsRevHint">入場料・延長料金・VIP基本料金など、商品原価が発生しない売上の内訳です。ここに入力した金額は「月間売上」に既に含まれている前提で、フード原価・ドリンク原価の計算対象から除外されます（追加入力ではありません）。</div>
+      <div class="exprow"><span class="lb" data-t="eEntranceFee">入場料</span><div class="amtwrap"><span class="sym" id="sym22">₱</span><input type="number" min="0" step="any" id="pEntranceFee" oninput="onRevenueConditionChanged()"></div></div>
+      <div class="exprow"><span class="lb" data-t="eExtensionFee">延長料金</span><div class="amtwrap"><span class="sym" id="sym23">₱</span><input type="number" min="0" step="any" id="pExtensionFee" oninput="onRevenueConditionChanged()"></div></div>
+      <div class="exprow"><span class="lb" data-t="eVipFee">VIP基本料金</span><div class="amtwrap"><span class="sym" id="sym24">₱</span><input type="number" min="0" step="any" id="pVipFee" oninput="onRevenueConditionChanged()"></div></div>
+      <div class="muted" id="nonCogsRevWarn" style="font-size:11.5px;margin-top:2px;color:#b91c1c;display:none;"></div>
       <div id="loadActualRow" style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <input id="pMonth" type="month" class="fc" style="width:auto;flex:0 0 auto;">
         <button type="button" class="btn-sm" onclick="loadActual()" data-t="loadActual">📥 その月の実績を読み込む</button>
@@ -136,8 +143,41 @@
           <div class="cogsfield"><span class="sym" id="symDrinkBack">₱</span><input type="number" id="pDrinkBackAmt" min="0" step="any" oninput="onAmtManualEdit('pDrinkBackRate')"></div>
         </div>
       </div>
-      <div class="hint" data-t="drinkBackHint">ドリンク売上に対する割合(%)を入力すると自動計算します（ホスト/ホステス等へのドリンク歩合）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。</div>
+      <div class="hint" data-t="drinkBackHint">ドリンク売上に対する割合(%)を入力すると自動計算します（上記以外のホスト/ホステス等への一律ドリンク歩合。下記のレディースドリンク・ボトル・紹介料と別枠で加算されます）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。</div>
       <button type="button" class="btn-sm" style="margin-top:8px;" onclick="recalcDrinkBack()" data-t="drinkBackRecalc">🔄 割合から再計算</button>
+
+      <div class="cogsblock" style="margin-top:10px;">
+        <div class="lb" data-t="eLadiesDrinkBack">レディースドリンクバック</div>
+        <div class="cogsinputs">
+          <div class="cogsfield"><input type="number" id="pLadiesDrinkCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitCups">杯/月</span></div>
+          <div class="cogsfield"><input type="number" id="pLadiesDrinkUnit" min="0" step="any" placeholder="100" oninput="calc()"><span class="sym" data-t="unitPerCup">₱/杯</span></div>
+          <span class="cogsarrow">→</span>
+          <div class="cogsfield"><span class="sym" id="symLadiesDrinkBack">₱</span><input type="number" id="pLadiesDrinkBack" readonly tabindex="-1"></div>
+        </div>
+      </div>
+      <div class="hint" data-t="ladiesDrinkBackHint">月間の杯数×1杯あたりのバック額で自動計算します（例：レディースドリンクは通常価格＋一定額上乗せし、その上乗せ分を女性スタッフへバックする運用を、杯数×固定額で近似します）。</div>
+
+      <div class="cogsblock" style="margin-top:10px;">
+        <div class="lb" data-t="eBottleBack">ボトルバック</div>
+        <div class="cogsinputs">
+          <div class="cogsfield"><input type="number" id="pBottleCount" min="0" step="1" placeholder="0" oninput="calc()"><span class="sym" data-t="unitBottles">本/月</span></div>
+          <div class="cogsfield"><input type="number" id="pBottleUnitBack" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitPerBottle">₱/本</span></div>
+          <span class="cogsarrow">→</span>
+          <div class="cogsfield"><span class="sym" id="symBottleBack">₱</span><input type="number" id="pBottleBack" readonly tabindex="-1"></div>
+        </div>
+      </div>
+      <div class="hint" data-t="bottleBackHint">月間の本数×1本あたりのバック額で自動計算します（ボトル販売は通常価格に対するバック率が高くなりやすいため、ドリンク売上全体に対する一律%ではなく本数ベースで計算します）。</div>
+
+      <div class="cogsblock" style="margin-top:10px;">
+        <div class="lb" data-t="eReferralBack">紹介料</div>
+        <div class="cogsinputs">
+          <div class="cogsfield"><input type="number" id="pReferralRevenue" min="0" step="any" placeholder="0" oninput="calc()"><span class="sym" data-t="unitReferralRev">₱/月</span></div>
+          <div class="cogsfield"><input type="number" id="pReferralRate" min="0" max="100" step="any" placeholder="2" oninput="calc()"><span class="sym">%</span></div>
+          <span class="cogsarrow">→</span>
+          <div class="cogsfield"><span class="sym" id="symReferralBack">₱</span><input type="number" id="pReferralBack" readonly tabindex="-1"></div>
+        </div>
+      </div>
+      <div class="hint" data-t="referralBackHint">紹介経由の売上（月額）×紹介料率(%)で自動計算します（紹介対象売上は上の「月間売上」に既に含まれている前提で、ここでは紹介料の計算基準としてのみ使用します）。</div>
       <div class="divider"></div>
       <div class="exprow"><span class="lb" data-t="eRent">賃料</span><div class="amtwrap"><span class="sym" id="sym1">₱</span><input type="number" min="0" step="any" id="pRent" oninput="calc()"></div></div>
       <div class="exprow"><span class="lb" data-t="eElec">電気代</span><div class="amtwrap"><span class="sym" id="sym2">₱</span><input type="number" min="0" step="any" id="pElec" oninput="calc()"></div></div>
@@ -153,6 +193,11 @@
           <div class="cogsfield"><input type="number" id="pMgrCount" min="0" step="1" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitPeople">名</span></div>
           <div class="cogsfield"><input type="number" id="pMgrDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
+        <div class="cogsinputs" style="margin-top:4px;">
+          <div class="cogsfield"><input type="number" id="pMgrNightHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitNightHours">夜勤h/月・人</span></div>
+          <div class="cogsfield"><input type="number" id="pMgrOtHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitOtHours">残業h/月・人</span></div>
+          <div class="cogsfield"><input type="number" id="pMgrRestDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitRestDays">休日出勤日/月・人</span></div>
+        </div>
         <div class="muted" id="mgrSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
       <div class="cogsblock" style="margin-top:10px;">
@@ -162,6 +207,11 @@
           <div class="cogsfield"><input type="number" id="pSrHoursPerDay" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitHoursPerDay">h/日</span></div>
           <div class="cogsfield"><input type="number" id="pSrCount" min="0" step="1" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitPeople">名</span></div>
           <div class="cogsfield"><input type="number" id="pSrDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDays">日/月</span></div>
+        </div>
+        <div class="cogsinputs" style="margin-top:4px;">
+          <div class="cogsfield"><input type="number" id="pSrNightHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitNightHours">夜勤h/月・人</span></div>
+          <div class="cogsfield"><input type="number" id="pSrOtHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitOtHours">残業h/月・人</span></div>
+          <div class="cogsfield"><input type="number" id="pSrRestDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitRestDays">休日出勤日/月・人</span></div>
         </div>
         <div class="muted" id="srSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
@@ -173,6 +223,11 @@
           <div class="cogsfield"><input type="number" id="pMidCount" min="0" step="1" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitPeople">名</span></div>
           <div class="cogsfield"><input type="number" id="pMidDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
+        <div class="cogsinputs" style="margin-top:4px;">
+          <div class="cogsfield"><input type="number" id="pMidNightHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitNightHours">夜勤h/月・人</span></div>
+          <div class="cogsfield"><input type="number" id="pMidOtHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitOtHours">残業h/月・人</span></div>
+          <div class="cogsfield"><input type="number" id="pMidRestDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitRestDays">休日出勤日/月・人</span></div>
+        </div>
         <div class="muted" id="midSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
       <div class="cogsblock" style="margin-top:10px;">
@@ -183,11 +238,17 @@
           <div class="cogsfield"><input type="number" id="pJrCount" min="0" step="1" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitPeople">名</span></div>
           <div class="cogsfield"><input type="number" id="pJrDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
+        <div class="cogsinputs" style="margin-top:4px;">
+          <div class="cogsfield"><input type="number" id="pJrNightHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitNightHours">夜勤h/月・人</span></div>
+          <div class="cogsfield"><input type="number" id="pJrOtHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitOtHours">残業h/月・人</span></div>
+          <div class="cogsfield"><input type="number" id="pJrRestDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitRestDays">休日出勤日/月・人</span></div>
+        </div>
         <div class="muted" id="jrSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
-      <div class="hint" data-t="salaryHint">各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分は別項目として自動計算し、経費合計に含めます）。</div>
+      <div class="hint" data-t="salaryHint">各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分は基本給ベースで別項目として自動計算し、経費合計に含めます）。</div>
+      <div class="hint" data-t="premiumHint">夜勤（22時〜翌6時）・残業（1日8時間超）・休日出勤の割増を、人数1人あたりの月間時間／日数で入力すると自動計算します（夜勤+10%、残業+25%、休日出勤+30%を仮定した概算です。実際の適用条件は労働法令・専門家にご確認ください）。</div>
       <div class="exprow locked">
-        <span class="lb" data-t="salaryTotalLabel">給与合計（12か月分）</span>
+        <span class="lb" data-t="salaryTotalLabel">給与合計（12か月分・割増込み）</span>
         <div class="amtwrap"><span class="sym" id="symSalaryTotal">₱</span><input type="number" id="pSalaryTotalDisp" readonly tabindex="-1"></div>
       </div>
       <div class="exprow locked">
@@ -208,7 +269,17 @@
       <div class="divider"></div>
       <div class="exprow"><span class="lb" data-t="eOtherStaff">その他人件費（弁護士／経理など）</span><div class="amtwrap"><span class="sym" id="symOther">₱</span><input type="number" min="0" step="any" id="pOtherStaff" oninput="calc()"></div></div>
       <div class="exprow"><span class="lb" data-t="eKaraoke">カラオケレンタル</span><div class="amtwrap"><span class="sym" id="sym8">₱</span><input type="number" min="0" step="any" id="pKaraoke" oninput="calc()"></div></div>
-      <div class="exprow"><span class="lb" data-t="ePayFee">決済手数料</span><div class="amtwrap"><span class="sym" id="sym14">₱</span><input type="number" min="0" step="any" id="pPayFee" oninput="calc()"></div></div>
+      <div class="cogsblock">
+        <div class="lb" data-t="ePayFee">決済手数料</div>
+        <div class="cogsinputs">
+          <div class="cogsfield"><input type="number" id="pCashlessPct" min="0" max="100" step="any" placeholder="70" oninput="recalcPayFee()"><span class="sym" data-t="unitCashlessPct">キャッシュレス率%</span></div>
+          <div class="cogsfield"><input type="number" id="pPayFeeRate" min="0" max="100" step="any" placeholder="1.875" oninput="recalcPayFee()"><span class="sym">%</span></div>
+          <span class="cogsarrow">→</span>
+          <div class="cogsfield"><span class="sym" id="sym14">₱</span><input type="number" id="pPayFee" min="0" step="any" oninput="onAmtManualEdit('pPayFeeRate')"></div>
+        </div>
+      </div>
+      <div class="hint" data-t="payFeeHint">「売上のうちキャッシュレス決済の割合(%)」×「決済手数料率(%)」を月間売上に掛けて自動計算します。決済手数料率を空欄にすると固定金額として扱います。</div>
+      <button type="button" class="btn-sm" style="margin-top:8px;" onclick="recalcPayFee()" data-t="cogsRecalc">🔄 割合から再計算</button>
       <div class="exprow"><span class="lb" data-t="ePermits">許認可・行政手数料</span><div class="amtwrap"><span class="sym" id="sym15">₱</span><input type="number" min="0" step="any" id="pPermits" oninput="calc()"></div></div>
       <div class="exprow"><span class="lb" data-t="eInsurance">保険料</span><div class="amtwrap"><span class="sym" id="sym16">₱</span><input type="number" min="0" step="any" id="pInsurance" oninput="calc()"></div></div>
       <div class="divider"></div>
@@ -283,16 +354,25 @@
     var SETTINGS_MAP = {
       pRevenue:'profitSimRevenue', pRent:'profitSimRent', pElec:'profitSimElec', pWater:'profitSimWater',
       pGas:'profitSimGas', pNet:'profitSimNet',
+      pEntranceFee:'profitSimEntranceFee', pExtensionFee:'profitSimExtensionFee', pVipFee:'profitSimVipFee',
       pMgrDailyWage:'profitSimMgrDailyWage', pMgrHoursPerDay:'profitSimMgrHoursPerDay', pMgrCount:'profitSimMgrCount', pMgrDays:'profitSimMgrDays',
+      pMgrNightHours:'profitSimMgrNightHours', pMgrOtHours:'profitSimMgrOtHours', pMgrRestDays:'profitSimMgrRestDays',
       pSrDailyWage:'profitSimSrDailyWage', pSrHoursPerDay:'profitSimSrHoursPerDay', pSrCount:'profitSimSrCount', pSrDays:'profitSimSrDays',
+      pSrNightHours:'profitSimSrNightHours', pSrOtHours:'profitSimSrOtHours', pSrRestDays:'profitSimSrRestDays',
       pMidDailyWage:'profitSimMidDailyWage', pMidHoursPerDay:'profitSimMidHoursPerDay', pMidCount:'profitSimMidCount', pMidDays:'profitSimMidDays',
+      pMidNightHours:'profitSimMidNightHours', pMidOtHours:'profitSimMidOtHours', pMidRestDays:'profitSimMidRestDays',
       pJrDailyWage:'profitSimJrDailyWage', pJrHoursPerDay:'profitSimJrHoursPerDay', pJrCount:'profitSimJrCount', pJrDays:'profitSimJrDays',
+      pJrNightHours:'profitSimJrNightHours', pJrOtHours:'profitSimJrOtHours', pJrRestDays:'profitSimJrRestDays',
       pSssRate:'profitSimSssRate', pSss:'profitSimSss', pOtherStaff:'profitSimOtherStaff', pKaraoke:'profitSimKaraoke',
-      pPayFee:'profitSimPayFee', pPermits:'profitSimPermits', pInsurance:'profitSimInsurance',
+      pCashlessPct:'profitSimCashlessPct', pPayFeeRate:'profitSimPayFeeRate', pPayFee:'profitSimPayFee',
+      pPermits:'profitSimPermits', pInsurance:'profitSimInsurance',
       pDrinkRevenuePct:'profitSimDrinkRevenuePct',
       pFoodCogsRate:'profitSimFoodCogsRate', pFoodCogsAmt:'profitSimFoodCogsAmt',
       pDrinkCogsRate:'profitSimDrinkCogsRate', pDrinkCogsAmt:'profitSimDrinkCogsAmt',
       pDrinkBackRate:'profitSimDrinkBackRate', pDrinkBackAmt:'profitSimDrinkBackAmt',
+      pLadiesDrinkCount:'profitSimLadiesDrinkCount', pLadiesDrinkUnit:'profitSimLadiesDrinkUnit',
+      pBottleCount:'profitSimBottleCount', pBottleUnitBack:'profitSimBottleUnitBack',
+      pReferralRevenue:'profitSimReferralRevenue', pReferralRate:'profitSimReferralRate',
       pC1Label:'profitSimC1Label', pC1Amt:'profitSimC1Amt', pC2Label:'profitSimC2Label', pC2Amt:'profitSimC2Amt',
       pC3Label:'profitSimC3Label', pC3Amt:'profitSimC3Amt', pC4Label:'profitSimC4Label', pC4Amt:'profitSimC4Amt',
       pC5Label:'profitSimC5Label', pC5Amt:'profitSimC5Amt',
@@ -313,9 +393,25 @@
       document.getElementById('svcRateNote').innerText = '(' + SVC_RATE + '%・' + (SVC_INCLUSIVE ? I18n.t('modeIncl') : I18n.t('modeExcl')) + '・' + I18n.t('autoCalc') + ')';
     }
 
-    // 売上のうちドリンクの割合(%)から、ドリンク売上／フード売上を算出する。
-    function _drinkRevenue(){ return num('pRevenue') * num('pDrinkRevenuePct') / 100; }
-    function _foodRevenue(){ return num('pRevenue') - _drinkRevenue(); }
+    // 入場料・延長料金・VIP基本料金は「月間売上」に含まれる商品原価が発生しない売上のため、
+    // フード原価・ドリンク原価の計算対象（原価対象売上）から除外する。
+    function _nonCogsRevenue(){ return num('pEntranceFee') + num('pExtensionFee') + num('pVipFee'); }
+    function _cogsBaseRevenue(){ return Math.max(0, num('pRevenue') - _nonCogsRevenue()); }
+    // 原価対象売上のうちドリンクの割合(%)から、ドリンク売上／フード売上を算出する。
+    function _drinkRevenue(){ return _cogsBaseRevenue() * num('pDrinkRevenuePct') / 100; }
+    function _foodRevenue(){ return _cogsBaseRevenue() - _drinkRevenue(); }
+
+    // ドリンクバックの内訳（レディースドリンク・ボトル・紹介料）。いずれも杯数・本数・紹介対象売上を
+    // 直接入力するため、常に確定額として計算する（割合/固定金額モードの排他制御は不要）。
+    function _ladiesDrinkBack(){ return num('pLadiesDrinkCount') * num('pLadiesDrinkUnit'); }
+    function _bottleBack(){ return num('pBottleCount') * num('pBottleUnitBack'); }
+    function _referralBack(){ return num('pReferralRevenue') * num('pReferralRate') / 100; }
+    function _drinkBackBreakdownTotal(){ return _ladiesDrinkBack() + _bottleBack() + _referralBack(); }
+    function _updateDrinkBackBreakdown(){
+      document.getElementById('pLadiesDrinkBack').value = Math.round(_ladiesDrinkBack());
+      document.getElementById('pBottleBack').value = Math.round(_bottleBack());
+      document.getElementById('pReferralBack').value = Math.round(_referralBack());
+    }
 
     // rateId(%) × baseAmount（フード売上／ドリンク売上など）から amtId の金額を自動計算する共通処理。
     // これはプログラムによる更新（割合が優先＝割合指定モード）であり、対応する割合欄は消さない。
@@ -326,6 +422,9 @@
     window.recalcFoodCogs = function(){ _recalcVariableAmt('pFoodCogsRate','pFoodCogsAmt', _foodRevenue()); calc(); };
     window.recalcDrinkCogs = function(){ _recalcVariableAmt('pDrinkCogsRate','pDrinkCogsAmt', _drinkRevenue()); calc(); };
     window.recalcDrinkBack = function(){ _recalcVariableAmt('pDrinkBackRate','pDrinkBackAmt', _drinkRevenue()); calc(); };
+    // 決済手数料＝月間売上×キャッシュレス比率(%)×決済手数料率(%)。決済手数料率が空欄なら固定金額モード。
+    function _cashlessRevenue(){ return num('pRevenue') * num('pCashlessPct') / 100; }
+    window.recalcPayFee = function(){ _recalcVariableAmt('pPayFeeRate','pPayFee', _cashlessRevenue()); calc(); };
 
     // ユーザーが金額欄を直接編集した場合のみ、対応する割合欄を空欄にして「固定金額モード」へ切り替える。
     // （_recalcVariableAmt等によるプログラム的な value 代入は input イベントを発火しないため、ここが呼ばれるのは
@@ -341,6 +440,7 @@
       if (num('pFoodCogsRate') > 0) { _recalcVariableAmt('pFoodCogsRate','pFoodCogsAmt', _foodRevenue()); }
       if (num('pDrinkCogsRate') > 0) { _recalcVariableAmt('pDrinkCogsRate','pDrinkCogsAmt', _drinkRevenue()); }
       if (num('pDrinkBackRate') > 0) { _recalcVariableAmt('pDrinkBackRate','pDrinkBackAmt', _drinkRevenue()); }
+      if (num('pPayFeeRate') > 0) { _recalcVariableAmt('pPayFeeRate','pPayFee', _cashlessRevenue()); }
     }
     function onRevenueConditionChanged(){
       recalcRevenueLinkedAmounts();
@@ -350,20 +450,40 @@
     // 給与（ランク別）：各ランクの 日給×人数×月間出勤日数 の合計を給与合計とする。
     // 1日の勤務時間は「時給換算（日給÷1日勤務時間）」を表示するための参考入力で、給与合計の計算には使わない。
     var RANKS = [
-      { daily:'pMgrDailyWage', hpd:'pMgrHoursPerDay', count:'pMgrCount', days:'pMgrDays', sub:'mgrSubtotal' },
-      { daily:'pSrDailyWage',  hpd:'pSrHoursPerDay',  count:'pSrCount',  days:'pSrDays',  sub:'srSubtotal'  },
-      { daily:'pMidDailyWage', hpd:'pMidHoursPerDay', count:'pMidCount', days:'pMidDays', sub:'midSubtotal' },
-      { daily:'pJrDailyWage',  hpd:'pJrHoursPerDay',  count:'pJrCount',  days:'pJrDays',  sub:'jrSubtotal'  }
+      { daily:'pMgrDailyWage', hpd:'pMgrHoursPerDay', count:'pMgrCount', days:'pMgrDays', night:'pMgrNightHours', ot:'pMgrOtHours', restdays:'pMgrRestDays', sub:'mgrSubtotal' },
+      { daily:'pSrDailyWage',  hpd:'pSrHoursPerDay',  count:'pSrCount',  days:'pSrDays',  night:'pSrNightHours',  ot:'pSrOtHours',  restdays:'pSrRestDays',  sub:'srSubtotal'  },
+      { daily:'pMidDailyWage', hpd:'pMidHoursPerDay', count:'pMidCount', days:'pMidDays', night:'pMidNightHours', ot:'pMidOtHours', restdays:'pMidRestDays', sub:'midSubtotal' },
+      { daily:'pJrDailyWage',  hpd:'pJrHoursPerDay',  count:'pJrCount',  days:'pJrDays',  night:'pJrNightHours',  ot:'pJrOtHours',  restdays:'pJrRestDays',  sub:'jrSubtotal'  }
     ];
-    function _rankSubtotal(r){ return num(r.daily) * num(r.count) * num(r.days); }
+    // 割増賃金（概算）：夜勤（22時〜翌6時）は時給の+10%、残業（1日8時間超）は時給の+25%、
+    // 休日出勤は日給の+30%を仮定する（DOLEの一般的な最低基準に基づく概算。実際の適用条件・料率は
+    // 個別の就業規則・労働法令により異なるため、正式な給与計算には専門家の確認が必要）。
+    var NIGHT_DIFF_PCT = 0.10, OT_PCT = 1.25, REST_DAY_PCT = 1.30;
+    function _rankBasicSubtotal(r){ return num(r.daily) * num(r.count) * num(r.days); }
     function _rankHourly(r){ var h = num(r.hpd); return h > 0 ? (num(r.daily) / h) : 0; }
+    function _rankPremium(r){
+      var hourly = _rankHourly(r);
+      var count = num(r.count);
+      var night = num(r.night) * hourly * NIGHT_DIFF_PCT * count;
+      var ot = num(r.ot) * hourly * OT_PCT * count;
+      var rest = num(r.restdays) * num(r.daily) * REST_DAY_PCT * count;
+      return night + ot + rest;
+    }
+    function _rankSubtotal(r){ return _rankBasicSubtotal(r) + _rankPremium(r); }
     function _salaryTotal(){
       var t = 0;
       RANKS.forEach(function(r){ t += _rankSubtotal(r); });
       return t;
     }
-    // 13か月給与（フィリピンの法定給付）は給与合計の1/12を月割りで積立てる想定。項目は非表示のまま固定費に自動合算する。
-    function _thirteenthMonth(){ return _salaryTotal() / 12; }
+    function _basicSalaryTotal(){
+      var t = 0;
+      RANKS.forEach(function(r){ t += _rankBasicSubtotal(r); });
+      return t;
+    }
+    // 13か月給与（フィリピンの法定給付）は「基本給」の1/12を月割りで積立てる想定
+    // （夜勤・残業・休日出勤の割増分は基本給に含めないのが原則のため、基本給合計のみを基準にする）。
+    // 項目は非表示のまま固定費に自動合算する。
+    function _thirteenthMonth(){ return _basicSalaryTotal() / 12; }
     function _updateSalaryDisplays(){
       var total = 0;
       RANKS.forEach(function(r){
@@ -376,7 +496,8 @@
         }
       });
       document.getElementById('pSalaryTotalDisp').value = Math.round(total);
-      document.getElementById('pSalary13thDisp').value = Math.round(total / 12);
+      // 13か月給与は基本給ベース（割増賃金を含まない）で計算するため、_thirteenthMonth()と同じ基準を表示する。
+      document.getElementById('pSalary13thDisp').value = Math.round(_thirteenthMonth());
       return total;
     }
     window.recalcSss = function(){ _recalcVariableAmt('pSssRate','pSss', _salaryTotal()); calc(); };
@@ -388,17 +509,20 @@
       calc();
     }
 
-    var FIXED_FIELD_IDS = ['pRent','pElec','pWater','pGas','pNet','pSss','pOtherStaff','pKaraoke','pPayFee','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt','pC6Amt','pC7Amt','pC8Amt','pC9Amt','pC10Amt'];
+    var FIXED_FIELD_IDS = ['pRent','pElec','pWater','pGas','pNet','pSss','pOtherStaff','pKaraoke','pPermits','pInsurance','pC1Amt','pC2Amt','pC3Amt','pC4Amt','pC5Amt','pC6Amt','pC7Amt','pC8Amt','pC9Amt','pC10Amt'];
 
-    // VATは常に売上に対する率として（内税/外税設定に応じた実効率）、フード原価・ドリンク原価・ドリンクバックは
-    // それぞれフード売上／ドリンク売上に対する「割合(%)」が入力されていればその率として、
-    // それ以外の項目は固定費として扱う。fixed=固定費合計、varRatePct=売上全体に対する変動費率合計(%)。
+    // VAT・決済手数料は常に「月間売上全体」に対する率として（決済手数料はキャッシュレス比率も加味した実効率）、
+    // フード原価・ドリンク原価・ドリンクバックは、原価対象売上（月間売上－入場料等の非原価売上）のうち
+    // フード売上／ドリンク売上に対する「割合(%)」が入力されていればその率として、それ以外の項目は固定費として扱う。
+    // fixed=固定費合計、revVarPct=売上全体に対する変動費率合計(%)、cogsVarPct=原価対象売上に対する変動費率合計(%)。
     // サービス代は参考表示のみで経費・変動費率には含めない（ユーザー判断：売上＝サービス料上乗せ前の小計のため）。
     function _beInputs(){
       var fixed = 0;
       FIXED_FIELD_IDS.forEach(function(id){ fixed += num(id); });
-      // 給与合計＋13か月給与（月割り・非表示）は固定費として加算する。
+      // 給与合計（割増賃金込み）＋13か月給与（基本給ベース・月割り・非表示）は固定費として加算する。
       fixed += _salaryTotal() + _thirteenthMonth();
+      // レディースドリンク・ボトル・紹介料バック（杯数・本数・紹介対象売上ベース）は固定費として加算する。
+      fixed += _drinkBackBreakdownTotal();
       var drinkPct = num('pDrinkRevenuePct') / 100;
       var foodPct = 1 - drinkPct;
       var foodCogsRate = num('pFoodCogsRate');
@@ -408,17 +532,29 @@
       if (foodCogsRate > 0) { foodCogsEffPct = foodPct * foodCogsRate; } else { fixed += num('pFoodCogsAmt'); }
       if (drinkCogsRate > 0) { drinkCogsEffPct = drinkPct * drinkCogsRate; } else { fixed += num('pDrinkCogsAmt'); }
       if (dbRate > 0) { dbEffPct = drinkPct * dbRate; } else { fixed += num('pDrinkBackAmt'); }
+      var cogsVarPct = foodCogsEffPct + drinkCogsEffPct + dbEffPct;
+      // 決済手数料が割合指定モード（キャッシュレス比率×手数料率）でなければ固定費として加算する。
+      var payFeeRate = num('pPayFeeRate');
+      if (!(payFeeRate > 0)) { fixed += num('pPayFee'); }
       // 内税の場合のみ、売上に含まれるVATを変動費率として算入する（外税は顧客から別途徴収するだけで、
       // 入力売上＝税抜小計に対する損益には影響しないため含めない）。
       var vatVarPct = TAX_INCLUSIVE ? _effRate(VAT_RATE, true) : 0;
-      var varRatePct = vatVarPct + foodCogsEffPct + drinkCogsEffPct + dbEffPct;
-      return { fixed: fixed, varRatePct: varRatePct };
+      var payFeeVarPct = (payFeeRate > 0) ? (num('pCashlessPct') / 100 * payFeeRate) : 0;
+      var revVarPct = vatVarPct + payFeeVarPct;
+      return { fixed: fixed, nonCogsRev: _nonCogsRevenue(), revVarPct: revVarPct, cogsVarPct: cogsVarPct, varRatePct: revVarPct + cogsVarPct };
     }
-    // 目標粗利を達成するのに必要な売上 = (固定費 + 目標粗利) / (1 - 変動費率)。目標粗利0円なら損益分岐点売上と同じ。
+    // 目標粗利を達成するのに必要な売上Rを、固定費・非原価売上（入場料等）・変動費率から逆算する。
+    // 変動費には「売上全体Rに対する率（VAT・決済手数料）」と「原価対象売上(R－非原価売上)に対する率
+    // （フード/ドリンク原価・ドリンクバック）」の2種類があるため、後者は非原価売上を差し引いた額に対して計算する：
+    //   target = R - fixed - revVarPct%×R - cogsVarPct%×(R－nonCogsRev)
+    //   R = (target + fixed － cogsVarPct%×nonCogsRev) / (1 － revVarPct% － cogsVarPct%)
+    // 目標粗利0円なら損益分岐点売上と同じ。
     function calcRevenueForProfit(targetProfit){
       var b = _beInputs();
-      if (b.varRatePct >= 100) return null;
-      return (b.fixed + targetProfit) / (1 - b.varRatePct / 100);
+      var denom = 1 - (b.revVarPct + b.cogsVarPct) / 100;
+      if (denom <= 0) return null;
+      var R = (targetProfit + b.fixed - (b.cogsVarPct / 100) * b.nonCogsRev) / denom;
+      return R;
     }
     function calcBreakeven(){ return calcRevenueForProfit(0); }
 
@@ -455,7 +591,18 @@
       { id:'pFoodCogsRate', label:function(){ return I18n.t('eFoodCogs') + ' %'; }, type:'pct' },
       { id:'pDrinkCogsRate', label:function(){ return I18n.t('eDrinkCogs') + ' %'; }, type:'pct' },
       { id:'pDrinkBackRate', label:function(){ return I18n.t('eDrinkBack') + ' %'; }, type:'pct' },
-      { id:'pSssRate', label:function(){ return I18n.t('eSss') + ' %'; }, type:'pct' }
+      { id:'pSssRate', label:function(){ return I18n.t('eSss') + ' %'; }, type:'pct' },
+      { id:'pEntranceFee', label:function(){ return I18n.t('eEntranceFee'); }, type:'min0' },
+      { id:'pExtensionFee', label:function(){ return I18n.t('eExtensionFee'); }, type:'min0' },
+      { id:'pVipFee', label:function(){ return I18n.t('eVipFee'); }, type:'min0' },
+      { id:'pCashlessPct', label:function(){ return I18n.t('unitCashlessPct'); }, type:'pct' },
+      { id:'pPayFeeRate', label:function(){ return I18n.t('ePayFee') + ' %'; }, type:'pct' },
+      { id:'pLadiesDrinkCount', label:function(){ return I18n.t('eLadiesDrinkBack') + ' ' + I18n.t('unitCups'); }, type:'min0' },
+      { id:'pLadiesDrinkUnit', label:function(){ return I18n.t('eLadiesDrinkBack') + ' ' + I18n.t('unitPerCup'); }, type:'min0' },
+      { id:'pBottleCount', label:function(){ return I18n.t('eBottleBack') + ' ' + I18n.t('unitBottles'); }, type:'min0' },
+      { id:'pBottleUnitBack', label:function(){ return I18n.t('eBottleBack') + ' ' + I18n.t('unitPerBottle'); }, type:'min0' },
+      { id:'pReferralRevenue', label:function(){ return I18n.t('eReferralBack') + ' ' + I18n.t('unitReferralRev'); }, type:'min0' },
+      { id:'pReferralRate', label:function(){ return I18n.t('eReferralBack') + ' %'; }, type:'pct' }
     ];
     RANKS.forEach(function(r, idx){
       var rk = RANK_I18N_KEYS[idx];
@@ -463,6 +610,9 @@
       VALIDATION_FIELDS.push({ id:r.hpd,   label:function(){ return I18n.t(rk) + ' ' + I18n.t('unitHoursPerDay'); }, type:'min0' });
       VALIDATION_FIELDS.push({ id:r.count, label:function(){ return I18n.t(rk) + ' ' + I18n.t('unitPeople'); }, type:'min0' });
       VALIDATION_FIELDS.push({ id:r.days,  label:function(){ return I18n.t(rk) + ' ' + I18n.t('unitDays'); }, type:'min0' });
+      VALIDATION_FIELDS.push({ id:r.night, label:function(){ return I18n.t(rk) + ' ' + I18n.t('unitNightHours'); }, type:'min0' });
+      VALIDATION_FIELDS.push({ id:r.ot,    label:function(){ return I18n.t(rk) + ' ' + I18n.t('unitOtHours'); }, type:'min0' });
+      VALIDATION_FIELDS.push({ id:r.restdays, label:function(){ return I18n.t(rk) + ' ' + I18n.t('unitRestDays'); }, type:'min0' });
     });
     function validateInputs(){
       var errors = [];
@@ -518,11 +668,20 @@
       // 常にサービス料上乗せ前の小計として扱う仕様のため、内税抽出方式ではなく常に加算方式で計算する
       // （VATと違い、サービス料は revenue に含まれることが無い前提のため _effRate は使わない）。
       document.getElementById('pService').value = Math.round(revenue * SVC_RATE / 100);
+      var nonCogsRev = _nonCogsRevenue();
+      var warnEl = document.getElementById('nonCogsRevWarn');
+      if (nonCogsRev > revenue) {
+        warnEl.style.display = 'block';
+        warnEl.innerText = I18n.t('nonCogsRevWarnText');
+      } else {
+        warnEl.style.display = 'none';
+      }
       var dRev = _drinkRevenue(), fRev = _foodRevenue();
       document.getElementById('revSplitDetail').innerText = I18n.t('revSplitDrink') + ' ' + money(dRev) + ' ／ ' + I18n.t('revSplitFood') + ' ' + money(fRev);
       var salaryTotal = _updateSalaryDisplays();
-      // 13か月給与（月割り・非表示項目）を給与合計に加算して経費合計に含める。
-      var expTotal = salaryTotal + _thirteenthMonth();
+      _updateDrinkBackBreakdown();
+      // 13か月給与（基本給ベース・月割り・非表示項目）を給与合計（割増込み）に加算して経費合計に含める。
+      var expTotal = salaryTotal + _thirteenthMonth() + _drinkBackBreakdownTotal();
       FIELD_IDS.forEach(function(id){ expTotal += num(id); });
       // VATは内税（売上に含まれる税額を除外する必要がある）の場合のみ経費として加算する。
       // 外税（税抜小計＋別途徴収）の場合は入力売上自体に含まれていないため加算しない。
@@ -609,8 +768,8 @@
     };
 
     function applySyms(){
-      for(var i=1;i<=21;i++){ var el=document.getElementById('sym'+i); if(el) el.innerText=SYM; }
-      ['symVat','symSvc','symFoodCogs','symDrinkCogs','symDrinkBack','symOther','symSalaryTotal','symSss','symSalary13th'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerText=SYM; });
+      for(var i=1;i<=24;i++){ var el=document.getElementById('sym'+i); if(el) el.innerText=SYM; }
+      ['symVat','symSvc','symFoodCogs','symDrinkCogs','symDrinkBack','symOther','symSalaryTotal','symSss','symSalary13th','symLadiesDrinkBack','symBottleBack','symReferralBack'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerText=SYM; });
     }
 
     // 旧給与形式（時給×人数×月間勤務時間）から新形式（日給×人数×月間出勤日数）への自動移行。
@@ -713,28 +872,42 @@
         expTitle:'🧾 経費（月額）', revLinkedTitle:'📎 売上連動', eVat:'VAT', eService:'サービス代（参考・経費に含まず）', autoCalc:'自動計算', modeIncl:'内税', modeExcl:'外税',
         vatSvcHint:'VAT・サービス代の税率および内税/外税の設定は、設定画面の値をそのまま使用します（このページでは変更できません）。内税の場合は売上に含まれる税額を抽出、外税の場合は売上に加算して計算します。',
         svcRefHint:'「月間売上」はサービス料上乗せ前の小計として扱います。サービス料は徴収後に対象スタッフへ全額分配する預り金のため、参考表示のみで営業利益の計算には含めていません。',
-        revSplitTitle:'🍽️🍹 売上内訳（フード／ドリンク）', drinkRevPctLabel:'売上のうちドリンクの割合', revSplitDrink:'ドリンク売上', revSplitFood:'フード売上',
-        eFoodCogs:'フード原価', foodCogsHint:'フード売上（売上×(100−ドリンク割合)%）に対する割合(%)を入力すると自動計算します。',
-        eDrinkCogs:'ドリンク原価', drinkCogsHint:'ドリンク売上（売上×ドリンク割合%）に対する割合(%)を入力すると自動計算します。',
+        nonCogsRevTitle:'🎟️ 原価対象外の売上（内訳・上の合計に含む）',
+        nonCogsRevHint:'入場料・延長料金・VIP基本料金など、商品原価が発生しない売上の内訳です。ここに入力した金額は「月間売上」に既に含まれている前提で、フード原価・ドリンク原価の計算対象から除外されます（追加入力ではありません）。',
+        eEntranceFee:'入場料', eExtensionFee:'延長料金', eVipFee:'VIP基本料金',
+        nonCogsRevWarnText:'⚠️ 入場料・延長料金・VIP基本料金の合計が月間売上を超えています。金額をご確認ください。',
+        revSplitTitle:'🍽️🍹 売上内訳（フード／ドリンク）', drinkRevPctLabel:'原価対象売上のうちドリンクの割合', revSplitDrink:'ドリンク売上', revSplitFood:'フード売上',
+        eFoodCogs:'フード原価', foodCogsHint:'フード売上（原価対象売上×(100−ドリンク割合)%）に対する割合(%)を入力すると自動計算します。',
+        eDrinkCogs:'ドリンク原価', drinkCogsHint:'ドリンク売上（原価対象売上×ドリンク割合%）に対する割合(%)を入力すると自動計算します。',
         cogsRecalc:'🔄 割合から再計算',
-        eDrinkBack:'ドリンクバック', drinkBackHint:'ドリンク売上に対する割合(%)を入力すると自動計算します（ホスト/ホステス等へのドリンク歩合）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。', drinkBackRecalc:'🔄 割合から再計算',
+        eDrinkBack:'ドリンクバック（その他・簡易）', drinkBackHint:'ドリンク売上に対する割合(%)を入力すると自動計算します（上記以外のホスト/ホステス等への一律ドリンク歩合。下記のレディースドリンク・ボトル・紹介料と別枠で加算されます）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。', drinkBackRecalc:'🔄 割合から再計算',
+        eLadiesDrinkBack:'レディースドリンクバック', unitCups:'杯/月', unitPerCup:'₱/杯',
+        ladiesDrinkBackHint:'月間の杯数×1杯あたりのバック額で自動計算します（例：レディースドリンクは通常価格＋一定額上乗せし、その上乗せ分を女性スタッフへバックする運用を、杯数×固定額で近似します）。',
+        eBottleBack:'ボトルバック', unitBottles:'本/月', unitPerBottle:'₱/本',
+        bottleBackHint:'月間の本数×1本あたりのバック額で自動計算します（ボトル販売は通常価格に対するバック率が高くなりやすいため、ドリンク売上全体に対する一律%ではなく本数ベースで計算します）。',
+        eReferralBack:'紹介料', unitReferralRev:'₱/月',
+        referralBackHint:'紹介経由の売上（月額）×紹介料率(%)で自動計算します（紹介対象売上は上の「月間売上」に既に含まれている前提で、ここでは紹介料の計算基準としてのみ使用します）。',
         eRent:'賃料', eElec:'電気代', eWater:'水道代', eGas:'ガス代（LPG）', eNet:'通信費（ネット等）',
         salaryTitle:'👥 給与（月額・ランク別）', rankManager:'マネージャー', rankSenior:'一般上級', rankMid:'一般中級', rankJunior:'一般初級',
         unitPeople:'名', unitDailyWage:'₱/日', unitHoursPerDay:'h/日', unitDays:'日/月', hourlyPrefix:'時給換算',
-        salaryHint:'各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分は別項目として自動計算し、経費合計に含めます）。',
-        salaryTotalLabel:'給与合計（12か月分）',
+        unitNightHours:'夜勤h/月・人', unitOtHours:'残業h/月・人', unitRestDays:'休日出勤日/月・人',
+        salaryHint:'各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分は基本給ベースで別項目として自動計算し、経費合計に含めます）。',
+        premiumHint:'夜勤（22時〜翌6時）・残業（1日8時間超）・休日出勤の割増を、人数1人あたりの月間時間／日数で入力すると自動計算します（夜勤+10%、残業+25%、休日出勤+30%を仮定した概算です。実際の適用条件は労働法令・専門家にご確認ください）。',
+        salaryTotalLabel:'給与合計（12か月分・割増込み）',
         salary13thLabel:'13か月給与積立金（月割り）',
-        eSss:'社会保険料（SSS/PhilHealth/Pag-IBIG）', sssHint:'給与合計に対する割合(%)を入力すると自動計算します（初期値13%）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。',
+        eSss:'社会保険料（SSS/PhilHealth/Pag-IBIG）', sssHint:'給与合計（割増賃金込み）に対する割合(%)を入力すると自動計算します（初期値13%）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。',
         eOtherStaff:'その他人件費（弁護士／経理など）', eKaraoke:'カラオケレンタル',
-        ePayFee:'決済手数料', ePermits:'許認可・行政手数料', eInsurance:'保険料',
+        ePayFee:'決済手数料', unitCashlessPct:'キャッシュレス率%',
+        payFeeHint:'「売上のうちキャッシュレス決済の割合(%)」×「決済手数料率(%)」を月間売上に掛けて自動計算します。決済手数料率を空欄にすると固定金額として扱います。',
+        ePermits:'許認可・行政手数料', eInsurance:'保険料',
         phCustom1:'その他１', phCustom2:'その他２', phCustom3:'その他３', phCustom4:'その他４', phCustom5:'その他５',
         phCustom6:'その他６', phCustom7:'その他７', phCustom8:'その他８', phCustom9:'その他９', phCustom10:'その他１０',
         phHint:'ガス代・通信費・社会保険料は、フィリピンの飲食店運営で発生しやすい代表的な項目として追加しています。不要であれば0のままで構いません。',
         resultTitle:'📊 計算結果', revenue2:'売上', expTotal:'経費合計', profit:'営業利益', rateLabel:'営業利益率',
-        beLabel:'参考：営業利益0円になる売上目安', beHint:'現在入力中の固定費（給与・13か月給与・社会保険料を含む）・VAT率をもとにした目安です（フード原価・ドリンク原価・ドリンクバックは割合(%)を入力している場合のみそれぞれの売上に対する変動費として計算し、未入力なら固定額として扱います。サービス代は含みません）。', beNA:'達成不可（変動費率が100%以上）',
+        beLabel:'参考：営業利益0円になる売上目安', beHint:'現在入力中の固定費（給与・割増賃金・13か月給与・社会保険料を含む）・VAT率・決済手数料率をもとにした目安です（フード原価・ドリンク原価・ドリンクバックは割合(%)を入力している場合のみ原価対象売上（入場料等を除く）に対する変動費として計算し、未入力なら固定額として扱います。サービス代は含みません）。', beNA:'達成不可（変動費率が100%以上）',
         beDetailPrefix:'固定費合計', beDetailRate:'／変動費率',
         wantProfitLabel:'欲しい営業利益から売上を計算', wantProfitBtn:'→ 売上に反映',
-        wantProfitHint:'現在の固定費・VAT率・フード原価率・ドリンク原価率・ドリンクバック率（%指定時）をもとに、指定した営業利益を達成するために必要な売上を計算し、上の「月間売上」欄に反映します。',
+        wantProfitHint:'現在の固定費・VAT率・決済手数料率・フード原価率・ドリンク原価率・ドリンクバック率（%指定時）・入場料等（原価対象外売上）をもとに、指定した営業利益を達成するために必要な売上を計算し、上の「月間売上」欄に反映します。',
         wantNeedValue:'欲しい営業利益の金額を入力してください', wantOk:'✅ 売上に反映しました：',
         saveBtn:'💾 現在の値を既定値として保存', saveHint:'保存すると、次回この画面を開いたときに同じ数字が自動で入力されます（売上だけ毎回入力すればOK）。',
         saved:'✅ 保存しました', errPrefix:'エラー: ', needMonth:'対象月を選択してください', loadConfirm:'現在入力中の売上・賃料・電気代・水道代を、その月の実績で上書きします。仕入実績がある場合はフード原価・ドリンク原価の金額も上書きされることがあります。よろしいですか？', loadFail:'データを取得できませんでした', loadOk:'✅ 実績を読み込みました', loadWageNote:'（参考：その月の給与実績',
@@ -757,28 +930,42 @@
         expTitle:'🧾 Expenses (monthly)', revLinkedTitle:'📎 Revenue-linked', eVat:'VAT', eService:'Service charge (reference only, excluded)', autoCalc:'auto-calculated', modeIncl:'tax-incl.', modeExcl:'tax-excl.',
         vatSvcHint:'VAT and service charge rates, and whether they are tax-inclusive or tax-exclusive, come from Settings and cannot be changed on this page. Tax-inclusive extracts the tax already contained in revenue; tax-exclusive adds it on top of revenue.',
         svcRefHint:'"Monthly revenue" is treated as the subtotal before the service charge is added. Since the service charge collected is fully redistributed to covered staff, it is shown for reference only and excluded from the operating profit calculation.',
-        revSplitTitle:'🍽️🍹 Revenue split (food / drink)', drinkRevPctLabel:'Share of revenue that is drinks', revSplitDrink:'Drink revenue', revSplitFood:'Food revenue',
-        eFoodCogs:'Food COGS', foodCogsHint:'Enter a percentage (%) of food revenue (revenue × (100 − drink share)%) to auto-calculate.',
-        eDrinkCogs:'Drink COGS', drinkCogsHint:'Enter a percentage (%) of drink revenue (revenue × drink share%) to auto-calculate.',
+        nonCogsRevTitle:'🎟️ Non-COGS revenue (breakdown, already included in the total above)',
+        nonCogsRevHint:'Breakdown of revenue that carries no product cost — entrance fee, extension fee, VIP base charge, etc. Amounts entered here are assumed to already be included in "Monthly revenue" (not additional revenue) and are excluded from the food/drink COGS calculation base.',
+        eEntranceFee:'Entrance fee', eExtensionFee:'Extension fee', eVipFee:'VIP base charge',
+        nonCogsRevWarnText:'⚠️ The sum of entrance fee + extension fee + VIP base charge exceeds monthly revenue. Please check the amounts.',
+        revSplitTitle:'🍽️🍹 Revenue split (food / drink)', drinkRevPctLabel:'Share of COGS-bearing revenue that is drinks', revSplitDrink:'Drink revenue', revSplitFood:'Food revenue',
+        eFoodCogs:'Food COGS', foodCogsHint:'Enter a percentage (%) of food revenue (COGS-bearing revenue × (100 − drink share)%) to auto-calculate.',
+        eDrinkCogs:'Drink COGS', drinkCogsHint:'Enter a percentage (%) of drink revenue (COGS-bearing revenue × drink share%) to auto-calculate.',
         cogsRecalc:'🔄 Recalculate from %',
-        eDrinkBack:'Drink back', drinkBackHint:'Enter a percentage (%) of drink revenue to auto-calculate (commission paid to hosts/hostesses on drink sales). The resulting amount can be freely overwritten afterward (changing the % or pressing "Recalculate from %" recalculates it).', drinkBackRecalc:'🔄 Recalculate from %',
+        eDrinkBack:'Drink back (other / simple)', drinkBackHint:'Enter a percentage (%) of drink revenue to auto-calculate (a flat commission for hosts/hostesses other than the items below. Added separately on top of ladies-drink, bottle, and referral back below).', drinkBackRecalc:'🔄 Recalculate from %',
+        eLadiesDrinkBack:'Ladies-drink back', unitCups:'cups/mo', unitPerCup:'₱/cup',
+        ladiesDrinkBackHint:'Auto-calculated as monthly cup count × back amount per cup (approximates ladies-drink pricing, where a markup over the normal price is kicked back to female staff, using a per-cup fixed amount).',
+        eBottleBack:'Bottle back', unitBottles:'bottles/mo', unitPerBottle:'₱/bottle',
+        bottleBackHint:'Auto-calculated as monthly bottle count × back amount per bottle (bottle sales typically carry a higher effective back rate than a flat % of total drink revenue, so this is calculated per bottle instead).',
+        eReferralBack:'Referral commission', unitReferralRev:'₱/mo',
+        referralBackHint:'Auto-calculated as referral-driven revenue (monthly) × referral rate (%). Referral revenue is assumed to already be included in "Monthly revenue" above; it is used here only as the base for the commission calculation.',
         eRent:'Rent', eElec:'Electricity', eWater:'Water', eGas:'Gas (LPG)', eNet:'Internet / telecom',
         salaryTitle:'👥 Salary (monthly, by rank)', rankManager:'Manager', rankSenior:'General - Senior', rankMid:'General - Mid', rankJunior:'General - Junior',
         unitPeople:'people', unitDailyWage:'₱/day', unitHoursPerDay:'h/day', unitDays:'days/mo', hourlyPrefix:'≈ hourly',
-        salaryHint:'Enter the daily wage, hours worked per day, headcount, and workdays per month for each rank to auto-calculate the equivalent hourly wage and total salary (the 13th-month pay accrual is calculated as a separate line item and included in total expenses).',
-        salaryTotalLabel:'Total salary (12 months)',
+        unitNightHours:'night h/mo/person', unitOtHours:'OT h/mo/person', unitRestDays:'rest-day-worked days/mo/person',
+        salaryHint:'Enter the daily wage, hours worked per day, headcount, and workdays per month for each rank to auto-calculate the equivalent hourly wage and total salary (the 13th-month pay accrual is based on basic pay and calculated as a separate line item, included in total expenses).',
+        premiumHint:'Enter night-shift (10pm–6am), overtime (beyond 8h/day), and rest-day-worked hours/days per month per employee to auto-calculate premiums (assumes +10% night differential, +25% overtime, +30% rest-day premium — approximations only; confirm actual applicable rates with labor law / a professional).',
+        salaryTotalLabel:'Total salary (12 months, incl. premiums)',
         salary13thLabel:'13th-month pay accrual (monthly)',
-        eSss:'Social contributions (SSS/PhilHealth/Pag-IBIG)', sssHint:'Enter a percentage (%) of total salary to auto-calculate (default 13%). The resulting amount can be freely overwritten afterward (changing the % or pressing "Recalculate from %" recalculates it).',
+        eSss:'Social contributions (SSS/PhilHealth/Pag-IBIG)', sssHint:'Enter a percentage (%) of total salary (including premiums) to auto-calculate (default 13%). The resulting amount can be freely overwritten afterward (changing the % or pressing "Recalculate from %" recalculates it).',
         eOtherStaff:'Other personnel costs (lawyer/accounting, etc.)', eKaraoke:'Karaoke rental',
-        ePayFee:'Payment processing fees', ePermits:'Permits & government fees', eInsurance:'Insurance',
+        ePayFee:'Payment processing fees', unitCashlessPct:'cashless share %',
+        payFeeHint:'Auto-calculated as "share of revenue that is cashless (%)" × "payment processing fee rate (%)" × monthly revenue. Leave the fee rate blank to treat it as a fixed amount.',
+        ePermits:'Permits & government fees', eInsurance:'Insurance',
         phCustom1:'Other 1', phCustom2:'Other 2', phCustom3:'Other 3', phCustom4:'Other 4', phCustom5:'Other 5',
         phCustom6:'Other 6', phCustom7:'Other 7', phCustom8:'Other 8', phCustom9:'Other 9', phCustom10:'Other 10',
         phHint:'Gas, internet, and social contributions were added as common costs for a Philippines-based restaurant/bar. Leave at 0 if not applicable.',
         resultTitle:'📊 Result', revenue2:'Revenue', expTotal:'Total expenses', profit:'Operating profit', rateLabel:'Operating margin',
-        beLabel:'Reference: break-even revenue (operating profit = 0)', beHint:'Estimated from the fixed costs (including salary, 13th-month pay, and social contributions) and VAT rate currently entered (food COGS, drink COGS, and drink back are treated as a variable cost against their respective revenue only if a percentage is entered; otherwise as a fixed amount. Service charge is not included).', beNA:'Not achievable (variable cost rate is 100% or more)',
+        beLabel:'Reference: break-even revenue (operating profit = 0)', beHint:'Estimated from the fixed costs (including salary, shift premiums, 13th-month pay, and social contributions), VAT rate, and payment fee rate currently entered (food COGS, drink COGS, and drink back are treated as a variable cost against COGS-bearing revenue — excluding entrance fee etc. — only if a percentage is entered; otherwise as a fixed amount. Service charge is not included).', beNA:'Not achievable (variable cost rate is 100% or more)',
         beDetailPrefix:'Total fixed costs', beDetailRate:'/ variable cost rate',
         wantProfitLabel:'Calculate revenue from a target operating profit', wantProfitBtn:'→ Apply to revenue',
-        wantProfitHint:'Using the current fixed costs, VAT rate, food COGS rate, drink COGS rate, and drink back rate (if % is set), calculates the revenue needed to reach the target operating profit and fills it into "Monthly revenue" above.',
+        wantProfitHint:'Using the current fixed costs, VAT rate, payment fee rate, food COGS rate, drink COGS rate, drink back rate (if % is set), and entrance fee etc. (non-COGS revenue), calculates the revenue needed to reach the target operating profit and fills it into "Monthly revenue" above.',
         wantNeedValue:'Please enter a target operating profit amount', wantOk:'✅ Applied to revenue:',
         saveBtn:'💾 Save current values as defaults', saveHint:'Once saved, the same figures will be pre-filled next time you open this screen (just enter revenue each time).',
         saved:'✅ Saved', errPrefix:'Error: ', needMonth:'Please select a month', loadConfirm:'This will overwrite the currently entered revenue, rent, electricity, and water with the actual figures for that month. Food and drink COGS amounts may also be overwritten if purchase data exists for that month. Continue?', loadFail:'Could not load data', loadOk:'✅ Actuals loaded', loadWageNote:'(Reference: actual salary for that month',
