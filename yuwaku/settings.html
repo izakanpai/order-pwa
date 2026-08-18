@@ -192,6 +192,13 @@
       <div class="st" id="st-bridge"></div>
     </div>
 
+    <div class="card">
+      <div class="card-title" data-t="emailOutboxTitle">📧 eレシート送信（メール送信キュー）</div>
+      <div class="hint" data-t="emailOutboxHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">会計確定時のeレシートメールは、応答を速くするため送信キューへ積んでから非同期で送信します。この処理には1分間隔の自動実行（時間主導トリガー）が必要です。初回のみ、下のボタンを1回押して有効化してください（設定済みなら何度押しても問題ありません）。</div>
+      <button class="btn" onclick="setupEmailOutbox()" data-t="emailOutboxBtn">⏱ 自動送信を有効化</button>
+      <div class="st" id="st-emailOutbox"></div>
+    </div>
+
   </div>
 
   <!-- Table QR Codes Modal -->
@@ -381,6 +388,12 @@
       $('bridgePollSec').value = sec;
       rpc('saveSettings',[{ bridgePollMs: Math.round(sec * 1000) }]).then(function(){ st('st-bridge',I18n.t('saved'), true); }).catch(function(e){ st('st-bridge',I18n.t('errPrefix')+(e.message||e), false); });
     };
+    // [P2] 会計確定のメール送信をoutbox化した分、1分間隔の時間主導トリガーが必要になる。初回のみ管理者が押す想定。
+    window.setupEmailOutbox = function(){
+      rpc('ensureEmailOutboxTrigger',[]).then(function(r){
+        st('st-emailOutbox', (r && r.already) ? I18n.t('emailOutboxAlready') : I18n.t('emailOutboxDone'), true);
+      }).catch(function(e){ st('st-emailOutbox', I18n.t('errPrefix')+(e.message||e), false); });
+    };
     function setBadge(id, on){ var b=$(id); b.className='badge '+(on?'on':'offb'); b.innerText=on?I18n.t('set'):I18n.t('unset'); b.removeAttribute('data-t'); }
 
     // ---- load ----
@@ -444,6 +457,7 @@
         repTitle:'📧 定期レポート（自動メール）', repDaily:'日次日報（毎日）', repWeekly:'週次レポート', repMonthly:'月次レポート', repEmail:'送信先メール（複数可・カンマか改行区切り）', repHour:'送信時刻', repWeekDay:'送信曜日', repMonthDay:'送信日（1〜28）', dow0:'日曜', dow1:'月曜', dow2:'火曜', dow3:'水曜', dow4:'木曜', dow5:'金曜', dow6:'土曜', repSave:'💾 保存＆スケジュール', repTestD:'✉️ 日次テスト', repTestW:'✉️ 週次テスト', repTestM:'✉️ 月次テスト',
         repLang:'出力言語', repLangJa:'日本語', repLangEn:'英語', repLangBoth:'日本語＋英語（両方）',
         bridgeTitle:'🖶 印刷ブリッジ（プリンタ連携）', bridgeInterval:'キュー確認間隔（秒）', bridgeHint:'印刷キュー（bridge.html）がサーバーへ確認しにいく頻度です。短いほど印刷が早く始まりますが、サーバー負荷は増えます。既定値は1.2秒です。',
+        emailOutboxTitle:'📧 eレシート送信（メール送信キュー）', emailOutboxHint:'会計確定時のeレシートメールは、応答を速くするため送信キューへ積んでから非同期で送信します。この処理には1分間隔の自動実行（時間主導トリガー）が必要です。初回のみ、下のボタンを1回押して有効化してください（設定済みなら何度押しても問題ありません）。', emailOutboxBtn:'⏱ 自動送信を有効化', emailOutboxDone:'✅ 自動送信を有効化しました', emailOutboxAlready:'✅ 既に有効化されています',
         saved:'✅ 保存しました', savedSched:'✅ 保存＆スケジュール設定しました', uploaded:'✅ アップロードしました', pickImg:'画像を選択してください', needKey:'キーを入力してください', noGeoDev:'この端末は位置情報に対応していません', gotLoc:'現在地を取得しました。「保存」を押してください。', noLoc:'位置情報を取得できませんでした。手動入力してください。', sending:'送信中…', testSent:'✅ テスト送信しました。受信箱をご確認ください', sendFail:'送信できませんでした', scopeReauth:'認証(スコープ)の再承認が必要かもしれません', errPrefix:'エラー: ' },
       en:{ title:'⚙️ Settings', back:'← Manage', save:'💾 Save', status:'Status:', unset:'Not set', set:'Set', phPaste:'Paste and save', close:'Close',
         qrCardTitle:'📱 Table QR Codes', qrCardDesc:'Print and place these QR codes on each table. Customers scan to open the order screen locked to their table.', qrShowBtn:'📱 Show QR Codes', qrModalTitle:'Table QR Codes', qrModalSub:'Scan to open the order screen', qrPrintBtn:'🖨️ Print', qrNoTables:'No tables are set up yet. Please save the table count first.',
@@ -461,6 +475,7 @@
         repTitle:'📧 Scheduled reports (auto email)', repDaily:'Daily report (every day)', repWeekly:'Weekly report', repMonthly:'Monthly report', repEmail:'Recipient emails (multiple, comma/newline separated)', repHour:'Send time', repWeekDay:'Send day', repMonthDay:'Send day (1–28)', dow0:'Sun', dow1:'Mon', dow2:'Tue', dow3:'Wed', dow4:'Thu', dow5:'Fri', dow6:'Sat', repSave:'💾 Save & schedule', repTestD:'✉️ Daily test', repTestW:'✉️ Weekly test', repTestM:'✉️ Monthly test',
         repLang:'Output language', repLangJa:'Japanese', repLangEn:'English', repLangBoth:'Japanese + English (both)',
         bridgeTitle:'🖶 Print bridge (printer connection)', bridgeInterval:'Queue check interval (sec)', bridgeHint:'How often the print bridge (bridge.html) checks the server for print jobs. Shorter = faster printing but more server load. Default is 1.2 seconds.',
+        emailOutboxTitle:'📧 e-Receipt sending (email outbox)', emailOutboxHint:'To keep checkout fast, e-receipt emails are queued and sent asynchronously in the background. This needs a 1-minute time-driven trigger. Press the button below once (safe to press again if already set up).', emailOutboxBtn:'⏱ Enable auto-send', emailOutboxDone:'✅ Auto-send enabled', emailOutboxAlready:'✅ Already enabled',
         saved:'✅ Saved', savedSched:'✅ Saved & scheduled', uploaded:'✅ Uploaded', pickImg:'Please select an image', needKey:'Please enter a key', noGeoDev:'This device does not support location', gotLoc:'Location acquired. Please press Save.', noLoc:'Could not get location. Please enter manually.', sending:'Sending…', testSent:'✅ Test sent. Please check your inbox', sendFail:'Could not send', scopeReauth:'You may need to re-authorize (scopes)', errPrefix:'Error: ' }
     }, function(){ setBadge('payBadge', payConfigured); setBadge('gemBadge', gemConfigured); setBadge('cseBadge', cseConfigured); });
   </script>
