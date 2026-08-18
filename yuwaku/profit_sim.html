@@ -80,9 +80,25 @@
       <div class="divider"></div>
       <div class="subhead" data-t="nonCogsRevTitle">🎟️ 原価対象外の売上（内訳・上の合計に含む）</div>
       <div class="hint" data-t="nonCogsRevHint">入場料・延長料金・VIP基本料金など、商品原価が発生しない売上の内訳です。ここに入力した金額は「月間売上」に既に含まれている前提で、フード原価・ドリンク原価の計算対象から除外されます（追加入力ではありません）。</div>
-      <div class="exprow"><span class="lb" data-t="eEntranceFee">入場料</span><div class="amtwrap"><span class="sym" id="sym22">₱</span><input type="number" min="0" step="any" id="pEntranceFee" oninput="onRevenueConditionChanged()"></div></div>
-      <div class="exprow"><span class="lb" data-t="eExtensionFee">延長料金</span><div class="amtwrap"><span class="sym" id="sym23">₱</span><input type="number" min="0" step="any" id="pExtensionFee" oninput="onRevenueConditionChanged()"></div></div>
-      <div class="exprow"><span class="lb" data-t="eVipFee">VIP基本料金</span><div class="amtwrap"><span class="sym" id="sym24">₱</span><input type="number" min="0" step="any" id="pVipFee" oninput="onRevenueConditionChanged()"></div></div>
+      <div class="cogsblock">
+        <div class="lb" data-t="eEntranceFee">入場料</div>
+        <div class="cogsinputs">
+          <div class="cogsfield"><input type="number" id="pEntranceCount" min="0" step="1" placeholder="0" oninput="onRevenueConditionChanged()"><span class="sym" data-t="unitPeopleCount">人/月</span></div>
+          <div class="cogsfield"><input type="number" id="pEntranceUnit" min="0" step="any" placeholder="0" oninput="onRevenueConditionChanged()"><span class="sym" data-t="unitPerPerson">₱/人</span></div>
+          <span class="cogsarrow">→</span>
+          <div class="cogsfield"><span class="sym" id="symEntranceFee">₱</span><input type="number" id="pEntranceFee" readonly tabindex="-1"></div>
+        </div>
+      </div>
+      <div class="cogsblock" style="margin-top:10px;">
+        <div class="lb" data-t="eExtensionFee">延長料金</div>
+        <div class="cogsinputs">
+          <div class="cogsfield"><input type="number" id="pExtensionCount" min="0" step="1" placeholder="0" oninput="onRevenueConditionChanged()"><span class="sym" data-t="unitPeopleCount">人/月</span></div>
+          <div class="cogsfield"><input type="number" id="pExtensionUnit" min="0" step="any" placeholder="0" oninput="onRevenueConditionChanged()"><span class="sym" data-t="unitPerPerson">₱/人</span></div>
+          <span class="cogsarrow">→</span>
+          <div class="cogsfield"><span class="sym" id="symExtensionFee">₱</span><input type="number" id="pExtensionFee" readonly tabindex="-1"></div>
+        </div>
+      </div>
+      <div class="exprow" style="margin-top:10px;"><span class="lb" data-t="eVipFee">VIP基本料金</span><div class="amtwrap"><span class="sym" id="sym24">₱</span><input type="number" min="0" step="any" id="pVipFee" oninput="onRevenueConditionChanged()"></div></div>
       <div class="muted" id="nonCogsRevWarn" style="font-size:11.5px;margin-top:2px;color:#b91c1c;display:none;"></div>
       <div id="loadActualRow" style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <input id="pMonth" type="month" class="fc" style="width:auto;flex:0 0 auto;">
@@ -354,7 +370,9 @@
     var SETTINGS_MAP = {
       pRevenue:'profitSimRevenue', pRent:'profitSimRent', pElec:'profitSimElec', pWater:'profitSimWater',
       pGas:'profitSimGas', pNet:'profitSimNet',
-      pEntranceFee:'profitSimEntranceFee', pExtensionFee:'profitSimExtensionFee', pVipFee:'profitSimVipFee',
+      pEntranceCount:'profitSimEntranceCount', pEntranceUnit:'profitSimEntranceUnit',
+      pExtensionCount:'profitSimExtensionCount', pExtensionUnit:'profitSimExtensionUnit',
+      pVipFee:'profitSimVipFee',
       pMgrDailyWage:'profitSimMgrDailyWage', pMgrHoursPerDay:'profitSimMgrHoursPerDay', pMgrCount:'profitSimMgrCount', pMgrDays:'profitSimMgrDays',
       pMgrNightHours:'profitSimMgrNightHours', pMgrOtHours:'profitSimMgrOtHours', pMgrRestDays:'profitSimMgrRestDays',
       pSrDailyWage:'profitSimSrDailyWage', pSrHoursPerDay:'profitSimSrHoursPerDay', pSrCount:'profitSimSrCount', pSrDays:'profitSimSrDays',
@@ -395,7 +413,14 @@
 
     // 入場料・延長料金・VIP基本料金は「月間売上」に含まれる商品原価が発生しない売上のため、
     // フード原価・ドリンク原価の計算対象（原価対象売上）から除外する。
-    function _nonCogsRevenue(){ return num('pEntranceFee') + num('pExtensionFee') + num('pVipFee'); }
+    // 入場料・延長料金は人数×単価で自動計算する（VIP基本料金は固定額入力のまま）。
+    function _entranceFee(){ return num('pEntranceCount') * num('pEntranceUnit'); }
+    function _extensionFee(){ return num('pExtensionCount') * num('pExtensionUnit'); }
+    function _updateNonCogsRevDisplays(){
+      document.getElementById('pEntranceFee').value = Math.round(_entranceFee());
+      document.getElementById('pExtensionFee').value = Math.round(_extensionFee());
+    }
+    function _nonCogsRevenue(){ return _entranceFee() + _extensionFee() + num('pVipFee'); }
     function _cogsBaseRevenue(){ return Math.max(0, num('pRevenue') - _nonCogsRevenue()); }
     // 原価対象売上のうちドリンクの割合(%)から、ドリンク売上／フード売上を算出する。
     function _drinkRevenue(){ return _cogsBaseRevenue() * num('pDrinkRevenuePct') / 100; }
@@ -592,8 +617,10 @@
       { id:'pDrinkCogsRate', label:function(){ return I18n.t('eDrinkCogs') + ' %'; }, type:'pct' },
       { id:'pDrinkBackRate', label:function(){ return I18n.t('eDrinkBack') + ' %'; }, type:'pct' },
       { id:'pSssRate', label:function(){ return I18n.t('eSss') + ' %'; }, type:'pct' },
-      { id:'pEntranceFee', label:function(){ return I18n.t('eEntranceFee'); }, type:'min0' },
-      { id:'pExtensionFee', label:function(){ return I18n.t('eExtensionFee'); }, type:'min0' },
+      { id:'pEntranceCount', label:function(){ return I18n.t('eEntranceFee') + ' ' + I18n.t('unitPeopleCount'); }, type:'min0' },
+      { id:'pEntranceUnit', label:function(){ return I18n.t('eEntranceFee') + ' ' + I18n.t('unitPerPerson'); }, type:'min0' },
+      { id:'pExtensionCount', label:function(){ return I18n.t('eExtensionFee') + ' ' + I18n.t('unitPeopleCount'); }, type:'min0' },
+      { id:'pExtensionUnit', label:function(){ return I18n.t('eExtensionFee') + ' ' + I18n.t('unitPerPerson'); }, type:'min0' },
       { id:'pVipFee', label:function(){ return I18n.t('eVipFee'); }, type:'min0' },
       { id:'pCashlessPct', label:function(){ return I18n.t('unitCashlessPct'); }, type:'pct' },
       { id:'pPayFeeRate', label:function(){ return I18n.t('ePayFee') + ' %'; }, type:'pct' },
@@ -668,6 +695,7 @@
       // 常にサービス料上乗せ前の小計として扱う仕様のため、内税抽出方式ではなく常に加算方式で計算する
       // （VATと違い、サービス料は revenue に含まれることが無い前提のため _effRate は使わない）。
       document.getElementById('pService').value = Math.round(revenue * SVC_RATE / 100);
+      _updateNonCogsRevDisplays();
       var nonCogsRev = _nonCogsRevenue();
       var warnEl = document.getElementById('nonCogsRevWarn');
       if (nonCogsRev > revenue) {
@@ -769,7 +797,7 @@
 
     function applySyms(){
       for(var i=1;i<=24;i++){ var el=document.getElementById('sym'+i); if(el) el.innerText=SYM; }
-      ['symVat','symSvc','symFoodCogs','symDrinkCogs','symDrinkBack','symOther','symSalaryTotal','symSss','symSalary13th','symLadiesDrinkBack','symBottleBack','symReferralBack'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerText=SYM; });
+      ['symVat','symSvc','symFoodCogs','symDrinkCogs','symDrinkBack','symOther','symSalaryTotal','symSss','symSalary13th','symLadiesDrinkBack','symBottleBack','symReferralBack','symEntranceFee','symExtensionFee'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerText=SYM; });
     }
 
     // 旧給与形式（時給×人数×月間勤務時間）から新形式（日給×人数×月間出勤日数）への自動移行。
@@ -873,8 +901,8 @@
         vatSvcHint:'VAT・サービス代の税率および内税/外税の設定は、設定画面の値をそのまま使用します（このページでは変更できません）。内税の場合は売上に含まれる税額を抽出、外税の場合は売上に加算して計算します。',
         svcRefHint:'「月間売上」はサービス料上乗せ前の小計として扱います。サービス料は徴収後に対象スタッフへ全額分配する預り金のため、参考表示のみで営業利益の計算には含めていません。',
         nonCogsRevTitle:'🎟️ 原価対象外の売上（内訳・上の合計に含む）',
-        nonCogsRevHint:'入場料・延長料金・VIP基本料金など、商品原価が発生しない売上の内訳です。ここに入力した金額は「月間売上」に既に含まれている前提で、フード原価・ドリンク原価の計算対象から除外されます（追加入力ではありません）。',
-        eEntranceFee:'入場料', eExtensionFee:'延長料金', eVipFee:'VIP基本料金',
+        nonCogsRevHint:'入場料・延長料金・VIP基本料金など、商品原価が発生しない売上の内訳です（入場料・延長料金は人数×単価で自動計算）。ここで計算・入力した金額は「月間売上」に既に含まれている前提で、フード原価・ドリンク原価の計算対象から除外されます（追加入力ではありません）。',
+        eEntranceFee:'入場料', eExtensionFee:'延長料金', eVipFee:'VIP基本料金', unitPeopleCount:'人/月', unitPerPerson:'₱/人',
         nonCogsRevWarnText:'⚠️ 入場料・延長料金・VIP基本料金の合計が月間売上を超えています。金額をご確認ください。',
         revSplitTitle:'🍽️🍹 売上内訳（フード／ドリンク）', drinkRevPctLabel:'原価対象売上のうちドリンクの割合', revSplitDrink:'ドリンク売上', revSplitFood:'フード売上',
         eFoodCogs:'フード原価', foodCogsHint:'フード売上（原価対象売上×(100−ドリンク割合)%）に対する割合(%)を入力すると自動計算します。',
@@ -931,8 +959,8 @@
         vatSvcHint:'VAT and service charge rates, and whether they are tax-inclusive or tax-exclusive, come from Settings and cannot be changed on this page. Tax-inclusive extracts the tax already contained in revenue; tax-exclusive adds it on top of revenue.',
         svcRefHint:'"Monthly revenue" is treated as the subtotal before the service charge is added. Since the service charge collected is fully redistributed to covered staff, it is shown for reference only and excluded from the operating profit calculation.',
         nonCogsRevTitle:'🎟️ Non-COGS revenue (breakdown, already included in the total above)',
-        nonCogsRevHint:'Breakdown of revenue that carries no product cost — entrance fee, extension fee, VIP base charge, etc. Amounts entered here are assumed to already be included in "Monthly revenue" (not additional revenue) and are excluded from the food/drink COGS calculation base.',
-        eEntranceFee:'Entrance fee', eExtensionFee:'Extension fee', eVipFee:'VIP base charge',
+        nonCogsRevHint:'Breakdown of revenue that carries no product cost — entrance fee, extension fee, VIP base charge, etc. (entrance fee and extension fee are auto-calculated as headcount × unit price). These amounts are assumed to already be included in "Monthly revenue" (not additional revenue) and are excluded from the food/drink COGS calculation base.',
+        eEntranceFee:'Entrance fee', eExtensionFee:'Extension fee', eVipFee:'VIP base charge', unitPeopleCount:'people/mo', unitPerPerson:'₱/person',
         nonCogsRevWarnText:'⚠️ The sum of entrance fee + extension fee + VIP base charge exceeds monthly revenue. Please check the amounts.',
         revSplitTitle:'🍽️🍹 Revenue split (food / drink)', drinkRevPctLabel:'Share of COGS-bearing revenue that is drinks', revSplitDrink:'Drink revenue', revSplitFood:'Food revenue',
         eFoodCogs:'Food COGS', foodCogsHint:'Enter a percentage (%) of food revenue (COGS-bearing revenue × (100 − drink share)%) to auto-calculate.',
