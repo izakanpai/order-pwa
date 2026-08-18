@@ -280,23 +280,31 @@
       }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
     function repeat(s,n){ var o=''; for(var k=0;k<n;k++) o+=s; return o; }
-    function isSoldToday(v){ if(!v) return false; var t=new Date(); var today=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2); var d=String(v).slice(0,10); return d===today; }
+    function _todayStr(){ var t=new Date(); return t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2); }
+    function isSoldToday(v){ if(!v) return false; var d=String(v).slice(0,10); return d===_todayStr(); }
+    // [応答速度対応] 従来は「setSoldOut→全件再取得(getAllMenuForAdmin)→全体再描画」の2往復待ちで、
+    // ボタンの見た目もその間ずっと変化しなかった（連打を誘発しやすい）。ここではクリック直後に
+    // ローカルのMENU配列を楽観的に更新して即座に再描画し、サーバー応答がエラーだった場合のみ
+    // 元に戻す（ロールバック）。全件再取得は行わない。
     window.toggleSold = function(i){
       var m = MENU[i]; if(!m) return;
       var makeSold = !isSoldToday(m['売切日']);
+      var prevVal = m['売切日'];
+      m['売切日'] = makeSold ? _todayStr() : '';
+      render();
       rpc('setSoldOut',[m['商品名'], makeSold]).then(function(res){
-        if(String(res).indexOf('Error')===0){ msg(I18n.t('errPrefix')+res, false); return; }
-        return rpc('getAllMenuForAdmin',[]).then(function(l){ MENU=l||[]; render(); });
-      }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
+        if(String(res).indexOf('Error')===0){ m['売切日']=prevVal; render(); msg(I18n.t('errPrefix')+res, false); }
+      }).catch(function(e){ m['売切日']=prevVal; render(); msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
     var SYM='₱';
+    // [応答速度対応] 削除成功後は全件再取得せず、ローカル配列からその1件だけ除去して再描画する。
     window.del = function(i){
       var m = MENU[i]; if(!m) return;
       if(!confirm(m['商品名']+' — '+I18n.t('delConfirm'))) return;
       rpc('deleteMenuItem',[m['商品名']]).then(function(res){
         if(String(res).indexOf('Error')===0){ msg(I18n.t('errPrefix')+res, false); return; }
         msg(I18n.t('deleted'), true); if(document.getElementById('oldName').value===m['商品名']) clearForm();
-        return rpc('getAllMenuForAdmin',[]).then(function(l){ MENU=l||[]; render(); });
+        MENU.splice(i,1); render();
       }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
     window.edit = function(i){

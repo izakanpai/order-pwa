@@ -88,13 +88,24 @@
     function clearForm(){ ['iId','iName','iNameEn','iUnit','iMemo'].forEach(function(id){ document.getElementById(id).value=''; }); document.getElementById('iSupplier').value=''; }
 
     window.edit = function(id){ var it=ITEMS.filter(function(x){return x.id===id;})[0]; if(!it) return; document.getElementById('iId').value=it.id; document.getElementById('iName').value=it.name; document.getElementById('iNameEn').value=it.nameEn||''; document.getElementById('iUnit').value=it.unit||''; document.getElementById('iSupplier').value=it.supplier||''; document.getElementById('iMemo').value=it.memo||''; window.scrollTo({top:9999,behavior:'smooth'}); };
-    window.del = function(id){ if(!confirm(I18n.t('delConfirm'))) return; rpc('deleteOrderItem',[id]).then(function(){ return reload(); }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); }); };
+    // [応答速度対応] 削除成功時は全件再取得せず、ローカル配列からその1件だけ除去する。
+    window.del = function(id){ if(!confirm(I18n.t('delConfirm'))) return; rpc('deleteOrderItem',[id]).then(function(){ ITEMS = ITEMS.filter(function(x){ return x.id!==id; }); render(); }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); }); };
     window.save = function(){
       var it = { id:document.getElementById('iId').value, name:document.getElementById('iName').value.trim(), nameEn:document.getElementById('iNameEn').value.trim(), unit:document.getElementById('iUnit').value.trim(), supplier:document.getElementById('iSupplier').value, memo:document.getElementById('iMemo').value.trim() };
       if(!it.name){ msg(I18n.t('needName'), false); return; }
       var btn=document.getElementById('saveBtn'); btn.disabled=true;
-      rpc('saveOrderItem',[it]).then(function(d){ btn.disabled=false; if(d&&d.error){ msg(I18n.t('errPrefix')+d.error, false); return; } msg(I18n.t('saved'), true); clearForm(); return reload(); })
-        .catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
+      // [応答速度対応] saveOrderItemが保存済み行を返すので、全件再取得(getOrderItems)せず
+      // ローカル配列を新規追加/置換するだけで一覧に反映する。
+      rpc('saveOrderItem',[it]).then(function(d){
+        btn.disabled=false;
+        if(d&&d.error){ msg(I18n.t('errPrefix')+d.error, false); return; }
+        msg(I18n.t('saved'), true); clearForm();
+        if (d && d.row) {
+          var idx = ITEMS.findIndex(function(x){ return x.id===d.row.id; });
+          if (idx>=0) ITEMS[idx]=d.row; else ITEMS.push(d.row);
+          render();
+        } else { return reload(); } // 想定外形状のフォールバックのみ再取得
+      }).catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
     function reload(){ return rpc('getOrderItems',[]).then(function(l){ ITEMS=l||[]; render(); }); }
 

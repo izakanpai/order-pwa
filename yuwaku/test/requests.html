@@ -126,14 +126,18 @@
         '</div>';
       }).join('');
     }
+    // [応答速度対応] 投稿・状態変更・削除のたびに全件再取得(getRequests)して一覧全体を再描画していたのを
+    // やめ、submitRequestが返す作成済み行をローカル配列に追加、状態変更はクライアントが既に把握している
+    // 新しい値でその場で書き換え（失敗時のみロールバック）、削除は該当行をローカルから除去するだけにする。
     window.submitReq = function(){
       var content = ($('newContent').value||'').trim();
       var errEl = $('subErr'); errEl.style.display='none';
       if (!content){ errEl.textContent = I18n.t('needContent'); errEl.style.display='block'; return; }
       var category = $('newCat').value||'その他';
-      rpc('submitRequest',[{ category: category, content: content }]).then(function(){
+      rpc('submitRequest',[{ category: category, content: content }]).then(function(r){
+        if (r && r.row) { ROWS.unshift(r.row); render(); }
+        else { return reload(); } // 想定外形状のフォールバックのみ再取得
         $('newContent').value='';
-        return reload();
       }).catch(function(e){ errEl.textContent = I18n.t('errPrefix')+(e.message||e); errEl.style.display='block'; });
     };
     window.setStatus = function(id, status, note, due){
@@ -141,11 +145,15 @@
       var s = (status===null || status===undefined) ? row.status : status;
       var n = (note===null || note===undefined) ? row.note : note;
       var d = (due===null || due===undefined) ? row.due : due;
-      rpc('updateRequestStatus',[id, s, n, d]).then(function(){ return reload(); }).catch(function(){ reload(); });
+      var prev = { status: row.status, note: row.note, due: row.due };
+      row.status = s; row.note = n; row.due = d; render(); // 楽観的更新
+      rpc('updateRequestStatus',[id, s, n, d]).then(function(r){
+        if (!(r && r.success)) { row.status=prev.status; row.note=prev.note; row.due=prev.due; render(); }
+      }).catch(function(){ row.status=prev.status; row.note=prev.note; row.due=prev.due; render(); });
     };
     window.removeReq = function(id){
       if (!confirm(I18n.t('confirmDelete'))) return;
-      rpc('deleteRequest',[id]).then(function(){ return reload(); }).catch(function(){});
+      rpc('deleteRequest',[id]).then(function(){ ROWS = ROWS.filter(function(r){ return r.id!==id; }); render(); }).catch(function(){});
     };
     window.reload = function(){
       return rpc('getRequests',[]).then(function(l){ ROWS=l||[]; render(); });
