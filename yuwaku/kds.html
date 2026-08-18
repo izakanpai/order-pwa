@@ -217,6 +217,9 @@
       load();
       _resetPoll();   // 旧: 8秒/60秒の二重登録だった重複バグを解消（loadが2倍の頻度で呼ばれていた）
       setInterval(loadMenu, 300000); // メニュー設定（厨房表示ON/OFF）の変更を数分以内に反映
+      // [慎重レビューH1対応] バージョン不一致検知に万一漏れがあっても数分以内に必ず復帰する安全弁として、
+      // バージョンの一致・不一致に関わらず定期的に強制フルリフレッシュする。
+      setInterval(function(){ load(true); }, 180000); // 3分ごと
       if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(function(){}); }
     }
     var __booted = false;
