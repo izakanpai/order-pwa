@@ -135,9 +135,10 @@
       else { document.getElementById('receiptPreviewWrap').style.display='none'; }
       window.scrollTo({top:0,behavior:'smooth'});
     };
+    // [応答速度対応] 削除成功時は全件再取得(getExpenses)せず、ローカル配列からその1件だけ除去する。
     window.del = function(id){
       if(!confirm(I18n.t('delConfirm'))) return;
-      rpc('deleteExpense',[id]).then(function(){ return rpc('getExpenses',[]); }).then(function(l){ ALL=l||[]; render(); })
+      rpc('deleteExpense',[id]).then(function(){ ALL = ALL.filter(function(e){ return e.id!==id; }); render(); })
         .catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
     // 画像ファイルをbase64化してアップロードし、fileIdを返す（uploadTopImage等と同じパターン）
@@ -169,10 +170,18 @@
         ? fileToBase64(file).then(function(b64){ return rpc('uploadExpenseReceipt',[{ data:b64, type:file.type, name:file.name }]); })
             .then(function(r){ if(r && r.success && r.fileId){ exp.receiptImageId = r.fileId; } })
         : Promise.resolve();
+      // [応答速度対応] saveExpenseが保存済み行を返すので、全件再取得(getExpenses)せず
+      // ローカル配列を新規追加/置換するだけで一覧に反映する。
       uploadStep.then(function(){ return rpc('saveExpense',[exp]); }).then(function(r){ btn.disabled=false; msg(I18n.t('saved'), true); clearForm();
         // 登録した月に合わせる
         if(exp.date){ document.getElementById('month').value = exp.date.slice(0,7); }
-        return rpc('getExpenses',[]).then(function(l){ ALL=l||[]; render(); });
+        if (r && r.row) {
+          var idx = ALL.findIndex(function(e){ return e.id===r.row.id; });
+          if (idx>=0) ALL[idx]=r.row; else ALL.push(r.row);
+          render();
+        } else {
+          return rpc('getExpenses',[]).then(function(l){ ALL=l||[]; render(); }); // 想定外形状のフォールバックのみ再取得
+        }
       }).catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
 

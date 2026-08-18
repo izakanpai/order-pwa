@@ -61,7 +61,7 @@
           <input id="newDue" type="date" class="fc">
         </div>
       </div>
-      <button class="btn" onclick="addTodo()" data-t="addBtn">➕ 追加</button>
+      <button class="btn" id="addBtn" onclick="addTodo()" data-t="addBtn">➕ 追加</button>
       <div id="addErr" class="muted" style="margin-top:8px;display:none;color:#b91c1c;"></div>
     </div>
 
@@ -113,23 +113,34 @@
       opts += EMPLOYEES.map(function(e){ return '<option value="'+esc(e.name)+'">'+esc(e.name)+'</option>'; }).join('');
       sel.innerHTML = opts;
     }
+    // [応答速度対応] 以前は保存/削除/完了切替のたびに全件再取得（getTodos）して一覧全体を再描画していた。
+    // saveTodoが保存済み行をそのまま返すようになったので、その行だけをROWSに追加/更新し、
+    // 削除・完了切替はローカル配列を直接書き換えることで、追加のAPI往復を無くす。
     window.addTodo = function(){
       var title = ($('newTitle').value||'').trim();
       var errEl = $('addErr'); errEl.style.display='none';
       if (!title){ errEl.textContent = I18n.t('needTitle'); errEl.style.display='block'; return; }
       var assignee = $('newAssignee').value||'';
       var due = $('newDue').value||'';
-      rpc('saveTodo',[{ title: title, assignee: assignee, due: due }]).then(function(){
+      var btn = $('addBtn'); if (btn) btn.disabled = true;
+      rpc('saveTodo',[{ title: title, assignee: assignee, due: due }]).then(function(r){
+        if (btn) btn.disabled = false;
+        if (r && r.row) { ROWS.unshift(r.row); render(); }
+        else { return reload(); } // 想定外形状のフォールバックのみ再取得
         $('newTitle').value=''; $('newAssignee').value=''; $('newDue').value='';
-        return reload();
-      }).catch(function(e){ errEl.textContent = I18n.t('errPrefix')+(e.message||e); errEl.style.display='block'; });
+      }).catch(function(e){ if (btn) btn.disabled = false; errEl.textContent = I18n.t('errPrefix')+(e.message||e); errEl.style.display='block'; });
     };
     window.toggleDone = function(id, done){
-      rpc('toggleTodoDone',[id, done]).then(function(){ return reload(); }).catch(function(){ reload(); });
+      var row = ROWS.filter(function(r){ return r.id===id; })[0];
+      var prevDone = row ? row.done : null, prevDoneAt = row ? row.doneAt : null;
+      if (row) { row.done = done; row.doneAt = done ? todayStr() : ''; render(); } // 楽観的更新
+      rpc('toggleTodoDone',[id, done]).catch(function(){
+        if (row) { row.done = prevDone; row.doneAt = prevDoneAt; render(); } // 失敗時はロールバック
+      });
     };
     window.removeTodo = function(id){
       if (!confirm(I18n.t('confirmDelete'))) return;
-      rpc('deleteTodo',[id]).then(function(){ return reload(); }).catch(function(){});
+      rpc('deleteTodo',[id]).then(function(){ ROWS = ROWS.filter(function(r){ return r.id!==id; }); render(); }).catch(function(){});
     };
     window.reload = function(){
       return rpc('getTodos',[]).then(function(l){ ROWS=l||[]; render(); });
