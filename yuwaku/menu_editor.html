@@ -250,7 +250,7 @@
         var nm = (en && m['商品名_EN']) ? m['商品名_EN'] : m['商品名'];
         var cat = (en && m['カテゴリ_EN']) ? m['カテゴリ_EN'] : (m['カテゴリ']||'');
         var thumb = m.displayUrl ? '<img class="thumb" src="'+esc(m.displayUrl)+'" loading="lazy" alt="">' : '<div class="thumb"></div>';
-        var sold = isSoldToday(m['売切日']);
+        var sold = !!m.soldOut;
         var tags = '';
         var sp = Number(m['辛さ'])||0; if(sp>0) tags += ' ・ '+repeat('🌶',sp);
         if(m['アレルゲン']) tags += ' ・ ⚠'+esc(String(m['アレルゲン']));
@@ -280,24 +280,31 @@
       }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
     function repeat(s,n){ var o=''; for(var k=0;k<n;k++) o+=s; return o; }
-    function _todayStr(){ var t=new Date(); return t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2); }
-    function isSoldToday(v){ if(!v) return false; var d=String(v).slice(0,10); return d===_todayStr(); }
+    // [GPTレビュー(2026-08-19再確認レポート)対応/C-7] 以前はブラウザのローカル日付で「本日売切か」を
+    // 自前判定していたため、サーバー（店舗タイムゾーン基準）の判定とズレることがあった
+    // （例：注文画面は「本日売切」なのに、メニュー編集は「販売中」と誤表示）。
+    // getAllMenuForAdminがサーバー側で計算した m.soldOut（店舗TZ基準・注文画面と同じ関数で判定）を
+    // 返すようになったので、ここでは二度と日付を再解釈せず、そのbooleanをそのまま使う。
     // [応答速度対応] 従来は「setSoldOut→全件再取得(getAllMenuForAdmin)→全体再描画」の2往復待ちで、
     // ボタンの見た目もその間ずっと変化しなかった（連打を誘発しやすい）。ここではクリック直後に
     // ローカルのMENU配列を楽観的に更新して即座に再描画し、サーバー応答がエラーだった場合のみ
     // 元に戻す（ロールバック）。全件再取得は行わない。
     window.toggleSold = function(i){
       var m = MENU[i]; if(!m) return;
-      var makeSold = !isSoldToday(m['売切日']);
+      var makeSold = !m.soldOut;
       var prevVal = m['売切日'];
-      m['売切日'] = makeSold ? _todayStr() : '';
+      var prevSold = m.soldOut;
+      var t = new Date();
+      var todayStr = t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);
+      m['売切日'] = makeSold ? todayStr : '';
+      m.soldOut = makeSold;
       render();
       rpc('setSoldOut',[m['商品名'], makeSold]).then(function(res){
         // [負荷試験レビュー対応] setSoldOutは{success:true/false}を返すようになった（従来の文字列判定はしない）。
         // success:falseを見逃して「保存できたつもり」のUIのまま放置しないよう、必ずロールバックしてエラー表示する。
         var ok = res && (res.success === true || res.ok === true);
-        if (!ok) { m['売切日']=prevVal; render(); msg(I18n.t('errPrefix')+((res&&res.error)||'save_failed'), false); }
-      }).catch(function(e){ m['売切日']=prevVal; render(); msg(I18n.t('errPrefix')+(e.message||e), false); });
+        if (!ok) { m['売切日']=prevVal; m.soldOut=prevSold; render(); msg(I18n.t('errPrefix')+((res&&res.error)||'save_failed'), false); }
+      }).catch(function(e){ m['売切日']=prevVal; m.soldOut=prevSold; render(); msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
     var SYM='₱';
     // [応答速度対応] 削除成功後は全件再取得せず、ローカル配列からその1件だけ除去して再描画する。

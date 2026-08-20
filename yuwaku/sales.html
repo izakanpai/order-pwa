@@ -87,9 +87,22 @@
     var dailyChart, hourChart, dowChart;
     var _sales=null, _ana=null, _pop=null;
 
+    // [GPTレビュー(2026-08-19再確認レポート)対応/C-4] getSalesSummaryは、初回集計の分割移行が
+    // 完了するまで{daily:[],monthly:[],building:true}を返すようになった（36,000件規模でも画面を
+    // ブロックしないよう、移行はバックグラウンドのトリガーで進む）。buildingの間は「集計を構築中」
+    // 表示にして数秒後に自動で再試行し、通常のsalesが空というケースと区別する。
+    var _buildingRetryTimer = null;
     function renderSales(data){
       _sales = data || _sales;
       data = _sales;
+      if (data && data.building){
+        document.getElementById('noData').style.display='block';
+        document.getElementById('noData').innerText = isEN() ? 'Building sales summary for the first time. This can take a bit — retrying automatically…' : '売上集計を初回構築中です。しばらくすると自動で再取得します…';
+        document.getElementById('monthly').innerHTML = '<div class="hint">'+(isEN() ? 'Building…' : '構築中…')+'</div>';
+        if (_buildingRetryTimer) clearTimeout(_buildingRetryTimer);
+        _buildingRetryTimer = setTimeout(function(){ rpc('getSalesSummary',[]).then(renderSales).catch(function(){}); }, 4000);
+        return;
+      }
       if (!data || !data.daily || !data.daily.length){ document.getElementById('noData').style.display='block'; document.getElementById('noData').innerText=I18n.t('noSales'); document.getElementById('monthly').innerHTML='<div class="hint">'+I18n.t('noData')+'</div>'; return; }
       var labels = data.daily.map(function(r){ return r.date; });
       var totals = data.daily.map(function(r){ return r.total; });
