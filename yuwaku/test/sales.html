@@ -102,11 +102,29 @@
     var _buildingRetryCount = 0;
     var _BUILDING_RETRY_MAX = 30;
     var _heavyLoadsStarted = false;
+    // [GPT第3回確認レポート(2026-08-20)対応/T-6] 分析（getSalesAnalytics）・人気度（getMenuPopularity）
+    // を同時並行で開始すると、どちらも重いRPCのため実環境で両方timeoutしていた。順番に実行する
+    // （分析が終わってから人気度を開始する）ことで、同時に走る重いリクエストを1つに減らす。
     function _startHeavyLoadsOnce(){
       if (_heavyLoadsStarted) return;
       _heavyLoadsStarted = true;
-      loadAnalytics();
-      rpc('getMenuPopularity',[30]).then(renderPopularity).catch(function(e){ document.getElementById('popList').innerHTML='<div style="color:#b91c1c;">'+esc(e.message||e)+'</div>'; });
+      var month = document.getElementById('anaMonth').value; if(!month) return;
+      document.getElementById('anaItems').innerHTML = '<tbody><tr><td style="padding:14px;">'+I18n.t('loading')+'</td></tr></tbody>';
+      rpc('getSalesAnalytics',[month]).then(renderAnalytics).catch(function(e){ document.getElementById('anaItems').innerHTML='<tbody><tr><td style="color:#b91c1c;padding:14px;">'+esc(e.message||e)+'</td></tr></tbody>'; }).then(function(){
+        rpc('getMenuPopularity',[30]).then(renderPopularity).catch(function(e){ document.getElementById('popList').innerHTML='<div style="color:#b91c1c;">'+esc(e.message||e)+'</div>'; });
+      });
+    }
+    // [T-9対応] getSalesSummaryのbuilding応答に含まれる進捗（processedRows/totalRows/percent）と
+    // 最終稼働時刻(lastHeartbeat)を使い、単に「構築中…」と出すだけでなく、実際に進んでいるのか
+    // 止まっているのかが分かる表示にする。
+    function _buildingText(data){
+      var pct = (data && typeof data.percent === 'number') ? data.percent : null;
+      var base = isEN() ? 'Building sales summary for the first time. This can take a bit — retrying automatically…' : '売上集計を初回構築中です。しばらくすると自動で再取得します…';
+      if (pct === null) return base;
+      var pctText = isEN() ? (' (' + pct + '% , ' + data.processedRows + '/' + data.totalRows + ' rows)') : ('（' + pct + '%、' + data.processedRows + '/' + data.totalRows + '件）');
+      var stalled = data.lastHeartbeat && (Date.now() - data.lastHeartbeat > 5 * 60 * 1000);
+      var stalledText = stalled ? (isEN() ? ' — no progress for a while. Try reloading, or open the sales screen once more to nudge it.' : ' — しばらく進んでいません。再読み込みするか、もう一度この画面を開いて進めてみてください。') : '';
+      return base + pctText + stalledText;
     }
     function renderSales(data){
       _sales = data || _sales;
@@ -119,13 +137,19 @@
           document.getElementById('monthly').innerHTML = '<div class="hint">'+(isEN() ? 'Building…' : '構築中…')+'</div>';
           return;
         }
-        document.getElementById('noData').innerText = isEN() ? 'Building sales summary for the first time. This can take a bit — retrying automatically…' : '売上集計を初回構築中です。しばらくすると自動で再取得します…';
+        document.getElementById('noData').innerText = _buildingText(data);
         document.getElementById('monthly').innerHTML = '<div class="hint">'+(isEN() ? 'Building…' : '構築中…')+'</div>';
         var delay = Math.min(4000 + _buildingRetryCount * 2000, 20000);
         _buildingRetryCount++;
         _buildingRetryTimer = setTimeout(function(){ rpc('getSalesSummary',[]).then(renderSales).catch(function(){}); }, delay);
         return;
       }
+      // [T-8対応] buildingからdaily表示へ切り替わった際、「初回構築中」のバナーや自動再試行タイマーが
+      // 残ったままにならないよう、正常データを受け取った時点で明示的にリセットする。
+      if (_buildingRetryTimer) { clearTimeout(_buildingRetryTimer); _buildingRetryTimer = null; }
+      _buildingRetryCount = 0;
+      document.getElementById('noData').style.display='none';
+      document.getElementById('noData').innerText='';
       _startHeavyLoadsOnce();
       if (!data || !data.daily || !data.daily.length){ document.getElementById('noData').style.display='block'; document.getElementById('noData').innerText=I18n.t('noSales'); document.getElementById('monthly').innerHTML='<div class="hint">'+I18n.t('noData')+'</div>'; return; }
       var labels = data.daily.map(function(r){ return r.date; });
@@ -133,7 +157,15 @@
       if (dailyChart) dailyChart.destroy();
       dailyChart = new Chart(document.getElementById('dailyChart').getContext('2d'), {
         type:'line', data:{ labels:labels, datasets:[{ label:I18n.t('dailySales'), data:totals, borderColor:'#c62828', backgroundColor:'rgba(198,40,40,0.12)', fill:true, tension:0.3, pointBackgroundColor:'#c62828' }] },
-        options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, ticks:{ callback:function(v){ return money(v); } } } } }
+        // [表示改善] x軸を明示的に指定しないと、Chart.jsがラベル（'yyyy-MM-dd'文字列）を日時として
+        // 自動解釈し、曜日・タイムゾーン付きの冗長な表記（例："Fri Apr 03 2026 ... GMT+0900"）で
+        // 描画してしまい、データ件数が多いと軸がぐちゃぐちゃになっていた。x軸を'category'として
+        // 明示し、ラベルはサーバーが返す'yyyy-MM-dd'をそのまま年/月/日だけの表記に整形して使う。
+        // 件数が多い日は自動間引き(autoSkip)し、回転もかけない。
+        options:{ responsive:true, maintainAspectRatio:false, scales:{
+          x:{ type:'category', ticks:{ autoSkip:true, maxRotation:0, minRotation:0, callback:function(v, i){ var s=labels[i]; return s ? s.replace(/-/g,'/') : s; } } },
+          y:{ beginAtZero:true, ticks:{ callback:function(v){ return money(v); } } }
+        } }
       });
       var mh = '<table><thead><tr><th>'+I18n.t('colMonth')+'</th><th style="text-align:right;">'+I18n.t('colTotal')+'</th></tr></thead><tbody>';
       data.monthly.forEach(function(r){ mh += '<tr><td>'+esc(r.month)+'</td><td style="text-align:right;"><strong>'+money(r.total)+'</strong></td></tr>'; });
