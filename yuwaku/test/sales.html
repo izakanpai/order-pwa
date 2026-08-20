@@ -87,22 +87,46 @@
     var dailyChart, hourChart, dowChart;
     var _sales=null, _ana=null, _pop=null;
 
-    // [GPTレビュー(2026-08-19再確認レポート)対応/C-4] getSalesSummaryは、初回集計の分割移行が
-    // 完了するまで{daily:[],monthly:[],building:true}を返すようになった（36,000件規模でも画面を
-    // ブロックしないよう、移行はバックグラウンドのトリガーで進む）。buildingの間は「集計を構築中」
-    // 表示にして数秒後に自動で再試行し、通常のsalesが空というケースと区別する。
+    // [GPTレビュー(2026-08-19再確認レポート)対応/C-4、2026-08-20再確認レポート対応/S-8]
+    // getSalesSummaryは、初回集計の分割移行が完了するまで{daily:[],monthly:[],building:true}を
+    // 返すようになった（36,000件規模でも画面をブロックしないよう、移行は日次集計に関わる
+    // リクエストのついでに少しずつ進む）。buildingの間は「集計を構築中」表示にして自動で再試行し、
+    // 通常のsalesが空というケースと区別する。
+    // [S-8対応] 以前は再試行間隔が常に4秒固定・無期限で、しかも分析（getSalesAnalytics）・
+    // 人気度（getMenuPopularity）という重いRPCを構築中かどうかに関わらず初回表示時に並行実行して
+    // いたため、移行処理と重い集計処理が同時に走って余計な負荷・timeoutを増やしていた。
+    // 今回、(1) 再試行間隔を4秒→6秒→8秒→10秒…と徐々に伸ばし、既定30回（合計6〜7分程度）で
+    // 自動再試行を打ち切って手動再読み込みを促す、(2) 分析・人気度の読み込みはgetSalesSummaryが
+    // building:false（構築完了）になってから初めて開始する、の2点を修正した。
     var _buildingRetryTimer = null;
+    var _buildingRetryCount = 0;
+    var _BUILDING_RETRY_MAX = 30;
+    var _heavyLoadsStarted = false;
+    function _startHeavyLoadsOnce(){
+      if (_heavyLoadsStarted) return;
+      _heavyLoadsStarted = true;
+      loadAnalytics();
+      rpc('getMenuPopularity',[30]).then(renderPopularity).catch(function(e){ document.getElementById('popList').innerHTML='<div style="color:#b91c1c;">'+esc(e.message||e)+'</div>'; });
+    }
     function renderSales(data){
       _sales = data || _sales;
       data = _sales;
       if (data && data.building){
         document.getElementById('noData').style.display='block';
+        if (_buildingRetryTimer) clearTimeout(_buildingRetryTimer);
+        if (_buildingRetryCount >= _BUILDING_RETRY_MAX){
+          document.getElementById('noData').innerText = isEN() ? 'Still building the sales summary. Please reload in a bit.' : '売上集計の構築にまだ時間がかかっています。しばらくしてから再読み込みしてください。';
+          document.getElementById('monthly').innerHTML = '<div class="hint">'+(isEN() ? 'Building…' : '構築中…')+'</div>';
+          return;
+        }
         document.getElementById('noData').innerText = isEN() ? 'Building sales summary for the first time. This can take a bit — retrying automatically…' : '売上集計を初回構築中です。しばらくすると自動で再取得します…';
         document.getElementById('monthly').innerHTML = '<div class="hint">'+(isEN() ? 'Building…' : '構築中…')+'</div>';
-        if (_buildingRetryTimer) clearTimeout(_buildingRetryTimer);
-        _buildingRetryTimer = setTimeout(function(){ rpc('getSalesSummary',[]).then(renderSales).catch(function(){}); }, 4000);
+        var delay = Math.min(4000 + _buildingRetryCount * 2000, 20000);
+        _buildingRetryCount++;
+        _buildingRetryTimer = setTimeout(function(){ rpc('getSalesSummary',[]).then(renderSales).catch(function(){}); }, delay);
         return;
       }
+      _startHeavyLoadsOnce();
       if (!data || !data.daily || !data.daily.length){ document.getElementById('noData').style.display='block'; document.getElementById('noData').innerText=I18n.t('noSales'); document.getElementById('monthly').innerHTML='<div class="hint">'+I18n.t('noData')+'</div>'; return; }
       var labels = data.daily.map(function(r){ return r.date; });
       var totals = data.daily.map(function(r){ return r.total; });
@@ -148,7 +172,6 @@
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM = r.data.currencySymbol; }).catch(function(){});
     document.getElementById('anaMonth').value = new Date().toISOString().slice(0,7);
     rpc('getSalesSummary',[]).then(renderSales).catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('monthly').innerHTML='<div style="color:#b91c1c;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>'; });
-    loadAnalytics();
 
     function renderPopularity(d){
       _pop = d || _pop || { items:[] };
@@ -164,7 +187,8 @@
       html += '</tbody></table>';
       document.getElementById('popList').innerHTML = html;
     }
-    rpc('getMenuPopularity',[30]).then(renderPopularity).catch(function(e){ document.getElementById('popList').innerHTML='<div style="color:#b91c1c;">'+esc(e.message||e)+'</div>'; });
+    // [S-8対応] 人気度の初回読み込みは_startHeavyLoadsOnce()（renderSales内、構築完了後に1回だけ）で
+    // 行う。ここでは即時実行しない（構築中の重複負荷を避けるため）。
 
     I18n.init({
       ja:{ title:'📊 売上管理', back:'← 管理へ', dailyTitle:'📈 日別売上', monthlyTitle:'📅 月別サマリー', anaTitle:'🔎 分析（商品・時間帯・曜日）', month:'対象月', analyze:'🔍 分析', byItem:'🏆 商品別（ABC分析）', byCat:'🍱 カテゴリ別売上', byHour:'🕐 時間帯別', byDow:'📅 曜日別', popTitle:'🍽️ メニュー人気度スコア（直近30日）', popHint:'直近30日の注文数量で算出（最も売れた商品=100）。低スコア・未売上はメニュー見直しの参考に。', loading:'読み込み中…', noData:'データがありません', noSales:'売上データがありません。', dailySales:'日別売上', colMonth:'月', colTotal:'合計', sOrders:'注文 ', sOrdersU:'件', sSales:'売上 ', sAvg:'客単価 ', sCost:'原価率 ', cItem:'商品', cQty:'数量', cRev:'売上', cCost:'原価', cCostR:'原価率', cCum:'累計比', cCat:'カテゴリ', cScore:'スコア', other:'その他', hourU:'時', dowNames:'日,月,火,水,木,金,土', lHot:'🔥人気', lOk:'標準', lLow:'⚠️低調', lUnsold:'❌未売上', loadErr:'読み込みエラー: ' },
