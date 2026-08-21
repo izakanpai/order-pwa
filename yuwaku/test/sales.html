@@ -78,6 +78,44 @@
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
+    // [GPT第16回レポート対応/S16-6→GPT第17回レポート対応/V17-3・V17-4で調整]
+    // getSalesAnalytics/getMenuPopularityは、サーバー側のsingle-flight待機が壁時計上限へ達すると
+    // 'server_busy_retry'という内部エラーコードを投げる。当初この上限は100秒だったが、ブラウザ側
+    // （api.js）の1回あたりのfetch上限は25秒で、読取RPCは失敗時に1回だけ自動再送されるため、
+    // ブラウザが（最短でも）25秒でfetchをabortしてしまい、サーバーが100秒後に返す
+    // 'server_busy_retry'を一度も受け取れない状態だった。サーバー側の上限を20秒（ブラウザの単発
+    // fetch上限25秒より確実に短い）へ短縮したことで、待機側は自分のfetchがabortされる前に
+    // 'server_busy_retry'を受け取れるようになった。
+    // また、ブラウザ側のfetchが実際にtimeout/中断（AbortError等）した場合も同じ「混雑」として扱い、
+    // 再試行・翻訳の対象に含める。ただしapi.jsのAPI.post自体が読取RPCを既に1回自動再送しているため、
+    // ここでの追加再試行は1回だけに制限し、総試行回数が際限なく積み上がらないようにしている
+    // （最悪ケースの総fetch回数：API.post内部2回 + ここでの追加1回のrpc呼び出し（内部でさらに最大2回）
+    // ＝合計最大4回、というのが現在の設計上の上限）。
+    function _isBusyOrTimeoutError(e){
+      if (!e) return false;
+      var msg = String(e.message||e||'');
+      if (msg === 'server_busy_retry') return true;
+      if (e.name === 'AbortError') return true;
+      if (/timeout|abort/i.test(msg)) return true;
+      return false;
+    }
+    function rpcBusyRetry(fn, args, retriesLeft){
+      retriesLeft = (retriesLeft==null) ? 1 : retriesLeft;
+      return rpc(fn, args).catch(function(e){
+        var isBusy = _isBusyOrTimeoutError(e);
+        if (isBusy && retriesLeft > 0) {
+          var waitMs = 1000 + Math.floor(Math.random()*2000);
+          return new Promise(function(resolve){ setTimeout(resolve, waitMs); }).then(function(){
+            return rpcBusyRetry(fn, args, retriesLeft - 1);
+          });
+        }
+        if (isBusy) {
+          var busyErr = new Error(loc('集計が混み合っています。数秒後に再試行してください。', 'Sales analysis is busy. Please retry in a few seconds.'));
+          throw busyErr;
+        }
+        throw e;
+      });
+    }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     // 言語切替の一元ヘルパー（新しい表示・候補リストを追加する際は必ずこれを通すこと）
     function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
@@ -110,8 +148,8 @@
       _heavyLoadsStarted = true;
       var month = document.getElementById('anaMonth').value; if(!month) return;
       document.getElementById('anaItems').innerHTML = '<tbody><tr><td style="padding:14px;">'+I18n.t('loading')+'</td></tr></tbody>';
-      rpc('getSalesAnalytics',[month]).then(renderAnalytics).catch(function(e){ document.getElementById('anaItems').innerHTML='<tbody><tr><td style="color:#b91c1c;padding:14px;">'+esc(e.message||e)+'</td></tr></tbody>'; }).then(function(){
-        rpc('getMenuPopularity',[30]).then(renderPopularity).catch(function(e){ document.getElementById('popList').innerHTML='<div style="color:#b91c1c;">'+esc(e.message||e)+'</div>'; });
+      rpcBusyRetry('getSalesAnalytics',[month]).then(renderAnalytics).catch(function(e){ document.getElementById('anaItems').innerHTML='<tbody><tr><td style="color:#b91c1c;padding:14px;">'+esc(e.message||e)+'</td></tr></tbody>'; }).then(function(){
+        rpcBusyRetry('getMenuPopularity',[30]).then(renderPopularity).catch(function(e){ document.getElementById('popList').innerHTML='<div style="color:#b91c1c;">'+esc(e.message||e)+'</div>'; });
       });
     }
     // [T-9対応] getSalesSummaryのbuilding応答に含まれる進捗（processedRows/totalRows/percent）と
@@ -176,7 +214,7 @@
     window.loadAnalytics = function(){
       var month = document.getElementById('anaMonth').value; if(!month) return;
       document.getElementById('anaItems').innerHTML = '<tbody><tr><td style="padding:14px;">'+I18n.t('loading')+'</td></tr></tbody>';
-      rpc('getSalesAnalytics',[month]).then(renderAnalytics).catch(function(e){ document.getElementById('anaItems').innerHTML='<tbody><tr><td style="color:#b91c1c;padding:14px;">'+esc(e.message||e)+'</td></tr></tbody>'; });
+      rpcBusyRetry('getSalesAnalytics',[month]).then(renderAnalytics).catch(function(e){ document.getElementById('anaItems').innerHTML='<tbody><tr><td style="color:#b91c1c;padding:14px;">'+esc(e.message||e)+'</td></tr></tbody>'; });
     };
     function renderAnalytics(d){
       _ana = d || _ana || { items:[], byHour:[], byDow:[], total:0, count:0 };
