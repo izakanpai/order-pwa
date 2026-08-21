@@ -77,20 +77,30 @@
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
-    function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
-    // [GPT第16回レポート対応/S16-6→GPT第17回レポート対応/V17-3・V17-4で調整]
-    // getSalesAnalytics/getMenuPopularityは、サーバー側のsingle-flight待機が壁時計上限へ達すると
-    // 'server_busy_retry'という内部エラーコードを投げる。当初この上限は100秒だったが、ブラウザ側
-    // （api.js）の1回あたりのfetch上限は25秒で、読取RPCは失敗時に1回だけ自動再送されるため、
-    // ブラウザが（最短でも）25秒でfetchをabortしてしまい、サーバーが100秒後に返す
-    // 'server_busy_retry'を一度も受け取れない状態だった。サーバー側の上限を20秒（ブラウザの単発
-    // fetch上限25秒より確実に短い）へ短縮したことで、待機側は自分のfetchがabortされる前に
-    // 'server_busy_retry'を受け取れるようになった。
-    // また、ブラウザ側のfetchが実際にtimeout/中断（AbortError等）した場合も同じ「混雑」として扱い、
-    // 再試行・翻訳の対象に含める。ただしapi.jsのAPI.post自体が読取RPCを既に1回自動再送しているため、
-    // ここでの追加再試行は1回だけに制限し、総試行回数が際限なく積み上がらないようにしている
-    // （最悪ケースの総fetch回数：API.post内部2回 + ここでの追加1回のrpc呼び出し（内部でさらに最大2回）
-    // ＝合計最大4回、というのが現在の設計上の上限）。
+    // opts: {silent:bool, timeoutMs:number, noInternalRetry:bool}（[GPT第22回レポート対応/G22-1・G22-2]）
+    function rpc(fn,args,opts){
+      opts = opts || {};
+      var payload = { fn:fn, args:args||[], token:TOKEN };
+      if (opts.silent) payload.__silent = true;
+      if (typeof opts.timeoutMs === 'number') payload.__timeoutMs = opts.timeoutMs;
+      if (opts.noInternalRetry) payload.__noInternalRetry = true;
+      return API.post('rpc',payload).then(function(r){ return r.data; });
+    }
+    // [GPT第22回レポート対応/G22-1] 実測でSales分析が約69〜72秒、Dashboardが約115秒かかっていた。
+    // 原因はapi.js自身の内部再送（最大2 fetch）と、この画面のrpcBusyRetry（追加1回＝内部で
+    // さらに最大2 fetch）が重なり、最悪ケースで合計4 fetch・fetch上限25秒×4＋backoffという
+    // 事実上無制限に近い総待ち時間になっていたこと。再試行の責務をこの画面（rpcBusyRetry）だけに
+    // 一本化し、API.post側の内部再送は無効化（__noInternalRetry）した上で、fetchタイムアウトを
+    // サーバー側single-flightの壁時計上限（20秒）より確実に長く・api.js既定（25秒）より短い23秒に
+    // 個別指定する。これにより総待ち時間の上限は「23秒×2回＋backoff」＝約47〜49秒に固定される
+    // （旧設計の理論値100秒超から半分以下に短縮。真の解決はG22-3の集計高速化）。
+    var _HEAVY_RPC_TIMEOUT_MS = 23000;
+    function rpcHeavy(fn, args){
+      // [GPT第22回レポート対応/G22-2] silent:trueにより、api.js共通の全画面オーバーレイ（#izLoad）を
+      // 表示しない。重い集計の間もヘッダーのEN切替・「← 管理へ」・他画面への遷移操作を塞がない。
+      // 進捗表示は各セクション内（anaItems/popList等）のインライン表示のみで行う。
+      return rpc(fn, args, { silent:true, timeoutMs:_HEAVY_RPC_TIMEOUT_MS, noInternalRetry:true });
+    }
     function _isBusyOrTimeoutError(e){
       if (!e) return false;
       var msg = String(e.message||e||'');
@@ -101,7 +111,7 @@
     }
     function rpcBusyRetry(fn, args, retriesLeft){
       retriesLeft = (retriesLeft==null) ? 1 : retriesLeft;
-      return rpc(fn, args).catch(function(e){
+      return rpcHeavy(fn, args).catch(function(e){
         var isBusy = _isBusyOrTimeoutError(e);
         if (isBusy && retriesLeft > 0) {
           var waitMs = 1000 + Math.floor(Math.random()*2000);
@@ -110,12 +120,16 @@
           });
         }
         if (isBusy) {
-          var busyErr = new Error(loc('集計が混み合っています。数秒後に再試行してください。', 'Sales analysis is busy. Please retry in a few seconds.'));
+          var busyErr = new Error(loc('集計が混み合っています。しばらくしてから「再試行」を押してください。', 'This analysis is busy. Please wait a moment and tap Retry.'));
           throw busyErr;
         }
         throw e;
       });
     }
+    // [GPT第22回レポート対応/G22-2] エラー内容＋最終試行時刻＋「再試行」ボタン（onclickで指定した
+    // 関数を再実行）を表示する共通ヘルパー。長時間の自動再試行を重ねる代わりに、自動再試行が
+    // 尽きた時点で操作を利用者に委ねる（総待ち時間の上限を明確にする）。
+    function _retryTs(){ return new Date().toLocaleTimeString(isEN()?'en-US':'ja-JP'); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     // 言語切替の一元ヘルパー（新しい表示・候補リストを追加する際は必ずこれを通すこと）
     function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
@@ -143,13 +157,26 @@
     // [GPT第3回確認レポート(2026-08-20)対応/T-6] 分析（getSalesAnalytics）・人気度（getMenuPopularity）
     // を同時並行で開始すると、どちらも重いRPCのため実環境で両方timeoutしていた。順番に実行する
     // （分析が終わってから人気度を開始する）ことで、同時に走る重いリクエストを1つに減らす。
+    // [GPT第22回レポート対応/G22-2] 初回は分析→人気度の順に1回だけ自動起動する（従来通り）。
+    // 人気度は_popularityStartedで「初回のみ」を保証し、以降は再試行ボタン（_loadPopularity()）でのみ起動する。
+    var _popularityStarted = false;
     function _startHeavyLoadsOnce(){
       if (_heavyLoadsStarted) return;
       _heavyLoadsStarted = true;
-      var month = document.getElementById('anaMonth').value; if(!month) return;
-      document.getElementById('anaItems').innerHTML = '<tbody><tr><td style="padding:14px;">'+I18n.t('loading')+'</td></tr></tbody>';
-      rpcBusyRetry('getSalesAnalytics',[month]).then(renderAnalytics).catch(function(e){ document.getElementById('anaItems').innerHTML='<tbody><tr><td style="color:#b91c1c;padding:14px;">'+esc(e.message||e)+'</td></tr></tbody>'; }).then(function(){
-        rpcBusyRetry('getMenuPopularity',[30]).then(renderPopularity).catch(function(e){ document.getElementById('popList').innerHTML='<div style="color:#b91c1c;">'+esc(e.message||e)+'</div>'; });
+      loadAnalytics();
+    }
+    function _loadPopularityOnce(){
+      if (_popularityStarted) return;
+      _popularityStarted = true;
+      _loadPopularity();
+    }
+    function _loadPopularity(){
+      document.getElementById('popList').innerHTML = '<div class="hint">'+I18n.t('loading')+'</div>';
+      rpcBusyRetry('getMenuPopularity',[30]).then(renderPopularity).catch(function(e){
+        document.getElementById('popList').innerHTML = '<div style="color:#b91c1c;">'+esc(e.message||e)
+          +'<div style="margin-top:6px;font-size:12px;color:var(--text-3);">'+loc('最終試行: ','Last attempt: ')+_retryTs()+'</div>'
+          +'<button type="button" class="btn" style="margin-top:8px;" onclick="_loadPopularity()">'+loc('🔄 再試行','🔄 Retry')+'</button>'
+          +'</div>';
       });
     }
     // [T-9対応] getSalesSummaryのbuilding応答に含まれる進捗（processedRows/totalRows/percent）と
@@ -179,7 +206,7 @@
         document.getElementById('monthly').innerHTML = '<div class="hint">'+(isEN() ? 'Building…' : '構築中…')+'</div>';
         var delay = Math.min(4000 + _buildingRetryCount * 2000, 20000);
         _buildingRetryCount++;
-        _buildingRetryTimer = setTimeout(function(){ rpc('getSalesSummary',[]).then(renderSales).catch(function(){}); }, delay);
+        _buildingRetryTimer = setTimeout(function(){ rpc('getSalesSummary',[],{silent:true}).then(renderSales).catch(function(){}); }, delay);
         return;
       }
       // [T-8対応] buildingからdaily表示へ切り替わった際、「初回構築中」のバナーや自動再試行タイマーが
@@ -214,7 +241,16 @@
     window.loadAnalytics = function(){
       var month = document.getElementById('anaMonth').value; if(!month) return;
       document.getElementById('anaItems').innerHTML = '<tbody><tr><td style="padding:14px;">'+I18n.t('loading')+'</td></tr></tbody>';
-      rpcBusyRetry('getSalesAnalytics',[month]).then(renderAnalytics).catch(function(e){ document.getElementById('anaItems').innerHTML='<tbody><tr><td style="color:#b91c1c;padding:14px;">'+esc(e.message||e)+'</td></tr></tbody>'; });
+      rpcBusyRetry('getSalesAnalytics',[month]).then(renderAnalytics).catch(function(e){
+        document.getElementById('anaItems').innerHTML = '<tbody><tr><td style="color:#b91c1c;padding:14px;">'+esc(e.message||e)
+          +'<div style="margin-top:6px;font-size:12px;color:var(--text-3);">'+loc('最終試行: ','Last attempt: ')+_retryTs()+'</div>'
+          +'<button type="button" class="btn" style="margin-top:8px;" onclick="loadAnalytics()">'+loc('🔄 再試行','🔄 Retry')+'</button>'
+          +'</td></tr></tbody>';
+      }).then(function(){
+        // [G22-2] 分析の成功・失敗いずれの場合も、初回に限り人気度の読み込みへ進む
+        // （従来からの「分析→人気度を直列」の動線を維持。並行実行は過去のT-6で回帰済みのため避ける）。
+        _loadPopularityOnce();
+      });
     };
     function renderAnalytics(d){
       _ana = d || _ana || { items:[], byHour:[], byDow:[], total:0, count:0 };
@@ -241,7 +277,9 @@
     // 通貨記号
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM = r.data.currencySymbol; }).catch(function(){});
     document.getElementById('anaMonth').value = new Date().toISOString().slice(0,7);
-    rpc('getSalesSummary',[]).then(renderSales).catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('monthly').innerHTML='<div style="color:#b91c1c;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>'; });
+    rpc('getSalesSummary',[],{silent:true}).then(renderSales).catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('monthly').innerHTML='<div style="color:#b91c1c;">'+I18n.t('loadErr')+esc(e.message||e)
+      +'<div style="margin-top:6px;font-size:12px;color:var(--text-3);">'+loc('最終試行: ','Last attempt: ')+_retryTs()+'</div>'
+      +'<button type="button" class="btn" style="margin-top:8px;" onclick="rpc(\'getSalesSummary\',[],{silent:true}).then(renderSales)">'+loc('🔄 再試行','🔄 Retry')+'</button></div>'; });
 
     function renderPopularity(d){
       _pop = d || _pop || { items:[] };

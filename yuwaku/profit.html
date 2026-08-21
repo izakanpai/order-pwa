@@ -58,7 +58,45 @@
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
-    function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
+    // opts: {silent:bool, timeoutMs:number, noInternalRetry:bool}（[GPT第22回レポート対応/G22-1・G22-2]）
+    function rpc(fn,args,opts){
+      opts = opts || {};
+      var payload = { fn:fn, args:args||[], token:TOKEN };
+      if (opts.silent) payload.__silent = true;
+      if (typeof opts.timeoutMs === 'number') payload.__timeoutMs = opts.timeoutMs;
+      if (opts.noInternalRetry) payload.__noInternalRetry = true;
+      return API.post('rpc',payload).then(function(r){ return r.data; });
+    }
+    function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
+    // [GPT第22回レポート対応/G22-1・G22-2] getMonthlyProfitもgetSalesAnalytics等と同じ
+    // single-flight機構を使う重い集計RPC。sales.html/dashboard.htmlと同じ対策
+    // （再試行の一本化・fetchタイムアウト個別指定・全画面オーバーレイの回避・再試行ボタン）を適用する。
+    var _HEAVY_RPC_TIMEOUT_MS = 23000;
+    function _isBusyOrTimeoutError(e){
+      if (!e) return false;
+      var msg = String(e.message||e||'');
+      if (msg === 'server_busy_retry') return true;
+      if (e.name === 'AbortError') return true;
+      if (/timeout|abort/i.test(msg)) return true;
+      return false;
+    }
+    function rpcBusyRetry(fn, args, retriesLeft){
+      retriesLeft = (retriesLeft==null) ? 1 : retriesLeft;
+      return rpc(fn, args, { silent:true, timeoutMs:_HEAVY_RPC_TIMEOUT_MS, noInternalRetry:true }).catch(function(e){
+        var isBusy = _isBusyOrTimeoutError(e);
+        if (isBusy && retriesLeft > 0) {
+          var waitMs = 1000 + Math.floor(Math.random()*2000);
+          return new Promise(function(resolve){ setTimeout(resolve, waitMs); }).then(function(){
+            return rpcBusyRetry(fn, args, retriesLeft - 1);
+          });
+        }
+        if (isBusy) {
+          var busyErr = new Error(isEN() ? 'This calculation is busy. Please wait a moment and tap Retry.' : '集計が混み合っています。しばらくしてから「再試行」を押してください。');
+          throw busyErr;
+        }
+        throw e;
+      });
+    }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     var SYM='₱', DATA=null, cogsMode='auto';
     function money(v){ return SYM+(Math.round(Number(v)||0)).toLocaleString(); }
@@ -98,8 +136,15 @@
     window.load = function(){
       var mo = document.getElementById('month').value; if(!mo) return;
       document.getElementById('result').innerHTML='<div class="loading">'+I18n.t('loading')+'</div>';
-      rpc('getMonthlyProfit',[mo]).then(function(d){ DATA=d||null; render(); })
-        .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('result').innerHTML='<div style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>'; });
+      rpcBusyRetry('getMonthlyProfit',[mo]).then(function(d){ DATA=d||null; render(); })
+        .catch(function(e){
+          if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; }
+          var ts = new Date().toLocaleTimeString(isEN()?'en-US':'ja-JP');
+          document.getElementById('result').innerHTML = '<div style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)
+            +'<div style="margin-top:6px;font-size:12px;color:var(--text-3);">'+(isEN()?'Last attempt: ':'最終試行: ')+ts+'</div>'
+            +'<button type="button" class="hbtn" style="background:var(--navy);margin-top:8px;" onclick="load()">'+(isEN()?'🔄 Retry':'🔄 再試行')+'</button>'
+            +'</div>';
+        });
     };
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; if(DATA) render(); }).catch(function(){});

@@ -46,11 +46,28 @@
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
-    function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
-    // [GPT第17回レポート対応/V17-5] getDashboardは内部でgetMenuPopularityを呼んでおり、混雑時に
-    // 'server_busy_retry'を受け得る（sales.htmlのrpcBusyRetryと同じ理由・同じ設計）。ここでも
-    // 1回だけ短いバックオフの後に自動再試行し、それでも失敗した場合だけ分かりやすいメッセージにする
-    // （API.postの内部再送と重ねすぎないよう追加再試行は1回に限定）。
+    // opts: {silent:bool, timeoutMs:number, noInternalRetry:bool}（[GPT第22回レポート対応/G22-1・G22-2]）
+    function rpc(fn,args,opts){
+      opts = opts || {};
+      var payload = { fn:fn, args:args||[], token:TOKEN };
+      if (opts.silent) payload.__silent = true;
+      if (typeof opts.timeoutMs === 'number') payload.__timeoutMs = opts.timeoutMs;
+      if (opts.noInternalRetry) payload.__noInternalRetry = true;
+      return API.post('rpc',payload).then(function(r){ return r.data; });
+    }
+    function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
+    // [GPT第22回レポート対応/G22-1] getDashboardは内部でgetMenuPopularity等の重い集計を呼び、
+    // 実測で最悪約115秒かかっていた。原因はapi.js自身の内部再送とこの画面のrpcBusyRetryの
+    // 再試行が重なっていたこと（sales.htmlと同じ問題）。再試行の責務をrpcBusyRetryへ一本化し
+    // （API.post側の内部再送は__noInternalRetryで無効化）、fetchタイムアウトをサーバー側
+    // single-flightの壁時計上限（20秒）より確実に長い23秒に個別指定する。これにより総待ち時間の
+    // 上限は「23秒×2回＋backoff」＝約47〜49秒に固定される。
+    var _HEAVY_RPC_TIMEOUT_MS = 23000;
+    function rpcHeavy(fn, args){
+      // [GPT第22回レポート対応/G22-2] silent:trueにより全画面オーバーレイ（#izLoad）を表示しない。
+      // 集計中もヘッダーのEN切替・「← 管理へ」操作を塞がない。進捗は#wrap内のインライン表示のみ。
+      return rpc(fn, args, { silent:true, timeoutMs:_HEAVY_RPC_TIMEOUT_MS, noInternalRetry:true });
+    }
     function _isBusyOrTimeoutError(e){
       if (!e) return false;
       var msg = String(e.message||e||'');
@@ -61,7 +78,7 @@
     }
     function rpcBusyRetry(fn, args, retriesLeft){
       retriesLeft = (retriesLeft==null) ? 1 : retriesLeft;
-      return rpc(fn, args).catch(function(e){
+      return rpcHeavy(fn, args).catch(function(e){
         var isBusy = _isBusyOrTimeoutError(e);
         if (isBusy && retriesLeft > 0) {
           var waitMs = 1000 + Math.floor(Math.random()*2000);
@@ -134,13 +151,31 @@
     }
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; if(D) render(); }).catch(function(){});
-    rpcBusyRetry('getDashboard',[]).then(function(d){ D=d||null; render(); })
-      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('wrap').innerHTML='<div style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>'; });
+    // [GPT第22回レポート対応/G22-2] 自動再試行が尽きた場合はエラー＋最終試行時刻＋「再試行」ボタンを
+    // 表示し、以降の再試行は利用者の操作に委ねる（総待ち時間の上限を明確にする）。
+    function loadDashboard(){
+      document.getElementById('wrap').innerHTML = '<div class="loading">'+I18n.t('loading')+'</div>';
+      rpcBusyRetry('getDashboard',[]).then(function(d){ D=d||null; render(); })
+        .catch(function(e){
+          if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; }
+          var ts = new Date().toLocaleTimeString(isEN()?'en-US':'ja-JP');
+          document.getElementById('wrap').innerHTML = '<div style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)
+            +'<div style="margin-top:6px;font-size:12px;color:var(--text-3);">'+(isEN()?'Last attempt: ':'最終試行: ')+ts+'</div>'
+            +'<button type="button" class="hbtn" style="background:var(--navy);margin-top:8px;" onclick="loadDashboard()">'+(isEN()?'🔄 Retry':'🔄 再試行')+'</button>'
+            +'</div>';
+        });
+    }
 
+    // [GPT第23回レポート対応/G23-2] 以前はI18n.init()より先にloadDashboard()を呼んでいたため、
+    // 初期ローダーのI18n.t('loading')が辞書初期化前に評価され、翻訳文ではなく文字列'loading'が
+    // そのまま表示されていた。I18n.init()（同期的にDICTを設定してapply()する）を先に呼んでから
+    // loadDashboard()を呼ぶ順序に修正する。
     I18n.init({
       ja:{ title:'📊 ダッシュボード', back:'← 管理へ', loading:'読み込み中…', todaySales:'本日の売上', monthSales:'今月の売上', ordersU:'件', avg:'客単価', grossProfit:'今月の粗利', margin:'粗利率', primeRate:'プライムコスト率', primeSub:'(原価+人件費)÷売上', targetTitle:'🎯 月間売上目標', monthVsTarget:'今月 / 目標', setTarget:'目標を設定:', save:'保存', costTitle:'💴 今月の原価内訳', cogs:'商品原価(自動)', wages:'従業員給与', expenses:'経費(固定費・備品・その他)', costNote:'詳細・仕入実績での計算は', toProfit:'月間粗利へ', lowStock:'低在庫アラート', toInv:'在庫管理へ', menuAlert:'要注意メニュー', toSales:'売上分析へ', loadErr:'読み込みエラー: ', busyErr:'集計が混み合っています。数秒後に再試行してください。' },
       en:{ title:'📊 Dashboard', back:'← Manage', loading:'Loading…', todaySales:"Today's sales", monthSales:'This month', ordersU:' orders', avg:'Avg/order', grossProfit:'Gross profit (month)', margin:'Margin', primeRate:'Prime cost %', primeSub:'(COGS+labor)÷sales', targetTitle:'🎯 Monthly sales target', monthVsTarget:'Month / Target', setTarget:'Set target:', save:'Save', costTitle:'💴 Cost breakdown (month)', cogs:'Product cost (auto)', wages:'Wages', expenses:'Expenses (fixed/supplies/other)', costNote:'For detail & purchase-based calc →', toProfit:'Gross profit', lowStock:'Low-stock alerts', toInv:'Inventory', menuAlert:'Menu to review', toSales:'Sales analytics', loadErr:'Load error: ', busyErr:'Sales analysis is busy. Please retry in a few seconds.' }
     }, function(){ if(D) render(); });
+
+    loadDashboard();
   </script>
 </body>
 </html>

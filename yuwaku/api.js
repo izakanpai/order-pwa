@@ -98,22 +98,30 @@
   }
 
   // ---- 低レベル POST ----
+  // [GPT第22回レポート対応/G22-1] 重い集計RPC（getSalesAnalytics等）は、呼び出し元（各画面）が
+  // 独自のbusy/timeout再試行ロジック（rpcBusyRetry）を持つ。API.post自身の内部再送（下記canRetry）と
+  // 重ねると最大4 fetch・総待ち時間100秒超になり得たため、呼び出し元は以下のオプションを渡せる：
+  //   payload.__timeoutMs         : このリクエストのfetchタイムアウトを個別に指定（省略時は既定25秒）
+  //   payload.__noInternalRetry   : trueならAPI.post自身の内部再送を行わない（＝常に1 fetchのみ）
+  // これにより「内部再送」と「画面側再送」の責務を分離し、二重再試行を避ける。
   API.post = async function (action, payload) {
     payload = payload || {};
     const silent = !!payload.__silent || BG_ACTIONS[action] || (action === 'rpc' && BG_RPC[payload.fn]);
-    const send = Object.assign({}, payload); delete send.__silent; delete send.__msg;
+    const timeoutMs = (typeof payload.__timeoutMs === 'number') ? payload.__timeoutMs : _FETCH_TIMEOUT_MS;
+    const noInternalRetry = !!payload.__noInternalRetry;
+    const send = Object.assign({}, payload); delete send.__silent; delete send.__msg; delete send.__timeoutMs; delete send.__noInternalRetry;
     const body = JSON.stringify(Object.assign({ action: action }, send));
-    const canRetry = _isReadOnly(action, payload.fn);
+    const canRetry = !noInternalRetry && _isReadOnly(action, payload.fn);
     if (!silent) _load.show(payload.__msg);
     try {
       let json;
       try {
-        json = await _fetchOnce(body, _FETCH_TIMEOUT_MS);
+        json = await _fetchOnce(body, timeoutMs);
       } catch (e1) {
         if (!canRetry) { _errBar.show(); throw e1; }
         await new Promise(function (r) { setTimeout(r, _RETRY_DELAY_MS); });
         try {
-          json = await _fetchOnce(body, _FETCH_TIMEOUT_MS);
+          json = await _fetchOnce(body, timeoutMs);
         } catch (e2) {
           _errBar.show();
           throw e2;
