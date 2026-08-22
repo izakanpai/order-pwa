@@ -200,7 +200,7 @@
             noKey:'オンライン決済は未設定です。', cashRecv:'現金を受け取りましたか？', confirmed:'支払い完了', done:'完了（会計済にする）', processing:'処理中…', lang:'EN',
             disc:'シニア/PWD割引', senior:'シニア', idPh:'ID番号', eligPh:'対象額', discLine:'割引', vatNote:'うちVAT', orLbl:'レシート番号', printBtn:'🖨️ レシート印刷', close:'閉じる', tableW:'卓', totalW:'合計',
             partial:'🧾 一部会計', partTitle:'一部会計 — 明細を選択', selected:'選択', selPay:'選択分を会計', splitLbl:'割り勘 ÷', each:'/人',
-            callHdr:'🔔 呼び出し', callLbl:'スタッフ呼出', billLbl:'お会計希望', resolve:'対応済', agoMin:'分前', stay:'滞在', voidBtn:'取消', voidT:'注文の取消', reason:'取消理由', approver:'承認者（責任者ログイン）', loginPh:'ログインID', passPh:'パスワード', voidGo:'取消を承認', needReason:'取消理由を入力してください', authFail:'ログインIDまたはパスワードが違います', voided:'取消しました', alreadySettled:'会計済のため取消できません', eReceipt:'eレシート送信先メール（任意）',
+            callHdr:'🔔 呼び出し', callLbl:'スタッフ呼出', billLbl:'お会計希望', resolve:'対応済', agoMin:'分前', stay:'滞在', voidBtn:'取消', voidT:'注文の取消', reason:'取消理由', approver:'承認者（責任者ログイン）', loginPh:'ログインID', passPh:'パスワード', voidGo:'取消を承認', needReason:'取消理由を入力してください', authFail:'ログインIDまたはパスワードが違います', voided:'取消しました', alreadySettled:'会計済のため取消できません', alreadyVoid:'既に取消済みです', lockedRetry:'処理中のため、しばらくして再試行してください', eReceipt:'eレシート送信先メール（任意）',
             entryFeeLbl:'入場料', extFeeLbl:'延長料',
             discApprover:'承認者（マネージャー以上のログイン）', discNeedAppr:'承認者のログインID・パスワードを入力してください', discNotManager:'マネージャー以上の権限が必要です', discDisabled:'シニア/PWD割引は現在無効化されています', discVerifying:'承認確認中…' },
       en: { title:'Orders', served:'✓ Served', servedBtn:'Mark served', pay:'💳 Checkout', noOrder:'No open orders',
@@ -209,7 +209,7 @@
             noKey:'Online payment is not set up.', cashRecv:'Cash received?', confirmed:'Paid', done:'Done (settle)', processing:'Processing…', lang:'JP',
             disc:'Senior/PWD discount', senior:'Senior', idPh:'ID no.', eligPh:'Eligible amt', discLine:'Discount', vatNote:'incl. VAT', orLbl:'Receipt no.', printBtn:'🖨️ Print receipt', close:'Close', tableW:'Table', totalW:'TOTAL',
             partial:'🧾 Partial', partTitle:'Partial checkout — select items', selected:'Selected', selPay:'Checkout selected', splitLbl:'Split ÷', each:'/person',
-            callHdr:'🔔 Requests', callLbl:'Call staff', billLbl:'Bill please', resolve:'Done', agoMin:'m ago', stay:'Seated', voidBtn:'Void', voidT:'Void order', reason:'Reason', approver:'Approver (manager login)', loginPh:'Login ID', passPh:'Password', voidGo:'Approve void', needReason:'Please enter a reason', authFail:'Wrong login ID or password', voided:'Order voided', alreadySettled:'Cannot void a settled order', eReceipt:'e-receipt email (optional)',
+            callHdr:'🔔 Requests', callLbl:'Call staff', billLbl:'Bill please', resolve:'Done', agoMin:'m ago', stay:'Seated', voidBtn:'Void', voidT:'Void order', reason:'Reason', approver:'Approver (manager login)', loginPh:'Login ID', passPh:'Password', voidGo:'Approve void', needReason:'Please enter a reason', authFail:'Wrong login ID or password', voided:'Order voided', alreadySettled:'Cannot void a settled order', alreadyVoid:'Already voided', lockedRetry:'Busy right now — please retry shortly', eReceipt:'e-receipt email (optional)',
             entryFeeLbl:'Entry fee', extFeeLbl:'Extension fee',
             discApprover:'Approver (manager-or-above login)', discNeedAppr:'Please enter the approver login ID and password', discNotManager:'Manager-level login required', discDisabled:'Senior/PWD discount is currently disabled', discVerifying:'Verifying approval…' }
     };
@@ -348,6 +348,8 @@
         if(d.error==='auth'){ vdErr(t().authFail); return; }
         if(d.error==='no_reason'){ vdErr(t().needReason); return; }
         if(d.error==='already_settled'){ vdErr(t().alreadySettled); return; }
+        if(d.error==='already_void'){ closeVoid(); alert(t().alreadyVoid); load(); return; }
+        if(d.error==='locked_please_retry'){ vdErr(t().lockedRetry); return; }
         if(d.error){ vdErr('Error: '+d.error); return; }
         closeVoid(); load();
       }).catch(function(e){ btn.disabled=false; vdErr('Error: '+(e.message||e)); });

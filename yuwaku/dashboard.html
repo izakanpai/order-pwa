@@ -87,7 +87,11 @@
           });
         }
         if (isBusy) {
-          var busyErr = new Error(I18n.t('busyErr'));
+          // [GPT第24回レポート再指摘対応/G24-5] ここでI18n.t('busyErr')を呼んで文字列化してしまうと、
+          // catch時点の言語でメッセージが固定される。翻訳キーだけを載せたマーカーを投げ、
+          // 実際の翻訳はrenderError()側で「その時点の現在言語」を使って行う。
+          var busyErr = new Error('busy_retry_exhausted');
+          busyErr.i18nKey = 'busyErr';
           throw busyErr;
         }
         throw e;
@@ -153,16 +157,34 @@
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; if(D) render(); }).catch(function(){});
     // [GPT第22回レポート対応/G22-2] 自動再試行が尽きた場合はエラー＋最終試行時刻＋「再試行」ボタンを
     // 表示し、以降の再試行は利用者の操作に委ねる（総待ち時間の上限を明確にする）。
+    // [GPT第24回レポート対応/G24-2] 以前はエラー表示のHTMLへ翻訳済み文言（'Last attempt: '/'🔄 Retry'等）を
+    // catch時点の言語でそのまま焼き込んでいたため、表示後にEN/JPを切り替えてもエラー本文・最終試行・
+    // 再試行ボタンだけ古い言語のまま残っていた（タイトル・戻るボタンはdata-t属性でI18n.apply()が
+    // 面倒を見るため正しく切り替わり、この不一致が目立っていた）。エラー状態（メッセージ・発生時刻）を
+    // lastErrorへ保持し、renderError()を「その時点の現在言語」で毎回組み立てる状態ベースの描画に変更。
+    // I18n.init()の言語変更コールバックからもrenderError()を呼ぶことで、表示中の言語切替にも追随する。
+    // [GPT第24回レポート再指摘対応/G24-5] lastErrorには翻訳済み文字列ではなく、既知エラーの翻訳キー
+    // （i18nKey）または未知バックエンドエラーの生メッセージ（message）のどちらか一方だけを保持する。
+    // renderError()が毎回「その時点の現在言語」でi18nKeyを引き直すため、表示中の言語切替でも
+    // busyErr本文が追随する。生メッセージ（バックエンドの例外文言）は元々翻訳対象ではないためそのまま。
+    var lastError = null;
+    function renderError(){
+      if(!lastError) return;
+      var ts = lastError.ts.toLocaleTimeString(isEN()?'en-US':'ja-JP');
+      var body = lastError.i18nKey ? I18n.t(lastError.i18nKey) : lastError.message;
+      document.getElementById('wrap').innerHTML = '<div style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(body)
+        +'<div style="margin-top:6px;font-size:12px;color:var(--text-3);">'+I18n.t('lastAttempt')+ts+'</div>'
+        +'<button type="button" class="hbtn" style="background:var(--navy);margin-top:8px;" onclick="loadDashboard()">'+I18n.t('retry')+'</button>'
+        +'</div>';
+    }
     function loadDashboard(){
+      lastError = null;
       document.getElementById('wrap').innerHTML = '<div class="loading">'+I18n.t('loading')+'</div>';
       rpcBusyRetry('getDashboard',[]).then(function(d){ D=d||null; render(); })
         .catch(function(e){
           if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; }
-          var ts = new Date().toLocaleTimeString(isEN()?'en-US':'ja-JP');
-          document.getElementById('wrap').innerHTML = '<div style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)
-            +'<div style="margin-top:6px;font-size:12px;color:var(--text-3);">'+(isEN()?'Last attempt: ':'最終試行: ')+ts+'</div>'
-            +'<button type="button" class="hbtn" style="background:var(--navy);margin-top:8px;" onclick="loadDashboard()">'+(isEN()?'🔄 Retry':'🔄 再試行')+'</button>'
-            +'</div>';
+          lastError = e && e.i18nKey ? { i18nKey: e.i18nKey, ts: new Date() } : { message: String(e.message||e), ts: new Date() };
+          renderError();
         });
     }
 
@@ -171,9 +193,9 @@
     // そのまま表示されていた。I18n.init()（同期的にDICTを設定してapply()する）を先に呼んでから
     // loadDashboard()を呼ぶ順序に修正する。
     I18n.init({
-      ja:{ title:'📊 ダッシュボード', back:'← 管理へ', loading:'読み込み中…', todaySales:'本日の売上', monthSales:'今月の売上', ordersU:'件', avg:'客単価', grossProfit:'今月の粗利', margin:'粗利率', primeRate:'プライムコスト率', primeSub:'(原価+人件費)÷売上', targetTitle:'🎯 月間売上目標', monthVsTarget:'今月 / 目標', setTarget:'目標を設定:', save:'保存', costTitle:'💴 今月の原価内訳', cogs:'商品原価(自動)', wages:'従業員給与', expenses:'経費(固定費・備品・その他)', costNote:'詳細・仕入実績での計算は', toProfit:'月間粗利へ', lowStock:'低在庫アラート', toInv:'在庫管理へ', menuAlert:'要注意メニュー', toSales:'売上分析へ', loadErr:'読み込みエラー: ', busyErr:'集計が混み合っています。数秒後に再試行してください。' },
-      en:{ title:'📊 Dashboard', back:'← Manage', loading:'Loading…', todaySales:"Today's sales", monthSales:'This month', ordersU:' orders', avg:'Avg/order', grossProfit:'Gross profit (month)', margin:'Margin', primeRate:'Prime cost %', primeSub:'(COGS+labor)÷sales', targetTitle:'🎯 Monthly sales target', monthVsTarget:'Month / Target', setTarget:'Set target:', save:'Save', costTitle:'💴 Cost breakdown (month)', cogs:'Product cost (auto)', wages:'Wages', expenses:'Expenses (fixed/supplies/other)', costNote:'For detail & purchase-based calc →', toProfit:'Gross profit', lowStock:'Low-stock alerts', toInv:'Inventory', menuAlert:'Menu to review', toSales:'Sales analytics', loadErr:'Load error: ', busyErr:'Sales analysis is busy. Please retry in a few seconds.' }
-    }, function(){ if(D) render(); });
+      ja:{ title:'📊 ダッシュボード', back:'← 管理へ', loading:'読み込み中…', todaySales:'本日の売上', monthSales:'今月の売上', ordersU:'件', avg:'客単価', grossProfit:'今月の粗利', margin:'粗利率', primeRate:'プライムコスト率', primeSub:'(原価+人件費)÷売上', targetTitle:'🎯 月間売上目標', monthVsTarget:'今月 / 目標', setTarget:'目標を設定:', save:'保存', costTitle:'💴 今月の原価内訳', cogs:'商品原価(自動)', wages:'従業員給与', expenses:'経費(固定費・備品・その他)', costNote:'詳細・仕入実績での計算は', toProfit:'月間粗利へ', lowStock:'低在庫アラート', toInv:'在庫管理へ', menuAlert:'要注意メニュー', toSales:'売上分析へ', loadErr:'読み込みエラー: ', busyErr:'集計が混み合っています。数秒後に再試行してください。', lastAttempt:'最終試行: ', retry:'🔄 再試行' },
+      en:{ title:'📊 Dashboard', back:'← Manage', loading:'Loading…', todaySales:"Today's sales", monthSales:'This month', ordersU:' orders', avg:'Avg/order', grossProfit:'Gross profit (month)', margin:'Margin', primeRate:'Prime cost %', primeSub:'(COGS+labor)÷sales', targetTitle:'🎯 Monthly sales target', monthVsTarget:'Month / Target', setTarget:'Set target:', save:'Save', costTitle:'💴 Cost breakdown (month)', cogs:'Product cost (auto)', wages:'Wages', expenses:'Expenses (fixed/supplies/other)', costNote:'For detail & purchase-based calc →', toProfit:'Gross profit', lowStock:'Low-stock alerts', toInv:'Inventory', menuAlert:'Menu to review', toSales:'Sales analytics', loadErr:'Load error: ', busyErr:'Sales analysis is busy. Please retry in a few seconds.', lastAttempt:'Last attempt: ', retry:'🔄 Retry' }
+    }, function(){ if(D) render(); else renderError(); });
 
     loadDashboard();
   </script>
