@@ -110,6 +110,7 @@
           if (it['商品名_EN']) enMap[it['商品名']] = it['商品名_EN'];
         });
         KITCHEN_MAP = map; MENU_EN = enMap;
+        if (lastData.length) render(lastData);
       }).catch(function(){});
     }
     function elapsedInfo(dateStr){
@@ -187,6 +188,19 @@
     // 平常時（8秒ごと・変化なし）はSpreadsheet読込自体が省略され、GAS実行が軽くなる。
     var _opsVersion = null;
     var _loadInFlight = false;
+    var _OPS_UI_CACHE_KEY = 'yuwakuOpsUiSnapshotV1';
+    function restoreOpsUiCache(){
+      try {
+        var d = JSON.parse(localStorage.getItem(_OPS_UI_CACHE_KEY) || 'null');
+        if (!d || !d.savedAt || Date.now() - Number(d.savedAt) > 86400000 || !Array.isArray(d.orders)) return false;
+        _opsVersion = d.version != null ? d.version : null;
+        render(d.orders);
+        return true;
+      } catch(e) { return false; }
+    }
+    function saveOpsUiCache(d){
+      try { localStorage.setItem(_OPS_UI_CACHE_KEY, JSON.stringify({ savedAt:Date.now(), version:_opsVersion, orders:d.orders||[], calls:d.calls||[], partySizes:d.partySizes||{} })); } catch(e) {}
+    }
     window.load = function(force){
       if (_loadInFlight) return; // 前回リクエストが残っていれば重複送信しない
       _loadInFlight = true;
@@ -200,6 +214,7 @@
         var d = r.data || {};
         _opsVersion = d.version != null ? d.version : _opsVersion;
         if (d.unchanged) return; // 変化なし：再描画不要
+        saveOpsUiCache(d);
         render(d.orders || []);
       }).catch(function(){
         _loadInFlight = false;
@@ -234,6 +249,7 @@
     });
     function boot(){
       loadMenu();
+      restoreOpsUiCache();
       load();
       _resetPoll();   // 旧: 8秒/60秒の二重登録だった重複バグを解消（loadが2倍の頻度で呼ばれていた）
       setInterval(loadMenu, 300000); // メニュー設定（厨房表示ON/OFF）の変更を数分以内に反映

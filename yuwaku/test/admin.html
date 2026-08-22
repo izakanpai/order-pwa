@@ -360,6 +360,20 @@
     // 直前に見たバージョンを送り、変化が無ければunchanged:trueだけ返る＝Spreadsheet読込自体を省略できる。
     var _opsVersion = null;
     var _loadInFlight = false;
+    var _OPS_UI_CACHE_KEY = 'yuwakuOpsUiSnapshotV1';
+    function restoreOpsUiCache(){
+      try {
+        var d = JSON.parse(localStorage.getItem(_OPS_UI_CACHE_KEY) || 'null');
+        if (!d || !d.savedAt || Date.now() - Number(d.savedAt) > 86400000 || !Array.isArray(d.orders)) return false;
+        _opsVersion = d.version != null ? d.version : null;
+        orders = d.orders; calls = Array.isArray(d.calls) ? d.calls : [];
+        if (d.partySizes) PARTY_SIZES = d.partySizes;
+        return true;
+      } catch(e) { return false; }
+    }
+    function saveOpsUiCache(d){
+      try { localStorage.setItem(_OPS_UI_CACHE_KEY, JSON.stringify({ savedAt:Date.now(), version:_opsVersion, orders:orders, calls:calls, partySizes:PARTY_SIZES })); } catch(e) {}
+    }
     window.load = function(force){
       if (_loadInFlight) return Promise.resolve(); // 前回リクエストが残っていれば重複送信しない（会計中呼び出し等が重ならないように）
       _loadInFlight = true;
@@ -374,6 +388,7 @@
         if (d.unchanged) return; // 変化なし：再描画不要
         orders = d.orders || []; calls = d.calls || [];
         if (d.partySizes) PARTY_SIZES = d.partySizes;
+        saveOpsUiCache(d);
         render(); renderCalls();
       }).catch(function(){
         _loadInFlight = false;
@@ -696,9 +711,11 @@
       I18n.init(i18n, onLangChange);
       updateHeadClock();
       setInterval(updateHeadClock, 15000);
+      var restoredOps = restoreOpsUiCache();
       API.post('bootstrap', {}).then(function(r){
         SETTINGS = r.settings || {}; PAYMONGO = !!r.paymongo;
         (r.menu||[]).forEach(function(m){ var jp=m['商品名'], en=m['商品名_EN']; if(jp && en) MENU_MAP[String(jp)]=String(en); });
+        if (restoredOps) { render(); renderCalls(); }
         load();
       }).catch(function(){ load(); });
       loadCalls();
