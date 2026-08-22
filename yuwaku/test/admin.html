@@ -365,6 +365,7 @@
       _loadInFlight = true;
       // [修正点一覧C-2対応] getOperationsDelta/getOrders/getStaffCallsが認証必須になったため、tokenを送る。
       var payload = (force || _opsVersion == null) ? { token: TOKEN } : { sinceVersion: _opsVersion, token: TOKEN };
+      // 注文管理は集計画面ではないため、5秒を超えて待たせない。
       payload.__timeoutMs = 4500; payload.__noInternalRetry = true; payload.__silent = true;
       return API.post('getOperationsDelta', payload).then(function(r){
         _loadInFlight = false;

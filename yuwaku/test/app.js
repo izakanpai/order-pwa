@@ -459,6 +459,7 @@
     $('stTotalVal').textContent = '—';
     if (!state.table) { $('stBody').innerHTML = '<div style="text-align:center;color:var(--text-2);padding:14px;">' + escHtml(x.noTable) + '</div>'; return; }
     // 注文状況は集計画面ではないため、画面操作開始から5秒以内で必ず完了させる。
+    // 共通APIの既定25秒・内部再送は使わず、4.5秒で成功または明確な通信エラーへ遷移する。
     API.post('getOrdersByTable', { table: state.table, __timeoutMs: 4500, __noInternalRetry: true, __silent: true }).then(function (r) {
       var list = (r && r.data) || [];
       if (!list.length) {

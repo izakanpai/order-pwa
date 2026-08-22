@@ -71,6 +71,7 @@
     // [GPT第22回レポート対応/G22-1・G22-2] getMonthlyProfitもgetSalesAnalytics等と同じ
     // single-flight機構を使う重い集計RPC。sales.html/dashboard.htmlと同じ対策
     // （再試行の一本化・fetchタイムアウト個別指定・全画面オーバーレイの回避・再試行ボタン）を適用する。
+    // 集計画面は1回30秒を上限とし、画面側の再送で上限を超えないようにする。
     var _HEAVY_RPC_TIMEOUT_MS = 30000;
     function _isBusyOrTimeoutError(e){
       if (!e) return false;
