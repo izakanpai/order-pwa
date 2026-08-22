@@ -46,7 +46,7 @@
     </div>
     <div class="card">
       <div class="card-title" data-t="monthlyTitle">📅 月別サマリー</div>
-      <div id="monthly"><div class="hint" data-t="loading">読み込み中…</div></div>
+      <div id="monthly"><div class="hint" data-t="loading">集計処理には時間がかかります。しばらくお待ちください…</div></div>
     </div>
     <div class="card">
       <div class="card-title" data-t="anaTitle">🔎 分析（商品・時間帯・曜日）</div>
@@ -67,7 +67,7 @@
     <div class="card">
       <div class="card-title" data-t="popTitle">🍽️ メニュー人気度スコア（直近30日）</div>
       <div class="hint" style="margin-bottom:8px;" data-t="popHint">直近30日の注文数量で算出（最も売れた商品=100）。低スコア・未売上はメニュー見直しの参考に。</div>
-      <div id="popList" style="overflow:auto;"><div class="hint" data-t="loading">読み込み中…</div></div>
+      <div id="popList" style="overflow:auto;"><div class="hint" data-t="loading">集計処理には時間がかかります。しばらくお待ちください…</div></div>
     </div>
   </div>
 
@@ -86,15 +86,9 @@
       if (opts.noInternalRetry) payload.__noInternalRetry = true;
       return API.post('rpc',payload).then(function(r){ return r.data; });
     }
-    // [GPT第22回レポート対応/G22-1] 実測でSales分析が約69〜72秒、Dashboardが約115秒かかっていた。
-    // 原因はapi.js自身の内部再送（最大2 fetch）と、この画面のrpcBusyRetry（追加1回＝内部で
-    // さらに最大2 fetch）が重なり、最悪ケースで合計4 fetch・fetch上限25秒×4＋backoffという
-    // 事実上無制限に近い総待ち時間になっていたこと。再試行の責務をこの画面（rpcBusyRetry）だけに
-    // 一本化し、API.post側の内部再送は無効化（__noInternalRetry）した上で、fetchタイムアウトを
-    // サーバー側single-flightの壁時計上限（20秒）より確実に長く・api.js既定（25秒）より短い23秒に
-    // 個別指定する。これにより総待ち時間の上限は「23秒×2回＋backoff」＝約47〜49秒に固定される
-    // （旧設計の理論値100秒超から半分以下に短縮。真の解決はG22-3の集計高速化）。
-    var _HEAVY_RPC_TIMEOUT_MS = 23000;
+    // 集計画面は利用者要件どおり各集計リクエスト30秒を上限とする。API内部再送も
+    // 画面側再送も無効化し、自動再送の重複で上限を超えないよう1回だけ実行する。
+    var _HEAVY_RPC_TIMEOUT_MS = 30000;
     function rpcHeavy(fn, args){
       // [GPT第22回レポート対応/G22-2] silent:trueにより、api.js共通の全画面オーバーレイ（#izLoad）を
       // 表示しない。重い集計の間もヘッダーのEN切替・「← 管理へ」・他画面への遷移操作を塞がない。
@@ -110,7 +104,7 @@
       return false;
     }
     function rpcBusyRetry(fn, args, retriesLeft){
-      retriesLeft = (retriesLeft==null) ? 1 : retriesLeft;
+      retriesLeft = (retriesLeft==null) ? 0 : retriesLeft;
       return rpcHeavy(fn, args).catch(function(e){
         var isBusy = _isBusyOrTimeoutError(e);
         if (isBusy && retriesLeft > 0) {
@@ -299,8 +293,8 @@
     // 行う。ここでは即時実行しない（構築中の重複負荷を避けるため）。
 
     I18n.init({
-      ja:{ title:'📊 受注管理', back:'← 管理へ', dailyTitle:'📈 日別受注額（未会計含む）', monthlyTitle:'📅 月別受注サマリー', anaTitle:'🔎 受注分析（商品・時間帯・曜日）', month:'対象月', analyze:'🔍 分析', byItem:'🏆 商品別（ABC分析）', byCat:'🍱 カテゴリ別受注額', byHour:'🕐 時間帯別', byDow:'📅 曜日別', popTitle:'🍽️ メニュー人気度スコア（直近30日）', popHint:'直近30日の注文数量で算出（最多受注商品=100）。低スコア・未受注はメニュー見直しの参考に。', loading:'読み込み中…', noData:'データがありません', noSales:'受注データがありません。', dailySales:'日別受注額（未会計含む）', colMonth:'月', colTotal:'受注額', sOrders:'注文 ', sOrdersU:'件', sSales:'受注額 ', sAvg:'平均受注額 ', sCost:'原価率 ', cItem:'商品', cQty:'数量', cRev:'受注額', cCost:'原価', cCostR:'原価率', cCum:'累計比', cCat:'カテゴリ', cScore:'スコア', other:'その他', hourU:'時', dowNames:'日,月,火,水,木,金,土', lHot:'🔥人気', lOk:'標準', lLow:'⚠️低調', lUnsold:'❌未受注', loadErr:'読み込みエラー: ' },
-      en:{ title:'📊 Order Analytics', back:'← Manage', dailyTitle:'📈 Daily order amount (includes unsettled)', monthlyTitle:'📅 Monthly order summary', anaTitle:'🔎 Order analysis (items / hours / days)', month:'Target month', analyze:'🔍 Analyze', byItem:'🏆 By item (ABC analysis)', byCat:'🍱 Order amount by category', byHour:'🕐 By hour', byDow:'📅 By day of week', popTitle:'🍽️ Menu popularity score (last 30 days)', popHint:'Based on order quantity over the last 30 days (most ordered = 100). Low-score / unordered items help you review the menu.', loading:'Loading…', noData:'No data', noSales:'No order data.', dailySales:'Daily order amount (includes unsettled)', colMonth:'Month', colTotal:'Order amount', sOrders:'Orders ', sOrdersU:'', sSales:'Order amount ', sAvg:'Avg/order ', sCost:'Cost rate ', cItem:'Item', cQty:'Qty', cRev:'Order amount', cCost:'Cost', cCostR:'Cost %', cCum:'Cum %', cCat:'Category', cScore:'Score', other:'Other', hourU:':00', dowNames:'Sun,Mon,Tue,Wed,Thu,Fri,Sat', lHot:'🔥Popular', lOk:'Normal', lLow:'⚠️Low', lUnsold:'❌Unordered', loadErr:'Load error: ' }
+      ja:{ title:'📊 受注管理', back:'← 管理へ', dailyTitle:'📈 日別受注額（未会計含む）', monthlyTitle:'📅 月別受注サマリー', anaTitle:'🔎 受注分析（商品・時間帯・曜日）', month:'対象月', analyze:'🔍 分析', byItem:'🏆 商品別（ABC分析）', byCat:'🍱 カテゴリ別受注額', byHour:'🕐 時間帯別', byDow:'📅 曜日別', popTitle:'🍽️ メニュー人気度スコア（直近30日）', popHint:'直近30日の注文数量で算出（最多受注商品=100）。低スコア・未受注はメニュー見直しの参考に。', loading:'集計処理には時間がかかります。しばらくお待ちください…', noData:'データがありません', noSales:'受注データがありません。', dailySales:'日別受注額（未会計含む）', colMonth:'月', colTotal:'受注額', sOrders:'注文 ', sOrdersU:'件', sSales:'受注額 ', sAvg:'平均受注額 ', sCost:'原価率 ', cItem:'商品', cQty:'数量', cRev:'受注額', cCost:'原価', cCostR:'原価率', cCum:'累計比', cCat:'カテゴリ', cScore:'スコア', other:'その他', hourU:'時', dowNames:'日,月,火,水,木,金,土', lHot:'🔥人気', lOk:'標準', lLow:'⚠️低調', lUnsold:'❌未受注', loadErr:'読み込みエラー: ' },
+      en:{ title:'📊 Order Analytics', back:'← Manage', dailyTitle:'📈 Daily order amount (includes unsettled)', monthlyTitle:'📅 Monthly order summary', anaTitle:'🔎 Order analysis (items / hours / days)', month:'Target month', analyze:'🔍 Analyze', byItem:'🏆 By item (ABC analysis)', byCat:'🍱 Order amount by category', byHour:'🕐 By hour', byDow:'📅 By day of week', popTitle:'🍽️ Menu popularity score (last 30 days)', popHint:'Based on order quantity over the last 30 days (most ordered = 100). Low-score / unordered items help you review the menu.', loading:'This calculation may take some time. Please wait…', noData:'No data', noSales:'No order data.', dailySales:'Daily order amount (includes unsettled)', colMonth:'Month', colTotal:'Order amount', sOrders:'Orders ', sOrdersU:'', sSales:'Order amount ', sAvg:'Avg/order ', sCost:'Cost rate ', cItem:'Item', cQty:'Qty', cRev:'Order amount', cCost:'Cost', cCostR:'Cost %', cCum:'Cum %', cCat:'Category', cScore:'Score', other:'Other', hourU:':00', dowNames:'Sun,Mon,Tue,Wed,Thu,Fri,Sat', lHot:'🔥Popular', lOk:'Normal', lLow:'⚠️Low', lUnsold:'❌Unordered', loadErr:'Load error: ' }
     }, function(){ if(_sales) renderSales(); if(_ana) renderAnalytics(); if(_pop) renderPopularity(); });
   </script>
 </body>

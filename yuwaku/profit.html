@@ -49,7 +49,7 @@
       <div class="hint" data-t="hint">会計済み売上・会計済み商品原価(レシピ自動)・従業員給与(勤怠)はシステムから自動取得。固定費・備品・その他は「経費一覧」の登録額を集計します。</div>
     </div>
 
-    <div class="card" id="result"><div class="loading" data-t="loading">読み込み中…</div></div>
+    <div class="card" id="result"><div class="loading" data-t="loading">集計処理には時間がかかります。しばらくお待ちください…</div></div>
   </div>
 
   <script src="./config.js"></script>
@@ -71,7 +71,8 @@
     // [GPT第22回レポート対応/G22-1・G22-2] getMonthlyProfitもgetSalesAnalytics等と同じ
     // single-flight機構を使う重い集計RPC。sales.html/dashboard.htmlと同じ対策
     // （再試行の一本化・fetchタイムアウト個別指定・全画面オーバーレイの回避・再試行ボタン）を適用する。
-    var _HEAVY_RPC_TIMEOUT_MS = 23000;
+    // 集計画面は1回30秒を上限とし、画面側の再送で上限を超えないようにする。
+    var _HEAVY_RPC_TIMEOUT_MS = 30000;
     function _isBusyOrTimeoutError(e){
       if (!e) return false;
       var msg = String(e.message||e||'');
@@ -81,7 +82,7 @@
       return false;
     }
     function rpcBusyRetry(fn, args, retriesLeft){
-      retriesLeft = (retriesLeft==null) ? 1 : retriesLeft;
+      retriesLeft = (retriesLeft==null) ? 0 : retriesLeft;
       return rpc(fn, args, { silent:true, timeoutMs:_HEAVY_RPC_TIMEOUT_MS, noInternalRetry:true }).catch(function(e){
         var isBusy = _isBusyOrTimeoutError(e);
         if (isBusy && retriesLeft > 0) {
@@ -151,8 +152,8 @@
     document.getElementById('month').value = new Date().toISOString().slice(0,7);
 
     I18n.init({
-      ja:{ title:'📈 月間粗利', back:'← 管理へ', month:'対象月', calc:'🔄 計算', hint:'会計済み売上・会計済み商品原価(レシピ自動)・従業員給与(勤怠)はシステムから自動取得。固定費・備品・その他は「経費一覧」の登録額を集計します。', loading:'読み込み中…', revenue:'会計済み売上', orders:'会計件数 ', ordersU:'件', cogs:'商品原価', cogsAuto:'会計済み商品原価', cogsBuy:'仕入実績', wages:'従業員給与', rent:'賃料', elec:'電気代', water:'水道代', supply:'備品購入', other:'その他', profit:'粗利', rate:'粗利率', note2:'※ 固定費・備品・その他・仕入は「経費一覧」で当月に登録した金額の合計です。', errPrefix:'エラー: ', loadErr:'読み込みエラー: ' },
-      en:{ title:'📈 Monthly Gross Profit', back:'← Manage', month:'Target month', calc:'🔄 Calculate', hint:'Settled revenue, settled item cost (auto via recipes), and wages (attendance) are pulled from the system. Fixed costs / supplies / other are summed from the Expenses list.', loading:'Loading…', revenue:'Settled revenue', orders:'Checkouts ', ordersU:'', cogs:'Product cost', cogsAuto:'Settled item cost', cogsBuy:'Purchases', wages:'Wages', rent:'Rent', elec:'Electricity', water:'Water', supply:'Supplies', other:'Other', profit:'Gross profit', rate:'Margin', note2:'* Fixed costs / supplies / other / purchases are totals registered for the month in the Expenses list.', errPrefix:'Error: ', loadErr:'Load error: ' }
+      ja:{ title:'📈 月間粗利', back:'← 管理へ', month:'対象月', calc:'🔄 計算', hint:'会計済み売上・会計済み商品原価(レシピ自動)・従業員給与(勤怠)はシステムから自動取得。固定費・備品・その他は「経費一覧」の登録額を集計します。', loading:'集計処理には時間がかかります。しばらくお待ちください…', revenue:'会計済み売上', orders:'会計件数 ', ordersU:'件', cogs:'商品原価', cogsAuto:'会計済み商品原価', cogsBuy:'仕入実績', wages:'従業員給与', rent:'賃料', elec:'電気代', water:'水道代', supply:'備品購入', other:'その他', profit:'粗利', rate:'粗利率', note2:'※ 固定費・備品・その他・仕入は「経費一覧」で当月に登録した金額の合計です。', errPrefix:'エラー: ', loadErr:'読み込みエラー: ' },
+      en:{ title:'📈 Monthly Gross Profit', back:'← Manage', month:'Target month', calc:'🔄 Calculate', hint:'Settled revenue, settled item cost (auto via recipes), and wages (attendance) are pulled from the system. Fixed costs / supplies / other are summed from the Expenses list.', loading:'This calculation may take some time. Please wait…', revenue:'Settled revenue', orders:'Checkouts ', ordersU:'', cogs:'Product cost', cogsAuto:'Settled item cost', cogsBuy:'Purchases', wages:'Wages', rent:'Rent', elec:'Electricity', water:'Water', supply:'Supplies', other:'Other', profit:'Gross profit', rate:'Margin', note2:'* Fixed costs / supplies / other / purchases are totals registered for the month in the Expenses list.', errPrefix:'Error: ', loadErr:'Load error: ' }
     }, function(){ if(DATA) render(); });
 
     load();

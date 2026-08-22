@@ -458,7 +458,8 @@
     $('stSvcRow').style.display = 'none';
     $('stTotalVal').textContent = '—';
     if (!state.table) { $('stBody').innerHTML = '<div style="text-align:center;color:var(--text-2);padding:14px;">' + escHtml(x.noTable) + '</div>'; return; }
-    API.post('getOrdersByTable', { table: state.table }).then(function (r) {
+    // 注文状況は集計画面ではないため、画面操作開始から5秒以内で必ず完了させる。
+    API.post('getOrdersByTable', { table: state.table, __timeoutMs: 4500, __noInternalRetry: true, __silent: true }).then(function (r) {
       var list = (r && r.data) || [];
       if (!list.length) {
         $('stBody').innerHTML = '<div style="text-align:center;color:var(--text-2);padding:14px;">' + escHtml(x.stEmpty) + '</div>';
