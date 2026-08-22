@@ -138,7 +138,11 @@
       lastNewIds = curNew; firstPaint = false;
 
       document.getElementById('kcount').innerText = active.length;
-      if (!active.length){ document.getElementById('grid').innerHTML = '<div class="kempty">'+I18n.t('empty')+'</div>'; return; }
+      // [GPTレビュー(2026-08-22実機確認)対応/G24-5] 従来は「未対応/調理中」から滞留(stale)分を除いた件数だけを
+      // 見て0件なら「✅未提供のオーダーはありません」と表示していたため、実際には滞留注文が残っているのに
+      // 「対応不要」であるかのような矛盾した表示になっていた。滞留注文が存在する場合は、通常チケットが0件でも
+      // 「新規の未対応オーダーはない」旨の別文言にし、上部の滞留バナーと矛盾しないようにする。
+      if (!active.length){ document.getElementById('grid').innerHTML = '<div class="kempty">'+(stale.length ? I18n.t('emptyWithStale') : I18n.t('empty'))+'</div>'; return; }
 
 
       var html = '';
@@ -238,8 +242,8 @@
     }
     var __booted = false;
     I18n.init({
-      ja:{ title:'キッチン', sub:'未提供オーダー', back:'← 管理', loading:'読み込み中…', empty:'✅ 未提供のオーダーはありません', new:'新規', cook:'調理中', min:'分', prepaid:'前払い済', startCook:'🔥 調理開始', done:'✓ 提供完了', backNew:'新規に戻す', soundOn:'🔔 音 ON', soundOff:'🔕 音 OFF', connErr:'接続できません（自動再試行します）', staleNote:'件、長時間未処理の滞留注文があります（注文管理で確認してください）' },
-      en:{ title:'Kitchen', sub:'Pending orders', back:'← Manage', loading:'Loading…', empty:'✅ No pending orders', new:'New', cook:'Cooking', min:'m', prepaid:'Prepaid', startCook:'🔥 Start', done:'✓ Served', backNew:'Back to new', soundOn:'🔔 Sound ON', soundOff:'🔕 Sound OFF', connErr:'Cannot connect (auto-retrying)', staleNote:'stale order(s) pending too long — please check in Orders' }
+      ja:{ title:'キッチン', sub:'未提供オーダー', back:'← 管理', loading:'読み込み中…', empty:'✅ 未提供のオーダーはありません', emptyWithStale:'✅ 新規の未対応オーダーはありません（下の滞留注文を除く）', new:'新規', cook:'調理中', min:'分', prepaid:'前払い済', startCook:'🔥 調理開始', done:'✓ 提供完了', backNew:'新規に戻す', soundOn:'🔔 音 ON', soundOff:'🔕 音 OFF', connErr:'接続できません（自動再試行します）', staleNote:'件、長時間未処理の滞留注文があります（通常一覧には含まれていません。注文管理で確認してください）' },
+      en:{ title:'Kitchen', sub:'Pending orders', back:'← Manage', loading:'Loading…', empty:'✅ No pending orders', emptyWithStale:'✅ No new pending orders (excluding stale ones below)', new:'New', cook:'Cooking', min:'m', prepaid:'Prepaid', startCook:'🔥 Start', done:'✓ Served', backNew:'Back to new', soundOn:'🔔 Sound ON', soundOff:'🔕 Sound OFF', connErr:'Cannot connect (auto-retrying)', staleNote:'stale order(s) pending too long — not included in the list above; please check in Orders' }
     }, function(){ updateSoundBtn(); if(__booted) render(lastData); });
     document.addEventListener('DOMContentLoaded', boot);
   </script>
