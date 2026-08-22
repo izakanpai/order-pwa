@@ -41,14 +41,31 @@
   API.loading = _load; // 手動利用も可（API.loading.show('...') / .hide()）
 
   // 定期ポーリング等、待機表示を出さない（点滅防止）アクション
-  const BG_ACTIONS = { checkToken: 1, getOrders: 1, getOperationsDelta: 1, getOrdersByTable: 1, checkoutStatus: 1, bootstrap: 1, getSettings: 1, getStaffCalls: 1, getTableCheckoutStamp: 1 };
+  const BG_ACTIONS = { checkToken: 1, getOrders: 1, getOperationsDelta: 1, checkoutStatus: 1, bootstrap: 1, getSettings: 1, getStaffCalls: 1, getTableCheckoutStamp: 1 };
   const BG_RPC = { getPrintQueue: 1, getPrintQueueCounts: 1, getSettings: 1 };
+
+  // ---- タイムアウト設定（全画面共通・唯一の定義元）----
+  // [応答速度改善(2026-08-22)/タイムアウト共通化] 従来は各画面（admin.html/kds.html/dashboard.html/
+  // profit.html/sales.html/inventory.html等）がそれぞれ独自にミリ秒の数値をベタ書きしており、
+  // 「何秒でタイムアウトさせるか」の方針が画面ごとにバラバラで、変更時にファイルを横断して
+  // 探す必要があった。ここを唯一の定義元とし、各画面はAPI.TIMEOUT_MS.xxxを参照する（数値を
+  // 直接書かない）。個々のRPCの実際の応答分布は izakanpai_perf_report_2026-08-22.xlsx を参照。
+  //   fast    : 4.5秒  … 注文状況・KDS等、体感速度を最優先し「遅ければ次のポーリングに任せる」画面向け
+  //   default : 30秒   … 上記以外の一般的な読み取り・書き込み全般の既定値（未指定時はこれが使われる）
+  //   write   : 30秒   … 客が結果を待つ書き込み系（submitOrder/submitTakeoutOrder/finalizeBill等）。
+  //             defaultと同値だが、defaultの方針を今後変えても影響を受けないよう意図的に独立させている
+  //   heavy   : 23秒   … 売上集計等の重いRPC（画面側が独自のbusyRetryで再試行するため、内部再送は
+  //             行わずdefaultよりむしろ短く区切る。詳細はdashboard.html等の_HEAVY_RPC_TIMEOUT_MS参照）
+  //   ai      : 45秒   … 外部AI（Gemini Vision）呼び出し。実物のボトル画像はテスト画像より
+  //             大幅に時間がかかり得るため、他より大きく余裕を持たせる
+  var TIMEOUT_MS = { fast: 4500, default: 30000, write: 30000, heavy: 23000, ai: 45000 };
+  API.TIMEOUT_MS = TIMEOUT_MS; // 各画面から参照する唯一の公開窓口
 
   // ---- 通信エラー時の自動リトライ＋再読み込み案内バナー（全アクション共通）----
   // GAS側のコールドスタート等で最初の呼び出しが固まる/404になることがあるため、
   // 「読み取り系」アクションに限り1回だけ自動リトライする（書き込み系は二重実行を避けるためリトライしない）。
   // それでも失敗した場合は控えめなバナーで案内する（次に何か1回でも成功すれば自動的に消える）。
-  const _FETCH_TIMEOUT_MS = 25000;
+  const _FETCH_TIMEOUT_MS = TIMEOUT_MS.default;
   const _RETRY_DELAY_MS = 1200;
   const _READ_ACTIONS = { getSettings: 1, checkToken: 1, bootstrap: 1, checkoutStatus: 1, getStaffCalls: 1, getTableCheckoutStamp: 1, getOperationsDelta: 1 };
   function _isReadOnly(action, fn) {
@@ -190,7 +207,7 @@
       return 'queued';
     }
     try {
-      const res = await API.post('submitOrder', { order: order });
+      const res = await API.post('submitOrder', { order: order, __timeoutMs: TIMEOUT_MS.write });
       const d = res && res.data;
       // [H4] ロック競合による一時的な失敗はサーバー未登録なので再送キューへ（「拒否」扱いにしない）。
       if (d === 'Locked, please retry') { await API.queuePut({ id: order.clientId, order: order, ts: Date.now(), attempts: 0 }); return 'queued'; }
@@ -210,7 +227,7 @@
     let sent = 0, dropped = 0;
     for (const rec of pending) {
       try {
-        await API.post('submitOrder', { order: rec.order, __silent: true });
+        await API.post('submitOrder', { order: rec.order, __silent: true, __timeoutMs: TIMEOUT_MS.write });
         await API.queueDel(rec.id);
         sent++;
       } catch (err) {
