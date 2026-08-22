@@ -137,7 +137,7 @@
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
-    function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
+    function rpc(fn,args,opts){ return API.post('rpc',Object.assign({fn:fn,args:args||[],token:TOKEN},opts||{})).then(function(r){ return r.data; }); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     // 言語切替の一元ヘルパー。商品名・カテゴリ等、日本語/英語を出し分ける箇所は必ずこれを通すこと
     // （新しいUI要素・候補リストを追加するたびに毎回このチェックを忘れないための共通実装）。
@@ -345,7 +345,9 @@
       var btn = document.getElementById('aiAnalyzeBtn'); btn.disabled=true; btn.innerText=I18n.t('aiAnalyzing');
       document.getElementById('aiAlert').style.display='none';
       aiResizeImage(aiFile, 1024, 768, 0.75, function(b64, mime){
-        rpc('countDrinksWithAI',[b64, mime]).then(function(res){
+        // [P4] Gemini応答待ち（数秒〜25秒程度）の間、全画面のローディング表示で他操作までブロックしないようにする。
+        // ボタン自体は既にローカルの「解析中」busy表示になっているため、二重ブロックを避ける。
+        rpc('countDrinksWithAI',[b64, mime],{__silent:true,__timeoutMs:30000,__noInternalRetry:true}).then(function(res){
           btn.disabled=false; btn.innerText=I18n.t('aiAnalyzeBtn');
           res = res || {};
           if(res.error){ aiErr(res.error==='no_api_key' ? I18n.t('aiNoApiKey') : (I18n.t('errPrefix')+res.error)); return; }

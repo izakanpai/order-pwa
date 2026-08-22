@@ -221,6 +221,13 @@
     </div>
 
     <div class="card">
+      <div class="card-title" data-t="auditQueueTitle">📝 監査ログ（記録キュー）</div>
+      <div class="hint" data-t="auditQueueHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">注文確定・会計確定時の監査ログ記録は、応答を速くするため記録キューへ積んでから非同期でシートへ反映します。この処理には1分間隔の自動実行（時間主導トリガー）が必要です。初回のみ、下のボタンを1回押して有効化してください（設定済みなら何度押しても問題ありません。監査ログ画面自体は反映前の分も含めて常に最新を表示します）。</div>
+      <button class="btn" onclick="setupAuditQueue()" data-t="auditQueueBtn">⏱ 自動反映を有効化</button>
+      <div class="st" id="st-auditQueue"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title" data-t="ereceiptTitle">📩 eレシート送付先（固定・複数登録可）</div>
       <div class="fg"><label class="form-label" data-t="ereceiptEmailsLbl">送付先メール（複数可・カンマか改行区切り）</label><textarea id="ereceiptFixedEmails" class="fc" rows="2" placeholder="accounting@example.com, owner@example.com"></textarea></div>
       <div class="hint" data-t="ereceiptHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。</div>
@@ -437,6 +444,12 @@
         st('st-emailOutbox', (r && r.already) ? I18n.t('emailOutboxAlready') : I18n.t('emailOutboxDone'), true);
       }).catch(function(e){ st('st-emailOutbox', I18n.t('errPrefix')+(e.message||e), false); });
     };
+    // [P2] 監査ログの記録も同様にキュー化した分、1分間隔の時間主導トリガーが必要になる。初回のみ管理者が押す想定。
+    window.setupAuditQueue = function(){
+      rpc('ensureAuditQueueTrigger',[]).then(function(r){
+        st('st-auditQueue', (r && r.already) ? I18n.t('auditQueueAlready') : I18n.t('auditQueueDone'), true);
+      }).catch(function(e){ st('st-auditQueue', I18n.t('errPrefix')+(e.message||e), false); });
+    };
     function setBadge(id, on){ var b=$(id); b.className='badge '+(on?'on':'offb'); b.innerText=on?I18n.t('set'):I18n.t('unset'); b.removeAttribute('data-t'); }
 
     // ---- load ----
@@ -509,6 +522,7 @@
         repLang:'出力言語', repLangJa:'日本語', repLangEn:'英語', repLangBoth:'日本語＋英語（両方）',
         bridgeTitle:'🖶 印刷ブリッジ（プリンタ連携）', bridgeInterval:'キュー確認間隔（秒）', bridgeHint:'印刷キュー（bridge.html）がサーバーへ確認しにいく頻度です。短いほど印刷が早く始まりますが、サーバー負荷は増えます。既定値は1.2秒です。',
         emailOutboxTitle:'📧 eレシート送信（メール送信キュー）', emailOutboxHint:'会計確定時のeレシートメールは、応答を速くするため送信キューへ積んでから非同期で送信します。この処理には1分間隔の自動実行（時間主導トリガー）が必要です。初回のみ、下のボタンを1回押して有効化してください（設定済みなら何度押しても問題ありません）。', emailOutboxBtn:'⏱ 自動送信を有効化', emailOutboxDone:'✅ 自動送信を有効化しました', emailOutboxAlready:'✅ 既に有効化されています',
+        auditQueueTitle:'📝 監査ログ（記録キュー）', auditQueueHint:'注文確定・会計確定時の監査ログ記録は、応答を速くするため記録キューへ積んでから非同期でシートへ反映します。この処理には1分間隔の自動実行（時間主導トリガー）が必要です。初回のみ、下のボタンを1回押して有効化してください（設定済みなら何度押しても問題ありません。監査ログ画面自体は反映前の分も含めて常に最新を表示します）。', auditQueueBtn:'⏱ 自動反映を有効化', auditQueueDone:'✅ 自動反映を有効化しました', auditQueueAlready:'✅ 既に有効化されています',
         ereceiptTitle:'📩 eレシート送付先（固定・複数登録可）', ereceiptEmailsLbl:'送付先メール（複数可・カンマか改行区切り）', ereceiptHint:'ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。',
         saved:'✅ 保存しました', savedSched:'✅ 保存＆スケジュール設定しました', uploaded:'✅ アップロードしました', pickImg:'画像を選択してください', needKey:'キーを入力してください', noGeoDev:'この端末は位置情報に対応していません', gotLoc:'現在地を取得しました。「保存」を押してください。', noLoc:'位置情報を取得できませんでした。手動入力してください。', sending:'送信中…', testSent:'✅ テスト送信しました。受信箱をご確認ください', sendFail:'送信できませんでした', scopeReauth:'認証(スコープ)の再承認が必要かもしれません', errPrefix:'エラー: ' },
       en:{ title:'⚙️ Settings', back:'← Manage', save:'💾 Save', status:'Status:', unset:'Not set', set:'Set', phPaste:'Paste and save', close:'Close',
@@ -532,6 +546,7 @@
         repLang:'Output language', repLangJa:'Japanese', repLangEn:'English', repLangBoth:'Japanese + English (both)',
         bridgeTitle:'🖶 Print bridge (printer connection)', bridgeInterval:'Queue check interval (sec)', bridgeHint:'How often the print bridge (bridge.html) checks the server for print jobs. Shorter = faster printing but more server load. Default is 1.2 seconds.',
         emailOutboxTitle:'📧 e-Receipt sending (email outbox)', emailOutboxHint:'To keep checkout fast, e-receipt emails are queued and sent asynchronously in the background. This needs a 1-minute time-driven trigger. Press the button below once (safe to press again if already set up).', emailOutboxBtn:'⏱ Enable auto-send', emailOutboxDone:'✅ Auto-send enabled', emailOutboxAlready:'✅ Already enabled',
+        auditQueueTitle:'📝 Audit log (record queue)', auditQueueHint:'To keep order/checkout responses fast, audit-log entries are queued and written to the sheet asynchronously in the background. This needs a 1-minute time-driven trigger. Press the button below once (safe to press again if already set up — the audit log screen itself always shows the latest entries, including ones not yet flushed).', auditQueueBtn:'⏱ Enable auto-flush', auditQueueDone:'✅ Auto-flush enabled', auditQueueAlready:'✅ Already enabled',
         ereceiptTitle:'📩 e-Receipt recipients (fixed, multiple allowed)', ereceiptEmailsLbl:'Recipient email(s) — comma or newline separated', ereceiptHint:'Every time a bill is finalized, a copy of the e-receipt is automatically sent to the addresses registered here — separate from, and in addition to, whatever the customer optionally enters at checkout. Useful for accounting/owner copies. Leave blank to send nothing.',
         saved:'✅ Saved', savedSched:'✅ Saved & scheduled', uploaded:'✅ Uploaded', pickImg:'Please select an image', needKey:'Please enter a key', noGeoDev:'This device does not support location', gotLoc:'Location acquired. Please press Save.', noLoc:'Could not get location. Please enter manually.', sending:'Sending…', testSent:'✅ Test sent. Please check your inbox', sendFail:'Could not send', scopeReauth:'You may need to re-authorize (scopes)', errPrefix:'Error: ' }
     }, function(){ setBadge('payBadge', payConfigured); setBadge('gemBadge', gemConfigured); setBadge('cseBadge', cseConfigured); });
