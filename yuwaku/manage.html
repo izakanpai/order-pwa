@@ -181,7 +181,10 @@
         btn.disabled=false;
         TOKEN = r.token; NAME = r.name || '';
         localStorage.setItem('mgmtToken', TOKEN); localStorage.setItem('mgmtName', NAME); localStorage.setItem('mgmtRole', r.role||'');
-        checkAndShow();
+        // [応答速度改善(2026-08-22)/ログイン再改善] loginレスポンスに権限メニュー(me)が
+        // 同封されるようになったため、直後のcheckToken往復を省いて即座に表示する。
+        // 念のため未同封（旧サーバー版との混在デプロイ等）の場合のみ従来通りcheckAndShowにフォールバック。
+        if (r.me) { showHub(r.me.allowed || {}); } else { checkAndShow(); }
       }).catch(function(){ btn.disabled=false; errEl.textContent = I18n.t('loginErr'); errEl.style.display='block'; });
     };
     window.logout = function(){ localStorage.removeItem('mgmtToken'); localStorage.removeItem('mgmtName'); localStorage.removeItem('mgmtRole'); TOKEN=''; NAME=''; showLogin(); };
