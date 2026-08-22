@@ -345,9 +345,12 @@
       var btn = document.getElementById('aiAnalyzeBtn'); btn.disabled=true; btn.innerText=I18n.t('aiAnalyzing');
       document.getElementById('aiAlert').style.display='none';
       aiResizeImage(aiFile, 1024, 768, 0.75, function(b64, mime){
-        // [P4] Gemini応答待ち（数秒〜25秒程度）の間、全画面のローディング表示で他操作までブロックしないようにする。
-        // ボタン自体は既にローカルの「解析中」busy表示になっているため、二重ブロックを避ける。
-        rpc('countDrinksWithAI',[b64, mime],{__silent:true,__timeoutMs:30000,__noInternalRetry:true}).then(function(res){
+        // [P4] Gemini応答待ち（数秒〜25秒程度、実物のボトル画像ではさらに長くなり得る）の間、
+        // 全画面のローディング表示で他操作までブロックしないようにする。ボタン自体は既にローカルの
+        // 「解析中」busy表示になっているため、二重ブロックを避ける。
+        // [タイムアウト共通化(2026-08-22)] 個別のマジックナンバーではなくapi.jsの共通設定
+        // （API.TIMEOUT_MS.ai=45秒）を参照する。外部AI呼び出しは他の処理より大きく余裕を持たせている。
+        rpc('countDrinksWithAI',[b64, mime],{__silent:true,__timeoutMs:API.TIMEOUT_MS.ai,__noInternalRetry:true}).then(function(res){
           btn.disabled=false; btn.innerText=I18n.t('aiAnalyzeBtn');
           res = res || {};
           if(res.error){ aiErr(res.error==='no_api_key' ? I18n.t('aiNoApiKey') : (I18n.t('errPrefix')+res.error)); return; }

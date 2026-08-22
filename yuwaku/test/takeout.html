@@ -260,7 +260,7 @@
       if (PAYMONGO){ startPayment(order, btn); }
       else {
         order.paid = false;
-        API.post('submitTakeout', { order: order }).then(function(r){ btn.disabled=false; onOrdered(r.data, false); })
+        API.post('submitTakeout', { order: order, __timeoutMs: API.TIMEOUT_MS.write }).then(function(r){ btn.disabled=false; onOrdered(r.data, false); })
           .catch(function(e){ btn.disabled=false; showAlert(String(e.message||e), false); });
       }
     };
@@ -294,7 +294,7 @@
           // [修正点一覧C-1対応] o.paid=trueというクライアント申告はサーバーはもう信用しない。
           // サーバー側がcheckoutIdを決済台帳・PayMongo双方と突き合わせて検証してから支払済みとする。
           var o = pendingOrder.order; o.checkoutId = pendingOrder.checkoutId; pendingOrder = null;
-          API.post('submitTakeout', { order: o }).then(function(rr){ onOrdered(rr.data, true); })
+          API.post('submitTakeout', { order: o, __timeoutMs: API.TIMEOUT_MS.write }).then(function(rr){ onOrdered(rr.data, true); })
             .catch(function(e){ showAlert(String(e.message||e), false); });
         }
       }).catch(function(){});

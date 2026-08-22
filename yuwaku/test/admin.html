@@ -200,7 +200,7 @@
             noKey:'オンライン決済は未設定です。', cashRecv:'現金を受け取りましたか？', confirmed:'支払い完了', done:'完了（会計済にする）', processing:'処理中…', lang:'EN',
             disc:'シニア/PWD割引', senior:'シニア', idPh:'ID番号', eligPh:'対象額', discLine:'割引', vatNote:'うちVAT', orLbl:'レシート番号', printBtn:'🖨️ レシート印刷', close:'閉じる', tableW:'卓', totalW:'合計',
             partial:'🧾 一部会計', partTitle:'一部会計 — 明細を選択', selected:'選択', selPay:'選択分を会計', splitLbl:'割り勘 ÷', each:'/人',
-            callHdr:'🔔 呼び出し', callLbl:'スタッフ呼出', billLbl:'お会計希望', resolve:'対応済', agoMin:'分前', stay:'滞在', voidBtn:'取消', voidT:'注文の取消', reason:'取消理由', approver:'承認者（責任者ログイン）', loginPh:'ログインID', passPh:'パスワード', voidGo:'取消を承認', needReason:'取消理由を入力してください', authFail:'ログインIDまたはパスワードが違います', voided:'取消しました', alreadySettled:'会計済のため取消できません', alreadyVoid:'既に取消済みです', lockedRetry:'処理中のため、しばらくして再試行してください', eReceipt:'eレシート送信先メール（任意）',
+            callHdr:'🔔 呼び出し', callLbl:'スタッフ呼出', billLbl:'お会計希望', resolve:'対応済', agoMin:'分前', stay:'滞在', voidBtn:'取消', voidT:'注文の取消', reason:'取消理由', approver:'承認者（責任者ログイン）', loginPh:'ログインID', passPh:'パスワード', voidGo:'取消を承認', needReason:'取消理由を入力してください', authFail:'ログインIDまたはパスワードが違います', voided:'取消しました', alreadySettled:'会計済のため取消できません', eReceipt:'eレシート送信先メール（任意）',
             entryFeeLbl:'入場料', extFeeLbl:'延長料',
             discApprover:'承認者（マネージャー以上のログイン）', discNeedAppr:'承認者のログインID・パスワードを入力してください', discNotManager:'マネージャー以上の権限が必要です', discDisabled:'シニア/PWD割引は現在無効化されています', discVerifying:'承認確認中…' },
       en: { title:'Orders', served:'✓ Served', servedBtn:'Mark served', pay:'💳 Checkout', noOrder:'No open orders',
@@ -209,7 +209,7 @@
             noKey:'Online payment is not set up.', cashRecv:'Cash received?', confirmed:'Paid', done:'Done (settle)', processing:'Processing…', lang:'JP',
             disc:'Senior/PWD discount', senior:'Senior', idPh:'ID no.', eligPh:'Eligible amt', discLine:'Discount', vatNote:'incl. VAT', orLbl:'Receipt no.', printBtn:'🖨️ Print receipt', close:'Close', tableW:'Table', totalW:'TOTAL',
             partial:'🧾 Partial', partTitle:'Partial checkout — select items', selected:'Selected', selPay:'Checkout selected', splitLbl:'Split ÷', each:'/person',
-            callHdr:'🔔 Requests', callLbl:'Call staff', billLbl:'Bill please', resolve:'Done', agoMin:'m ago', stay:'Seated', voidBtn:'Void', voidT:'Void order', reason:'Reason', approver:'Approver (manager login)', loginPh:'Login ID', passPh:'Password', voidGo:'Approve void', needReason:'Please enter a reason', authFail:'Wrong login ID or password', voided:'Order voided', alreadySettled:'Cannot void a settled order', alreadyVoid:'Already voided', lockedRetry:'Busy right now — please retry shortly', eReceipt:'e-receipt email (optional)',
+            callHdr:'🔔 Requests', callLbl:'Call staff', billLbl:'Bill please', resolve:'Done', agoMin:'m ago', stay:'Seated', voidBtn:'Void', voidT:'Void order', reason:'Reason', approver:'Approver (manager login)', loginPh:'Login ID', passPh:'Password', voidGo:'Approve void', needReason:'Please enter a reason', authFail:'Wrong login ID or password', voided:'Order voided', alreadySettled:'Cannot void a settled order', eReceipt:'e-receipt email (optional)',
             entryFeeLbl:'Entry fee', extFeeLbl:'Extension fee',
             discApprover:'Approver (manager-or-above login)', discNeedAppr:'Please enter the approver login ID and password', discNotManager:'Manager-level login required', discDisabled:'Senior/PWD discount is currently disabled', discVerifying:'Verifying approval…' }
     };
@@ -348,8 +348,6 @@
         if(d.error==='auth'){ vdErr(t().authFail); return; }
         if(d.error==='no_reason'){ vdErr(t().needReason); return; }
         if(d.error==='already_settled'){ vdErr(t().alreadySettled); return; }
-        if(d.error==='already_void'){ closeVoid(); alert(t().alreadyVoid); load(); return; }
-        if(d.error==='locked_please_retry'){ vdErr(t().lockedRetry); return; }
         if(d.error){ vdErr('Error: '+d.error); return; }
         closeVoid(); load();
       }).catch(function(e){ btn.disabled=false; vdErr('Error: '+(e.message||e)); });
@@ -360,27 +358,11 @@
     // 直前に見たバージョンを送り、変化が無ければunchanged:trueだけ返る＝Spreadsheet読込自体を省略できる。
     var _opsVersion = null;
     var _loadInFlight = false;
-    var _OPS_UI_CACHE_KEY = 'yuwakuOpsUiSnapshotV1';
-    function restoreOpsUiCache(){
-      try {
-        var d = JSON.parse(localStorage.getItem(_OPS_UI_CACHE_KEY) || 'null');
-        if (!d || !d.savedAt || Date.now() - Number(d.savedAt) > 86400000 || !Array.isArray(d.orders)) return false;
-        _opsVersion = d.version != null ? d.version : null;
-        orders = d.orders; calls = Array.isArray(d.calls) ? d.calls : [];
-        if (d.partySizes) PARTY_SIZES = d.partySizes;
-        return true;
-      } catch(e) { return false; }
-    }
-    function saveOpsUiCache(d){
-      try { localStorage.setItem(_OPS_UI_CACHE_KEY, JSON.stringify({ savedAt:Date.now(), version:_opsVersion, orders:orders, calls:calls, partySizes:PARTY_SIZES })); } catch(e) {}
-    }
     window.load = function(force){
       if (_loadInFlight) return Promise.resolve(); // 前回リクエストが残っていれば重複送信しない（会計中呼び出し等が重ならないように）
       _loadInFlight = true;
       // [修正点一覧C-2対応] getOperationsDelta/getOrders/getStaffCallsが認証必須になったため、tokenを送る。
       var payload = (force || _opsVersion == null) ? { token: TOKEN } : { sinceVersion: _opsVersion, token: TOKEN };
-      // 注文管理は集計画面ではないため、5秒を超えて待たせない。
-      payload.__timeoutMs = 4500; payload.__noInternalRetry = true; payload.__silent = true;
       return API.post('getOperationsDelta', payload).then(function(r){
         _loadInFlight = false;
         var d = r.data || {};
@@ -388,7 +370,6 @@
         if (d.unchanged) return; // 変化なし：再描画不要
         orders = d.orders || []; calls = d.calls || [];
         if (d.partySizes) PARTY_SIZES = d.partySizes;
-        saveOpsUiCache(d);
         render(); renderCalls();
       }).catch(function(){
         _loadInFlight = false;
@@ -684,7 +665,8 @@
       var discOn = document.getElementById('dcOn').checked;
       var req = { table: payTable, method: payMethod, orderIds: payOrderIds, email: email, token: TOKEN, checkoutId: payCheckoutId,
         discountType: pv.discountType||'', discountId: pv.discountId||'', discountName: pv.discountName||'', discountEligible: pv.discountEligible||0,
-        discountApproverLogin: discOn?document.getElementById('dcApprLogin').value.trim():'', discountApproverPass: discOn?document.getElementById('dcApprPass').value:'' };
+        discountApproverLogin: discOn?document.getElementById('dcApprLogin').value.trim():'', discountApproverPass: discOn?document.getElementById('dcApprPass').value:'',
+        __timeoutMs: API.TIMEOUT_MS.write }; // [タイムアウト共通化] 会計確定は複数注文まとめての場合もあり時間がかかり得るため専用枠を使う
       API.post('finalizeBill', req).then(function(r){
         btn.disabled=false; btn.innerText=t().done; var d=r.data||{};
         if (d.error==='discount_auth'){ alert(t().authFail); return; }
@@ -711,11 +693,9 @@
       I18n.init(i18n, onLangChange);
       updateHeadClock();
       setInterval(updateHeadClock, 15000);
-      var restoredOps = restoreOpsUiCache();
       API.post('bootstrap', {}).then(function(r){
         SETTINGS = r.settings || {}; PAYMONGO = !!r.paymongo;
         (r.menu||[]).forEach(function(m){ var jp=m['商品名'], en=m['商品名_EN']; if(jp && en) MENU_MAP[String(jp)]=String(en); });
-        if (restoredOps) { render(); renderCalls(); }
         load();
       }).catch(function(){ load(); });
       loadCalls();
