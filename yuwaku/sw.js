@@ -9,7 +9,20 @@
 // activateハンドラが自動的に旧キャッシュを削除するため、次回アクセス時に新しいconfig.js
 // （Cloudflare Workers宛て）が確実に取得される。config.js/api.js等の静的資産を差し替える
 // デプロイのたびに、このバージョン番号を必ず1つ上げること。
-const CACHE = 'yuwaku-pos-v145';
+//
+// ★2026-08-23再追記（v146・重大な不具合の修正）: v145はSHELL配列に既に削除済みの
+// `admin_new.html`が残ったままだった。installハンドラの`caches.addAll(SHELL)`は1件でも
+// 404すると全体が失敗する仕様のため、v145の新規インストールが実際には毎回失敗し続けて
+// いた（新しいCACHEのopenだけ実行されて中身が空のまま）。インストールが失敗すると
+// ブラウザは新しいService Workerをactivateしないため、既にこのPWAを使ったことがある
+// 端末は「本来はv145に上がっているはず」のつもりが実際にはv144のまま固定され、config.js
+// がいつまでもGAS時代のURLを指し続ける（sales.html等が読み込み中のまま止まる・古い
+// バックエンドへの再試行ループが発生する、という形で症状が出た）。
+// 今回、削除済みファイルをSHELLから除去し、バージョンをv146へ上げることで、次回アクセス時に
+// 改めてインストールが成功し、正しいconfig.js（Cloudflare Workers宛て）へ切り替わるようにした。
+// 教訓: SHELLに載せるファイルを変更する際は、必ずデプロイ後の実際のファイル一覧と突き合わせる
+// こと（今回は目視確認を怠ったのが原因）。
+const CACHE = 'yuwaku-pos-v146';
 const SHELL = [
   './',
   './index.html',
@@ -46,7 +59,7 @@ const SHELL = [
   './todo.html',
   './requests.html',
   './printers.html',
-  './admin_new.html',
+  './spa.html',
   './overview.html',
   './system-overview.svg',
   './system-overview-en.svg',
