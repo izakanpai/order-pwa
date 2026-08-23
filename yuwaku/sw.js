@@ -1,6 +1,15 @@
 // Service Worker: アプリシェルをキャッシュし、オフラインでも起動できるようにする。
-// API（script.google.com）へのPOSTは横取りせず素通しする。
-const CACHE = 'yuwaku-pos-v144';
+// API（Cloudflare Workers）へのPOSTは横取りせず素通しする。
+//
+// ★2026-08-23追記（Cloudflare移行に伴う重要な変更）: 静的資産（config.js/api.js含む）は
+// 下のfetchハンドラで「キャッシュ優先」のため、CACHEのバージョン文字列を変えない限り、
+// 既にこのPWAを使ったことがある端末では、config.jsをGAS時代のURLのまま古いキャッシュから
+// 返し続けてしまう（サーバー側でconfig.jsを差し替えても反映されない＝画面がずっと重いGAS
+// バックエンドに繋がったまま、という不具合の直接原因）。CACHEのバージョンを上げると、
+// activateハンドラが自動的に旧キャッシュを削除するため、次回アクセス時に新しいconfig.js
+// （Cloudflare Workers宛て）が確実に取得される。config.js/api.js等の静的資産を差し替える
+// デプロイのたびに、このバージョン番号を必ず1つ上げること。
+const CACHE = 'yuwaku-pos-v145';
 const SHELL = [
   './',
   './index.html',
@@ -36,6 +45,8 @@ const SHELL = [
   './receipts.html',
   './todo.html',
   './requests.html',
+  './printers.html',
+  './admin_new.html',
   './overview.html',
   './system-overview.svg',
   './system-overview-en.svg',
