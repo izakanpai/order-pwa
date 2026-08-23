@@ -1,0 +1,1236 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>izakanpai 管理画面（Cloudflare版・試験用）</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #fff; --text: #111827; --muted: #6b7280; --border: #e5e7eb;
+    --accent: #2563eb; --accent-fg: #fff; --danger: #dc2626; --ok: #059669; --warn: #d97706;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; background: var(--bg); color: var(--text); }
+  header { background: #0f172a; color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 15px; margin: 0; font-weight: 700; }
+  header .badge { font-size: 11px; background: #1e293b; padding: 3px 8px; border-radius: 999px; color: #cbd5e1; }
+  header .spacer { flex: 1; }
+  header button { background: #334155; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+  header button:hover { background: #475569; }
+  nav { display: flex; gap: 4px; padding: 8px 12px; background: #fff; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  nav button { border: none; background: none; padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--muted); border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  nav button.active { background: var(--accent); color: #fff; }
+  main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .card h2 { font-size: 14px; margin: 0 0 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .stat .label { font-size: 11px; color: var(--muted); }
+  .stat .value { font-size: 22px; font-weight: 700; margin-top: 2px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; }
+  input, select { font-size: 13px; padding: 5px 7px; border: 1px solid var(--border); border-radius: 6px; width: 100%; }
+  button.btn { border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; }
+  button.btn.secondary { background: #e5e7eb; color: #111827; }
+  button.btn.danger { background: var(--danger); color: #fff; }
+  button.btn.ok { background: var(--ok); color: #fff; }
+  button.btn:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+  .order-card { border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: #fff; }
+  .order-card.stale { border-color: var(--warn); background: #fffbeb; }
+  .order-card .table-name { font-weight: 700; font-size: 15px; }
+  .order-card .status { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #e5e7eb; }
+  .order-card .items { font-size: 12px; color: var(--muted); margin: 6px 0; }
+  .toast { position: fixed; bottom: 16px; right: 16px; background: #111827; color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 13px; z-index: 999; max-width: 320px; }
+  .toast.err { background: var(--danger); }
+  .modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: flex; align-items: center; justify-content: center; z-index: 998; padding: 16px; }
+  .modal { background: #fff; border-radius: 12px; padding: 18px; width: 100%; max-width: 380px; }
+  .modal h3 { margin: 0 0 10px; font-size: 15px; }
+  .modal .field, .login-box .field { margin-bottom: 10px; }
+  .modal .field label, .login-box .field label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 3px; }
+  .hidden { display: none !important; }
+  #loginScreen { max-width: 340px; margin: 60px auto; }
+  .small { font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header id="topbar" class="hidden">
+  <h1>izakanpai 管理画面（Cloudflare版）</h1>
+  <span class="badge" id="storeBadge"></span>
+  <span class="badge" id="roleBadge"></span>
+  <div class="spacer"></div>
+  <button onclick="logout()">ログアウト</button>
+</header>
+
+<nav id="navbar" class="hidden">
+  <button data-tab="dashboard" onclick="showTab('dashboard')">ダッシュボード</button>
+  <button data-tab="kds" onclick="showTab('kds')">注文管理・KDS</button>
+  <button data-tab="menu" onclick="showTab('menu')">メニュー</button>
+  <button data-tab="employees" onclick="showTab('employees')">従業員</button>
+  <button data-tab="inventory" onclick="showTab('inventory')">在庫</button>
+  <button data-tab="attendance" onclick="showTab('attendance')">勤怠</button>
+  <button data-tab="crm" onclick="showTab('crm')">クーポン・会員・予約</button>
+  <button data-tab="expenses" onclick="showTab('expenses')">経費・粗利</button>
+  <button data-tab="tasks" onclick="showTab('tasks')">タスク・申請</button>
+  <button data-tab="register" onclick="showTab('register')">レジ締め</button>
+  <button data-tab="purchasing" onclick="showTab('purchasing')">仕入・発注・レシピ</button>
+  <button data-tab="takeout" onclick="showTab('takeout')">テイクアウト・プリンター</button>
+  <button data-tab="settings" onclick="showTab('settings')">設定</button>
+</nav>
+
+<main>
+
+<!-- ログイン画面 -->
+<div id="loginScreen" class="card">
+  <h2>ログイン</h2>
+  <div class="login-box">
+    <div class="field"><label>APIエンドポイント</label><input id="apiBase" value="https://izakanpai-api.izakanpai.workers.dev"></div>
+    <div class="field"><label>店舗ID</label><input id="loginStoreId" value="store_001"></div>
+    <div class="field"><label>ログインID</label><input id="loginId"></div>
+    <div class="field"><label>パスワード</label><input id="loginPass" type="password"></div>
+    <button class="btn" style="width:100%" onclick="doLogin()">ログイン</button>
+    <p class="small" id="loginError"></p>
+    <p class="small">これは本番運用画面ではなく、Cloudflare移行版APIの動作確認用の簡易管理画面です。</p>
+  </div>
+</div>
+
+<!-- ダッシュボード -->
+<div id="tab-dashboard" class="tabpanel hidden">
+  <div class="card"><div class="row"><h2 style="margin:0">ダッシュボード</h2><button class="btn secondary" onclick="loadDashboard()">再読込</button></div></div>
+  <div class="grid" id="dashGrid"></div>
+</div>
+
+<!-- 注文管理・KDS -->
+<div id="tab-kds" class="tabpanel hidden">
+  <div class="card">
+    <div class="row">
+      <h2 style="margin:0">注文一覧（未対応〜提供済）</h2>
+      <span class="small" id="kdsUpdated"></span>
+      <div class="spacer"></div>
+      <button class="btn secondary" onclick="loadOps()">再読込</button>
+    </div>
+  </div>
+  <div class="orders-grid" id="ordersGrid"></div>
+  <div class="card">
+    <h2>スタッフ呼び出し</h2>
+    <div id="callsList"></div>
+  </div>
+</div>
+
+<!-- メニュー -->
+<div id="tab-menu" class="tabpanel hidden">
+  <div class="card">
+    <h2>メニュー追加</h2>
+    <div class="row">
+      <input id="newItemName" placeholder="商品名" style="max-width:160px">
+      <input id="newItemNameEn" placeholder="商品名(英)" style="max-width:160px">
+      <input id="newItemCategory" placeholder="カテゴリ" style="max-width:120px">
+      <input id="newItemPrice" placeholder="価格" type="number" style="max-width:100px">
+      <button class="btn" onclick="createMenuItem()">追加</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>メニュー一覧</h2>
+    <table><thead><tr><th>商品名</th><th>カテゴリ</th><th>価格</th><th>状態</th><th></th></tr></thead><tbody id="menuTbody"></tbody></table>
+  </div>
+</div>
+
+<!-- 従業員 -->
+<div id="tab-employees" class="tabpanel hidden">
+  <div class="card">
+    <h2>従業員追加</h2>
+    <div class="row">
+      <input id="newEmpName" placeholder="氏名" style="max-width:140px">
+      <input id="newEmpLoginId" placeholder="ログインID" style="max-width:120px">
+      <input id="newEmpPass" placeholder="パスワード(6文字以上)" type="password" style="max-width:160px">
+      <select id="newEmpRole"><option value="一般">一般</option><option value="マネージャー">マネージャー</option><option value="admin">admin(管理者)</option></select>
+      <input id="newEmpWage" placeholder="時給" type="number" style="max-width:90px">
+      <button class="btn" onclick="createEmployee()">追加</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>従業員一覧</h2>
+    <table><thead><tr><th>氏名</th><th>ログインID</th><th>ロール</th><th>状態</th><th></th></tr></thead><tbody id="empTbody"></tbody></table>
+  </div>
+</div>
+
+<!-- 在庫（フェーズ6） -->
+<div id="tab-inventory" class="tabpanel hidden">
+  <div class="card">
+    <div class="row"><h2 style="margin:0">ドリンク在庫</h2><button class="btn secondary" onclick="loadInventory()">再読込</button></div>
+    <p class="small">在庫数・最小在庫・単価はこの場で直接編集できます（保存ボタンで一括反映。GAS版と同じく「保存した内容＝在庫一覧」の完全置き換え方式です）。品名を空にすると削除されます。</p>
+    <table><thead><tr><th>品名</th><th>カテゴリ</th><th>単位</th><th>在庫数</th><th>最小在庫</th><th>単価</th></tr></thead><tbody id="invTbody"></tbody></table>
+    <div class="row" style="margin-top:10px">
+      <button class="btn secondary" onclick="addInventoryRow()">行を追加</button>
+      <button class="btn" onclick="saveInventory()">在庫一覧を保存</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>入荷・廃棄・棚卸</h2>
+    <div class="row">
+      <input id="invOpName" placeholder="品名（既存の在庫品名と一致させてください）" style="max-width:200px">
+      <input id="invOpQty" placeholder="数量" type="number" style="max-width:100px">
+      <input id="invOpCost" placeholder="単価（入荷時のみ・任意）" type="number" style="max-width:140px">
+      <input id="invOpReason" placeholder="理由（廃棄時のみ・任意）" style="max-width:160px">
+      <button class="btn ok" onclick="invReceive()">入荷</button>
+      <button class="btn danger" onclick="invWaste()">廃棄</button>
+      <button class="btn secondary" onclick="invStocktake()">棚卸（数量を実数に設定）</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>変動履歴</h2>
+    <table><thead><tr><th>日時</th><th>種別</th><th>品名</th><th>数量</th><th>残数</th><th>理由</th><th>担当</th></tr></thead><tbody id="invMovesTbody"></tbody></table>
+  </div>
+</div>
+
+<!-- 勤怠（フェーズ7） -->
+<div id="tab-attendance" class="tabpanel hidden">
+  <div class="card">
+    <div class="row"><h2 style="margin:0">本日の勤務状況</h2><button class="btn secondary" onclick="loadAttendance()">再読込</button></div>
+    <table><thead><tr><th>氏名</th><th>時給</th><th>現在の状態</th><th>打刻</th></tr></thead><tbody id="attStatusTbody"></tbody></table>
+    <p class="small">写真・GPS証跡つきの打刻（GAS版のpunchWithProof）は今回未移植です。ここでの打刻はキオスク端末想定の簡易版（種別選択のみ）です。</p>
+  </div>
+  <div class="card">
+    <h2>月次集計（残業・深夜割増・給与概算）</h2>
+    <div class="row"><input id="attMonth" type="month" style="max-width:160px"><button class="btn secondary" onclick="loadAttendanceSummary()">集計を表示</button></div>
+    <table><thead><tr><th>氏名</th><th>労働時間</th><th>残業時間</th><th>深夜割増時間</th><th>出勤日数</th><th>給与概算</th></tr></thead><tbody id="attSummaryTbody"></tbody></table>
+  </div>
+</div>
+
+<!-- クーポン・会員・予約（フェーズ8） -->
+<div id="tab-crm" class="tabpanel hidden">
+  <div class="card">
+    <div class="row"><h2 style="margin:0">クーポン</h2><button class="btn secondary" onclick="loadCoupons()">再読込</button></div>
+    <p class="small">保存すると一覧全体が置き換わります（利用回数は保持されます）。GAS版と同じく、注文自体はクーポンで割引されません（利用記録のみ）。</p>
+    <table><thead><tr><th>コード</th><th>種別</th><th>値</th><th>最小注文額</th><th>有効期限</th><th>上限</th><th>利用回数</th><th>有効</th><th>説明</th></tr></thead><tbody id="couponTbody"></tbody></table>
+    <div class="row" style="margin-top:10px">
+      <button class="btn secondary" onclick="addCouponRow()">行を追加</button>
+      <button class="btn" onclick="saveCouponsForm()">クーポン一覧を保存</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="margin:0">会員（簡易ロイヤリティ）</h2><button class="btn secondary" onclick="loadMembers()">再読込</button></div>
+    <table><thead><tr><th>電話番号</th><th>氏名</th><th>ポイント</th><th>来店回数</th><th>累計金額</th><th>誕生日</th><th></th></tr></thead><tbody id="memberTbody"></tbody></table>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="margin:0">予約</h2><button class="btn secondary" onclick="loadReservations()">再読込</button></div>
+    <table><thead><tr><th>受付</th><th>予約日時</th><th>人数</th><th>氏名</th><th>電話</th><th>備考</th><th>状態</th></tr></thead><tbody id="reservationTbody"></tbody></table>
+  </div>
+</div>
+
+<!-- 経費・粗利（フェーズ8） -->
+<div id="tab-expenses" class="tabpanel hidden">
+  <div class="card">
+    <h2>経費を追加</h2>
+    <div class="row">
+      <input id="newExpDate" type="date" style="max-width:150px">
+      <select id="newExpCategory"><option>賃料</option><option>電気代</option><option>水道代</option><option>商品仕入</option><option>備品購入</option><option>その他</option></select>
+      <input id="newExpItem" placeholder="品目" style="max-width:160px">
+      <input id="newExpAmount" placeholder="金額" type="number" style="max-width:110px">
+      <input id="newExpPurchaser" placeholder="購入者（任意）" style="max-width:120px">
+      <button class="btn" onclick="createExpense()">追加</button>
+    </div>
+    <p class="small">レシート画像のアップロードはGoogle Drive依存のため今回未移植です。</p>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="margin:0">経費一覧</h2><button class="btn secondary" onclick="loadExpenses()">再読込</button></div>
+    <table><thead><tr><th>日付</th><th>カテゴリ</th><th>品目</th><th>金額</th><th>購入者</th><th></th></tr></thead><tbody id="expTbody"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>月間粗利</h2>
+    <div class="row"><input id="profitMonth" type="month" style="max-width:160px"><button class="btn secondary" onclick="loadProfit()">表示</button></div>
+    <p class="small">原価（cogsAuto）はレシピ[BOM]機能が未着手のため常に0円です。目安として「商品仕入」経費をご覧ください。</p>
+    <div class="grid" id="profitGrid"></div>
+  </div>
+</div>
+
+<!-- タスク・申請（フェーズ10。docs/yuwakuのtodo.html/requests.htmlの代わりに、この新管理画面側に作る方針） -->
+<div id="tab-tasks" class="tabpanel hidden">
+  <div class="card">
+    <h2>ToDoを追加</h2>
+    <div class="row">
+      <input id="newTodoTitle" placeholder="タイトル" style="max-width:220px">
+      <input id="newTodoAssignee" placeholder="担当者（任意）" style="max-width:120px">
+      <input id="newTodoDue" type="date" style="max-width:150px">
+      <button class="btn" onclick="createTodo()">追加</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="margin:0">ToDo一覧</h2><button class="btn secondary" onclick="loadTodos()">再読込</button></div>
+    <table><thead><tr><th>完了</th><th>タイトル</th><th>担当者</th><th>期限</th><th>作成者</th><th></th></tr></thead><tbody id="todoTbody"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>申し入れを投稿</h2>
+    <p class="small">不具合や運営上の困りごとを報告できます（記名式）。</p>
+    <div class="row">
+      <select id="newReqCategory"><option>設備</option><option>メニュー</option><option>シフト</option><option>その他</option></select>
+      <input id="newReqContent" placeholder="内容" style="flex:1;min-width:200px">
+      <button class="btn" onclick="createRequest()">投稿</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="margin:0">申し入れ一覧</h2><button class="btn secondary" onclick="loadRequests()">再読込</button></div>
+    <p class="small">ステータス変更・対応メモ・削除はマネージャー以上のログインに限ります。</p>
+    <table><thead><tr><th>投稿日時</th><th>投稿者</th><th>カテゴリ</th><th>内容</th><th>ステータス</th><th>対応メモ</th><th></th></tr></thead><tbody id="reqTbody"></tbody></table>
+  </div>
+</div>
+
+<!-- レジ締め・シフト管理（フェーズ11） -->
+<div id="tab-register" class="tabpanel hidden">
+  <div class="card">
+    <h2>現在のシフト</h2>
+    <div id="regCurrentBox"></div>
+  </div>
+  <div class="card" id="regOpenCard">
+    <h2>シフト開始</h2>
+    <div class="row">
+      <input id="regOpenFloat" type="number" placeholder="釣銭準備金（円）" value="5000" style="max-width:180px">
+      <input id="regOpenStaff" placeholder="担当者名（空欄でログイン者名）" style="max-width:200px">
+      <button class="btn" onclick="openShiftUI()">シフト開始</button>
+    </div>
+  </div>
+  <div class="card hidden" id="regCloseCard">
+    <h2>シフト締め</h2>
+    <div class="row">
+      <input id="regCloseCounted" type="number" placeholder="実際のレジ内現金（円）" style="max-width:200px">
+      <input id="regCloseCashInOut" type="number" placeholder="現金過不足（両替等、任意）" value="0" style="max-width:200px">
+      <input id="regCloseMemo" placeholder="メモ（任意）" style="max-width:200px">
+      <button class="btn" onclick="closeShiftUI()">シフト締め</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="margin:0">締めたシフト履歴</h2><button class="btn secondary" onclick="loadRegisterBundle()">再読込</button></div>
+    <table><thead><tr><th>開始</th><th>終了</th><th>担当</th><th>釣銭</th><th>現金売上</th><th>カード</th><th>その他</th><th>想定現金</th><th>実現金</th><th>過不足</th><th>メモ</th></tr></thead><tbody id="regShiftsTbody"></tbody></table>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="margin:0">スタッフ別集計</h2><input id="regStaffMonth" type="month" style="max-width:160px"><button class="btn secondary" onclick="loadRegisterBundle()">表示</button></div>
+    <table><thead><tr><th>担当</th><th>回数</th><th>現金</th><th>カード</th><th>その他</th><th>合計</th><th>過不足合計</th></tr></thead><tbody id="regStaffTbody"></tbody></table>
+  </div>
+</div>
+
+<!-- 仕入先・発注・レシピ原価管理（フェーズ12） -->
+<div id="tab-purchasing" class="tabpanel hidden">
+  <div class="card">
+    <div class="row"><h2 style="margin:0">発注提案（最小在庫を下回っている在庫）</h2><button class="btn secondary" onclick="loadReorderSuggestions()">再読込</button></div>
+    <p class="small">仕入先ごとにまとめて表示します。発注メールの自動送信は未対応のため、この内容を見ながら電話・LINE・メール等で別途発注してください。</p>
+    <div id="reorderBox"></div>
+  </div>
+  <div class="card">
+    <h2>仕入先を追加</h2>
+    <div class="row">
+      <input id="newSupName" placeholder="仕入先名" style="max-width:160px">
+      <input id="newSupContact" placeholder="連絡先" style="max-width:140px">
+      <input id="newSupEmail" placeholder="メール（任意）" style="max-width:160px">
+      <input id="newSupItems" placeholder="取扱品目" style="max-width:160px">
+      <button class="btn" onclick="createSupplier()">追加</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="margin:0">仕入先一覧</h2><button class="btn secondary" onclick="loadSuppliers()">再読込</button></div>
+    <table><thead><tr><th>名前</th><th>連絡先</th><th>メール</th><th>取扱品目</th><th>備考</th><th></th></tr></thead><tbody id="supTbody"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>発注アイテムを追加</h2>
+    <p class="small">新規発注時に候補として選べる品目マスタです（在庫・メニューとは別管理）。</p>
+    <div class="row">
+      <input id="newOiName" placeholder="品目名" style="max-width:160px">
+      <input id="newOiUnit" placeholder="単位" style="max-width:80px">
+      <input id="newOiSupplier" placeholder="既定仕入先" style="max-width:140px">
+      <button class="btn" onclick="createOrderItem()">追加</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="margin:0">発注アイテム一覧</h2><button class="btn secondary" onclick="loadOrderItems()">再読込</button></div>
+    <table><thead><tr><th>品目名</th><th>単位</th><th>既定仕入先</th><th></th></tr></thead><tbody id="oiTbody"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>レシピ（メニュー→材料の消費量）</h2>
+    <p class="small">ここで登録した消費量×在庫単価が、経費・粗利タブの「原価（自動）」に反映されます。材料名は在庫タブの商品名と一致させてください。</p>
+    <div class="row">
+      <select id="recipeMenu"></select>
+      <select id="recipeMaterial"></select>
+      <input id="recipeQty" type="number" placeholder="消費量" style="max-width:100px">
+      <button class="btn" onclick="addRecipeRow()">行を追加</button>
+      <button class="btn secondary" onclick="saveRecipesUI()">レシピを保存</button>
+    </div>
+    <table><thead><tr><th>メニュー</th><th>材料</th><th>消費量</th><th></th></tr></thead><tbody id="recipeTbody"></tbody></table>
+  </div>
+</div>
+
+<!-- テイクアウト注文・レシートプリンター連携（フェーズ13） -->
+<div id="tab-takeout" class="tabpanel hidden">
+  <div class="card">
+    <div class="row"><h2 style="margin:0">テイクアウト注文</h2><button class="btn secondary" onclick="loadTakeoutOrders()">再読込</button></div>
+    <p class="small">お客様側の注文受付フォームは今回未着手です（このタブは受けた注文を店舗側で管理する画面です）。決済は未実装のため、現状はすべて「店頭受け渡し時に会計」の運用になります。</p>
+    <table><thead><tr><th>コード</th><th>受付</th><th>氏名</th><th>電話</th><th>受取</th><th>内容</th><th>金額</th><th>メモ</th><th>ステータス</th></tr></thead><tbody id="takeoutTbody"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>プリンターを追加</h2>
+    <div class="row">
+      <input id="newPrName" placeholder="プリンター名" style="max-width:160px">
+      <input id="newPrMac" placeholder="MACアドレス（任意）" style="max-width:160px">
+      <input id="newPrCategories" placeholder="担当カテゴリ（カンマ区切り、空欄で全品目）" style="max-width:220px">
+      <button class="btn" onclick="createPrinter()">追加</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="margin:0">プリンター一覧</h2><button class="btn secondary" onclick="loadPrinters()">再読込</button></div>
+    <p class="small">★スコープについて: プリンターマスタ・印刷キューの管理のみ移植済みです。実際の紙への印字には
+      CloudPRNT対応プリンター等の物理連携が別途必要で、今回は未着手です（「テスト印字」もキューに
+      積むだけで、実際には印字されません）。</p>
+    <table><thead><tr><th>名前</th><th>MAC</th><th>担当カテゴリ</th><th>有効</th><th></th></tr></thead><tbody id="prTbody"></tbody></table>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="margin:0">印刷キュー</h2><button class="btn secondary" onclick="loadPrintQueue()">再読込</button></div>
+    <div class="grid" id="pqCountsGrid"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn secondary" onclick="reprintAllFailedUI()">失敗分をすべて再印刷キューへ</button>
+      <button class="btn secondary" onclick="clearPrintedJobsUI()">印刷済みジョブを削除</button>
+    </div>
+    <table><thead><tr><th>登録</th><th>卓/コード</th><th>プリンター</th><th>ステータス</th><th>試行</th><th></th></tr></thead><tbody id="pqTbody"></tbody></table>
+  </div>
+</div>
+
+<!-- 設定 -->
+<div id="tab-settings" class="tabpanel hidden">
+  <div class="card">
+    <h2>税・サービス料・割引</h2>
+    <div class="grid" id="settingsBillingGrid"></div>
+    <button class="btn" style="margin-top:10px" onclick="saveSettingsForm()">保存</button>
+  </div>
+  <div class="card">
+    <h2>入場料・延長料</h2>
+    <div class="grid" id="settingsEntryGrid"></div>
+  </div>
+  <div class="card">
+    <h2>営業日締め・目標・その他</h2>
+    <div class="grid" id="settingsMiscGrid"></div>
+  </div>
+  <div class="card">
+    <h2>卓数・カウンター数</h2>
+    <div class="row">
+      <div style="max-width:120px"><label class="small">テーブル数</label><input id="tableCount" type="number"></div>
+      <div style="max-width:120px"><label class="small">カウンター数</label><input id="counterCount" type="number"></div>
+      <button class="btn" onclick="saveSeatCounts()">卓数を保存（既存の卓構成を置き換えます）</button>
+    </div>
+    <p class="small" id="tableList"></p>
+  </div>
+</div>
+
+</main>
+
+<div id="modalRoot"></div>
+
+<script>
+const SETTINGS_FIELDS = {
+  billing: [
+    ['taxRate', '税率(%)'], ['serviceRate', 'サービス料率(%)'],
+    ['taxInclusive', '税込表示(true/false)'], ['serviceInclusive', 'サービス料込表示(true/false)'],
+    ['seniorDiscountEnabled', 'Senior/PWD割引 有効化(on/off)'],
+  ],
+  entry: [
+    ['entryFeeAmount', '入場料(1人あたり円)'], ['extensionFeeAmount', '延長料(1人1コマあたり円)'],
+    ['baseUsageMinutes', '基本利用時間(分)'], ['extensionUnitMinutes', '延長1コマの分数'],
+  ],
+  misc: [
+    ['bizDayCutoffHour', '営業日締め時(0-11)'], ['bizDayCutoffMin', '営業日締め分'],
+    ['salesTargetMonthly', '月間売上目標(円)'], ['ereceiptFixedEmails', '固定eレシート送付先(カンマ区切り)'],
+  ],
+};
+
+let session = null; // { apiBase, storeId, token, role, name }
+let opsTimer = null;
+
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem('izakanpai_cf_admin') || 'null'); } catch (e) { return null; }
+}
+function saveSession(s) { localStorage.setItem('izakanpai_cf_admin', JSON.stringify(s)); }
+function clearSession() { localStorage.removeItem('izakanpai_cf_admin'); }
+
+function toast(msg, isErr) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (isErr ? ' err' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+async function api(action, body) {
+  const payload = Object.assign({ action, storeId: session.storeId }, body || {});
+  if (session.token) payload.token = session.token;
+  const res = await fetch(session.apiBase + '/', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
+  });
+  const json = await res.json().catch(() => ({ ok: false, error: 'invalid_json_response' }));
+  if (!json.ok) { toast(action + ': ' + json.error, true); throw new Error(json.error); }
+  return json;
+}
+
+async function doLogin() {
+  const apiBase = document.getElementById('apiBase').value.trim().replace(/\/+$/, '');
+  const storeId = document.getElementById('loginStoreId').value.trim();
+  const loginId = document.getElementById('loginId').value.trim();
+  const password = document.getElementById('loginPass').value;
+  document.getElementById('loginError').textContent = '';
+  try {
+    const res = await fetch(apiBase + '/', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'login', storeId, loginId, password }),
+    });
+    const json = await res.json();
+    if (!json.ok) { document.getElementById('loginError').textContent = 'ログイン失敗: ' + json.error; return; }
+    session = { apiBase, storeId, token: json.token, role: json.role, name: json.name };
+    saveSession(session);
+    enterApp();
+  } catch (e) {
+    document.getElementById('loginError').textContent = '通信エラー: ' + e.message;
+  }
+}
+function logout() { clearSession(); session = null; if (opsTimer) clearInterval(opsTimer); location.reload(); }
+
+function enterApp() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('topbar').classList.remove('hidden');
+  document.getElementById('navbar').classList.remove('hidden');
+  document.getElementById('storeBadge').textContent = session.storeId;
+  document.getElementById('roleBadge').textContent = session.name + '（' + session.role + '）';
+  showTab('dashboard');
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tabpanel').forEach((el) => el.classList.add('hidden'));
+  document.getElementById('tab-' + name).classList.remove('hidden');
+  document.querySelectorAll('#navbar button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
+  if (opsTimer) { clearInterval(opsTimer); opsTimer = null; }
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'kds') { loadOps(); opsTimer = setInterval(loadOps, 8000); }
+  if (name === 'menu') loadMenu();
+  if (name === 'employees') loadEmployees();
+  if (name === 'inventory') loadInventory();
+  if (name === 'attendance') loadAttendance();
+  if (name === 'crm') { loadCoupons(); loadMembers(); loadReservations(); }
+  if (name === 'expenses') loadExpenses();
+  if (name === 'tasks') { loadTodos(); loadRequests(); }
+  if (name === 'register') loadRegisterBundle();
+  if (name === 'purchasing') { loadReorderSuggestions(); loadSuppliers(); loadOrderItems(); loadRecipeEditor(); }
+  if (name === 'takeout') { loadTakeoutOrders(); loadPrinters(); loadPrintQueue(); }
+  if (name === 'settings') loadSettings();
+}
+
+// ---- ダッシュボード ----
+async function loadDashboard() {
+  const r = await api('getDashboard', {});
+  const items = [
+    ['本日 売上', '¥' + (r.today?.revenue ?? 0).toLocaleString()],
+    ['本日 注文数', r.today?.orders ?? 0],
+    ['今月 売上', '¥' + (r.month?.revenue ?? 0).toLocaleString() + '（' + (r.month?.month ?? '') + '）'],
+    ['今月 注文数', r.month?.orders ?? 0],
+    ['月間目標', r.target ? '¥' + r.target.toLocaleString() : '未設定'],
+    ['在庫アラート', r.lowStock ?? 0],
+    ['メニューアラート', r.menuAlert ?? 0],
+  ];
+  document.getElementById('dashGrid').innerHTML = items.map(([label, value]) =>
+    `<div class="stat"><div class="label">${label}</div><div class="value">${value}</div></div>`
+  ).join('');
+}
+
+// ---- 注文管理・KDS ----
+const STATUS_FLOW = { '未対応': '調理中', '調理中': '提供済' };
+async function loadOps() {
+  const r = await api('getOperationsDelta', {});
+  document.getElementById('kdsUpdated').textContent = '最終更新: ' + new Date().toLocaleTimeString('ja-JP');
+  const grid = document.getElementById('ordersGrid');
+  if (!r.orders.length) { grid.innerHTML = '<p class="small">現在アクティブな注文はありません。</p>'; }
+  else {
+    grid.innerHTML = r.orders.map((o) => {
+      const party = r.partySizes && r.partySizes[o.table];
+      const itemsStr = o.items.map((i) => `${i.item_name}×${i.qty}`).join(', ');
+      const next = STATUS_FLOW[o.status];
+      return `<div class="order-card ${o.stale ? 'stale' : ''}">
+        <div class="row"><span class="table-name">卓 ${esc(o.table)}</span><span class="status">${o.status}</span></div>
+        <div class="items">${esc(itemsStr)}</div>
+        <div class="small">¥${o.price.toLocaleString()}${party ? ' ／ ' + party.count + '名' : ''}${o.stale ? ' ／ 長時間滞留' : ''}</div>
+        <div class="row" style="margin-top:8px">
+          ${next ? `<button class="btn ok" onclick="updateStatus('${o.id}','${next}')">${next}へ</button>` : ''}
+          <button class="btn secondary" onclick="openBillModal('${esc(o.table)}')">会計</button>
+          <button class="btn danger" onclick="openVoidModal('${o.id}')">取消</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  const calls = document.getElementById('callsList');
+  calls.innerHTML = r.calls.length ? r.calls.map((c) =>
+    `<div class="row" style="margin-bottom:6px">
+      <span>卓 ${esc(c.table)} — ${c.type === 'bill' ? 'お会計' : '呼び出し'}（${c.ageMin}分経過）</span>
+      <button class="btn secondary" onclick="resolveCall('${c.id}')">対応済にする</button>
+    </div>`
+  ).join('') : '<p class="small">現在対応待ちの呼び出しはありません。</p>';
+}
+async function updateStatus(orderId, status) { await api('updateOrderStatus', { orderId, status }); toast('更新しました'); loadOps(); }
+async function resolveCall(id) { await api('resolveCall', { id }); loadOps(); }
+
+function openVoidModal(orderId) {
+  renderModal(`
+    <h3>注文を取消します</h3>
+    <div class="field"><label>理由</label><input id="mVoidReason"></div>
+    <div class="field"><label>承認者ログインID</label><input id="mVoidApproverLogin"></div>
+    <div class="field"><label>承認者パスワード</label><input id="mVoidApproverPass" type="password"></div>
+    <div class="row"><button class="btn danger" onclick="submitVoid('${orderId}')">取消を実行</button><button class="btn secondary" onclick="closeModal()">キャンセル</button></div>
+  `);
+}
+async function submitVoid(orderId) {
+  await api('voidOrder', {
+    orderId, reason: val('mVoidReason'),
+    approverLoginId: val('mVoidApproverLogin'), approverPassword: val('mVoidApproverPass'),
+  });
+  toast('取消しました'); closeModal(); loadOps();
+}
+
+function openBillModal(table) {
+  renderModal(`
+    <h3>卓 ${esc(table)} を会計（現金）</h3>
+    <p class="small">card/gcashはPayMongo連携が未移植のため、この画面では現金会計のみ対応しています。</p>
+    <label class="small"><input type="checkbox" id="mDiscOn" onchange="document.getElementById('mDiscFields').classList.toggle('hidden', !this.checked)"> Senior/PWD割引を適用</label>
+    <div id="mDiscFields" class="hidden">
+      <div class="field"><label>種別</label><select id="mDiscType"><option value="senior">Senior</option><option value="pwd">PWD</option></select></div>
+      <div class="field"><label>割引対象額</label><input id="mDiscEligible" type="number"></div>
+      <div class="field"><label>承認者ログインID</label><input id="mDiscApproverLogin"></div>
+      <div class="field"><label>承認者パスワード</label><input id="mDiscApproverPass" type="password"></div>
+    </div>
+    <div class="row"><button class="btn ok" onclick="submitBill('${table}')">会計確定</button><button class="btn secondary" onclick="closeModal()">キャンセル</button></div>
+  `);
+}
+async function submitBill(table) {
+  const bill = { table, method: 'cash' };
+  if (document.getElementById('mDiscOn').checked) {
+    bill.discountType = val('mDiscType');
+    bill.discountEligible = Number(val('mDiscEligible')) || 0;
+    bill.discountApproverLogin = val('mDiscApproverLogin');
+    bill.discountApproverPass = val('mDiscApproverPass');
+  }
+  const r = await api('finalizeBill', { bill });
+  toast('会計完了: ' + r.orNo + '（合計¥' + r.total.toLocaleString() + '）');
+  closeModal(); loadOps();
+}
+
+// ---- メニュー ----
+let currentMenuItems = [];
+async function loadMenu() {
+  const r = await api('getAllMenuForAdmin', {});
+  currentMenuItems = r.items;
+  document.getElementById('menuTbody').innerHTML = r.items.map((it) => `
+    <tr>
+      <td>${esc(it.name)}</td>
+      <td>${esc(it.category || '')}</td>
+      <td>¥${Number(it.price).toLocaleString()}</td>
+      <td>
+        <select onchange="setMenuStatus('${esc(it.name)}', this.value)">
+          <option value="on_sale" ${it.status === 'on_sale' ? 'selected' : ''}>販売中</option>
+          <option value="sold_out" ${it.status === 'sold_out' ? 'selected' : ''}>本日売切</option>
+          <option value="hidden" ${it.status === 'hidden' ? 'selected' : ''}>非表示</option>
+        </select>
+      </td>
+      <td><button class="btn danger" onclick="deleteMenuItem('${esc(it.name)}')">削除</button></td>
+    </tr>`).join('');
+}
+async function createMenuItem() {
+  const item = {
+    name: val('newItemName'), nameEn: val('newItemNameEn'),
+    category: val('newItemCategory'), price: Number(val('newItemPrice')) || 0,
+  };
+  if (!item.name) { toast('商品名を入力してください', true); return; }
+  await api('saveMenuItem', { item });
+  ['newItemName','newItemNameEn','newItemCategory','newItemPrice'].forEach((id) => document.getElementById(id).value = '');
+  toast('追加しました'); loadMenu();
+}
+async function setMenuStatus(oldName, status) {
+  // saveMenuItemはpriceを必須（未指定だとNaN扱いでinvalid_priceエラーになる）で受け取るため、
+  // 一覧から取得済みの現在の価格・カテゴリもあわせて送る。
+  const it = currentMenuItems.find((x) => x.name === oldName);
+  await api('saveMenuItem', { item: { oldName, name: oldName, status, price: it ? it.price : 0, category: it ? it.category : '' } });
+  toast('更新しました');
+}
+async function deleteMenuItem(name) {
+  if (!confirm(name + ' を削除しますか？')) return;
+  await api('deleteMenuItem', { name });
+  toast('削除しました'); loadMenu();
+}
+
+// ---- 従業員 ----
+let currentEmployees = [];
+async function loadEmployees() {
+  const r = await api('getAllEmployees', {});
+  currentEmployees = r.employees;
+  document.getElementById('empTbody').innerHTML = r.employees.map((e) => `
+    <tr>
+      <td>${esc(e.name)}</td><td>${esc(e.login_id || '')}</td><td>${esc(e.role)}</td>
+      <td>
+        <select onchange="setEmpStatus('${e.employee_id}', this.value)">
+          <option value="在籍" ${e.status === '在籍' ? 'selected' : ''}>在籍</option>
+          <option value="退職" ${e.status === '退職' ? 'selected' : ''}>退職</option>
+        </select>
+      </td>
+      <td><button class="btn danger" onclick="deleteEmployee('${e.employee_id}')">削除</button></td>
+    </tr>`).join('');
+}
+async function createEmployee() {
+  const employee = {
+    name: val('newEmpName'), loginId: val('newEmpLoginId'), password: val('newEmpPass'),
+    role: val('newEmpRole'), wage: Number(val('newEmpWage')) || 0,
+  };
+  if (!employee.name) { toast('氏名を入力してください', true); return; }
+  await api('saveEmployee', { employee });
+  ['newEmpName','newEmpLoginId','newEmpPass','newEmpWage'].forEach((id) => document.getElementById(id).value = '');
+  toast('追加しました'); loadEmployees();
+}
+async function setEmpStatus(id, status) {
+  // saveEmployeeはnameを必須で受け取る（未指定だと保存を拒否する仕様）ため、
+  // 一覧から取得済みの現在の氏名をあわせて送る。
+  const emp = currentEmployees.find((e) => e.employee_id === id);
+  await api('saveEmployee', { employee: { id, name: emp ? emp.name : '', status } });
+  toast('更新しました');
+}
+async function deleteEmployee(id) {
+  if (!confirm('この従業員を削除しますか？')) return;
+  await api('deleteEmployee', { id });
+  toast('削除しました'); loadEmployees();
+}
+
+// ---- 在庫（フェーズ6） ----
+function invRowHtml(it) {
+  it = it || { name: '', category: '', unit: '本', stock: 0, minimum: 0, cost: 0 };
+  return `<tr>
+    <td><input class="invName" value="${esc(it.name)}" placeholder="品名"></td>
+    <td><input class="invCategory" value="${esc(it.category || '')}" placeholder="カテゴリ"></td>
+    <td><input class="invUnit" value="${esc(it.unit || '本')}" style="max-width:60px"></td>
+    <td><input class="invStock" type="number" value="${it.stock}" style="max-width:90px"></td>
+    <td><input class="invMinimum" type="number" value="${it.minimum}" style="max-width:90px"></td>
+    <td><input class="invCost" type="number" value="${it.cost}" style="max-width:90px"></td>
+  </tr>`;
+}
+async function loadInventory() {
+  const r = await api('getDrinkInventory', {});
+  document.getElementById('invTbody').innerHTML = r.items.map(invRowHtml).join('');
+  const moves = await api('getStockMoves', {});
+  document.getElementById('invMovesTbody').innerHTML = moves.moves.slice(0, 50).map((m) => `
+    <tr>
+      <td class="small">${esc(m.ts)}</td><td>${esc(m.type)}</td><td>${esc(m.name)}</td>
+      <td>${m.qty > 0 ? '+' : ''}${m.qty}${esc(m.unit)}</td><td>${m.stock}</td>
+      <td class="small">${esc(m.reason)}</td><td class="small">${esc(m.actor)}</td>
+    </tr>`).join('');
+}
+function addInventoryRow() {
+  document.getElementById('invTbody').insertAdjacentHTML('beforeend', invRowHtml());
+}
+async function saveInventory() {
+  const rows = [...document.querySelectorAll('#invTbody tr')].map((tr) => ({
+    name: tr.querySelector('.invName').value.trim(),
+    category: tr.querySelector('.invCategory').value,
+    unit: tr.querySelector('.invUnit').value,
+    stock: Number(tr.querySelector('.invStock').value) || 0,
+    minimum: Number(tr.querySelector('.invMinimum').value) || 0,
+    cost: Number(tr.querySelector('.invCost').value) || 0,
+  })).filter((it) => it.name);
+  await api('saveDrinkInventory', { items: rows });
+  toast('在庫一覧を保存しました'); loadInventory();
+}
+async function invReceive() {
+  const name = val('invOpName'), qty = Number(val('invOpQty')) || 0, cost = Number(val('invOpCost')) || 0;
+  if (!name || qty <= 0) { toast('品名・数量を入力してください', true); return; }
+  await api('receiveStock', { name, qty, cost });
+  toast('入荷を記録しました'); loadInventory();
+}
+async function invWaste() {
+  const name = val('invOpName'), qty = Number(val('invOpQty')) || 0, reason = val('invOpReason');
+  if (!name || qty <= 0) { toast('品名・数量を入力してください', true); return; }
+  await api('logWaste', { name, qty, reason });
+  toast('廃棄を記録しました'); loadInventory();
+}
+async function invStocktake() {
+  const name = val('invOpName'), counted = Number(val('invOpQty'));
+  if (!name || !Number.isFinite(counted) || counted < 0) { toast('品名・実数を入力してください', true); return; }
+  await api('stocktake', { name, counted });
+  toast('棚卸を記録しました'); loadInventory();
+}
+
+// ---- 勤怠（フェーズ7） ----
+const PUNCH_TYPES = ['出勤', '休憩開始', '休憩終了', '退勤'];
+async function loadAttendance() {
+  const r = await api('getEmployeeStatuses', {});
+  document.getElementById('attStatusTbody').innerHTML = r.statuses.map((s) => `
+    <tr>
+      <td>${esc(s.name)}</td><td>¥${Number(s.wage).toLocaleString()}</td><td>${esc(s.status)}</td>
+      <td>
+        <select id="attType_${s.id}" style="max-width:110px">${PUNCH_TYPES.map((t) => `<option value="${t}">${t}</option>`).join('')}</select>
+        <button class="btn secondary" onclick="doPunch('${s.id}')">打刻</button>
+      </td>
+    </tr>`).join('');
+  if (!document.getElementById('attMonth').value) document.getElementById('attMonth').value = new Date().toISOString().slice(0, 7);
+}
+async function doPunch(empId) {
+  const type = document.getElementById('attType_' + empId).value;
+  const r = await api('punch', { empId, type });
+  if (r.success === false) { toast('打刻エラー: ' + r.error, true); return; }
+  toast('打刻しました（' + r.status + '）'); loadAttendance();
+}
+async function loadAttendanceSummary() {
+  const month = val('attMonth');
+  if (!month) { toast('対象月を選択してください', true); return; }
+  const r = await api('getAttendanceMonthlySummary', { month });
+  document.getElementById('attSummaryTbody').innerHTML = r.summary.filter((e) => e.days > 0 || e.workedMin > 0).map((e) => `
+    <tr>
+      <td>${esc(e.name)}</td><td>${(e.workedMin / 60).toFixed(1)}時間</td><td>${(e.overtimeMin / 60).toFixed(1)}時間</td>
+      <td>${(e.nightMin / 60).toFixed(1)}時間</td><td>${e.days}日</td><td>¥${e.estimate.toLocaleString()}</td>
+    </tr>`).join('') || '<tr><td colspan="6" class="small">この月の勤怠記録はありません。</td></tr>';
+}
+
+// ---- クーポン・会員・予約（フェーズ8） ----
+function couponRowHtml(c) {
+  c = c || { code: '', type: 'amount', value: 0, min: 0, expiry: '', limit: 0, used: 0, active: true, desc: '' };
+  return `<tr>
+    <td><input class="cpCode" value="${esc(c.code)}" placeholder="コード" style="max-width:110px"></td>
+    <td><select class="cpType"><option value="amount" ${c.type === 'amount' ? 'selected' : ''}>金額引き</option><option value="percent" ${c.type === 'percent' ? 'selected' : ''}>割引率%</option></select></td>
+    <td><input class="cpValue" type="number" value="${c.value}" style="max-width:80px"></td>
+    <td><input class="cpMin" type="number" value="${c.min}" style="max-width:80px"></td>
+    <td><input class="cpExpiry" type="date" value="${esc(c.expiry)}" style="max-width:130px"></td>
+    <td><input class="cpLimit" type="number" value="${c.limit}" style="max-width:70px"></td>
+    <td class="small">${c.used}</td>
+    <td><input class="cpActive" type="checkbox" style="width:auto" ${c.active ? 'checked' : ''}></td>
+    <td><input class="cpDesc" value="${esc(c.desc)}" placeholder="説明"></td>
+  </tr>`;
+}
+async function loadCoupons() {
+  const r = await api('getCoupons', {});
+  document.getElementById('couponTbody').innerHTML = r.coupons.map(couponRowHtml).join('');
+}
+function addCouponRow() { document.getElementById('couponTbody').insertAdjacentHTML('beforeend', couponRowHtml()); }
+async function saveCouponsForm() {
+  const rows = [...document.querySelectorAll('#couponTbody tr')].map((tr) => ({
+    code: tr.querySelector('.cpCode').value.trim(),
+    type: tr.querySelector('.cpType').value,
+    value: Number(tr.querySelector('.cpValue').value) || 0,
+    min: Number(tr.querySelector('.cpMin').value) || 0,
+    expiry: tr.querySelector('.cpExpiry').value,
+    limit: Number(tr.querySelector('.cpLimit').value) || 0,
+    active: tr.querySelector('.cpActive').checked,
+    desc: tr.querySelector('.cpDesc').value,
+  })).filter((c) => c.code);
+  await api('saveCoupons', { rows });
+  toast('クーポン一覧を保存しました'); loadCoupons();
+}
+async function loadMembers() {
+  const r = await api('getMembers', {});
+  document.getElementById('memberTbody').innerHTML = r.members.map((m) => `
+    <tr>
+      <td>${esc(m.phone)}</td><td>${esc(m.name)}</td><td>${m.points}pt</td><td>${m.visits}回</td>
+      <td>¥${Number(m.totalSpent).toLocaleString()}</td><td>${esc(m.birthday || '')}</td>
+      <td>${m.birthday ? `<button class="btn secondary" onclick="issueBdayCoupon('${esc(m.phone)}')">誕生日クーポン発行</button>` : ''}</td>
+    </tr>`).join('') || '<tr><td colspan="7" class="small">登録済みの会員はいません。</td></tr>';
+}
+async function issueBdayCoupon(phone) {
+  const r = await api('issueBirthdayCoupon', { phone });
+  toast(r.dup ? '既に発行済みです（' + r.code + '）' : '発行しました: ' + r.code + '（¥' + r.amount + '）');
+}
+async function loadReservations() {
+  const r = await api('getReservations', {});
+  document.getElementById('reservationTbody').innerHTML = r.reservations.map((v) => `
+    <tr>
+      <td class="small">${esc(v.received)}</td><td>${esc(v.datetime)}</td><td>${v.people}名</td>
+      <td>${esc(v.name)}</td><td>${esc(v.phone)}</td><td class="small">${esc(v.notes)}</td>
+      <td>
+        <select onchange="updateReservation('${esc(v.id)}', this.value)">
+          ${['受付','確定','キャンセル','来店済'].map((s) => `<option value="${s}" ${v.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" class="small">予約はありません。</td></tr>';
+}
+async function updateReservation(id, status) {
+  await api('updateReservationStatus', { id, status });
+  toast('更新しました');
+}
+
+// ---- 経費・粗利（フェーズ8） ----
+async function loadExpenses() {
+  const r = await api('getExpenses', {});
+  document.getElementById('expTbody').innerHTML = r.expenses.map((e) => `
+    <tr>
+      <td>${esc(e.date)}</td><td>${esc(e.category)}</td><td>${esc(e.item)}</td>
+      <td>¥${Number(e.amount).toLocaleString()}</td><td>${esc(e.purchaser)}</td>
+      <td><button class="btn danger" onclick="removeExpense('${esc(e.id)}')">削除</button></td>
+    </tr>`).join('') || '<tr><td colspan="6" class="small">経費の登録はまだありません。</td></tr>';
+}
+async function createExpense() {
+  const expense = {
+    date: val('newExpDate'), category: val('newExpCategory'), item: val('newExpItem'),
+    amount: Number(val('newExpAmount')) || 0, purchaser: val('newExpPurchaser'),
+  };
+  if (!expense.date || !expense.amount) { toast('日付・金額を入力してください', true); return; }
+  await api('saveExpense', { expense });
+  ['newExpItem','newExpAmount','newExpPurchaser'].forEach((id) => document.getElementById(id).value = '');
+  toast('追加しました'); loadExpenses();
+}
+async function removeExpense(id) {
+  if (!confirm('この経費を削除しますか？')) return;
+  await api('deleteExpense', { id });
+  toast('削除しました'); loadExpenses();
+}
+async function loadProfit() {
+  const month = val('profitMonth') || new Date().toISOString().slice(0, 7);
+  if (!val('profitMonth')) document.getElementById('profitMonth').value = month;
+  const r = await api('getMonthlyProfit', { month });
+  const expTotal = Object.values(r.exp).reduce((a, b) => a + b, 0);
+  const items = [
+    ['売上（会計済レシート基準）', '¥' + r.revenue.toLocaleString()],
+    ['会計件数', r.orders],
+    ['人件費（勤怠概算）', '¥' + r.wages.toLocaleString()],
+    ['経費合計', '¥' + expTotal.toLocaleString()],
+    ['原価（自動）', '¥' + r.cogsAuto.toLocaleString() + '（未実装につき常に0）'],
+    ...Object.entries(r.exp).map(([k, v]) => ['　経費: ' + k, '¥' + v.toLocaleString()]),
+  ];
+  document.getElementById('profitGrid').innerHTML = items.map(([label, value]) =>
+    `<div class="stat"><div class="label">${label}</div><div class="value" style="font-size:16px">${value}</div></div>`
+  ).join('');
+}
+
+// ---- フェーズ10: タスク・申請 ----
+async function loadTodos() {
+  const r = await api('getTodos', {});
+  document.getElementById('todoTbody').innerHTML = r.todos.map((t) => `
+    <tr style="${t.done ? 'opacity:.55' : ''}">
+      <td><input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo('${esc(t.id)}', this.checked)"></td>
+      <td>${esc(t.title)}</td><td>${esc(t.assignee)}</td><td>${esc(t.due)}</td><td>${esc(t.creator)}</td>
+      <td><button class="btn danger" onclick="removeTodo('${esc(t.id)}')">削除</button></td>
+    </tr>`).join('') || '<tr><td colspan="6" class="small">ToDoの登録はまだありません。</td></tr>';
+}
+async function createTodo() {
+  const title = val('newTodoTitle');
+  if (!title) { toast('タイトルを入力してください', true); return; }
+  const todo = { title, assignee: val('newTodoAssignee'), due: val('newTodoDue') };
+  await api('saveTodo', { todo });
+  ['newTodoTitle', 'newTodoAssignee', 'newTodoDue'].forEach((id) => document.getElementById(id).value = '');
+  toast('追加しました'); loadTodos();
+}
+async function toggleTodo(id, done) {
+  await api('toggleTodoDone', { id, done });
+  loadTodos();
+}
+async function removeTodo(id) {
+  if (!confirm('このToDoを削除しますか？')) return;
+  await api('deleteTodo', { id });
+  toast('削除しました'); loadTodos();
+}
+const REQUEST_STATUSES = ['未対応', '対応中', '解決済み'];
+async function loadRequests() {
+  const r = await api('getRequests', {});
+  document.getElementById('reqTbody').innerHTML = r.requests.map((req) => `
+    <tr>
+      <td class="small">${esc(req.created)}</td><td>${esc(req.author)}</td><td>${esc(req.category)}</td>
+      <td>${esc(req.content)}</td>
+      <td><select onchange="updateRequestStatusUI('${esc(req.id)}', this.value)">
+        ${REQUEST_STATUSES.map((s) => `<option value="${s}" ${s === req.status ? 'selected' : ''}>${s}</option>`).join('')}
+      </select></td>
+      <td><input value="${esc(req.note)}" placeholder="対応メモ" style="max-width:140px" onchange="updateRequestNoteUI('${esc(req.id)}', this.value, '${esc(req.status)}')"></td>
+      <td><button class="btn danger" onclick="removeRequest('${esc(req.id)}')">削除</button></td>
+    </tr>`).join('') || '<tr><td colspan="7" class="small">申し入れの投稿はまだありません。</td></tr>';
+}
+async function createRequest() {
+  const content = val('newReqContent');
+  if (!content) { toast('内容を入力してください', true); return; }
+  const request = { category: val('newReqCategory'), content };
+  await api('submitRequest', { request });
+  document.getElementById('newReqContent').value = '';
+  toast('投稿しました'); loadRequests();
+}
+async function updateRequestStatusUI(id, status) {
+  const r = await api('updateRequestStatus', { id, status });
+  if (r.error === 'forbidden') { toast('マネージャー以上のログインが必要です', true); loadRequests(); return; }
+  toast('更新しました'); loadRequests();
+}
+async function updateRequestNoteUI(id, note, status) {
+  const r = await api('updateRequestStatus', { id, status, note });
+  if (r.error === 'forbidden') { toast('マネージャー以上のログインが必要です', true); loadRequests(); return; }
+  toast('更新しました'); loadRequests();
+}
+async function removeRequest(id) {
+  if (!confirm('この申し入れを削除しますか？')) return;
+  const r = await api('deleteRequest', { id });
+  if (r.error === 'forbidden') { toast('マネージャー以上のログインが必要です', true); return; }
+  toast('削除しました'); loadRequests();
+}
+
+// ---- フェーズ11: レジ締め・シフト管理 ----
+async function loadRegisterBundle() {
+  const month = val('regStaffMonth');
+  const r = await api('getRegisterBundle', month ? { month } : {});
+  const c = r.current;
+  if (c.open) {
+    document.getElementById('regCurrentBox').innerHTML = [
+      ['開始', esc(c.openAt)], ['担当', esc(c.staff || '（未設定）')], ['釣銭準備金', '¥' + c.float.toLocaleString()],
+      ['現金売上（現在まで）', '¥' + c.sales.cash.toLocaleString()], ['カード売上', '¥' + c.sales.card.toLocaleString()],
+      ['その他売上', '¥' + c.sales.other.toLocaleString()], ['会計件数', c.sales.count],
+      ['想定現金（現在）', '¥' + c.expectedCash.toLocaleString()],
+    ].map(([label, value]) => `<div class="stat"><div class="label">${label}</div><div class="value" style="font-size:16px">${value}</div></div>`).join('');
+    document.getElementById('regOpenCard').classList.add('hidden');
+    document.getElementById('regCloseCard').classList.remove('hidden');
+  } else {
+    document.getElementById('regCurrentBox').innerHTML = '<p class="small">現在開いているシフトはありません。</p>';
+    document.getElementById('regOpenCard').classList.remove('hidden');
+    document.getElementById('regCloseCard').classList.add('hidden');
+  }
+  document.getElementById('regShiftsTbody').innerHTML = r.shifts.map((s) => `
+    <tr>
+      <td class="small">${esc(s.openAt)}</td><td class="small">${esc(s.closeAt)}</td><td>${esc(s.staff)}</td>
+      <td>¥${s.float.toLocaleString()}</td><td>¥${s.cashSales.toLocaleString()}</td><td>¥${s.cardSales.toLocaleString()}</td>
+      <td>¥${s.otherSales.toLocaleString()}</td><td>¥${s.expectedCash.toLocaleString()}</td><td>¥${s.countedCash.toLocaleString()}</td>
+      <td style="${s.overShort !== 0 ? 'color:#c00' : ''}">¥${s.overShort.toLocaleString()}</td><td class="small">${esc(s.memo)}</td>
+    </tr>`).join('') || '<tr><td colspan="11" class="small">締めたシフトはまだありません。</td></tr>';
+  document.getElementById('regStaffTbody').innerHTML = r.staff.map((s) => `
+    <tr>
+      <td>${esc(s.staff)}</td><td>${s.shifts}</td><td>¥${s.cash.toLocaleString()}</td><td>¥${s.card.toLocaleString()}</td>
+      <td>¥${s.other.toLocaleString()}</td><td>¥${s.total.toLocaleString()}</td>
+      <td style="${s.overShort !== 0 ? 'color:#c00' : ''}">¥${s.overShort.toLocaleString()}</td>
+    </tr>`).join('') || '<tr><td colspan="7" class="small">対象データがありません。</td></tr>';
+}
+async function openShiftUI() {
+  const floatAmt = Number(val('regOpenFloat')) || 0;
+  const staff = val('regOpenStaff');
+  const r = await api('openShift', { float: floatAmt, staff: staff || undefined });
+  if (r.error === 'already_open') { toast('既にシフトが開始されています', true); loadRegisterBundle(); return; }
+  toast('シフトを開始しました'); loadRegisterBundle();
+}
+async function closeShiftUI() {
+  const counted = val('regCloseCounted');
+  if (counted === '') { toast('実際のレジ内現金を入力してください', true); return; }
+  const r = await api('closeShift', { counted: Number(counted) || 0, cashInOut: Number(val('regCloseCashInOut')) || 0, memo: val('regCloseMemo') });
+  if (r.error === 'no_open') { toast('開いているシフトがありません', true); loadRegisterBundle(); return; }
+  const over = r.z.overShort;
+  toast('シフトを締めました（過不足: ' + (over >= 0 ? '+' : '') + over.toLocaleString() + '円）');
+  ['regCloseCounted', 'regCloseMemo'].forEach((id) => document.getElementById(id).value = '');
+  document.getElementById('regCloseCashInOut').value = '0';
+  loadRegisterBundle();
+}
+
+// ---- フェーズ12: 仕入先・発注・レシピ原価管理 ----
+async function loadReorderSuggestions() {
+  const r = await api('getReorderSuggestions', {});
+  document.getElementById('reorderBox').innerHTML = r.groups.length ? r.groups.map((g) => `
+    <div class="card" style="margin:8px 0;background:var(--card-bg-2, rgba(127,127,127,.06))">
+      <div class="row"><b>${esc(g.supplier || '（仕入先未設定）')}</b>
+        ${g.contact ? '<span class="small">' + esc(g.contact) + '</span>' : ''}
+        ${g.email ? '<span class="small">' + esc(g.email) + '</span>' : ''}
+        ${g.supplier ? '<button class="btn secondary" onclick="sendReorderEmailUI(\'' + esc(g.supplier) + '\')">発注メールを送る</button>' : ''}
+      </div>
+      <table><thead><tr><th>品目</th><th>在庫</th><th>最小在庫</th><th>推奨発注数</th><th>単位</th></tr></thead><tbody>
+        ${g.items.map((it) => `<tr><td>${esc(it.name)}</td><td>${it.stock}</td><td>${it.minimum}</td><td><b>${it.suggest}</b></td><td>${esc(it.unit)}</td></tr>`).join('')}
+      </tbody></table>
+    </div>`).join('') : '<p class="small">現在、最小在庫を下回っている在庫はありません。</p>';
+}
+async function sendReorderEmailUI(supplierName) {
+  const r = await api('sendReorderEmail', { supplierName });
+  if (r.error === 'email_not_implemented') { toast('発注メールの自動送信は未対応です。上の一覧を見ながら別途発注してください', true); return; }
+  toast('送信しました');
+}
+async function loadSuppliers() {
+  const r = await api('getSuppliers', {});
+  document.getElementById('supTbody').innerHTML = r.suppliers.map((s) => `
+    <tr>
+      <td>${esc(s.name)}</td><td>${esc(s.contact)}</td><td class="small">${esc(s.email)}</td><td>${esc(s.items)}</td><td class="small">${esc(s.memo)}</td>
+      <td><button class="btn danger" onclick="removeSupplier('${esc(s.id)}')">削除</button></td>
+    </tr>`).join('') || '<tr><td colspan="6" class="small">仕入先の登録はまだありません。</td></tr>';
+}
+async function createSupplier() {
+  const name = val('newSupName');
+  if (!name) { toast('仕入先名を入力してください', true); return; }
+  const supplier = { name, contact: val('newSupContact'), email: val('newSupEmail'), items: val('newSupItems') };
+  const r = await api('saveSupplier', { supplier });
+  if (r.error === 'no_name') { toast('仕入先名を入力してください', true); return; }
+  ['newSupName', 'newSupContact', 'newSupEmail', 'newSupItems'].forEach((id) => document.getElementById(id).value = '');
+  toast('追加しました'); loadSuppliers();
+}
+async function removeSupplier(id) {
+  if (!confirm('この仕入先を削除しますか？')) return;
+  await api('deleteSupplier', { id });
+  toast('削除しました'); loadSuppliers(); loadReorderSuggestions();
+}
+async function loadOrderItems() {
+  const r = await api('getOrderItems', {});
+  document.getElementById('oiTbody').innerHTML = r.items.map((it) => `
+    <tr>
+      <td>${esc(it.name)}</td><td>${esc(it.unit)}</td><td>${esc(it.supplier)}</td>
+      <td><button class="btn danger" onclick="removeOrderItem('${esc(it.id)}')">削除</button></td>
+    </tr>`).join('') || '<tr><td colspan="4" class="small">発注アイテムの登録はまだありません。</td></tr>';
+}
+async function createOrderItem() {
+  const name = val('newOiName');
+  if (!name) { toast('品目名を入力してください', true); return; }
+  const item = { name, unit: val('newOiUnit'), supplier: val('newOiSupplier') };
+  const r = await api('saveOrderItem', { item });
+  if (r.error === 'no_name') { toast('品目名を入力してください', true); return; }
+  ['newOiName', 'newOiUnit', 'newOiSupplier'].forEach((id) => document.getElementById(id).value = '');
+  toast('追加しました'); loadOrderItems();
+}
+async function removeOrderItem(id) {
+  if (!confirm('この発注アイテムを削除しますか？')) return;
+  await api('deleteOrderItem', { id });
+  toast('削除しました'); loadOrderItems();
+}
+let RECIPE_ROWS = [];
+async function loadRecipeEditor() {
+  const [menuR, invR, recipeR] = await Promise.all([api('getAllMenuForAdmin', {}), api('getDrinkInventory', {}), api('getRecipes', {})]);
+  const menuSel = document.getElementById('recipeMenu');
+  menuSel.innerHTML = menuR.items.map((m) => `<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('');
+  const matSel = document.getElementById('recipeMaterial');
+  matSel.innerHTML = invR.items.map((i) => `<option value="${esc(i.name)}">${esc(i.name)}</option>`).join('');
+  RECIPE_ROWS = recipeR.recipes.slice();
+  renderRecipeTbody();
+}
+function renderRecipeTbody() {
+  document.getElementById('recipeTbody').innerHTML = RECIPE_ROWS.map((r, idx) => `
+    <tr>
+      <td>${esc(r.menu)}</td><td>${esc(r.material)}</td><td>${r.qty}</td>
+      <td><button class="btn danger" onclick="removeRecipeRow(${idx})">削除</button></td>
+    </tr>`).join('') || '<tr><td colspan="4" class="small">レシピの登録はまだありません。</td></tr>';
+}
+function addRecipeRow() {
+  const menu = val('recipeMenu'), material = val('recipeMaterial'), qty = Number(val('recipeQty')) || 0;
+  if (!menu || !material || qty <= 0) { toast('メニュー・材料・消費量を入力してください', true); return; }
+  RECIPE_ROWS = RECIPE_ROWS.filter((r) => !(r.menu === menu && r.material === material));
+  RECIPE_ROWS.push({ menu, material, qty });
+  document.getElementById('recipeQty').value = '';
+  renderRecipeTbody();
+  toast('行を追加しました（「レシピを保存」を押すまでは確定しません）');
+}
+function removeRecipeRow(idx) {
+  RECIPE_ROWS.splice(idx, 1);
+  renderRecipeTbody();
+}
+async function saveRecipesUI() {
+  await api('saveRecipes', { rows: RECIPE_ROWS });
+  toast('レシピを保存しました'); loadRecipeEditor();
+}
+
+// ---- フェーズ13: テイクアウト注文・レシートプリンター連携 ----
+const TAKEOUT_STATUSES = ['未対応', '調理中', '受渡可能', '受渡済', 'キャンセル'];
+async function loadTakeoutOrders() {
+  const r = await api('getTakeoutOrders', {});
+  document.getElementById('takeoutTbody').innerHTML = r.orders.map((o) => `
+    <tr>
+      <td>${esc(o.code)}</td><td class="small">${esc(o.created)}</td><td>${esc(o.name)}</td><td>${esc(o.phone)}</td>
+      <td>${esc(o.pickup)}</td><td class="small">${o.items.map((it) => esc(it.name) + '×' + it.qty).join(', ')}</td>
+      <td>¥${o.subtotal.toLocaleString()}</td><td class="small">${esc(o.notes)}</td>
+      <td><select onchange="updateTakeoutStatusUI('${esc(o.code)}', this.value)">
+        ${TAKEOUT_STATUSES.map((s) => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
+      </select></td>
+    </tr>`).join('') || '<tr><td colspan="9" class="small">テイクアウト注文はまだありません。</td></tr>';
+}
+async function updateTakeoutStatusUI(code, status) {
+  await api('updateTakeoutStatus', { code, status });
+  toast('更新しました'); loadTakeoutOrders();
+}
+async function loadPrinters() {
+  const r = await api('getAllPrinters', {});
+  document.getElementById('prTbody').innerHTML = r.printers.map((p) => `
+    <tr>
+      <td>${esc(p.name)}</td><td class="small">${esc(p.mac)}</td><td class="small">${esc(p.categories.join(', ') || '（全品目）')}</td>
+      <td>${p.enabled ? '有効' : '無効'}</td>
+      <td><button class="btn secondary" onclick="testPrintUI('${esc(p.id)}')">テスト印字</button>
+        <button class="btn danger" onclick="removePrinter('${esc(p.id)}')">削除</button></td>
+    </tr>`).join('') || '<tr><td colspan="5" class="small">プリンターの登録はまだありません。</td></tr>';
+}
+async function createPrinter() {
+  const name = val('newPrName');
+  if (!name) { toast('プリンター名を入力してください', true); return; }
+  const categories = val('newPrCategories').split(',').map((s) => s.trim()).filter(Boolean);
+  const r = await api('savePrinter', { printer: { name, mac: val('newPrMac'), categories, enabled: true } });
+  if (r.error === 'no_name') { toast('プリンター名を入力してください', true); return; }
+  ['newPrName', 'newPrMac', 'newPrCategories'].forEach((id) => document.getElementById(id).value = '');
+  toast('追加しました'); loadPrinters();
+}
+async function removePrinter(id) {
+  if (!confirm('このプリンターを削除しますか？')) return;
+  await api('deletePrinter', { id });
+  toast('削除しました'); loadPrinters(); loadPrintQueue();
+}
+async function testPrintUI(printerId) {
+  const r = await api('testPrint', { printerId });
+  if (r.error === 'no_printer') { toast('プリンターが見つかりません', true); return; }
+  toast('テスト印字ジョブをキューに追加しました（実際の印字は行われません）'); loadPrintQueue();
+}
+async function loadPrintQueue() {
+  const [counts, q] = await Promise.all([api('getPrintQueueCounts', {}), api('getPrintQueue', {})]);
+  const labels = { pending: '未印刷', printing: '印刷中', done: '印刷済', failed: '失敗' };
+  document.getElementById('pqCountsGrid').innerHTML = Object.keys(labels).map((k) =>
+    `<div class="stat"><div class="label">${labels[k]}</div><div class="value">${counts[k] || 0}</div></div>`
+  ).join('');
+  document.getElementById('pqTbody').innerHTML = q.jobs.map((j) => `
+    <tr>
+      <td class="small">${esc(j.created)}</td><td>${esc(j.table || j.orderId)}</td><td>${esc(j.printerName)}</td>
+      <td>${esc(labels[j.status] || j.status)}</td><td>${j.attempts}</td>
+      <td><button class="btn secondary" onclick="reprintJobUI('${esc(j.id)}')">再印刷</button></td>
+    </tr>`).join('') || '<tr><td colspan="6" class="small">印刷キューは空です。</td></tr>';
+}
+async function reprintJobUI(id) {
+  await api('reprintJob', { id });
+  toast('再印刷キューに戻しました'); loadPrintQueue();
+}
+async function reprintAllFailedUI() {
+  const r = await api('reprintAllFailed', {});
+  toast(`${r.count}件を再印刷キューへ戻しました`); loadPrintQueue();
+}
+async function clearPrintedJobsUI() {
+  await api('clearPrintedJobs', {});
+  toast('印刷済みジョブを削除しました'); loadPrintQueue();
+}
+
+// ---- 設定 ----
+let currentSettings = {};
+function settingsGridHtml(group) {
+  return SETTINGS_FIELDS[group].map(([key, label]) =>
+    `<div><label class="small">${label}</label><input id="set_${key}" value="${esc(currentSettings[key] || '')}"></div>`
+  ).join('');
+}
+async function loadSettings() {
+  const r = await api('getSettings', {});
+  currentSettings = r.settings || {};
+  document.getElementById('settingsBillingGrid').innerHTML = settingsGridHtml('billing');
+  document.getElementById('settingsEntryGrid').innerHTML = settingsGridHtml('entry');
+  document.getElementById('settingsMiscGrid').innerHTML = settingsGridHtml('misc');
+  const tables = await api('getTableMaster', {});
+  document.getElementById('tableList').textContent = '現在の卓構成: ' + tables.tables.join(', ');
+}
+async function saveSettingsForm() {
+  const data = {};
+  [...SETTINGS_FIELDS.billing, ...SETTINGS_FIELDS.entry, ...SETTINGS_FIELDS.misc].forEach(([key]) => {
+    data[key] = val('set_' + key);
+  });
+  await api('saveSettings', { data });
+  toast('設定を保存しました');
+}
+async function saveSeatCounts() {
+  const tableCount = Number(val('tableCount')) || 0, counterCount = Number(val('counterCount')) || 0;
+  if (!confirm('現在の卓構成を置き換えます。よろしいですか？')) return;
+  await api('saveSeatCounts', { tableCount, counterCount });
+  toast('卓数を更新しました'); loadSettings();
+}
+
+// ---- ユーティリティ ----
+function val(id) { return document.getElementById(id).value; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function renderModal(html) { document.getElementById('modalRoot').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`; }
+function closeModal() { document.getElementById('modalRoot').innerHTML = ''; }
+
+// ---- 起動 ----
+(function init() {
+  session = loadSession();
+  if (session && session.token) {
+    document.getElementById('apiBase').value = session.apiBase;
+    document.getElementById('loginStoreId').value = session.storeId;
+    enterApp();
+  }
+})();
+</script>
+</body>
+</html>
