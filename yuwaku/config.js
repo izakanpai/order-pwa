@@ -1,6 +1,12 @@
-// PWA 設定。GASのexec URL（固定デプロイ）を指す。
+// PWA 設定。Cloudflare Workers（本移行後の本番API）のURLを指す。
 // デプロイURLを差し替える場合はここだけ変更する。
+//
+// ★注意（あつしさんへ）: 下記URLは、これまでの作業中に一貫して使ってきた想定の本番URL
+// （Workerサービス名 izakanpai-api ＋ Cloudflareアカウントのサブドメイン izakanpai）です。
+// 実際に `npx wrangler deploy` を実行すると、コンソールに実際のデプロイ先URLが表示されます。
+// もしそのURLがここと違っていたら、下のAPI_URLを実際のURLに書き換えてから
+// deploy.bat/deploy_all.batを実行してください。
 window.APP_CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbw48cGyvKYP5gtIE1ltI_YFjU9R08RomOzq_Vp0cd0uWbHREDeLxxP-hRT4UusvjS9H/exec',
+  API_URL: 'https://izakanpai-api.izakanpai.workers.dev',
   VERSION: 'v1.0.0'
 };
