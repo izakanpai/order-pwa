@@ -175,7 +175,19 @@
     </div>
 
     <div class="card">
+      <div class="card-title" data-t="emailCfgTitle">📧 メール送信設定（Resend）</div>
+      <div class="hint" style="font-size:13px;font-weight:700;color:#1e40af;background:#dbeafe;border:1px solid #bfdbfe;border-radius:9px;padding:10px 12px;margin-bottom:10px;" data-t="emailCfgHint">2026-08-23、定期レポート機能のメール送信の仕組みを実装しました（Resendという外部メール送信サービス経由）。ご利用には以下の準備が必要です。<br>① <a href="https://resend.com" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:underline;">resend.com</a>で無料アカウントを作成<br>② 送信元ドメインを追加し、案内されるDNSレコードを設定して検証を完了<br>③ APIキーを発行し、下に貼り付けて保存<br>④ 送信元アドレス（検証したドメイン配下、例: report@mail.izakanpai.com）も保存<br><br>⚠️ この環境では実際のAPIキーでの送信確認はできていません。設定後、下の定期レポートカードの「テスト送信」で必ず実機確認をお願いします。</div>
+      <div class="fg"><label class="form-label" data-t="emailApiKeyLbl">Resend APIキー</label><input id="emailApiKey" type="text" class="fc" placeholder="re_xxxxxxxx"><span class="badge" id="emailKeyBadge" style="margin-left:8px;"></span></div>
+      <button class="btn" onclick="saveEmailKey()" data-t="save">💾 保存</button>
+      <div class="st" id="st-emailKey"></div>
+      <div class="fg" style="margin-top:12px;"><label class="form-label" data-t="emailFromLbl">送信元アドレス</label><input id="emailFromAddress" type="text" class="fc" placeholder="report@mail.izakanpai.com"></div>
+      <button class="btn" onclick="saveEmailFrom()" data-t="save">💾 保存</button>
+      <div class="st" id="st-emailFrom"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title" data-t="repTitle">📧 定期レポート（自動メール）</div>
+      <div class="hint" style="font-size:13px;font-weight:700;color:#15803d;background:#dcfce7;border:1px solid #bbf7d0;border-radius:9px;padding:10px 12px;margin-bottom:10px;" data-t="repNowWorks">✅ 2026-08-23よりメール送信の仕組みが実装され、この機能が使えるようになりました（上の「メール送信設定」でResend APIキー・送信元アドレスの設定が必要です）。実際の送信は15分間隔のスケジュール実行のため、設定した時刻ちょうどではなく、その後の直近15分枠内（最大約15分遅れ）で届きます。</div>
       <div class="fg"><label class="form-label" data-t="repEmail">送信先メール（複数可・カンマか改行区切り）</label><textarea id="reportEmail" class="fc" rows="2" placeholder="a@example.com, b@example.com"></textarea></div>
 
       <label class="chk" style="display:block;margin:10px 0 4px;"><input type="checkbox" id="reportEnabled"><span data-t="repDaily">日次日報（毎日）</span></label>
@@ -192,7 +204,6 @@
         <div class="fg"><label class="form-label" data-t="repMonthDay">送信日（1〜28）</label><input id="reportMonthlyDay" type="number" min="1" max="28" class="fc"></div>
         <div class="fg"><label class="form-label" data-t="repHour">送信時刻</label><input id="reportMonthlyTime" type="time" class="fc" step="60"></div>
       </div>
-      <div class="form-hint" style="margin:6px 0 0;">Apps Scriptの仕様上、実際の送信は指定時刻から最大15分程度ずれる場合があります。</div>
 
       <div class="fg" style="max-width:220px;margin-top:12px;"><label class="form-label" data-t="repLang">出力言語</label><select id="reportLang" class="fc"><option value="ja" data-t="repLangJa">日本語</option><option value="en" data-t="repLangEn">英語</option><option value="both" data-t="repLangBoth">日本語＋英語（両方）</option></select></div>
 
@@ -215,30 +226,28 @@
 
     <div class="card">
       <div class="card-title" data-t="emailOutboxTitle">📧 eレシート送信（メール送信キュー）</div>
-      <div class="hint" data-t="emailOutboxHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">会計確定時のeレシートメールは、応答を速くするため送信キューへ積んでから非同期で送信します。この処理には1分間隔の自動実行（時間主導トリガー）が必要です。初回のみ、下のボタンを1回押して有効化してください（設定済みなら何度押しても問題ありません）。</div>
-      <button class="btn" onclick="setupEmailOutbox()" data-t="emailOutboxBtn">⏱ 自動送信を有効化</button>
+      <div class="hint" style="font-size:13px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;padding:10px 12px;margin:2px 0 10px;" data-t="emailOutboxUnavail">⚠️ この機能は現在ご利用いただけません。メール送信の仕組み自体がまだ実装されていないため、下のボタンを押しても実際にeレシートが送信されることはありません。<br><br>代わりに、お客様へは店舗スタッフが会計時にレシートを紙で印刷（プリンタ設定でレシート自動印刷が有効な場合）してお渡しください。過去の会計内容は<a href="./receipts.html" style="color:#92400e;text-decoration:underline;">会計履歴</a>からいつでも再印刷できます。</div>
+      <button class="btn" disabled style="opacity:.45;cursor:not-allowed;" data-t="emailOutboxBtn">⏱ 自動送信を有効化（利用不可）</button>
       <div class="st" id="st-emailOutbox"></div>
     </div>
 
     <div class="card">
       <div class="card-title" data-t="auditQueueTitle">📝 監査ログ（記録キュー）</div>
-      <div class="hint" data-t="auditQueueHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">注文確定・会計確定時の監査ログ記録は、応答を速くするため記録キューへ積んでから非同期でシートへ反映します。この処理には1分間隔の自動実行（時間主導トリガー）が必要です。初回のみ、下のボタンを1回押して有効化してください（設定済みなら何度押しても問題ありません。監査ログ画面自体は反映前の分も含めて常に最新を表示します）。</div>
-      <button class="btn" onclick="setupAuditQueue()" data-t="auditQueueBtn">⏱ 自動反映を有効化</button>
+      <div class="hint" style="font-size:13px;font-weight:700;color:#15803d;background:#dcfce7;border:1px solid #bbf7d0;border-radius:9px;padding:10px 12px;margin:2px 0 10px;" data-t="auditQueueObsolete">✅ この設定は不要になりました。以前（Googleスプレッドシート版）は記録を1分おきの自動実行でまとめて反映する仕組みが必要でしたが、現在のシステム（Cloudflare D1）では注文確定・会計確定時に監査ログへ即時反映されます。下のボタンを押す必要はありません。</div>
       <div class="st" id="st-auditQueue"></div>
     </div>
 
     <div class="card">
       <div class="card-title" data-t="opLogQueueTitle">🗒️ 操作ログ（記録キュー）</div>
-      <div class="hint" data-t="opLogQueueHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">各種操作（保存・削除等）の操作ログ記録は、応答を速くするため記録キューへ積んでから非同期でシートへ反映します。この処理には1分間隔の自動実行（時間主導トリガー）が必要です。初回のみ、下のボタンを1回押して有効化してください（設定済みなら何度押しても問題ありません。操作ログ画面自体は反映前の分も含めて常に最新を表示します）。</div>
-      <button class="btn" onclick="setupOpLogQueue()" data-t="opLogQueueBtn">⏱ 自動反映を有効化</button>
+      <div class="hint" style="font-size:13px;font-weight:700;color:#15803d;background:#dcfce7;border:1px solid #bbf7d0;border-radius:9px;padding:10px 12px;margin:2px 0 10px;" data-t="opLogQueueObsolete">✅ この設定は不要になりました。監査ログと同様、現在のシステム（Cloudflare D1）では操作ログも各種操作時に即時反映されます。下のボタンを押す必要はありません。</div>
       <div class="st" id="st-opLogQueue"></div>
     </div>
 
     <div class="card">
       <div class="card-title" data-t="ereceiptTitle">📩 eレシート送付先（固定・複数登録可）</div>
-      <div class="fg"><label class="form-label" data-t="ereceiptEmailsLbl">送付先メール（複数可・カンマか改行区切り）</label><textarea id="ereceiptFixedEmails" class="fc" rows="2" placeholder="accounting@example.com, owner@example.com"></textarea></div>
-      <div class="hint" data-t="ereceiptHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。</div>
-      <button class="btn" onclick="saveEreceiptFixedEmails()" data-t="save">💾 保存</button>
+      <div class="hint" style="font-size:13px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;padding:10px 12px;margin-bottom:10px;" data-t="ereceiptUnavail">⚠️ この機能は現在ご利用いただけません。メール送信の仕組み自体が未実装のため、ここに登録しても実際には送信されません。経理・オーナー控えは<a href="./receipts.html" style="color:#92400e;text-decoration:underline;">会計履歴</a>やCSVエクスポート（バックアップ/書き出し画面）をご利用ください。</div>
+      <div class="fg"><label class="form-label" data-t="ereceiptEmailsLbl">送付先メール（複数可・カンマか改行区切り）</label><textarea id="ereceiptFixedEmails" class="fc" rows="2" placeholder="accounting@example.com, owner@example.com" disabled></textarea></div>
+      <button class="btn" disabled style="opacity:.45;cursor:not-allowed;" data-t="ereceiptSaveBtn">💾 保存（利用不可）</button>
       <div class="st" id="st-ereceipt"></div>
     </div>
 
@@ -411,11 +420,9 @@
         extensionFeeAmount:Number($('extensionFeeAmount').value)||0, extensionUnitMinutes:Number($('extensionUnitMinutes').value)||0 }])
         .then(function(){ st('st-entry',I18n.t('saved'), true); }).catch(function(e){ st('st-entry',I18n.t('errPrefix')+(e.message||e), false); });
     };
-    window.saveEreceiptFixedEmails = function(){
-      var emails=($('ereceiptFixedEmails').value||'').split(/[\s,;]+/).map(function(x){return x.trim();}).filter(Boolean).join(',');
-      rpc('saveSettings',[{ ereceiptFixedEmails: emails }])
-        .then(function(){ st('st-ereceipt',I18n.t('saved'), true); }).catch(function(e){ st('st-ereceipt',I18n.t('errPrefix')+(e.message||e), false); });
-    };
+    // 2026-08-23: メール送信の仕組み自体が未実装のため保存しても意味がなく、UI側で
+    // textarea・ボタンをdisabledにした（呼べないようno-op化）。
+    window.saveEreceiptFixedEmails = function(){};
     window.saveSeniorDiscount = function(){
       rpc('saveSettings',[{ seniorDiscountEnabled:$('seniorDiscountEnabled').checked?'on':'' }])
         .then(function(){ st('st-senior',I18n.t('saved'), true); }).catch(function(e){ st('st-senior',I18n.t('errPrefix')+(e.message||e), false); });
@@ -433,36 +440,56 @@
     };
     window.saveGeo = function(){ rpc('saveSettings',[{ storeLat:$('storeLat').value, storeLng:$('storeLng').value, storeRadius:Number($('storeRadius').value)||0 }]).then(function(){ st('st-geo',I18n.t('saved'), true); }).catch(function(e){ st('st-geo',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.saveLoy = function(){ rpc('saveSettings',[{ loyaltyEnabled:$('loyaltyEnabled').checked?'on':'', loyaltyEarnRate:Number($('loyaltyEarnRate').value)||20, loyaltyRedeemValue:Number($('loyaltyRedeemValue').value)||1 }]).then(function(){ st('st-loy',I18n.t('saved'), true); }).catch(function(e){ st('st-loy',I18n.t('errPrefix')+(e.message||e), false); }); };
+    // 2026-08-23: メール送信の仕組み（Resend経由）を実装したため、保存・テスト送信とも
+    // 実際にrpc()でサーバーへ送るよう復元した。実際の自動送信にはResend APIキー・送信元
+    // アドレスの設定（上のカード）が別途必要。
     window.saveReport = function(){
-      var emails=($('reportEmail').value||'').split(/[\s,;]+/).map(function(x){return x.trim();}).filter(Boolean).join(',');
-      var dt=_splitTime($('reportTime').value), wt=_splitTime($('reportWeeklyTime').value), mt=_splitTime($('reportMonthlyTime').value);
-      rpc('saveReportSettings',[emails, dt[0], dt[1], $('reportEnabled').checked, $('reportWeekly').checked, $('reportMonthly').checked, $('reportWeeklyDay').value, wt[0], wt[1], $('reportMonthlyDay').value, mt[0], mt[1], $('reportLang').value]).then(function(r){ if(r&&r.success){ st('st-report',I18n.t('savedSched'), true); } else { st('st-report',I18n.t('errPrefix')+((r&&r.error)||I18n.t('scopeReauth')), false); } }).catch(function(e){ st('st-report',I18n.t('errPrefix')+(e.message||e), false); });
+      var emails = ($('reportEmail').value||'').split(/[\n,]+/).map(function(s){return s.trim();}).filter(Boolean).join(',');
+      var dt = ($('reportTime').value||'23:00').split(':');
+      var wdt = ($('reportWeeklyTime').value||$('reportTime').value||'23:00').split(':');
+      var mdt = ($('reportMonthlyTime').value||$('reportTime').value||'23:00').split(':');
+      rpc('saveReportSettings',[
+        emails, Number(dt[0])||23, Number(dt[1])||0,
+        $('reportEnabled').checked, $('reportWeekly').checked, $('reportMonthly').checked,
+        Number($('reportWeeklyDay').value)||1, Number(wdt[0])||23, Number(wdt[1])||0,
+        Number($('reportMonthlyDay').value)||1, Number(mdt[0])||23, Number(mdt[1])||0,
+        $('reportLang').value||'ja'
+      ]).then(function(){ st('st-report',I18n.t('saved'), true); }).catch(function(e){ st('st-report',I18n.t('errPrefix')+(e.message||e), false); });
     };
-    window.testReport = function(kind){ st('st-report',I18n.t('sending'), true); rpc('sendTestReport',[kind||'daily']).then(function(r){ if(r&&r.success){ st('st-report',I18n.t('testSent'), true); } else { st('st-report',I18n.t('errPrefix')+((r&&r.error)||I18n.t('sendFail')), false); } }).catch(function(e){ st('st-report',I18n.t('errPrefix')+(e.message||e), false); }); };
+    window.testReport = function(kind){
+      st('st-report',I18n.t('sending'), true);
+      rpc('sendTestReport',[kind]).then(function(r){
+        if(r && r.success){ st('st-report',I18n.t('testSent'), true); }
+        else { st('st-report',I18n.t('testFailed')+(r&&r.error?(': '+r.error):''), false); }
+      }).catch(function(e){ st('st-report',I18n.t('errPrefix')+(e.message||e), false); });
+    };
+    window.saveEmailKey = function(){
+      var k=$('emailApiKey').value.trim();
+      if(!k){ st('st-emailKey',I18n.t('needKey'), false); return; }
+      rpc('saveEmailApiKey',[k]).then(function(){ $('emailApiKey').value=''; st('st-emailKey',I18n.t('saved'), true); return rpc('getEmailApiKeyStatus',[]); })
+        .then(function(s){ if(s) setBadge('emailKeyBadge', s.hasKey); })
+        .catch(function(e){ st('st-emailKey',I18n.t('errPrefix')+(e.message||e), false); });
+    };
+    window.saveEmailFrom = function(){
+      var a=$('emailFromAddress').value.trim();
+      if(!a){ st('st-emailFrom',I18n.t('needFrom'), false); return; }
+      rpc('saveEmailFromAddress',[a]).then(function(){ st('st-emailFrom',I18n.t('saved'), true); return rpc('getEmailApiKeyStatus',[]); })
+        .then(function(s){ if(s) setBadge('emailKeyBadge', s.configured); })
+        .catch(function(e){ st('st-emailFrom',I18n.t('errPrefix')+(e.message||e), false); });
+    };
     window.saveBridgePoll = function(){
       var sec = Number($('bridgePollSec').value) || 1.2;
       sec = Math.min(60, Math.max(0.5, sec));   // 0.5〜60秒の範囲にクランプ（極端な値によるサーバー過負荷／印刷遅延を防止）
       $('bridgePollSec').value = sec;
       rpc('saveSettings',[{ bridgePollMs: Math.round(sec * 1000) }]).then(function(){ st('st-bridge',I18n.t('saved'), true); }).catch(function(e){ st('st-bridge',I18n.t('errPrefix')+(e.message||e), false); });
     };
-    // [P2] 会計確定のメール送信をoutbox化した分、1分間隔の時間主導トリガーが必要になる。初回のみ管理者が押す想定。
-    window.setupEmailOutbox = function(){
-      rpc('ensureEmailOutboxTrigger',[]).then(function(r){
-        st('st-emailOutbox', (r && r.already) ? I18n.t('emailOutboxAlready') : I18n.t('emailOutboxDone'), true);
-      }).catch(function(e){ st('st-emailOutbox', I18n.t('errPrefix')+(e.message||e), false); });
-    };
-    // [P2] 監査ログの記録も同様にキュー化した分、1分間隔の時間主導トリガーが必要になる。初回のみ管理者が押す想定。
-    window.setupAuditQueue = function(){
-      rpc('ensureAuditQueueTrigger',[]).then(function(r){
-        st('st-auditQueue', (r && r.already) ? I18n.t('auditQueueAlready') : I18n.t('auditQueueDone'), true);
-      }).catch(function(e){ st('st-auditQueue', I18n.t('errPrefix')+(e.message||e), false); });
-    };
-    // [P2共通化] 操作ログも監査ログと同じ非同期キュー方式に対応した分、1分間隔の時間主導トリガーが必要になる。初回のみ管理者が押す想定。
-    window.setupOpLogQueue = function(){
-      rpc('ensureOpLogQueueTrigger',[]).then(function(r){
-        st('st-opLogQueue', (r && r.already) ? I18n.t('opLogQueueAlready') : I18n.t('opLogQueueDone'), true);
-      }).catch(function(e){ st('st-opLogQueue', I18n.t('errPrefix')+(e.message||e), false); });
-    };
+    // 2026-08-23: 以下3つのキュー有効化ボタンはUI側で撤去・無効化済み。
+    // ・eレシート自動送信キュー: メール送信自体が未実装のため利用不可（no-op化）。
+    // ・監査ログ/操作ログキュー: Cloudflare D1版では既に即時反映されており、この設定自体が
+    //   不要になった（GAS時代のキュー＋時間主導トリガー方式の名残）。
+    window.setupEmailOutbox = function(){};
+    window.setupAuditQueue = function(){};
+    window.setupOpLogQueue = function(){};
     function setBadge(id, on){ var b=$(id); b.className='badge '+(on?'on':'offb'); b.innerText=on?I18n.t('set'):I18n.t('unset'); b.removeAttribute('data-t'); }
 
     // ---- load ----
@@ -477,6 +504,7 @@
       if(bundle.paymongo){ payConfigured = !!bundle.paymongo.configured; setBadge('payBadge', payConfigured); }
       if(bundle.gemini){ gemConfigured = !!bundle.gemini.configured; setBadge('gemBadge', gemConfigured); }
       if(bundle.pexels){ cseConfigured = !!bundle.pexels.configured; setBadge('cseBadge', cseConfigured); }
+      if(bundle.email){ setBadge('emailKeyBadge', !!bundle.email.configured); if(d.emailFromAddress) $('emailFromAddress').value = d.emailFromAddress; }
       $('shopName').value = d.shopName || '';
       if($('shopAddress')) $('shopAddress').value = d.shopAddress || '';
       if($('shopTin')) $('shopTin').value = d.shopTin || '';
@@ -531,13 +559,14 @@
         cseTitle:'🔍 Pexels画像検索（メニュー画像・任意）', cseApiKey:'APIキー', cseHint:'メニュー編集画面の商品画像を、無料ストック写真サイトPexelsから検索して選べるようにします。pexels.com/api にアクセスし、無料アカウントでログイン後「Your API Key」ページに表示されるキーを貼り付けてください（即時発行・審査なし）。無料枠は1時間200件・1か月20,000件です。',
         geoTitle:'📍 勤怠・店舗位置', lat:'緯度', lng:'経度', radius:'許容半径 (m)', getLoc:'📡 現在地を取得',
         loyTitle:'🎁 ロイヤリティ（ポイント）', loyEnable:'有効にする', loyEarn:'付与レート（何円で1pt）', loyRedeem:'利用価値（1pt=何円）',
-        repTitle:'📧 定期レポート（自動メール）', repDaily:'日次日報（毎日）', repWeekly:'週次レポート', repMonthly:'月次レポート', repEmail:'送信先メール（複数可・カンマか改行区切り）', repHour:'送信時刻', repWeekDay:'送信曜日', repMonthDay:'送信日（1〜28）', dow0:'日曜', dow1:'月曜', dow2:'火曜', dow3:'水曜', dow4:'木曜', dow5:'金曜', dow6:'土曜', repSave:'💾 保存＆スケジュール', repTestD:'✉️ 日次テスト', repTestW:'✉️ 週次テスト', repTestM:'✉️ 月次テスト',
+        repTitle:'📧 定期レポート（自動メール）', repNowWorks:'✅ 2026-08-23よりメール送信の仕組みが実装され、この機能が使えるようになりました（上の「メール送信設定」でResend APIキー・送信元アドレスの設定が必要です）。実際の送信は15分間隔のスケジュール実行のため、設定した時刻ちょうどではなく、その後の直近15分枠内（最大約15分遅れ）で届きます。', repDaily:'日次日報（毎日）', repWeekly:'週次レポート', repMonthly:'月次レポート', repEmail:'送信先メール（複数可・カンマか改行区切り）', repHour:'送信時刻', repWeekDay:'送信曜日', repMonthDay:'送信日（1〜28）', dow0:'日曜', dow1:'月曜', dow2:'火曜', dow3:'水曜', dow4:'木曜', dow5:'金曜', dow6:'土曜', repSave:'💾 保存＆スケジュール', repTestD:'✉️ 日次テスト', repTestW:'✉️ 週次テスト', repTestM:'✉️ 月次テスト', testFailed:'❌ 送信に失敗しました', needFrom:'送信元アドレスを入力してください',
         repLang:'出力言語', repLangJa:'日本語', repLangEn:'英語', repLangBoth:'日本語＋英語（両方）',
+        emailCfgTitle:'📧 メール送信設定（Resend）', emailCfgHint:'2026-08-23、定期レポート機能のメール送信の仕組みを実装しました（Resendという外部メール送信サービス経由）。ご利用には以下の準備が必要です。<br>① <a href="https://resend.com" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:underline;">resend.com</a>で無料アカウントを作成<br>② 送信元ドメインを追加し、案内されるDNSレコードを設定して検証を完了<br>③ APIキーを発行し、下に貼り付けて保存<br>④ 送信元アドレス（検証したドメイン配下、例: report@mail.izakanpai.com）も保存<br><br>⚠️ この環境では実際のAPIキーでの送信確認はできていません。設定後、下の定期レポートカードの「テスト送信」で必ず実機確認をお願いします。', emailApiKeyLbl:'Resend APIキー', emailFromLbl:'送信元アドレス',
         bridgeTitle:'🖶 印刷ブリッジ（プリンタ連携）', bridgeInterval:'キュー確認間隔（秒）', bridgeHint:'印刷キュー（bridge.html）がサーバーへ確認しにいく頻度です。短いほど印刷が早く始まりますが、サーバー負荷は増えます。既定値は1.2秒です。',
-        emailOutboxTitle:'📧 eレシート送信（メール送信キュー）', emailOutboxHint:'会計確定時のeレシートメールは、応答を速くするため送信キューへ積んでから非同期で送信します。この処理には1分間隔の自動実行（時間主導トリガー）が必要です。初回のみ、下のボタンを1回押して有効化してください（設定済みなら何度押しても問題ありません）。', emailOutboxBtn:'⏱ 自動送信を有効化', emailOutboxDone:'✅ 自動送信を有効化しました', emailOutboxAlready:'✅ 既に有効化されています',
-        auditQueueTitle:'📝 監査ログ（記録キュー）', auditQueueHint:'注文確定・会計確定時の監査ログ記録は、応答を速くするため記録キューへ積んでから非同期でシートへ反映します。この処理には1分間隔の自動実行（時間主導トリガー）が必要です。初回のみ、下のボタンを1回押して有効化してください（設定済みなら何度押しても問題ありません。監査ログ画面自体は反映前の分も含めて常に最新を表示します）。', auditQueueBtn:'⏱ 自動反映を有効化', auditQueueDone:'✅ 自動反映を有効化しました', auditQueueAlready:'✅ 既に有効化されています',
-        opLogQueueTitle:'🗒️ 操作ログ（記録キュー）', opLogQueueHint:'各種操作（保存・削除等）の操作ログ記録は、応答を速くするため記録キューへ積んでから非同期でシートへ反映します。この処理には1分間隔の自動実行（時間主導トリガー）が必要です。初回のみ、下のボタンを1回押して有効化してください（設定済みなら何度押しても問題ありません。操作ログ画面自体は反映前の分も含めて常に最新を表示します）。', opLogQueueBtn:'⏱ 自動反映を有効化', opLogQueueDone:'✅ 自動反映を有効化しました', opLogQueueAlready:'✅ 既に有効化されています',
-        ereceiptTitle:'📩 eレシート送付先（固定・複数登録可）', ereceiptEmailsLbl:'送付先メール（複数可・カンマか改行区切り）', ereceiptHint:'ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。',
+        emailOutboxTitle:'📧 eレシート送信（メール送信キュー）', emailOutboxUnavail:'⚠️ この機能は現在ご利用いただけません。メール送信の仕組み自体がまだ実装されていないため、下のボタンを押しても実際にeレシートが送信されることはありません。<br><br>代わりに、お客様へは店舗スタッフが会計時にレシートを紙で印刷（プリンタ設定でレシート自動印刷が有効な場合）してお渡しください。過去の会計内容は<a href="./receipts.html" style="color:#92400e;text-decoration:underline;">会計履歴</a>からいつでも再印刷できます。', emailOutboxBtn:'⏱ 自動送信を有効化（利用不可）', emailOutboxDone:'✅ 自動送信を有効化しました', emailOutboxAlready:'✅ 既に有効化されています',
+        auditQueueTitle:'📝 監査ログ（記録キュー）', auditQueueObsolete:'✅ この設定は不要になりました。以前（Googleスプレッドシート版）は記録を1分おきの自動実行でまとめて反映する仕組みが必要でしたが、現在のシステム（Cloudflare D1）では注文確定・会計確定時に監査ログへ即時反映されます。下のボタンを押す必要はありません。', auditQueueBtn:'⏱ 自動反映を有効化', auditQueueDone:'✅ 自動反映を有効化しました', auditQueueAlready:'✅ 既に有効化されています',
+        opLogQueueTitle:'🗒️ 操作ログ（記録キュー）', opLogQueueObsolete:'✅ この設定は不要になりました。監査ログと同様、現在のシステム（Cloudflare D1）では操作ログも各種操作時に即時反映されます。下のボタンを押す必要はありません。', opLogQueueBtn:'⏱ 自動反映を有効化', opLogQueueDone:'✅ 自動反映を有効化しました', opLogQueueAlready:'✅ 既に有効化されています',
+        ereceiptTitle:'📩 eレシート送付先（固定・複数登録可）', ereceiptSaveBtn:'💾 保存（利用不可）', ereceiptUnavail:'⚠️ この機能は現在ご利用いただけません。メール送信の仕組み自体が未実装のため、ここに登録しても実際には送信されません。経理・オーナー控えは<a href="./receipts.html" style="color:#92400e;text-decoration:underline;">会計履歴</a>やCSVエクスポート（バックアップ/書き出し画面）をご利用ください。', ereceiptEmailsLbl:'送付先メール（複数可・カンマか改行区切り）', ereceiptHint:'ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。',
         saved:'✅ 保存しました', savedSched:'✅ 保存＆スケジュール設定しました', uploaded:'✅ アップロードしました', pickImg:'画像を選択してください', needKey:'キーを入力してください', noGeoDev:'この端末は位置情報に対応していません', gotLoc:'現在地を取得しました。「保存」を押してください。', noLoc:'位置情報を取得できませんでした。手動入力してください。', sending:'送信中…', testSent:'✅ テスト送信しました。受信箱をご確認ください', sendFail:'送信できませんでした', scopeReauth:'認証(スコープ)の再承認が必要かもしれません', errPrefix:'エラー: ' },
       en:{ title:'⚙️ Settings', back:'← Manage', save:'💾 Save', status:'Status:', unset:'Not set', set:'Set', phPaste:'Paste and save', close:'Close',
         qrCardTitle:'📱 Table QR Codes', qrCardDesc:'Print and place these QR codes on each table. Customers scan to open the order screen locked to their table.', qrShowBtn:'📱 Show QR Codes', qrModalTitle:'Table QR Codes', qrModalSub:'Scan to open the order screen', qrPrintBtn:'🖨️ Print', qrNoTables:'No tables are set up yet. Please save the table count first.',
@@ -556,13 +585,14 @@
         cseTitle:'🔍 Pexels Image Search (menu images, optional)', cseApiKey:'API key', cseHint:'Lets you search free stock photos (Pexels) for product images right from the menu editor. Go to pexels.com/api, log in with a free account, and paste the key shown on the "Your API Key" page (issued instantly, no approval needed). Free tier is 200 requests/hour, 20,000/month.',
         geoTitle:'📍 Attendance / store location', lat:'Latitude', lng:'Longitude', radius:'Allowed radius (m)', getLoc:'📡 Get current location',
         loyTitle:'🎁 Loyalty (points)', loyEnable:'Enable', loyEarn:'Earn rate (amount per 1pt)', loyRedeem:'Redeem value (1pt = amount)',
-        repTitle:'📧 Scheduled reports (auto email)', repDaily:'Daily report (every day)', repWeekly:'Weekly report', repMonthly:'Monthly report', repEmail:'Recipient emails (multiple, comma/newline separated)', repHour:'Send time', repWeekDay:'Send day', repMonthDay:'Send day (1–28)', dow0:'Sun', dow1:'Mon', dow2:'Tue', dow3:'Wed', dow4:'Thu', dow5:'Fri', dow6:'Sat', repSave:'💾 Save & schedule', repTestD:'✉️ Daily test', repTestW:'✉️ Weekly test', repTestM:'✉️ Monthly test',
+        repTitle:'📧 Scheduled reports (auto email)', repNowWorks:'✅ As of 2026-08-23 email sending has been implemented and this feature now works (set your Resend API key & from-address in the "Email settings" card above). Actual sending runs on a 15-minute schedule, so mail arrives within the next 15-minute window after your set time, not exactly on the minute (up to ~15 min delay).', repDaily:'Daily report (every day)', repWeekly:'Weekly report', repMonthly:'Monthly report', repEmail:'Recipient emails (multiple, comma/newline separated)', repHour:'Send time', repWeekDay:'Send day', repMonthDay:'Send day (1–28)', dow0:'Sun', dow1:'Mon', dow2:'Tue', dow3:'Wed', dow4:'Thu', dow5:'Fri', dow6:'Sat', repSave:'💾 Save & schedule', repTestD:'✉️ Daily test', repTestW:'✉️ Weekly test', repTestM:'✉️ Monthly test', testFailed:'❌ Failed to send', needFrom:'Please enter a from-address',
         repLang:'Output language', repLangJa:'Japanese', repLangEn:'English', repLangBoth:'Japanese + English (both)',
+        emailCfgTitle:'📧 Email settings (Resend)', emailCfgHint:'On 2026-08-23 we implemented email sending for scheduled reports, via an external email service called Resend. Setup steps required:<br>① Create a free account at <a href="https://resend.com" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:underline;">resend.com</a><br>② Add your sending domain and complete DNS verification<br>③ Issue an API key and paste/save it below<br>④ Also save a from-address under your verified domain (e.g. report@mail.izakanpai.com)<br><br>⚠️ Sending has not been verified with a real API key in this environment — after setup, please confirm with the "test send" buttons on the report card below.', emailApiKeyLbl:'Resend API key', emailFromLbl:'From address',
         bridgeTitle:'🖶 Print bridge (printer connection)', bridgeInterval:'Queue check interval (sec)', bridgeHint:'How often the print bridge (bridge.html) checks the server for print jobs. Shorter = faster printing but more server load. Default is 1.2 seconds.',
-        emailOutboxTitle:'📧 e-Receipt sending (email outbox)', emailOutboxHint:'To keep checkout fast, e-receipt emails are queued and sent asynchronously in the background. This needs a 1-minute time-driven trigger. Press the button below once (safe to press again if already set up).', emailOutboxBtn:'⏱ Enable auto-send', emailOutboxDone:'✅ Auto-send enabled', emailOutboxAlready:'✅ Already enabled',
-        auditQueueTitle:'📝 Audit log (record queue)', auditQueueHint:'To keep order/checkout responses fast, audit-log entries are queued and written to the sheet asynchronously in the background. This needs a 1-minute time-driven trigger. Press the button below once (safe to press again if already set up — the audit log screen itself always shows the latest entries, including ones not yet flushed).', auditQueueBtn:'⏱ Enable auto-flush', auditQueueDone:'✅ Auto-flush enabled', auditQueueAlready:'✅ Already enabled',
-        opLogQueueTitle:'🗒️ Operation log (record queue)', opLogQueueHint:'To keep responses fast, operation-log entries (save/delete etc.) are queued and written to the sheet asynchronously in the background. This needs a 1-minute time-driven trigger. Press the button below once (safe to press again if already set up — the operation log screen itself always shows the latest entries, including ones not yet flushed).', opLogQueueBtn:'⏱ Enable auto-flush', opLogQueueDone:'✅ Auto-flush enabled', opLogQueueAlready:'✅ Already enabled',
-        ereceiptTitle:'📩 e-Receipt recipients (fixed, multiple allowed)', ereceiptEmailsLbl:'Recipient email(s) — comma or newline separated', ereceiptHint:'Every time a bill is finalized, a copy of the e-receipt is automatically sent to the addresses registered here — separate from, and in addition to, whatever the customer optionally enters at checkout. Useful for accounting/owner copies. Leave blank to send nothing.',
+        emailOutboxTitle:'📧 e-Receipt sending (email outbox)', emailOutboxUnavail:'⚠️ This feature is currently unavailable. Email sending itself has not been implemented yet, so pressing the button below will not actually send any e-receipts.<br><br>Instead, print receipts on paper for customers at checkout (if auto-print is enabled in printer settings). Past bills can always be reprinted from <a href="./receipts.html" style="color:#92400e;text-decoration:underline;">Bill history</a>.', emailOutboxBtn:'⏱ Enable auto-send (unavailable)', emailOutboxDone:'✅ Auto-send enabled', emailOutboxAlready:'✅ Already enabled',
+        auditQueueTitle:'📝 Audit log (record queue)', auditQueueObsolete:'✅ This setting is no longer needed. The old Google Sheets version needed a once-a-minute scheduled job to flush queued entries, but the current system (Cloudflare D1) writes audit-log entries immediately when an order or bill is finalized. No need to press the button below.', auditQueueBtn:'⏱ Enable auto-flush', auditQueueDone:'✅ Auto-flush enabled', auditQueueAlready:'✅ Already enabled',
+        opLogQueueTitle:'🗒️ Operation log (record queue)', opLogQueueObsolete:'✅ This setting is no longer needed. Like the audit log, the current system (Cloudflare D1) writes operation-log entries immediately for every action. No need to press the button below.', opLogQueueBtn:'⏱ Enable auto-flush', opLogQueueDone:'✅ Auto-flush enabled', opLogQueueAlready:'✅ Already enabled',
+        ereceiptTitle:'📩 e-Receipt recipients (fixed, multiple allowed)', ereceiptSaveBtn:'💾 Save (unavailable)', ereceiptUnavail:'⚠️ This feature is currently unavailable. Email sending itself has not been implemented yet, so addresses registered here are never actually sent to. Use <a href="./receipts.html" style="color:#92400e;text-decoration:underline;">Bill history</a> or CSV export (Backup/Export page) for accounting/owner records instead.', ereceiptEmailsLbl:'Recipient email(s) — comma or newline separated', ereceiptHint:'Every time a bill is finalized, a copy of the e-receipt is automatically sent to the addresses registered here — separate from, and in addition to, whatever the customer optionally enters at checkout. Useful for accounting/owner copies. Leave blank to send nothing.',
         saved:'✅ Saved', savedSched:'✅ Saved & scheduled', uploaded:'✅ Uploaded', pickImg:'Please select an image', needKey:'Please enter a key', noGeoDev:'This device does not support location', gotLoc:'Location acquired. Please press Save.', noLoc:'Could not get location. Please enter manually.', sending:'Sending…', testSent:'✅ Test sent. Please check your inbox', sendFail:'Could not send', scopeReauth:'You may need to re-authorize (scopes)', errPrefix:'Error: ' }
     }, function(){ setBadge('payBadge', payConfigured); setBadge('gemBadge', gemConfigured); setBadge('cseBadge', cseConfigured); });
   </script>

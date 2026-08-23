@@ -34,8 +34,8 @@
   <div class="wrap">
     <div class="card">
       <div class="card-title" data-t="bkTitle">📦 スプレッドシートを丸ごとバックアップ</div>
-      <div class="muted" data-t="bkHint" style="margin-bottom:12px;">現在の全データを日時付きでコピーし、Driveの「バックアップ」フォルダに保存します。</div>
-      <button class="btn green" id="bkBtn" onclick="backup()" data-t="bkBtn">💾 今すぐバックアップ</button>
+      <div class="muted" style="margin-bottom:10px;padding:10px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;color:#92400e;font-weight:700;" data-t="bkUnavail">⚠️ この機能は現在ご利用いただけません。データの保存先がGoogleスプレッドシートからCloudflare D1データベースへ移行したため、「Driveへコピー」という仕組み自体が存在しなくなりました。<br><br>代わりに、下の「シートをCSVで書き出し」で必要なテーブルをCSV形式で保存いただけます（Excel等で開けます）。全データの完全なバックアップが必要な場合は、開発担当（Claude/GPT）にD1データベースのエクスポートをご依頼ください。</div>
+      <button class="btn green" id="bkBtn" disabled style="opacity:.45;cursor:not-allowed;" data-t="bkBtn">💾 今すぐバックアップ（利用不可）</button>
       <div class="alert" id="bkMsg"></div>
     </div>
     <div class="card">
@@ -59,13 +59,9 @@
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     function alertBox(id, html, ok){ var m=document.getElementById(id); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerHTML=html; }
 
-    window.backup = function(){
-      var b=document.getElementById('bkBtn'); b.disabled=true; var old=b.innerText; b.innerText='…';
-      rpc('backupSpreadsheet',[]).then(function(d){ b.disabled=false; b.innerText=old; d=d||{};
-        if(d.error){ alertBox('bkMsg', I18n.t('errPrefix')+d.error, false); return; }
-        alertBox('bkMsg', I18n.t('bkDone')+'<br><b>'+esc(d.name)+'</b><br><a class="dl" href="'+esc(d.url)+'" target="_blank" rel="noopener">'+I18n.t('bkOpen')+'</a>', true);
-      }).catch(function(e){ b.disabled=false; b.innerText=old; alertBox('bkMsg', I18n.t('errPrefix')+(e.message||e), false); });
-    };
+    // 2026-08-23: スプレッドシート丸ごとバックアップはD1移行に伴い実装を取りやめたため、
+    // ボタン自体をdisabledにして呼べないようにしている（万一呼ばれても未実装エラーを返すのみ）。
+    window.backup = function(){};
 
     function csvCell(v){ var s=(v==null)?'':String(v); if(/[",\n]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }
     window.exportCsv = function(){
@@ -84,8 +80,8 @@
       .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; } });
 
     I18n.init({
-      ja:{ title:'💾 バックアップ / 書き出し', back:'← 管理へ', bkTitle:'📦 スプレッドシートを丸ごとバックアップ', bkHint:'現在の全データを日時付きでコピーし、Driveの「バックアップ」フォルダに保存します。', bkBtn:'💾 今すぐバックアップ', bkDone:'✅ バックアップを作成しました', bkOpen:'Driveで開く', csvTitle:'📄 シートをCSVで書き出し', csvHint:'シートを選んでCSVをダウンロードできます（Excel等で開けます）。', csvBtn:'⬇ CSVを書き出し', csvDone:'✅ 書き出しました:', errPrefix:'エラー: ' },
-      en:{ title:'💾 Backup / Export', back:'← Manage', bkTitle:'📦 Full spreadsheet backup', bkHint:'Copies all current data with a timestamp into the “Backup” folder on Drive.', bkBtn:'💾 Back up now', bkDone:'✅ Backup created', bkOpen:'Open in Drive', csvTitle:'📄 Export a sheet to CSV', csvHint:'Pick a sheet and download it as CSV (opens in Excel, etc.).', csvBtn:'⬇ Export CSV', csvDone:'✅ Exported:', errPrefix:'Error: ' }
+      ja:{ title:'💾 バックアップ / 書き出し', back:'← 管理へ', bkTitle:'📦 スプレッドシートを丸ごとバックアップ', bkHint:'現在の全データを日時付きでコピーし、Driveの「バックアップ」フォルダに保存します。', bkUnavail:'⚠️ この機能は現在ご利用いただけません。データの保存先がGoogleスプレッドシートからCloudflare D1データベースへ移行したため、「Driveへコピー」という仕組み自体が存在しなくなりました。<br><br>代わりに、下の「シートをCSVで書き出し」で必要なテーブルをCSV形式で保存いただけます（Excel等で開けます）。全データの完全なバックアップが必要な場合は、開発担当（Claude/GPT）にD1データベースのエクスポートをご依頼ください。', bkBtn:'💾 今すぐバックアップ（利用不可）', bkDone:'✅ バックアップを作成しました', bkOpen:'Driveで開く', csvTitle:'📄 シートをCSVで書き出し', csvHint:'シートを選んでCSVをダウンロードできます（Excel等で開けます）。', csvBtn:'⬇ CSVを書き出し', csvDone:'✅ 書き出しました:', errPrefix:'エラー: ' },
+      en:{ title:'💾 Backup / Export', back:'← Manage', bkTitle:'📦 Full spreadsheet backup', bkHint:'Copies all current data with a timestamp into the “Backup” folder on Drive.', bkUnavail:'⚠️ This feature is currently unavailable. Since data storage moved from Google Sheets to a Cloudflare D1 database, the “copy to Drive” mechanism no longer exists.<br><br>Use “Export a sheet to CSV” below instead to save any table as CSV (opens in Excel, etc.). If you need a full database backup, ask the dev team (Claude/GPT) to export the D1 database.', bkBtn:'💾 Back up now (unavailable)', bkDone:'✅ Backup created', bkOpen:'Open in Drive', csvTitle:'📄 Export a sheet to CSV', csvHint:'Pick a sheet and download it as CSV (opens in Excel, etc.).', csvBtn:'⬇ Export CSV', csvDone:'✅ Exported:', errPrefix:'Error: ' }
     }, function(){});
   </script>
 </body>

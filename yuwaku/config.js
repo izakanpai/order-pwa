@@ -6,6 +6,10 @@
 // 実際に `npx wrangler deploy` を実行すると、コンソールに実際のデプロイ先URLが表示されます。
 // もしそのURLがここと違っていたら、下のAPI_URLを実際のURLに書き換えてから
 // deploy.bat/deploy_all.batを実行してください。
+//
+// ★2026-08-23: テスト環境は ./test/config.js （URLで言うと /yuwaku/test/ 配下）で別管理。
+// このファイル（本番用）には、以前あったURLトグル切り替え機能は撤去した（複雑だったため、
+// 昔ながらのURL分離方式＝/yuwaku/test/ に一本化）。
 window.APP_CONFIG = {
   API_URL: 'https://izakanpai-api.izakanpai.workers.dev',
   VERSION: 'v1.0.0'

@@ -1,8 +1,11 @@
-// ★テスト環境の設定（本番とは別のGAS Webアプリ＝別スプレッドシートを指す）
-// TEST_GAS_URL をテスト用WebアプリのexecURLに差し替えてください。
-// 未設定のうちはAPIに接続できません（本番データを触らない安全側の初期値）。
+// ★テスト環境の設定（本番とは別のCloudflare Worker・別のD1データベースを指す）
+// このファイルは deploy_test.bat の robocopy 同期対象から除外されているため、
+// 本番の docs/yuwaku/config.js を更新しても上書きされない（sw.js も同様）。
+//
+// テスト用D1・テスト用Workerのセットアップ手順は、リポジトリ直下の
+// 「デプロイ手順_テスト環境構築_2026-08-23.md」を参照してください。
 window.APP_CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbwUB5XFbVV7CxUtG8_Guy5VMl1SATuye1Y265cu_JlNAdBsV2wpKmRO8labkeqLzEE/exec',
+  API_URL: 'https://izakanpai-api-test.izakanpai.workers.dev',
   VERSION: 'test',
-  TEST_ENV: true             // 画面上部に「TEST」表示を出す
+  TEST_ENV: true             // 画面左下に「🧪 TEST」バッジを表示（api.jsの既存の仕組み）
 };

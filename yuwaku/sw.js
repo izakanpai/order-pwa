@@ -22,7 +22,11 @@
 // 改めてインストールが成功し、正しいconfig.js（Cloudflare Workers宛て）へ切り替わるようにした。
 // 教訓: SHELLに載せるファイルを変更する際は、必ずデプロイ後の実際のファイル一覧と突き合わせる
 // こと（今回は目視確認を怠ったのが原因）。
-const CACHE = 'yuwaku-pos-v146';
+// ★2026-08-23再々追記（v147）: 全画面点検の結果を反映（clock.htmlのpunch/getEmployeeStatuses
+// 未登録バグ修正、settings.html/backup.html/purchasing.htmlのメール送信系・スプレッドシート
+// バックアップ機能を「利用不可」表示に変更＋代替案を明記）。静的資産（settings.html/backup.html/
+// purchasing.html）を変更したため、キャッシュを必ず入れ替える。
+const CACHE = 'yuwaku-pos-v148';
 const SHELL = [
   './',
   './index.html',
