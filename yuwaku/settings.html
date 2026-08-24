@@ -238,6 +238,7 @@
       <div class="card-title" data-t="emailOutboxTitle">📧 eレシート機能</div>
       <div class="hint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;" data-t-html="emailOutboxHint">2026-08-24より、会計確定時にeレシートをメールで送信できるようになりました。上の「メール送信設定（Resend）」でAPIキー・送信元アドレスの設定が完了している必要があります。<br>有効にすると、会計画面（<code>#payEmail</code>欄）でお客様が入力したメール、および下の「固定送付先」に登録したメールへ、会計確定のたびにeレシートが自動送信されます。</div>
       <label style="display:flex;align-items:center;gap:8px;margin:8px 0;"><input type="checkbox" id="ereceiptEnabled"> <span data-t="emailOutboxBtn">eレシートを有効にする</span></label>
+      <div class="fg" style="max-width:220px;margin-bottom:10px;"><label class="form-label" data-t="repLang">出力言語</label><select id="ereceiptLang" class="fc"><option value="ja" data-t="repLangJa">日本語</option><option value="en" data-t="repLangEn">英語</option><option value="both" data-t="repLangBoth">日本語＋英語（両方）</option></select></div>
       <button class="btn" onclick="saveEreceiptEnabled()" data-t="save">💾 保存</button>
       <div class="st" id="st-emailOutbox"></div>
       <hr style="border:0;border-top:1px solid var(--border);margin:16px 0;">
@@ -425,7 +426,7 @@
       }).catch(function(e){ st('st-ereceipt',I18n.t('errPrefix')+(e.message||e), false); });
     };
     window.saveEreceiptEnabled = function(){
-      rpc('saveEreceiptEnabled',[$('ereceiptEnabled').checked]).then(function(){ st('st-emailOutbox',I18n.t('saved'), true); }).catch(function(e){ st('st-emailOutbox',I18n.t('errPrefix')+(e.message||e), false); });
+      rpc('saveEreceiptEnabled',[$('ereceiptEnabled').checked, $('ereceiptLang').value]).then(function(){ st('st-emailOutbox',I18n.t('saved'), true); }).catch(function(e){ st('st-emailOutbox',I18n.t('errPrefix')+(e.message||e), false); });
     };
     window.saveSeniorDiscount = function(){
       rpc('saveSettings',[{ seniorDiscountEnabled:$('seniorDiscountEnabled').checked?'on':'' }])
@@ -555,6 +556,7 @@
       $('seniorDiscountEnabled').checked = (d.seniorDiscountEnabled==='on'||d.seniorDiscountEnabled===true||d.seniorDiscountEnabled==='true');
       $('ereceiptFixedEmails').value = (d.ereceiptFixedEmails || '').replace(/,/g,'\n');
       $('ereceiptEnabled').checked = (d.ereceiptEnabled==='on'||d.ereceiptEnabled===true||d.ereceiptEnabled==='true');
+      $('ereceiptLang').value = (d.ereceiptLang==='en'||d.ereceiptLang==='both')?d.ereceiptLang:'ja';
       $('storeLat').value = d.storeLat || ''; $('storeLng').value = d.storeLng || ''; $('storeRadius').value = d.storeRadius || '';
       $('loyaltyEnabled').checked = (d.loyaltyEnabled==='on'||d.loyaltyEnabled===true||d.loyaltyEnabled==='true');
       $('loyaltyEarnRate').value = d.loyaltyEarnRate || ''; $('loyaltyRedeemValue').value = d.loyaltyRedeemValue || '';
