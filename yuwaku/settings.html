@@ -234,29 +234,18 @@
     </div>
 
     <div class="card">
-      <div class="card-title" data-t="emailOutboxTitle">📧 eレシート送信（メール送信キュー）</div>
-      <div class="hint" style="font-size:13px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;padding:10px 12px;margin:2px 0 10px;" data-t-html="emailOutboxUnavail">⚠️ この機能は現在ご利用いただけません。メール送信の仕組み自体がまだ実装されていないため、下のボタンを押しても実際にeレシートが送信されることはありません。<br><br>代わりに、お客様へは店舗スタッフが会計時にレシートを紙で印刷（プリンタ設定でレシート自動印刷が有効な場合）してお渡しください。過去の会計内容は<a href="./receipts.html" style="color:#92400e;text-decoration:underline;">会計履歴</a>からいつでも再印刷できます。</div>
-      <button class="btn" disabled style="opacity:.45;cursor:not-allowed;" data-t="emailOutboxBtn">⏱ 自動送信を有効化（利用不可）</button>
+      <div class="card-title" data-t="emailOutboxTitle">📧 eレシート機能</div>
+      <div class="hint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;" data-t-html="emailOutboxHint">2026-08-24より、会計確定時にeレシートをメールで送信できるようになりました。上の「メール送信設定（Resend）」でAPIキー・送信元アドレスの設定が完了している必要があります。<br>有効にすると、会計画面（<code>#payEmail</code>欄）でお客様が入力したメール、および下の「固定送付先」に登録したメールへ、会計確定のたびにeレシートが自動送信されます。</div>
+      <label style="display:flex;align-items:center;gap:8px;margin:8px 0;"><input type="checkbox" id="ereceiptEnabled"> <span data-t="emailOutboxBtn">eレシートを有効にする</span></label>
+      <button class="btn" onclick="saveEreceiptEnabled()" data-t="save">💾 保存</button>
       <div class="st" id="st-emailOutbox"></div>
     </div>
 
     <div class="card">
-      <div class="card-title" data-t="auditQueueTitle">📝 監査ログ（記録キュー）</div>
-      <div class="hint" style="font-size:13px;font-weight:700;color:#15803d;background:#dcfce7;border:1px solid #bbf7d0;border-radius:9px;padding:10px 12px;margin:2px 0 10px;" data-t="auditQueueObsolete">✅ この設定は不要になりました。以前（Googleスプレッドシート版）は記録を1分おきの自動実行でまとめて反映する仕組みが必要でしたが、現在のシステム（Cloudflare D1）では注文確定・会計確定時に監査ログへ即時反映されます。下のボタンを押す必要はありません。</div>
-      <div class="st" id="st-auditQueue"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title" data-t="opLogQueueTitle">🗒️ 操作ログ（記録キュー）</div>
-      <div class="hint" style="font-size:13px;font-weight:700;color:#15803d;background:#dcfce7;border:1px solid #bbf7d0;border-radius:9px;padding:10px 12px;margin:2px 0 10px;" data-t="opLogQueueObsolete">✅ この設定は不要になりました。監査ログと同様、現在のシステム（Cloudflare D1）では操作ログも各種操作時に即時反映されます。下のボタンを押す必要はありません。</div>
-      <div class="st" id="st-opLogQueue"></div>
-    </div>
-
-    <div class="card">
       <div class="card-title" data-t="ereceiptTitle">📩 eレシート送付先（固定・複数登録可）</div>
-      <div class="hint" style="font-size:13px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;padding:10px 12px;margin-bottom:10px;" data-t="ereceiptUnavail">⚠️ この機能は現在ご利用いただけません。メール送信の仕組み自体が未実装のため、ここに登録しても実際には送信されません。経理・オーナー控えは<a href="./receipts.html" style="color:#92400e;text-decoration:underline;">会計履歴</a>やCSVエクスポート（バックアップ/書き出し画面）をご利用ください。</div>
-      <div class="fg"><label class="form-label" data-t="ereceiptEmailsLbl">送付先メール（複数可・カンマか改行区切り）</label><textarea id="ereceiptFixedEmails" class="fc" rows="2" placeholder="accounting@example.com, owner@example.com" disabled></textarea></div>
-      <button class="btn" disabled style="opacity:.45;cursor:not-allowed;" data-t="ereceiptSaveBtn">💾 保存（利用不可）</button>
+      <div class="hint" data-t="ereceiptHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。「eレシート機能」がオフの間は、ここに登録しても送信されません。</div>
+      <div class="fg"><label class="form-label" data-t="ereceiptEmailsLbl">送付先メール（複数可・カンマか改行区切り）</label><textarea id="ereceiptFixedEmails" class="fc" rows="2" placeholder="accounting@example.com, owner@example.com"></textarea></div>
+      <button class="btn" onclick="saveEreceiptFixedEmails()" data-t="ereceiptSaveBtn">💾 保存</button>
       <div class="st" id="st-ereceipt"></div>
     </div>
 
@@ -429,9 +418,17 @@
         extensionFeeAmount:Number($('extensionFeeAmount').value)||0, extensionUnitMinutes:Number($('extensionUnitMinutes').value)||0 }])
         .then(function(){ st('st-entry',I18n.t('saved'), true); }).catch(function(e){ st('st-entry',I18n.t('errPrefix')+(e.message||e), false); });
     };
-    // 2026-08-23: メール送信の仕組み自体が未実装のため保存しても意味がなく、UI側で
-    // textarea・ボタンをdisabledにした（呼べないようno-op化）。
-    window.saveEreceiptFixedEmails = function(){};
+    // 2026-08-24: メール送信基盤（Resend）実装に伴い、eレシート送付先の保存を実装。
+    window.saveEreceiptFixedEmails = function(){
+      var v = $('ereceiptFixedEmails').value.trim();
+      rpc('saveEreceiptFixedEmails',[v]).then(function(r){
+        if(r && r.error){ st('st-ereceipt', I18n.t('errPrefix')+r.error+(r.invalid?(': '+r.invalid.join(', ')):''), false); return; }
+        st('st-ereceipt', I18n.t('saved'), true);
+      }).catch(function(e){ st('st-ereceipt',I18n.t('errPrefix')+(e.message||e), false); });
+    };
+    window.saveEreceiptEnabled = function(){
+      rpc('saveEreceiptEnabled',[$('ereceiptEnabled').checked]).then(function(){ st('st-emailOutbox',I18n.t('saved'), true); }).catch(function(e){ st('st-emailOutbox',I18n.t('errPrefix')+(e.message||e), false); });
+    };
     window.saveSeniorDiscount = function(){
       rpc('saveSettings',[{ seniorDiscountEnabled:$('seniorDiscountEnabled').checked?'on':'' }])
         .then(function(){ st('st-senior',I18n.t('saved'), true); }).catch(function(e){ st('st-senior',I18n.t('errPrefix')+(e.message||e), false); });
@@ -517,13 +514,11 @@
       var v = $('bridgeKey').value.trim();
       rpc('saveSettings',[{ bridgeKey: v }]).then(function(){ st('st-bridgeKey',I18n.t('saved'), true); }).catch(function(e){ st('st-bridgeKey',I18n.t('errPrefix')+(e.message||e), false); });
     };
-    // 2026-08-23: 以下3つのキュー有効化ボタンはUI側で撤去・無効化済み。
-    // ・eレシート自動送信キュー: メール送信自体が未実装のため利用不可（no-op化）。
-    // ・監査ログ/操作ログキュー: Cloudflare D1版では既に即時反映されており、この設定自体が
-    //   不要になった（GAS時代のキュー＋時間主導トリガー方式の名残）。
-    window.setupEmailOutbox = function(){};
-    window.setupAuditQueue = function(){};
-    window.setupOpLogQueue = function(){};
+    // 2026-08-24: 監査ログ/操作ログの「記録キュー」カード自体を画面から撤去した
+    // （Cloudflare D1版では既に即時反映されており、GAS時代のキュー＋時間主導トリガー方式の
+    // 名残であるこの設定カードごと不要だったため。setupAuditQueue/setupOpLogQueueも削除）。
+    // eレシート機能自体は2026-08-24にメール送信基盤実装済みのため、上のsaveEreceiptEnabled/
+    // saveEreceiptFixedEmailsで有効化する方式に変更した（setupEmailOutboxは撤去）。
     function setBadge(id, on){ var b=$(id); b.className='badge '+(on?'on':'offb'); b.innerText=on?I18n.t('set'):I18n.t('unset'); b.removeAttribute('data-t'); }
 
     // ---- load ----
@@ -561,6 +556,7 @@
       $('extensionFeeAmount').value = d.extensionFeeAmount || ''; $('extensionUnitMinutes').value = d.extensionUnitMinutes || '';
       $('seniorDiscountEnabled').checked = (d.seniorDiscountEnabled==='on'||d.seniorDiscountEnabled===true||d.seniorDiscountEnabled==='true');
       $('ereceiptFixedEmails').value = (d.ereceiptFixedEmails || '').replace(/,/g,'\n');
+      $('ereceiptEnabled').checked = (d.ereceiptEnabled==='on'||d.ereceiptEnabled===true||d.ereceiptEnabled==='true');
       $('storeLat').value = d.storeLat || ''; $('storeLng').value = d.storeLng || ''; $('storeRadius').value = d.storeRadius || '';
       $('loyaltyEnabled').checked = (d.loyaltyEnabled==='on'||d.loyaltyEnabled===true||d.loyaltyEnabled==='true');
       $('loyaltyEarnRate').value = d.loyaltyEarnRate || ''; $('loyaltyRedeemValue').value = d.loyaltyRedeemValue || '';
@@ -600,10 +596,8 @@
         emailCfgTitle:'📧 メール送信設定（Resend）', emailCfgHint:'2026-08-23、定期レポート機能のメール送信の仕組みを実装しました（Resendという外部メール送信サービス経由）。ご利用には以下の準備が必要です。<br>① <a href="https://resend.com" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:underline;">resend.com</a>で無料アカウントを作成<br>② 送信元ドメインを追加し、案内されるDNSレコードを設定して検証を完了<br>③ APIキーを発行し、下に貼り付けて保存<br>④ 送信元アドレス（検証したドメイン配下、例: report@mail.izakanpai.com）も保存<br><br>⚠️ この環境では実際のAPIキーでの送信確認はできていません。設定後、下の定期レポートカードの「テスト送信」で必ず実機確認をお願いします。', emailApiKeyLbl:'Resend APIキー', emailFromLbl:'送信元アドレス',
         bridgeTitle:'🖶 印刷ブリッジ（プリンタ連携）', bridgeInterval:'キュー確認間隔（秒）', bridgeHint:'印刷キュー（bridge.html）がサーバーへ確認しにいく頻度です。短いほど印刷が早く始まりますが、サーバー負荷は増えます。既定値は1.2秒です。',
         bridgeKeyLbl:'BRIDGE_KEY（任意・共有シークレット）', bridgeKeyHint:'設定すると、この文字列を知っているブリッジ端末（bridge.html）だけが印刷キューを読み書きできるようになります。空欄のまま保存すると誰でも読み書きできる状態（従来どおり）に戻ります。bridge.html側の「キー」欄にも同じ文字列を入力してください。',
-        emailOutboxTitle:'📧 eレシート送信（メール送信キュー）', emailOutboxUnavail:'⚠️ この機能は現在ご利用いただけません。メール送信の仕組み自体がまだ実装されていないため、下のボタンを押しても実際にeレシートが送信されることはありません。<br><br>代わりに、お客様へは店舗スタッフが会計時にレシートを紙で印刷（プリンタ設定でレシート自動印刷が有効な場合）してお渡しください。過去の会計内容は<a href="./receipts.html" style="color:#92400e;text-decoration:underline;">会計履歴</a>からいつでも再印刷できます。', emailOutboxBtn:'⏱ 自動送信を有効化（利用不可）', emailOutboxDone:'✅ 自動送信を有効化しました', emailOutboxAlready:'✅ 既に有効化されています',
-        auditQueueTitle:'📝 監査ログ（記録キュー）', auditQueueObsolete:'✅ この設定は不要になりました。以前（Googleスプレッドシート版）は記録を1分おきの自動実行でまとめて反映する仕組みが必要でしたが、現在のシステム（Cloudflare D1）では注文確定・会計確定時に監査ログへ即時反映されます。下のボタンを押す必要はありません。', auditQueueBtn:'⏱ 自動反映を有効化', auditQueueDone:'✅ 自動反映を有効化しました', auditQueueAlready:'✅ 既に有効化されています',
-        opLogQueueTitle:'🗒️ 操作ログ（記録キュー）', opLogQueueObsolete:'✅ この設定は不要になりました。監査ログと同様、現在のシステム（Cloudflare D1）では操作ログも各種操作時に即時反映されます。下のボタンを押す必要はありません。', opLogQueueBtn:'⏱ 自動反映を有効化', opLogQueueDone:'✅ 自動反映を有効化しました', opLogQueueAlready:'✅ 既に有効化されています',
-        ereceiptTitle:'📩 eレシート送付先（固定・複数登録可）', ereceiptSaveBtn:'💾 保存（利用不可）', ereceiptUnavail:'⚠️ この機能は現在ご利用いただけません。メール送信の仕組み自体が未実装のため、ここに登録しても実際には送信されません。経理・オーナー控えは<a href="./receipts.html" style="color:#92400e;text-decoration:underline;">会計履歴</a>やCSVエクスポート（バックアップ/書き出し画面）をご利用ください。', ereceiptEmailsLbl:'送付先メール（複数可・カンマか改行区切り）', ereceiptHint:'ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。',
+        emailOutboxTitle:'📧 eレシート機能', emailOutboxHint:'2026-08-24より、会計確定時にeレシートをメールで送信できるようになりました。上の「メール送信設定（Resend）」でAPIキー・送信元アドレスの設定が完了している必要があります。<br>有効にすると、会計画面（<code>#payEmail</code>欄）でお客様が入力したメール、および下の「固定送付先」に登録したメールへ、会計確定のたびにeレシートが自動送信されます。', emailOutboxBtn:'eレシートを有効にする',
+        ereceiptTitle:'📩 eレシート送付先（固定・複数登録可）', ereceiptSaveBtn:'💾 保存', ereceiptEmailsLbl:'送付先メール（複数可・カンマか改行区切り）', ereceiptHint:'ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。「eレシート機能」がオフの間は、ここに登録しても送信されません。',
         saved:'✅ 保存しました', savedSched:'✅ 保存＆スケジュール設定しました', uploaded:'✅ アップロードしました', pickImg:'画像を選択してください', needKey:'キーを入力してください', noGeoDev:'この端末は位置情報に対応していません', gotLoc:'現在地を取得しました。「保存」を押してください。', noLoc:'位置情報を取得できませんでした。手動入力してください。', sending:'送信中…', testSent:'✅ テスト送信しました。受信箱をご確認ください', sendFail:'送信できませんでした', scopeReauth:'認証(スコープ)の再承認が必要かもしれません', errPrefix:'エラー: ' },
       en:{ title:'⚙️ Settings', back:'← Manage', save:'💾 Save', status:'Status:', unset:'Not set', set:'Set', phPaste:'Paste and save', close:'Close',
         qrCardTitle:'📱 Table QR Codes', qrCardDesc:'Print and place these QR codes on each table. Customers scan to open the order screen locked to their table.', qrShowBtn:'📱 Show QR Codes', qrModalTitle:'Table QR Codes', qrModalSub:'Scan to open the order screen', qrPrintBtn:'🖨️ Print', qrNoTables:'No tables are set up yet. Please save the table count first.',
@@ -627,10 +621,8 @@
         emailCfgTitle:'📧 Email settings (Resend)', emailCfgHint:'On 2026-08-23 we implemented email sending for scheduled reports, via an external email service called Resend. Setup steps required:<br>① Create a free account at <a href="https://resend.com" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:underline;">resend.com</a><br>② Add your sending domain and complete DNS verification<br>③ Issue an API key and paste/save it below<br>④ Also save a from-address under your verified domain (e.g. report@mail.izakanpai.com)<br><br>⚠️ Sending has not been verified with a real API key in this environment — after setup, please confirm with the "test send" buttons on the report card below.', emailApiKeyLbl:'Resend API key', emailFromLbl:'From address',
         bridgeTitle:'🖶 Print bridge (printer connection)', bridgeInterval:'Queue check interval (sec)', bridgeHint:'How often the print bridge (bridge.html) checks the server for print jobs. Shorter = faster printing but more server load. Default is 1.2 seconds.',
         bridgeKeyLbl:'BRIDGE_KEY (optional shared secret)', bridgeKeyHint:'When set, only a bridge device (bridge.html) that knows this string can read/write the print queue. Leaving it blank and saving returns to the open (no-key) behavior. Enter the same string in the "Key" field on bridge.html.',
-        emailOutboxTitle:'📧 e-Receipt sending (email outbox)', emailOutboxUnavail:'⚠️ This feature is currently unavailable. Email sending itself has not been implemented yet, so pressing the button below will not actually send any e-receipts.<br><br>Instead, print receipts on paper for customers at checkout (if auto-print is enabled in printer settings). Past bills can always be reprinted from <a href="./receipts.html" style="color:#92400e;text-decoration:underline;">Bill history</a>.', emailOutboxBtn:'⏱ Enable auto-send (unavailable)', emailOutboxDone:'✅ Auto-send enabled', emailOutboxAlready:'✅ Already enabled',
-        auditQueueTitle:'📝 Audit log (record queue)', auditQueueObsolete:'✅ This setting is no longer needed. The old Google Sheets version needed a once-a-minute scheduled job to flush queued entries, but the current system (Cloudflare D1) writes audit-log entries immediately when an order or bill is finalized. No need to press the button below.', auditQueueBtn:'⏱ Enable auto-flush', auditQueueDone:'✅ Auto-flush enabled', auditQueueAlready:'✅ Already enabled',
-        opLogQueueTitle:'🗒️ Operation log (record queue)', opLogQueueObsolete:'✅ This setting is no longer needed. Like the audit log, the current system (Cloudflare D1) writes operation-log entries immediately for every action. No need to press the button below.', opLogQueueBtn:'⏱ Enable auto-flush', opLogQueueDone:'✅ Auto-flush enabled', opLogQueueAlready:'✅ Already enabled',
-        ereceiptTitle:'📩 e-Receipt recipients (fixed, multiple allowed)', ereceiptSaveBtn:'💾 Save (unavailable)', ereceiptUnavail:'⚠️ This feature is currently unavailable. Email sending itself has not been implemented yet, so addresses registered here are never actually sent to. Use <a href="./receipts.html" style="color:#92400e;text-decoration:underline;">Bill history</a> or CSV export (Backup/Export page) for accounting/owner records instead.', ereceiptEmailsLbl:'Recipient email(s) — comma or newline separated', ereceiptHint:'Every time a bill is finalized, a copy of the e-receipt is automatically sent to the addresses registered here — separate from, and in addition to, whatever the customer optionally enters at checkout. Useful for accounting/owner copies. Leave blank to send nothing.',
+        emailOutboxTitle:'📧 e-Receipt', emailOutboxHint:'As of 2026-08-24, e-receipts can be sent by email when a bill is finalized. This requires the API key and from-address in the "Email sending (Resend)" section above to be configured.<br>When enabled, an e-receipt is sent automatically every time a bill is finalized — to whatever the customer entered at checkout (the <code>#payEmail</code> field), and to the fixed recipients registered below.', emailOutboxBtn:'Enable e-receipts',
+        ereceiptTitle:'📩 e-Receipt recipients (fixed, multiple allowed)', ereceiptSaveBtn:'💾 Save', ereceiptEmailsLbl:'Recipient email(s) — comma or newline separated', ereceiptHint:'Every time a bill is finalized, a copy of the e-receipt is automatically sent to the addresses registered here — separate from, and in addition to, whatever the customer optionally enters at checkout. Useful for accounting/owner copies. Leave blank to send nothing. Nothing is sent while "e-Receipt" above is off.',
         saved:'✅ Saved', savedSched:'✅ Saved & scheduled', uploaded:'✅ Uploaded', pickImg:'Please select an image', needKey:'Please enter a key', noGeoDev:'This device does not support location', gotLoc:'Location acquired. Please press Save.', noLoc:'Could not get location. Please enter manually.', sending:'Sending…', testSent:'✅ Test sent. Please check your inbox', sendFail:'Could not send', scopeReauth:'You may need to re-authorize (scopes)', errPrefix:'Error: ' }
     }, function(){ setBadge('gemBadge', gemConfigured); setBadge('cseBadge', cseConfigured); });
   </script>
