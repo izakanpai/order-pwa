@@ -34,7 +34,6 @@
   <div class="wrap">
     <div class="card">
       <div class="card-title" data-t="bkTitle">📦 全データを一括バックアップ</div>
-      <div class="muted" style="margin-bottom:10px;padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;color:#1e40af;font-weight:700;" data-t-html="bkHintBox">データの保存先がGoogleスプレッドシートからCloudflare D1データベースへ移行したため、以前の「Driveへコピー」という仕組みは無くなりました。<br>代わりに、下のボタンで全テーブルをまとめてZIPファイル（中身は各テーブルのCSV）としてダウンロードできます（Excel等で開けます）。<br><br>なお、Cloudflare D1自体にも過去30日以内の任意時点へ戻せる自動バックアップ（Point-in-Timeリカバリ）が備わっているため、この手動ダウンロードは「手元にも控えを残したい場合の追加の安心材料」という位置づけです。</div>
       <button class="btn green" id="bkBtn" onclick="backup()" data-t="bkBtn">📦 全データをZIPでダウンロード</button>
       <div class="alert" id="bkMsg"></div>
     </div>
@@ -114,8 +113,8 @@
       .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; } });
 
     I18n.init({
-      ja:{ title:'💾 バックアップ / 書き出し', back:'← 管理へ', bkTitle:'📦 全データを一括バックアップ', bkHintBox:'データの保存先がGoogleスプレッドシートからCloudflare D1データベースへ移行したため、以前の「Driveへコピー」という仕組みは無くなりました。<br>代わりに、下のボタンで全テーブルをまとめてZIPファイル（中身は各テーブルのCSV）としてダウンロードできます（Excel等で開けます）。<br><br>なお、Cloudflare D1自体にも過去30日以内の任意時点へ戻せる自動バックアップ（Point-in-Timeリカバリ）が備わっているため、この手動ダウンロードは「手元にも控えを残したい場合の追加の安心材料」という位置づけです。', bkBtn:'📦 全データをZIPでダウンロード', bkWorking:'作成中…', bkDone:'✅ ダウンロードしました:', csvTitle:'📄 シートをCSVで書き出し', csvHint:'シートを選んでCSVをダウンロードできます（Excel等で開けます）。', csvBtn:'⬇ CSVを書き出し', csvDone:'✅ 書き出しました:', errPrefix:'エラー: ' },
-      en:{ title:'💾 Backup / Export', back:'← Manage', bkTitle:'📦 Back up all data', bkHintBox:'Since data storage moved from Google Sheets to a Cloudflare D1 database, the old "copy to Drive" mechanism no longer exists.<br>Instead, use the button below to download every table at once as a ZIP file (containing one CSV per table, opens in Excel, etc.).<br><br>Cloudflare D1 also has its own automatic backup (Point-in-Time recovery, up to 30 days back), so this manual download is an extra copy for your own peace of mind rather than the only safety net.', bkBtn:'📦 Download all data (ZIP)', bkWorking:'Preparing…', bkDone:'✅ Downloaded:', csvTitle:'📄 Export a sheet to CSV', csvHint:'Pick a sheet and download it as CSV (opens in Excel, etc.).', csvBtn:'⬇ Export CSV', csvDone:'✅ Exported:', errPrefix:'Error: ' }
+      ja:{ title:'💾 バックアップ / 書き出し', back:'← 管理へ', bkTitle:'📦 全データを一括バックアップ', bkBtn:'📦 全データをZIPでダウンロード', bkWorking:'作成中…', bkDone:'✅ ダウンロードしました:', csvTitle:'📄 シートをCSVで書き出し', csvHint:'シートを選んでCSVをダウンロードできます（Excel等で開けます）。', csvBtn:'⬇ CSVを書き出し', csvDone:'✅ 書き出しました:', errPrefix:'エラー: ' },
+      en:{ title:'💾 Backup / Export', back:'← Manage', bkTitle:'📦 Back up all data', bkBtn:'📦 Download all data (ZIP)', bkWorking:'Preparing…', bkDone:'✅ Downloaded:', csvTitle:'📄 Export a sheet to CSV', csvHint:'Pick a sheet and download it as CSV (opens in Excel, etc.).', csvBtn:'⬇ Export CSV', csvDone:'✅ Exported:', errPrefix:'Error: ' }
     }, function(){});
   </script>
 </body>
