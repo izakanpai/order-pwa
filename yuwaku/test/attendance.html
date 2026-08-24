@@ -74,7 +74,10 @@
     };
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; }).catch(function(){});
-    document.getElementById('month').value = new Date().toISOString().slice(0,7);
+    // 2026-08-24修正: toISOString()はUTC基準のため、フィリピン時間で月初の午前0〜8時頃に開くと
+    // 前月が選択されてしまう不具合があった（profit_sim.htmlで先に見つけて修正済みだった同じ問題を
+    // 横展開）。ローカル時間（店舗のタイムゾーン）で当月を決める。
+    document.getElementById('month').value = (function(){ var n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); })();
 
     I18n.init({
       ja:{ title:'🕐 勤怠管理', back:'← 管理へ', month:'対象月', show:'🔍 表示', hint:'労働時間・残業（8時間超）・深夜（22-5時）・出勤日数・給与概算を集計します。概算＝時給×労働時間。', colEmp:'従業員', colDays:'出勤日', colWork:'労働', colOt:'残業', colNight:'深夜', colWage:'時給', colEst:'概算', pickMonth:'月を選んで表示', loading:'読み込み中…', noData:'この月の勤怠データはありません', loadErr:'読み込みエラー: ' },

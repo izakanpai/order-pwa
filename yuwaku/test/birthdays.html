@@ -65,7 +65,10 @@
     }
     window.issue = function(phone){ rpc('issueBirthdayCoupon',[phone]).then(function(d){ d=d||{}; if(d.ok){ ISSUED[phone]=d; render(); } else { alert(I18n.t('errPrefix')+(d.error||'error')); } }).catch(function(e){ alert(I18n.t('errPrefix')+(e.message||e)); }); };
     function load(){ var mo=document.getElementById('month').value; rpc('getBirthdayMembers',[mo]).then(function(l){ ROWS=l||[]; render(); }).catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="5" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; }); }
-    document.getElementById('month').value = new Date().toISOString().slice(0,7);
+    // 2026-08-24修正: toISOString()はUTC基準のため、フィリピン時間で月初の午前0〜8時頃に開くと
+    // 前月が選択されてしまう不具合があった（profit_sim.htmlで先に見つけて修正済みだった同じ問題を
+    // 横展開）。ローカル時間（店舗のタイムゾーン）で当月を決める。
+    document.getElementById('month').value = (function(){ var n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); })();
     document.getElementById('month').addEventListener('change', function(){ ISSUED={}; load(); });
 
     __loaded=true; load();

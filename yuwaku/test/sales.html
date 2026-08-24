@@ -277,7 +277,10 @@
 
     // 通貨記号
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM = r.data.currencySymbol; }).catch(function(){});
-    document.getElementById('anaMonth').value = new Date().toISOString().slice(0,7);
+    // 2026-08-24修正: toISOString()はUTC基準のため、フィリピン時間で月初の午前0〜8時頃に開くと
+    // 前月が選択されてしまう不具合があった（profit_sim.htmlで先に見つけて修正済みだった同じ問題を
+    // 横展開）。ローカル時間（店舗のタイムゾーン）で当月を決める。
+    document.getElementById('anaMonth').value = (function(){ var n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); })();
     rpc('getSalesSummary',[],{silent:true}).then(renderSales).catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('monthly').innerHTML='<div style="color:#b91c1c;">'+I18n.t('loadErr')+esc(e.message||e)
       +'<div style="margin-top:6px;font-size:12px;color:var(--text-3);">'+loc('最終試行: ','Last attempt: ')+_retryTs()+'</div>'
       +'<button type="button" class="btn" style="margin-top:8px;" onclick="rpc(\'getSalesSummary\',[],{silent:true}).then(renderSales)">'+loc('🔄 再試行','🔄 Retry')+'</button></div>'; });

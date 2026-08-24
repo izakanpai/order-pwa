@@ -53,7 +53,15 @@
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     var DATA = { avg:0, count:0, dist:{}, rows:[] }, __loaded=false;
     function stars(n){ var o=''; for(var i=1;i<=5;i++) o+=(i<=n?'★':'☆'); return o; }
-    function fmt(ts){ try{ return new Date(ts).toLocaleString(); }catch(e){ return esc(ts); } }
+    // 2026-08-24修正: バックエンドが返すtsはSQLiteのdatetime('now')によるUTC時刻（末尾にZ無し）。
+    // そのままnew Date()に渡すとローカル時刻として誤解釈され、表示が数時間ずれるため、
+    // 明示的にUTCと分かる形式へ直してから変換する。
+    function toUtcDate(ts){
+      var s = String(ts||'');
+      if(s && s.indexOf('Z')===-1 && s.indexOf('+')===-1){ s = s.replace(' ','T')+'Z'; }
+      return new Date(s);
+    }
+    function fmt(ts){ try{ return toUtcDate(ts).toLocaleString(); }catch(e){ return esc(ts); } }
     function render(){
       var d = DATA;
       var bars='';
