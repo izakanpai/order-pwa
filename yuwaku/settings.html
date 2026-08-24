@@ -176,7 +176,7 @@
 
     <div class="card">
       <div class="card-title" data-t="emailCfgTitle">📧 メール送信設定（Resend）</div>
-      <div class="hint" style="font-size:13px;font-weight:700;color:#1e40af;background:#dbeafe;border:1px solid #bfdbfe;border-radius:9px;padding:10px 12px;margin-bottom:10px;" data-t="emailCfgHint">2026-08-23、定期レポート機能のメール送信の仕組みを実装しました（Resendという外部メール送信サービス経由）。ご利用には以下の準備が必要です。<br>① <a href="https://resend.com" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:underline;">resend.com</a>で無料アカウントを作成<br>② 送信元ドメインを追加し、案内されるDNSレコードを設定して検証を完了<br>③ APIキーを発行し、下に貼り付けて保存<br>④ 送信元アドレス（検証したドメイン配下、例: report@mail.izakanpai.com）も保存<br><br>⚠️ この環境では実際のAPIキーでの送信確認はできていません。設定後、下の定期レポートカードの「テスト送信」で必ず実機確認をお願いします。</div>
+      <div class="hint" style="font-size:13px;font-weight:700;color:#1e40af;background:#dbeafe;border:1px solid #bfdbfe;border-radius:9px;padding:10px 12px;margin-bottom:10px;" data-t-html="emailCfgHint">2026-08-23、定期レポート機能のメール送信の仕組みを実装しました（Resendという外部メール送信サービス経由）。ご利用には以下の準備が必要です。<br>① <a href="https://resend.com" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:underline;">resend.com</a>で無料アカウントを作成<br>② 送信元ドメインを追加し、案内されるDNSレコードを設定して検証を完了<br>③ APIキーを発行し、下に貼り付けて保存<br>④ 送信元アドレス（検証したドメイン配下、例: report@mail.izakanpai.com）も保存<br><br>⚠️ この環境では実際のAPIキーでの送信確認はできていません。設定後、下の定期レポートカードの「テスト送信」で必ず実機確認をお願いします。</div>
       <div class="fg"><label class="form-label" data-t="emailApiKeyLbl">Resend APIキー</label><input id="emailApiKey" type="text" class="fc" placeholder="re_xxxxxxxx"><span class="badge" id="emailKeyBadge" style="margin-left:8px;"></span></div>
       <button class="btn" onclick="saveEmailKey()" data-t="save">💾 保存</button>
       <div class="st" id="st-emailKey"></div>
@@ -226,7 +226,7 @@
 
     <div class="card">
       <div class="card-title" data-t="emailOutboxTitle">📧 eレシート送信（メール送信キュー）</div>
-      <div class="hint" style="font-size:13px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;padding:10px 12px;margin:2px 0 10px;" data-t="emailOutboxUnavail">⚠️ この機能は現在ご利用いただけません。メール送信の仕組み自体がまだ実装されていないため、下のボタンを押しても実際にeレシートが送信されることはありません。<br><br>代わりに、お客様へは店舗スタッフが会計時にレシートを紙で印刷（プリンタ設定でレシート自動印刷が有効な場合）してお渡しください。過去の会計内容は<a href="./receipts.html" style="color:#92400e;text-decoration:underline;">会計履歴</a>からいつでも再印刷できます。</div>
+      <div class="hint" style="font-size:13px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;padding:10px 12px;margin:2px 0 10px;" data-t-html="emailOutboxUnavail">⚠️ この機能は現在ご利用いただけません。メール送信の仕組み自体がまだ実装されていないため、下のボタンを押しても実際にeレシートが送信されることはありません。<br><br>代わりに、お客様へは店舗スタッフが会計時にレシートを紙で印刷（プリンタ設定でレシート自動印刷が有効な場合）してお渡しください。過去の会計内容は<a href="./receipts.html" style="color:#92400e;text-decoration:underline;">会計履歴</a>からいつでも再印刷できます。</div>
       <button class="btn" disabled style="opacity:.45;cursor:not-allowed;" data-t="emailOutboxBtn">⏱ 自動送信を有効化（利用不可）</button>
       <div class="st" id="st-emailOutbox"></div>
     </div>

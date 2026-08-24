@@ -33,9 +33,9 @@
   <div class="head"><h1 data-t="title">💾 バックアップ / 書き出し</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
   <div class="wrap">
     <div class="card">
-      <div class="card-title" data-t="bkTitle">📦 スプレッドシートを丸ごとバックアップ</div>
-      <div class="muted" style="margin-bottom:10px;padding:10px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;color:#92400e;font-weight:700;" data-t="bkUnavail">⚠️ この機能は現在ご利用いただけません。データの保存先がGoogleスプレッドシートからCloudflare D1データベースへ移行したため、「Driveへコピー」という仕組み自体が存在しなくなりました。<br><br>代わりに、下の「シートをCSVで書き出し」で必要なテーブルをCSV形式で保存いただけます（Excel等で開けます）。全データの完全なバックアップが必要な場合は、開発担当（Claude/GPT）にD1データベースのエクスポートをご依頼ください。</div>
-      <button class="btn green" id="bkBtn" disabled style="opacity:.45;cursor:not-allowed;" data-t="bkBtn">💾 今すぐバックアップ（利用不可）</button>
+      <div class="card-title" data-t="bkTitle">📦 全データを一括バックアップ</div>
+      <div class="muted" style="margin-bottom:10px;padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;color:#1e40af;font-weight:700;" data-t-html="bkHintBox">データの保存先がGoogleスプレッドシートからCloudflare D1データベースへ移行したため、以前の「Driveへコピー」という仕組みは無くなりました。<br>代わりに、下のボタンで全テーブルをまとめてZIPファイル（中身は各テーブルのCSV）としてダウンロードできます（Excel等で開けます）。<br><br>なお、Cloudflare D1自体にも過去30日以内の任意時点へ戻せる自動バックアップ（Point-in-Timeリカバリ）が備わっているため、この手動ダウンロードは「手元にも控えを残したい場合の追加の安心材料」という位置づけです。</div>
+      <button class="btn green" id="bkBtn" onclick="backup()" data-t="bkBtn">📦 全データをZIPでダウンロード</button>
       <div class="alert" id="bkMsg"></div>
     </div>
     <div class="card">
@@ -52,6 +52,7 @@
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
@@ -59,17 +60,50 @@
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     function alertBox(id, html, ok){ var m=document.getElementById(id); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerHTML=html; }
 
-    // 2026-08-23: スプレッドシート丸ごとバックアップはD1移行に伴い実装を取りやめたため、
-    // ボタン自体をdisabledにして呼べないようにしている（万一呼ばれても未実装エラーを返すのみ）。
-    window.backup = function(){};
-
     function csvCell(v){ var s=(v==null)?'':String(v); if(/[",\n]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }
+    function toCsv(rows){ return (rows||[]).map(function(row){ return row.map(csvCell).join(','); }).join('\r\n'); }
+    function pad2(n){ return (n<10?'0':'')+n; }
+
+    // 2026-08-23: 「全データを一括バックアップ」。GAS版の「スプレッドシート丸ごとコピー」の
+    // 代替として、全テーブルをexportSheetDataで順に取得し、1テーブル1CSVとしてZIPにまとめて
+    // ダウンロードする（サーバー側の新規実装は不要。既存のgetSheetNames/exportSheetDataを
+    // ループで呼ぶだけ）。テーブル数が多い店舗でも1件ずつ順番に取得するので、途中でエラーが
+    // 出ても「どのテーブルで失敗したか」が分かるようにしている。
+    window.backup = function(){
+      var btn = document.getElementById('bkBtn');
+      btn.disabled = true; var origTxt = btn.textContent; btn.textContent = I18n.t('bkWorking');
+      rpc('getSheetNames', []).then(function(names){
+        names = names || [];
+        var zip = new JSZip();
+        var chain = Promise.resolve();
+        names.forEach(function(name){
+          chain = chain.then(function(){
+            return rpc('exportSheetData', [name]).then(function(d){
+              d = d || {};
+              if (d.error) { zip.file(name + '.csv', '# error: ' + d.error); return; }
+              zip.file(name + '.csv', '﻿' + toCsv(d.rows));
+            });
+          });
+        });
+        return chain.then(function(){ return zip.generateAsync({ type: 'blob' }); });
+      }).then(function(blob){
+        var now = new Date();
+        var stamp = now.getFullYear() + pad2(now.getMonth()+1) + pad2(now.getDate()) + '_' + pad2(now.getHours()) + pad2(now.getMinutes());
+        var fname = 'izakanpai_backup_' + stamp + '.zip';
+        var url = URL.createObjectURL(blob); var a = document.createElement('a');
+        a.href = url; a.download = fname; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        alertBox('bkMsg', I18n.t('bkDone') + ' ' + esc(fname), true);
+      }).catch(function(e){
+        alertBox('bkMsg', I18n.t('errPrefix') + (e.message || e), false);
+      }).finally(function(){
+        btn.disabled = false; btn.textContent = origTxt;
+      });
+    };
     window.exportCsv = function(){
       var name=document.getElementById('sheetSel').value; if(!name) return;
       rpc('exportSheetData',[name]).then(function(d){ d=d||{};
         if(d.error){ alertBox('csvMsg', I18n.t('errPrefix')+d.error, false); return; }
-        var csv=(d.rows||[]).map(function(row){ return row.map(csvCell).join(','); }).join('\r\n');
-        var blob=new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+        var blob=new Blob(['﻿'+toCsv(d.rows)], {type:'text/csv;charset=utf-8;'});
         var url=URL.createObjectURL(blob); var a=document.createElement('a');
         a.href=url; a.download=name+'.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
         alertBox('csvMsg', I18n.t('csvDone')+' '+esc(name)+'.csv', true);
@@ -80,8 +114,8 @@
       .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; } });
 
     I18n.init({
-      ja:{ title:'💾 バックアップ / 書き出し', back:'← 管理へ', bkTitle:'📦 スプレッドシートを丸ごとバックアップ', bkHint:'現在の全データを日時付きでコピーし、Driveの「バックアップ」フォルダに保存します。', bkUnavail:'⚠️ この機能は現在ご利用いただけません。データの保存先がGoogleスプレッドシートからCloudflare D1データベースへ移行したため、「Driveへコピー」という仕組み自体が存在しなくなりました。<br><br>代わりに、下の「シートをCSVで書き出し」で必要なテーブルをCSV形式で保存いただけます（Excel等で開けます）。全データの完全なバックアップが必要な場合は、開発担当（Claude/GPT）にD1データベースのエクスポートをご依頼ください。', bkBtn:'💾 今すぐバックアップ（利用不可）', bkDone:'✅ バックアップを作成しました', bkOpen:'Driveで開く', csvTitle:'📄 シートをCSVで書き出し', csvHint:'シートを選んでCSVをダウンロードできます（Excel等で開けます）。', csvBtn:'⬇ CSVを書き出し', csvDone:'✅ 書き出しました:', errPrefix:'エラー: ' },
-      en:{ title:'💾 Backup / Export', back:'← Manage', bkTitle:'📦 Full spreadsheet backup', bkHint:'Copies all current data with a timestamp into the “Backup” folder on Drive.', bkUnavail:'⚠️ This feature is currently unavailable. Since data storage moved from Google Sheets to a Cloudflare D1 database, the “copy to Drive” mechanism no longer exists.<br><br>Use “Export a sheet to CSV” below instead to save any table as CSV (opens in Excel, etc.). If you need a full database backup, ask the dev team (Claude/GPT) to export the D1 database.', bkBtn:'💾 Back up now (unavailable)', bkDone:'✅ Backup created', bkOpen:'Open in Drive', csvTitle:'📄 Export a sheet to CSV', csvHint:'Pick a sheet and download it as CSV (opens in Excel, etc.).', csvBtn:'⬇ Export CSV', csvDone:'✅ Exported:', errPrefix:'Error: ' }
+      ja:{ title:'💾 バックアップ / 書き出し', back:'← 管理へ', bkTitle:'📦 全データを一括バックアップ', bkHintBox:'データの保存先がGoogleスプレッドシートからCloudflare D1データベースへ移行したため、以前の「Driveへコピー」という仕組みは無くなりました。<br>代わりに、下のボタンで全テーブルをまとめてZIPファイル（中身は各テーブルのCSV）としてダウンロードできます（Excel等で開けます）。<br><br>なお、Cloudflare D1自体にも過去30日以内の任意時点へ戻せる自動バックアップ（Point-in-Timeリカバリ）が備わっているため、この手動ダウンロードは「手元にも控えを残したい場合の追加の安心材料」という位置づけです。', bkBtn:'📦 全データをZIPでダウンロード', bkWorking:'作成中…', bkDone:'✅ ダウンロードしました:', csvTitle:'📄 シートをCSVで書き出し', csvHint:'シートを選んでCSVをダウンロードできます（Excel等で開けます）。', csvBtn:'⬇ CSVを書き出し', csvDone:'✅ 書き出しました:', errPrefix:'エラー: ' },
+      en:{ title:'💾 Backup / Export', back:'← Manage', bkTitle:'📦 Back up all data', bkHintBox:'Since data storage moved from Google Sheets to a Cloudflare D1 database, the old "copy to Drive" mechanism no longer exists.<br>Instead, use the button below to download every table at once as a ZIP file (containing one CSV per table, opens in Excel, etc.).<br><br>Cloudflare D1 also has its own automatic backup (Point-in-Time recovery, up to 30 days back), so this manual download is an extra copy for your own peace of mind rather than the only safety net.', bkBtn:'📦 Download all data (ZIP)', bkWorking:'Preparing…', bkDone:'✅ Downloaded:', csvTitle:'📄 Export a sheet to CSV', csvHint:'Pick a sheet and download it as CSV (opens in Excel, etc.).', csvBtn:'⬇ Export CSV', csvDone:'✅ Exported:', errPrefix:'Error: ' }
     }, function(){});
   </script>
 </body>
