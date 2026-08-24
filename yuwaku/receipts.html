@@ -107,7 +107,10 @@
         render();
       }).catch(function(e){ alert(I18n.t('errPrefix')+(e.message||e)); });
     };
-    document.getElementById('month').value = new Date().toISOString().slice(0,7);
+    // 2026-08-24修正: toISOString()はUTC基準のため、フィリピン時間で月初の午前0〜8時頃に開くと
+    // 前月が選択されてしまう不具合があった（profit_sim.htmlで先に見つけて修正済みだった同じ問題を
+    // 横展開）。ローカル時間（店舗のタイムゾーン）で当月を決める。
+    document.getElementById('month').value = (function(){ var n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); })();
     document.getElementById('month').addEventListener('change', load);
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; render(); }).catch(function(){});

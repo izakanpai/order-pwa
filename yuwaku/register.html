@@ -52,7 +52,10 @@
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     var SYM='₱', CUR=null, HIST=[], STAFF=[];
-    var THIS_MONTH = new Date().toISOString().slice(0,7);
+    // 2026-08-24修正: toISOString()はUTC基準のため、フィリピン時間で月初の午前0〜8時頃に開くと
+    // 前月が選択されてしまう不具合があった（profit_sim.htmlで先に見つけて修正済みだった同じ問題を
+    // 横展開）。ローカル時間（店舗のタイムゾーン）で当月を決める。
+    var THIS_MONTH = (function(){ var n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); })();
     function money(v){ return SYM+(Math.round(Number(v)||0)).toLocaleString(); }
 
     window.doOpen = function(){

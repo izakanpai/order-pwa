@@ -110,16 +110,25 @@
           if (it['商品名_EN']) enMap[it['商品名']] = it['商品名_EN'];
         });
         KITCHEN_MAP = map; MENU_EN = enMap;
-        if (lastData.length) render(lastData);
       }).catch(function(){});
+    }
+    // 2026-08-24修正（重要）: バックエンドが返す注文日時はSQLiteのdatetime('now')によるUTC時刻
+    // （末尾にZ無し）。そのままnew Date()に渡すとローカル時刻として誤解釈され、経過時間の計算が
+    // タイムゾーン分（日本なら9時間、フィリピンなら8時間）ずれてしまっていた——つまり注文直後でも
+    // 「e-late（12分以上経過）」表示になってしまう不具合。表示だけでなく緊急度の判定そのものに
+    // 影響する箇所だったため、明示的にUTCと分かる形式へ直してから計算する。
+    function toUtcDate(dateStr){
+      var s = String(dateStr||'');
+      if(s && s.indexOf('Z')===-1 && s.indexOf('+')===-1){ s = s.replace(' ','T')+'Z'; }
+      return new Date(s);
     }
     function elapsedInfo(dateStr){
       var mins = 0;
-      try { mins = Math.max(0, Math.floor((Date.now() - new Date(dateStr).getTime())/60000)); } catch(e){}
+      try { mins = Math.max(0, Math.floor((Date.now() - toUtcDate(dateStr).getTime())/60000)); } catch(e){}
       var cls = mins >= 12 ? 'e-late' : (mins >= 6 ? 'e-warn' : 'e-ok');
       return { mins:mins, cls:cls };
     }
-    function fmtTime(dateStr){ try { return new Date(dateStr).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch(e){ return ''; } }
+    function fmtTime(dateStr){ try { return toUtcDate(dateStr).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch(e){ return ''; } }
 
     var lastData = [];
     function render(data){
@@ -188,33 +197,17 @@
     // 平常時（8秒ごと・変化なし）はSpreadsheet読込自体が省略され、GAS実行が軽くなる。
     var _opsVersion = null;
     var _loadInFlight = false;
-    var _OPS_UI_CACHE_KEY = 'yuwakuOpsUiSnapshotV1';
-    function restoreOpsUiCache(){
-      try {
-        var d = JSON.parse(localStorage.getItem(_OPS_UI_CACHE_KEY) || 'null');
-        if (!d || !d.savedAt || Date.now() - Number(d.savedAt) > 86400000 || !Array.isArray(d.orders)) return false;
-        _opsVersion = d.version != null ? d.version : null;
-        render(d.orders);
-        return true;
-      } catch(e) { return false; }
-    }
-    function saveOpsUiCache(d){
-      try { localStorage.setItem(_OPS_UI_CACHE_KEY, JSON.stringify({ savedAt:Date.now(), version:_opsVersion, orders:d.orders||[], calls:d.calls||[], partySizes:d.partySizes||{} })); } catch(e) {}
-    }
     window.load = function(force){
       if (_loadInFlight) return; // 前回リクエストが残っていれば重複送信しない
       _loadInFlight = true;
       // [修正点一覧C-2対応] getOperationsDelta/getOrders/getStaffCallsが認証必須になったため、tokenを送る。
       var payload = (force || _opsVersion == null) ? { token: TOKEN } : { sinceVersion: _opsVersion, token: TOKEN };
-      // KDSは集計画面ではないため5秒を超えて待たせない。
-      payload.__timeoutMs = 4500; payload.__noInternalRetry = true; payload.__silent = true;
       return API.post('getOperationsDelta', payload).then(function(r){
         _loadInFlight = false;
         __booted = true;
         var d = r.data || {};
         _opsVersion = d.version != null ? d.version : _opsVersion;
         if (d.unchanged) return; // 変化なし：再描画不要
-        saveOpsUiCache(d);
         render(d.orders || []);
       }).catch(function(){
         _loadInFlight = false;
@@ -249,7 +242,6 @@
     });
     function boot(){
       loadMenu();
-      restoreOpsUiCache();
       load();
       _resetPoll();   // 旧: 8秒/60秒の二重登録だった重複バグを解消（loadが2倍の頻度で呼ばれていた）
       setInterval(loadMenu, 300000); // メニュー設定（厨房表示ON/OFF）の変更を数分以内に反映

@@ -216,7 +216,15 @@
     function sym(){ return SETTINGS.currencySymbol || '₱'; }
     function money(v){ return sym() + (Number(v)||0).toLocaleString(); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-    function fmtTime(d){ try{ return new Date(d).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+    // 2026-08-24修正: バックエンドが返す注文日時はSQLiteのdatetime('now')によるUTC時刻
+    // （末尾にZ無し）。そのままnew Date()に渡すとローカル時刻として誤解釈され、表示が
+    // 数時間ずれるため、明示的にUTCと分かる形式へ直してから変換する。
+    function toUtcDate(d){
+      var s = String(d||'');
+      if(s && s.indexOf('Z')===-1 && s.indexOf('+')===-1){ s = s.replace(' ','T')+'Z'; }
+      return new Date(s);
+    }
+    function fmtTime(d){ try{ return toUtcDate(d).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
     // 席ラベルをEN/JP表示（保存値は変更しない・表示のみ）
     function seatLabel(v){ var s=String(v==null?'':v); var m=s.match(/^テーブル(\d+)$/); if(m) return (lang==='en'?'Table ':'テーブル')+m[1]; var c=s.match(/^カウンター(\d+)$/); if(c) return (lang==='en'?'Counter ':'カウンター')+c[1]; return s; }
     function breakdown(subtotal){

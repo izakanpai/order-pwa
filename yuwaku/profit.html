@@ -148,7 +148,10 @@
     };
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; if(DATA) render(); }).catch(function(){});
-    document.getElementById('month').value = new Date().toISOString().slice(0,7);
+    // 2026-08-24修正: toISOString()はUTC基準のため、フィリピン時間で月初の午前0〜8時頃に開くと
+    // 前月が選択されてしまう不具合があった（profit_sim.htmlで先に見つけて修正済みだった同じ問題を
+    // 横展開）。ローカル時間（店舗のタイムゾーン）で当月を決める。
+    document.getElementById('month').value = (function(){ var n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); })();
 
     I18n.init({
       ja:{ title:'📈 月間粗利', back:'← 管理へ', month:'対象月', calc:'🔄 計算', hint:'売上・商品原価(レシピ自動)・従業員給与(勤怠)はシステムから自動取得。固定費・備品・その他は「経費一覧」の登録額を集計します。', loading:'読み込み中…', revenue:'売上', ordersU:'件', cogs:'商品原価', cogsAuto:'自動(レシピ)', cogsBuy:'仕入実績', wages:'従業員給与', rent:'賃料', elec:'電気代', water:'水道代', supply:'備品購入', other:'その他', profit:'粗利', rate:'粗利率', note2:'※ 固定費・備品・その他・仕入は「経費一覧」で当月に登録した金額の合計です。', errPrefix:'エラー: ', loadErr:'読み込みエラー: ' },

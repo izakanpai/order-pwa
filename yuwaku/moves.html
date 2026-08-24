@@ -68,7 +68,15 @@
     var ALL = [], SYM='₱', __loaded=false;
     var TYPEKEY = { '入荷':'tIn', '廃棄':'tWaste', '棚卸':'tCount' };
     var TYPECLS = { '入荷':'b-in', '廃棄':'b-waste', '棚卸':'b-count' };
-    function fmt(ts){ try{ return new Date(ts).toLocaleString(); }catch(e){ return esc(ts); } }
+    // 2026-08-24修正: バックエンドが返すtsはSQLiteのdatetime('now')によるUTC時刻（末尾にZ無し）。
+    // そのままnew Date()に渡すとローカル時刻として誤解釈され、表示が数時間ずれるため、
+    // 明示的にUTCと分かる形式へ直してから変換する。
+    function toUtcDate(ts){
+      var s = String(ts||'');
+      if(s && s.indexOf('Z')===-1 && s.indexOf('+')===-1){ s = s.replace(' ','T')+'Z'; }
+      return new Date(s);
+    }
+    function fmt(ts){ try{ return toUtcDate(ts).toLocaleString(); }catch(e){ return esc(ts); } }
     function typeLabel(t){ return I18n.t(TYPEKEY[t]||'tIn'); }
 
     function render(){
@@ -93,8 +101,10 @@
       }).join('');
     }
     document.getElementById('month').addEventListener('change', render);
-    var ymd = new Date().toISOString().slice(0,10);
-    document.getElementById('month').value = ymd.slice(0,7);
+    // 2026-08-24修正: toISOString()はUTC基準のため、フィリピン時間で月初の午前0〜8時頃に開くと
+    // 前月が選択されてしまう不具合があった（profit_sim.htmlで先に見つけて修正済みだった同じ問題を
+    // 横展開）。ローカル時間（店舗のタイムゾーン）で当月を決める。
+    document.getElementById('month').value = (function(){ var n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); })();
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; render(); }).catch(function(){});
     rpc('getStockMoves',['']).then(function(l){ ALL=l||[]; __loaded=true; render(); })
