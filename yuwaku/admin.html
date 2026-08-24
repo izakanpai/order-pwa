@@ -122,19 +122,18 @@
           <span id="splitRes" style="font-weight:800;"></span>
         </div>
         <div style="margin-bottom:10px;"><input id="payEmail" type="email" placeholder="e-receipt email (任意)" autocomplete="off" style="width:100%;padding:9px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;box-sizing:border-box;"></div>
-        <button class="pbtn" style="background:linear-gradient(135deg,#0f4c81,#1565c0);" onclick="startOnline('gcash')">📱 GCash</button>
-        <button class="pbtn" style="background:linear-gradient(135deg,#2e7d32,#43a047);" onclick="startOnline('card')">💳 Card</button>
+        <button class="pbtn" id="payBtnGcash" style="background:linear-gradient(135deg,#0f4c81,#1565c0);" onclick="gcashPay()">📱 GCash</button>
+        <button class="pbtn" id="payBtnCard" style="background:linear-gradient(135deg,#2e7d32,#43a047);" onclick="cardPay()">💳 Card</button>
         <button class="pbtn" style="background:#334155;" onclick="cashPay()">💴 <span id="cashLbl">現金</span></button>
         <button class="cancel" onclick="closePay()" id="cxl1">キャンセル</button>
       </div>
       <div id="ps2" style="display:none;text-align:center;">
-        <div style="font-size:17px;font-weight:900;margin-bottom:4px;" id="ps2t"></div>
-        <div id="ps2loading" style="padding:20px;color:#aaa;">QR生成中…</div>
+        <div style="font-size:17px;font-weight:900;margin-bottom:4px;" id="ps2t">GCash</div>
         <div style="display:inline-block;padding:8px;border:2px solid #e0e8f5;border-radius:12px;margin-bottom:12px;">
           <img id="payQr" src="" alt="QR" style="width:200px;height:200px;display:none;border-radius:6px;">
         </div>
-        <a id="payLink" href="#" target="_blank" rel="noopener" style="display:block;background:#0f172a;color:#fff;text-decoration:none;border-radius:9px;padding:11px;font-size:13px;font-weight:800;margin-bottom:10px;">支払いページを開く</a>
-        <button class="pbtn" style="background:#f59e0b;color:#0f172a;" onclick="checkPay()" id="checkBtn">支払い確認</button>
+        <div id="ps2hint" style="font-size:12px;color:#64748b;margin-bottom:12px;"></div>
+        <button class="pbtn" style="background:#f59e0b;color:#0f172a;" onclick="confirmGcashPaid()" id="checkBtn">入金を確認した</button>
         <div class="alert" id="payAlert"></div>
         <button class="cancel" onclick="closePay()">キャンセル</button>
       </div>
@@ -197,7 +196,7 @@
       ja: { title:'注文管理', served:'✓ 提供済', servedBtn:'提供済にする', pay:'💳 会計する', noOrder:'未会計の注文はありません',
             cash:'現金', card:'Card', cancel:'キャンセル', pTitle:'お会計', sub:'小計', svc:'サービス料', tax:'税',
             openPay:'支払いページを開く', checkBtn:'支払い確認', checking:'確認中…', notYet:'まだ支払いが確認できません。',
-            noKey:'オンライン決済は未設定です。', cashRecv:'現金を受け取りましたか？', confirmed:'支払い完了', done:'完了（会計済にする）', processing:'処理中…', lang:'EN',
+            noKey:'オンライン決済は未設定です。', cashRecv:'現金を受け取りましたか？', cardRecv:'カード決済を確認しましたか？（別のカード決済端末で処理）', gcashHint:'お客様にQRコードをスキャンして送金していただき、入金を確認したら下のボタンを押してください。', gcashConfirm:'入金を確認した', confirmed:'支払い完了', done:'完了（会計済にする）', processing:'処理中…', lang:'EN',
             disc:'シニア/PWD割引', senior:'シニア', idPh:'ID番号', eligPh:'対象額', discLine:'割引', vatNote:'うちVAT', orLbl:'レシート番号', printBtn:'🖨️ レシート印刷', close:'閉じる', tableW:'卓', totalW:'合計',
             partial:'🧾 一部会計', partTitle:'一部会計 — 明細を選択', selected:'選択', selPay:'選択分を会計', splitLbl:'割り勘 ÷', each:'/人',
             callHdr:'🔔 呼び出し', callLbl:'スタッフ呼出', billLbl:'お会計希望', resolve:'対応済', agoMin:'分前', stay:'滞在', voidBtn:'取消', voidT:'注文の取消', reason:'取消理由', approver:'承認者（責任者ログイン）', loginPh:'ログインID', passPh:'パスワード', voidGo:'取消を承認', needReason:'取消理由を入力してください', authFail:'ログインIDまたはパスワードが違います', voided:'取消しました', alreadySettled:'会計済のため取消できません', eReceipt:'eレシート送信先メール（任意）',
@@ -206,7 +205,7 @@
       en: { title:'Orders', served:'✓ Served', servedBtn:'Mark served', pay:'💳 Checkout', noOrder:'No open orders',
             cash:'Cash', card:'Card', cancel:'Cancel', pTitle:'Payment', sub:'Subtotal', svc:'Service', tax:'Tax',
             openPay:'Open payment page', checkBtn:'Check status', checking:'Checking…', notYet:'Payment not confirmed yet.',
-            noKey:'Online payment is not set up.', cashRecv:'Cash received?', confirmed:'Paid', done:'Done (settle)', processing:'Processing…', lang:'JP',
+            noKey:'Online payment is not set up.', cashRecv:'Cash received?', cardRecv:'Card payment confirmed? (processed on a separate card terminal)', gcashHint:'Ask the customer to scan the QR code and pay, then press the button below once you\'ve confirmed the payment.', gcashConfirm:'Payment confirmed', confirmed:'Paid', done:'Done (settle)', processing:'Processing…', lang:'JP',
             disc:'Senior/PWD discount', senior:'Senior', idPh:'ID no.', eligPh:'Eligible amt', discLine:'Discount', vatNote:'incl. VAT', orLbl:'Receipt no.', printBtn:'🖨️ Print receipt', close:'Close', tableW:'Table', totalW:'TOTAL',
             partial:'🧾 Partial', partTitle:'Partial checkout — select items', selected:'Selected', selPay:'Checkout selected', splitLbl:'Split ÷', each:'/person',
             callHdr:'🔔 Requests', callLbl:'Call staff', billLbl:'Bill please', resolve:'Done', agoMin:'m ago', stay:'Seated', voidBtn:'Void', voidT:'Void order', reason:'Reason', approver:'Approver (manager login)', loginPh:'Login ID', passPh:'Password', voidGo:'Approve void', needReason:'Please enter a reason', authFail:'Wrong login ID or password', voided:'Order voided', alreadySettled:'Cannot void a settled order', eReceipt:'e-receipt email (optional)',
@@ -471,6 +470,10 @@
       // [要望対応] シニア/PWD割引は設定で無効化されている場合、選択肢自体を非表示にする
       // （従業員が不正に操作することを防ぐため、UI上に触れる余地を残さない）。
       document.getElementById('payDisc').style.display = (SETTINGS.seniorDiscountEnabled==='on') ? '' : 'none';
+      // 2026-08-23: クレジットカードは設定で許可されている場合のみボタンを表示（否の場合は別端末で
+      // 処理する運用のためボタン自体を出さない）。GCashは店舗QRコードが登録されている場合のみ表示。
+      document.getElementById('payBtnCard').style.display = (SETTINGS.creditCardEnabled==='on') ? '' : 'none';
+      document.getElementById('payBtnGcash').style.display = SETTINGS.gcashQr ? '' : 'none';
       var _pe=document.getElementById('payEmail'); if(_pe){ _pe.value=''; _pe.placeholder=t().eReceipt; }
       document.getElementById('splitN').value = 1; document.getElementById('splitLbl').innerText = t().splitLbl;
       document.getElementById('ps1t').innerText = t().pTitle;
@@ -620,39 +623,39 @@
         step(3);
       });
     };
-    window.startOnline = function(method){
+    // 2026-08-23: クレジットカードは通常、別のカード決済端末で処理される想定のため、この画面では
+    // 「カード決済ボタンを押した＝店舗側の別端末で決済済み」という扱いで、そのまま完了画面(ps3)へ進む。
+    // PayMongo等の決済APIとの連携は行わない（設定画面でボタン自体の表示可否のみ制御する）。
+    window.cardPay = function(){
       _dcVerifyThenGo(function(){
-        payMethod = method;
-        document.getElementById('ps2t').innerText = method==='gcash'?'GCash':t().card;
-        document.getElementById('payQr').style.display='none';
-        document.getElementById('ps2loading').style.display='block';
-        document.getElementById('payAlert').style.display='none';
-        step(2);
-        // [再修正確認テストH-NEW-3対応] 決済台帳に対象（卓・注文ID）を紐付けて記録できるよう、
-        // table/orderIdsも一緒に送る。
-        API.post('createCheckout', { amount: payTotal, desc: 'Table '+payTable, method: method, token: TOKEN, table: payTable, orderIds: payOrderIds }).then(function(r){
-          var d = r.data || {};
-          document.getElementById('ps2loading').style.display='none';
-          if (d.error){ var a=document.getElementById('payAlert'); a.style.display='block'; a.style.background='#fce8e6'; a.style.color='#b71c1c'; a.innerText = d.error==='no_api_key'?t().noKey:d.error; return; }
-          payCheckoutId = d.checkoutId;
-          document.getElementById('payQr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(d.checkoutUrl);
-          document.getElementById('payQr').style.display='block';
-          document.getElementById('payLink').href = d.checkoutUrl;
-          document.getElementById('payLink').innerText = t().openPay;
-          document.getElementById('checkBtn').innerText = t().checkBtn;
-        }).catch(function(e){ document.getElementById('ps2loading').style.display='none'; var a=document.getElementById('payAlert'); a.style.display='block'; a.style.background='#fce8e6'; a.style.color='#b71c1c'; a.innerText='Error: '+(e.message||e); });
+        payMethod = 'card';
+        document.getElementById('ps3lbl').innerText = t().cardRecv;
+        document.getElementById('ps3amt').innerText = money(payTotal)+' — '+seatLabel(payTable);
+        document.getElementById('doneBtn').innerText = t().done;
+        step(3);
       });
     };
-    window.checkPay = function(){
-      if (!payCheckoutId) return;
-      var btn = document.getElementById('checkBtn'); btn.disabled=true; btn.innerText=t().checking;
-      API.post('checkoutStatus', { checkoutId: payCheckoutId }).then(function(r){
-        btn.disabled=false; btn.innerText=t().checkBtn;
-        var d = r.data || {}; var a=document.getElementById('payAlert'); a.style.display='block';
-        if (d.error){ a.style.background='#fce8e6'; a.style.color='#b71c1c'; a.innerText = d.error==='no_api_key'?t().noKey:d.error; return; }
-        if (d.paymentStatus==='paid'){ document.getElementById('ps3lbl').innerText=t().confirmed; document.getElementById('ps3amt').innerText=money(payTotal)+' — '+seatLabel(payTable); document.getElementById('doneBtn').innerText=t().done; step(3); }
-        else { a.style.background='#fff8e1'; a.style.color='#856404'; a.innerText=t().notYet; }
-      }).catch(function(e){ btn.disabled=false; btn.innerText=t().checkBtn; var a=document.getElementById('payAlert'); a.style.display='block'; a.style.background='#fce8e6'; a.style.color='#b71c1c'; a.innerText='Error: '+(e.message||e); });
+    // 2026-08-23: GCashは設定画面に登録した店舗側の送金先QRコード画像をそのまま表示するだけの
+    // 簡易な仕組み。決済APIとの連携は行わず、入金確認は従来どおりスタッフが目視で行い、
+    // 「入金を確認した」ボタンを押すと会計完了画面(ps3)へ進む。
+    window.gcashPay = function(){
+      _dcVerifyThenGo(function(){
+        payMethod = 'gcash';
+        document.getElementById('ps2t').innerText = 'GCash';
+        var qr = SETTINGS.gcashQr || '';
+        var img = document.getElementById('payQr');
+        if (qr){ img.src = qr; img.style.display='block'; } else { img.style.display='none'; }
+        document.getElementById('ps2hint').innerText = t().gcashHint;
+        document.getElementById('checkBtn').innerText = t().gcashConfirm;
+        document.getElementById('payAlert').style.display='none';
+        step(2);
+      });
+    };
+    window.confirmGcashPaid = function(){
+      document.getElementById('ps3lbl').innerText = t().confirmed;
+      document.getElementById('ps3amt').innerText = money(payTotal)+' — '+seatLabel(payTable);
+      document.getElementById('doneBtn').innerText = t().done;
+      step(3);
     };
     window.finalize = function(){
       var btn = document.getElementById('doneBtn'); btn.disabled=true; btn.innerText=t().processing;

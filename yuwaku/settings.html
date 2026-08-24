@@ -128,11 +128,15 @@
     </div>
 
     <div class="card">
-      <div class="card-title" data-t="payTitle">💳 PayMongo（オンライン決済）</div>
-      <div class="row" style="margin-bottom:8px;"><span data-t="status">状態:</span> <span class="badge offb" id="payBadge" data-t="unset">未設定</span></div>
-      <div class="fg"><label class="form-label" data-t="payKey">シークレットキー（sk_live_… / sk_test_…）</label><input id="payKey" type="password" class="fc" autocomplete="off" placeholder="貼り付けて保存" data-tph="phPaste"><div class="hint" data-t="payHint">保存後はキー自体は表示されません（状態のみ）。</div></div>
-      <button class="btn" onclick="savePayKey()" data-t="save">💾 保存</button>
-      <div class="st" id="st-pay"></div>
+      <div class="card-title" data-t="payTitle">💳 決済方法（クレジット / GCash）</div>
+      <div class="hint" data-t="payHint" style="margin-bottom:12px;">クレジットカードは通常、別のカード決済端末で処理します。ここではお会計画面にボタンを表示するかどうかだけを設定します。</div>
+      <label class="chk" style="margin-bottom:10px;"><input type="checkbox" id="creditCardEnabled"><span data-t="ccEnable">クレジットカード決済ボタンを表示する</span></label>
+      <button class="btn" onclick="saveCreditCard()" data-t="save">💾 保存</button>
+      <div class="st" id="st-cc"></div>
+      <hr style="border:0;border-top:1px solid var(--border);margin:16px 0;">
+      <div class="fg"><label class="form-label" data-t="gcashQrLbl">GCash QRコード（画像）</label><input id="gcashQrFile" type="file" accept="image/*" class="fc" onchange="onGcashQrPick(event)"><div class="hint" data-t="gcashQrHint" style="margin-top:6px;">お店のGCash用QRコード画像を登録すると、お会計画面でそのまま表示されます。お客様がスキャンして送金する簡易的な仕組みで、入金確認は従来どおりスタッフが目視で行ってください。</div><img id="gcashQrPrev" class="prev" style="display:none;"></div>
+      <button class="btn sec" onclick="clearGcashQr()" data-t="remove">🗑️ 削除</button>
+      <div class="st" id="st-gcash"></div>
     </div>
 
     <div class="card">
@@ -427,7 +431,28 @@
       rpc('saveSettings',[{ seniorDiscountEnabled:$('seniorDiscountEnabled').checked?'on':'' }])
         .then(function(){ st('st-senior',I18n.t('saved'), true); }).catch(function(e){ st('st-senior',I18n.t('errPrefix')+(e.message||e), false); });
     };
-    window.savePayKey = function(){ var k=$('payKey').value.trim(); if(!k){ st('st-pay',I18n.t('needKey'), false); return; } rpc('savePaymongoKey',[k]).then(function(){ $('payKey').value=''; st('st-pay',I18n.t('saved'), true); return rpc('getPaymongoKeyStatus',[]); }).then(function(s){ if(s) setBadge('payBadge', s.configured); }).catch(function(e){ st('st-pay',I18n.t('errPrefix')+(e.message||e), false); }); };
+    // 2026-08-23: クレジットカードは別のカード決済端末で処理する運用のため、アプリ側は
+    // 「会計画面にボタンを出すかどうか」だけを持てばよい（オンライン決済ゲートウェイとの
+    // 連携は行わない）。GCashも同様に、実際の送金確認・API連携は行わず、店舗のGCash用
+    // QRコード画像を登録して会計画面に表示するだけの簡易な仕組みにしている。
+    window.saveCreditCard = function(){
+      rpc('saveSettings',[{ creditCardEnabled:$('creditCardEnabled').checked?'on':'' }])
+        .then(function(){ st('st-cc',I18n.t('saved'), true); }).catch(function(e){ st('st-cc',I18n.t('errPrefix')+(e.message||e), false); });
+    };
+    window.onGcashQrPick = function(ev){
+      var f = ev.target.files && ev.target.files[0]; if(!f) return;
+      var rd = new FileReader();
+      rd.onload = function(){
+        var url = rd.result;
+        $('gcashQrPrev').src = url; $('gcashQrPrev').style.display = 'inline-block';
+        rpc('saveGcashQr',[url]).then(function(){ st('st-gcash', I18n.t('saved'), true); }).catch(function(e){ st('st-gcash', I18n.t('errPrefix')+(e.message||e), false); });
+      };
+      rd.readAsDataURL(f);
+    };
+    window.clearGcashQr = function(){
+      $('gcashQrPrev').src=''; $('gcashQrPrev').style.display='none'; $('gcashQrFile').value='';
+      rpc('saveGcashQr',['']).then(function(){ st('st-gcash', I18n.t('saved'), true); }).catch(function(e){ st('st-gcash', I18n.t('errPrefix')+(e.message||e), false); });
+    };
     window.saveGemKey = function(){ var k=$('gemKey').value.trim(); if(!k){ st('st-gem',I18n.t('needKey'), false); return; } rpc('saveGeminiKey',[k]).then(function(){ $('gemKey').value=''; st('st-gem',I18n.t('saved'), true); return rpc('getGeminiKeyStatus',[]); }).then(function(s){ if(s) setBadge('gemBadge', s.configured); }).catch(function(e){ st('st-gem',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.saveCseKey = function(){
       var k=$('cseKey').value.trim();
@@ -496,12 +521,13 @@
     // 以前はgetSettings/getReceiptLogo/getPaymongoKeyStatus/getGeminiKeyStatusを
     // 個別に（一部は同時並行で）呼んでおり、GAS側の実行が競合して初期表示が
     // 遅くなる原因になっていた（体感10秒前後）。1回のRPCにまとめて往復回数を減らす。
-    var payConfigured = false, gemConfigured = false, cseConfigured = false;
+    var gemConfigured = false, cseConfigured = false;
     rpc('getSettingsBundle',[]).then(function(bundle){
       bundle = bundle || {};
       var d = bundle.settings || {};
       if(bundle.receiptLogo){ $('logoPrev').src=bundle.receiptLogo; $('logoPrev').style.display='inline-block'; }
-      if(bundle.paymongo){ payConfigured = !!bundle.paymongo.configured; setBadge('payBadge', payConfigured); }
+      $('creditCardEnabled').checked = (d.creditCardEnabled==='on'||d.creditCardEnabled===true||d.creditCardEnabled==='true');
+      if(d.gcashQr){ $('gcashQrPrev').src=d.gcashQr; $('gcashQrPrev').style.display='inline-block'; }
       if(bundle.gemini){ gemConfigured = !!bundle.gemini.configured; setBadge('gemBadge', gemConfigured); }
       if(bundle.pexels){ cseConfigured = !!bundle.pexels.configured; setBadge('cseBadge', cseConfigured); }
       if(bundle.email){ setBadge('emailKeyBadge', !!bundle.email.configured); if(d.emailFromAddress) $('emailFromAddress').value = d.emailFromAddress; }
@@ -554,7 +580,7 @@
         entryHint:'入場料・延長料はいずれも「1円以上」設定されている場合のみ会計画面に表示・請求されます（0円のままなら従来どおり請求されません）。延長料は、卓/カウンター選択時にお客様が入力した人数と入店時刻を基準に、基本利用時間を超えた分を延長時間の単位で切り上げて自動計算します。',
         seniorTitle:'🧓 シニア/PWD割引', seniorEnable:'有効にする（無効の場合、会計画面から選択肢自体が消えます）',
         seniorHint:'有効にした場合でも、実際に割引を適用するには会計時に責任者（マネージャー以上）のログイン承認が必要です。従業員が無断で割引を適用することを防ぐための仕組みです。',
-        payTitle:'💳 PayMongo（オンライン決済）', payKey:'シークレットキー（sk_live_… / sk_test_…）', payHint:'保存後はキー自体は表示されません（状態のみ）。',
+        payTitle:'💳 決済方法（クレジット / GCash）', payHint:'クレジットカードは通常、別のカード決済端末で処理します。ここではお会計画面にボタンを表示するかどうかだけを設定します。', ccEnable:'クレジットカード決済ボタンを表示する', gcashQrLbl:'GCash QRコード（画像）', gcashQrHint:'お店のGCash用QRコード画像を登録すると、お会計画面でそのまま表示されます。お客様がスキャンして送金する簡易的な仕組みで、入金確認は従来どおりスタッフが目視で行ってください。', remove:'🗑️ 削除',
         gemTitle:'🤖 Gemini APIキー（画像検索・在庫AIスキャン用・任意）', apiKey:'APIキー',
         cseTitle:'🔍 Pexels画像検索（メニュー画像・任意）', cseApiKey:'APIキー', cseHint:'メニュー編集画面の商品画像を、無料ストック写真サイトPexelsから検索して選べるようにします。pexels.com/api にアクセスし、無料アカウントでログイン後「Your API Key」ページに表示されるキーを貼り付けてください（即時発行・審査なし）。無料枠は1時間200件・1か月20,000件です。',
         geoTitle:'📍 勤怠・店舗位置', lat:'緯度', lng:'経度', radius:'許容半径 (m)', getLoc:'📡 現在地を取得',
@@ -580,7 +606,7 @@
         entryHint:'Both the entry fee and the extension fee are only shown/charged at checkout when set to 1 or more (leave at 0 to keep charging them off, as before). The extension fee is calculated automatically from the party size and entry time the guest entered when picking their table/counter, rounding up any time past the base usage time to whole extension units.',
         seniorTitle:'🧓 Senior/PWD discount', seniorEnable:'Enable (when off, the option disappears entirely from checkout)',
         seniorHint:'Even when enabled, actually applying the discount at checkout requires a manager-or-above login approval. This prevents staff from applying it without authorization.',
-        payTitle:'💳 PayMongo (online payment)', payKey:'Secret key (sk_live_… / sk_test_…)', payHint:'The key itself is not shown after saving (status only).',
+        payTitle:'💳 Payment methods (Credit card / GCash)', payHint:'Credit cards are normally processed on a separate card terminal. This only controls whether the button is shown on the checkout screen.', ccEnable:'Show the credit card button at checkout', gcashQrLbl:'GCash QR code (image)', gcashQrHint:'Register your store’s GCash QR code image and it will be shown as-is on the checkout screen. Customers scan it and pay directly; please continue to confirm payment visually as staff, as before.', remove:'🗑️ Remove',
         gemTitle:'🤖 Gemini API key (image search & inventory AI scan, optional)', apiKey:'API key',
         cseTitle:'🔍 Pexels Image Search (menu images, optional)', cseApiKey:'API key', cseHint:'Lets you search free stock photos (Pexels) for product images right from the menu editor. Go to pexels.com/api, log in with a free account, and paste the key shown on the "Your API Key" page (issued instantly, no approval needed). Free tier is 200 requests/hour, 20,000/month.',
         geoTitle:'📍 Attendance / store location', lat:'Latitude', lng:'Longitude', radius:'Allowed radius (m)', getLoc:'📡 Get current location',
@@ -594,7 +620,7 @@
         opLogQueueTitle:'🗒️ Operation log (record queue)', opLogQueueObsolete:'✅ This setting is no longer needed. Like the audit log, the current system (Cloudflare D1) writes operation-log entries immediately for every action. No need to press the button below.', opLogQueueBtn:'⏱ Enable auto-flush', opLogQueueDone:'✅ Auto-flush enabled', opLogQueueAlready:'✅ Already enabled',
         ereceiptTitle:'📩 e-Receipt recipients (fixed, multiple allowed)', ereceiptSaveBtn:'💾 Save (unavailable)', ereceiptUnavail:'⚠️ This feature is currently unavailable. Email sending itself has not been implemented yet, so addresses registered here are never actually sent to. Use <a href="./receipts.html" style="color:#92400e;text-decoration:underline;">Bill history</a> or CSV export (Backup/Export page) for accounting/owner records instead.', ereceiptEmailsLbl:'Recipient email(s) — comma or newline separated', ereceiptHint:'Every time a bill is finalized, a copy of the e-receipt is automatically sent to the addresses registered here — separate from, and in addition to, whatever the customer optionally enters at checkout. Useful for accounting/owner copies. Leave blank to send nothing.',
         saved:'✅ Saved', savedSched:'✅ Saved & scheduled', uploaded:'✅ Uploaded', pickImg:'Please select an image', needKey:'Please enter a key', noGeoDev:'This device does not support location', gotLoc:'Location acquired. Please press Save.', noLoc:'Could not get location. Please enter manually.', sending:'Sending…', testSent:'✅ Test sent. Please check your inbox', sendFail:'Could not send', scopeReauth:'You may need to re-authorize (scopes)', errPrefix:'Error: ' }
-    }, function(){ setBadge('payBadge', payConfigured); setBadge('gemBadge', gemConfigured); setBadge('cseBadge', cseConfigured); });
+    }, function(){ setBadge('gemBadge', gemConfigured); setBadge('cseBadge', cseConfigured); });
   </script>
 </body>
 </html>
