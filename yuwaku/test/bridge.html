@@ -39,7 +39,7 @@
     <h1 data-i="title">🖨️ 印刷ステーション（PT-210）</h1>
     <button id="langBtn" onclick="toggleLang()" style="flex:0 0 auto;background:#334155;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">EN</button>
   </div>
-  <p class="sub" data-i="sub">Android の Chrome 専用。この端末を据え置き、電源ON・画面ON・この画面を開いたままにしてください。<br>①「プリンタに接続」→ ②「監視開始」。以降は自動でレシートを印刷します。</p>
+  <p class="sub" data-i="sub">Chrome専用（Android・Windows・Mac・LinuxのいずれのChromeでも可。iOSのSafari/Chromeは非対応）。この端末を据え置き、電源ON・画面ON・この画面を開いたままにしてください。<br>①「プリンタに接続」→ ②「監視開始」。以降は自動でレシートを印刷します。</p>
 
   <div class="stat" id="stat"><span class="dot"></span><span id="statText">未接続</span></div>
 
@@ -83,9 +83,9 @@ var CANDIDATE_SERVICES = [
 ];
 
 var T={
-  ja:{ title:'🖨️ 印刷ステーション（PT-210）', sub:'Android の Chrome 専用。この端末を据え置き、電源ON・画面ON・この画面を開いたままにしてください。<br>①「プリンタに接続」→ ②「監視開始」。以降は自動でレシートを印刷します。', kDone:'印刷済', kFail:'失敗', kConn:'接続', bConn:'🔗 プリンタに接続', bStart:'▶ 監視開始', bStop:'■ 停止', keyLabel:'キー(任意)：', keyPh:'BRIDGE_KEY を設定した場合のみ', safe:'低速安全モード（20バイト送信）', note:'画面が消えると印刷が止まります（Wake Lockで常時点灯を試みます）。Bluetoothが切れたら「プリンタに接続」で再接続してください。困ったらこのログを共有してください。', langBtn:'EN',
+  ja:{ title:'🖨️ 印刷ステーション（PT-210）', sub:'Chrome専用（Android・Windows・Mac・LinuxのいずれのChromeでも可。iOSのSafari/Chromeは非対応）。この端末を据え置き、電源ON・画面ON・この画面を開いたままにしてください。<br>①「プリンタに接続」→ ②「監視開始」。以降は自動でレシートを印刷します。', kDone:'印刷済', kFail:'失敗', kConn:'接続', bConn:'🔗 プリンタに接続', bStart:'▶ 監視開始', bStop:'■ 停止', keyLabel:'キー(任意)：', keyPh:'BRIDGE_KEY を設定した場合のみ', safe:'低速安全モード（20バイト送信）', note:'画面が消えると印刷が止まります（Wake Lockで常時点灯を試みます）。Bluetoothが切れたら「プリンタに接続」で再接続してください。困ったらこのログを共有してください。', langBtn:'EN',
     disconnected:'未接続', selecting:'デバイス選択中…', noWrite:'書き込み可能な特性なし', connFail:'接続失敗', connected:'接続完了（監視開始できます）', needConn:'先に接続してください', watching:'監視中…', stopped:'停止中', disconnErr:'切断：再接続してください', noBt:'この端末は Web Bluetooth 非対応' },
-  en:{ title:'🖨️ Print Station (PT-210)', sub:'Android Chrome only. Keep this device on, screen on, and this page open.<br>① “Connect printer” → ② “Start”. Receipts then print automatically.', kDone:'Printed', kFail:'Failed', kConn:'Printer', bConn:'🔗 Connect printer', bStart:'▶ Start', bStop:'■ Stop', keyLabel:'Key (optional): ', keyPh:'Only if BRIDGE_KEY is set', safe:'Safe slow mode (20-byte writes)', note:'If the screen sleeps, printing stops (Wake Lock tries to keep it on). If Bluetooth drops, tap “Connect printer”. Share this log if stuck.', langBtn:'日本語',
+  en:{ title:'🖨️ Print Station (PT-210)', sub:'Chrome only (Android, Windows, Mac, or Linux Chrome all work; iOS Safari/Chrome is not supported). Keep this device on, screen on, and this page open.<br>① “Connect printer” → ② “Start”. Receipts then print automatically.', kDone:'Printed', kFail:'Failed', kConn:'Printer', bConn:'🔗 Connect printer', bStart:'▶ Start', bStop:'■ Stop', keyLabel:'Key (optional): ', keyPh:'Only if BRIDGE_KEY is set', safe:'Safe slow mode (20-byte writes)', note:'If the screen sleeps, printing stops (Wake Lock tries to keep it on). If Bluetooth drops, tap “Connect printer”. Share this log if stuck.', langBtn:'日本語',
     disconnected:'Not connected', selecting:'Selecting device…', noWrite:'No writable characteristic', connFail:'Connection failed', connected:'Connected (you can start)', needConn:'Connect first', watching:'Monitoring…', stopped:'Stopped', disconnErr:'Disconnected: reconnect', noBt:'This device has no Web Bluetooth' }
 };
 var curLang=(function(){ try{ return localStorage.getItem('lang')||'ja'; }catch(e){ return 'ja'; } })();

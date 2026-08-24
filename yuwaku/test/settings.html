@@ -226,6 +226,11 @@
       <div class="hint" data-t="bridgeHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">印刷キュー（bridge.html）がサーバーへ確認しにいく頻度です。短いほど印刷が早く始まりますが、サーバー負荷は増えます。既定値は1.2秒です。</div>
       <button class="btn" onclick="saveBridgePoll()" data-t="save">💾 保存</button>
       <div class="st" id="st-bridge"></div>
+      <hr style="border:0;border-top:1px solid var(--border);margin:16px 0;">
+      <div class="fg"><label class="form-label" data-t="bridgeKeyLbl">BRIDGE_KEY（任意・共有シークレット）</label><input id="bridgeKey" type="text" class="fc" autocomplete="off" placeholder="例: yuwaku-2026"></div>
+      <div class="hint" data-t="bridgeKeyHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">設定すると、この文字列を知っているブリッジ端末（bridge.html）だけが印刷キューを読み書きできるようになります。空欄のまま保存すると誰でも読み書きできる状態（従来どおり）に戻ります。bridge.html側の「キー」欄にも同じ文字列を入力してください。</div>
+      <button class="btn" onclick="saveBridgeKey()" data-t="save">💾 保存</button>
+      <div class="st" id="st-bridgeKey"></div>
     </div>
 
     <div class="card">
@@ -508,6 +513,10 @@
       $('bridgePollSec').value = sec;
       rpc('saveSettings',[{ bridgePollMs: Math.round(sec * 1000) }]).then(function(){ st('st-bridge',I18n.t('saved'), true); }).catch(function(e){ st('st-bridge',I18n.t('errPrefix')+(e.message||e), false); });
     };
+    window.saveBridgeKey = function(){
+      var v = $('bridgeKey').value.trim();
+      rpc('saveSettings',[{ bridgeKey: v }]).then(function(){ st('st-bridgeKey',I18n.t('saved'), true); }).catch(function(e){ st('st-bridgeKey',I18n.t('errPrefix')+(e.message||e), false); });
+    };
     // 2026-08-23: 以下3つのキュー有効化ボタンはUI側で撤去・無効化済み。
     // ・eレシート自動送信キュー: メール送信自体が未実装のため利用不可（no-op化）。
     // ・監査ログ/操作ログキュー: Cloudflare D1版では既に即時反映されており、この設定自体が
@@ -565,6 +574,7 @@
       $('reportMonthlyTime').value = _fmtTime(d.reportMonthlyHour!==undefined&&d.reportMonthlyHour!==''?d.reportMonthlyHour:d.reportHour, d.reportMonthlyMin!==undefined&&d.reportMonthlyMin!==''?d.reportMonthlyMin:d.reportMin);
       $('reportLang').value = (d.reportLang==='en'||d.reportLang==='both')?d.reportLang:'ja';
       $('bridgePollSec').value = (d.bridgePollMs!==undefined && d.bridgePollMs!=='') ? (Number(d.bridgePollMs)/1000) : 1.2;
+      $('bridgeKey').value = d.bridgeKey || '';
     }).catch(function(){});
 
     I18n.init({
@@ -589,6 +599,7 @@
         repLang:'出力言語', repLangJa:'日本語', repLangEn:'英語', repLangBoth:'日本語＋英語（両方）',
         emailCfgTitle:'📧 メール送信設定（Resend）', emailCfgHint:'2026-08-23、定期レポート機能のメール送信の仕組みを実装しました（Resendという外部メール送信サービス経由）。ご利用には以下の準備が必要です。<br>① <a href="https://resend.com" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:underline;">resend.com</a>で無料アカウントを作成<br>② 送信元ドメインを追加し、案内されるDNSレコードを設定して検証を完了<br>③ APIキーを発行し、下に貼り付けて保存<br>④ 送信元アドレス（検証したドメイン配下、例: report@mail.izakanpai.com）も保存<br><br>⚠️ この環境では実際のAPIキーでの送信確認はできていません。設定後、下の定期レポートカードの「テスト送信」で必ず実機確認をお願いします。', emailApiKeyLbl:'Resend APIキー', emailFromLbl:'送信元アドレス',
         bridgeTitle:'🖶 印刷ブリッジ（プリンタ連携）', bridgeInterval:'キュー確認間隔（秒）', bridgeHint:'印刷キュー（bridge.html）がサーバーへ確認しにいく頻度です。短いほど印刷が早く始まりますが、サーバー負荷は増えます。既定値は1.2秒です。',
+        bridgeKeyLbl:'BRIDGE_KEY（任意・共有シークレット）', bridgeKeyHint:'設定すると、この文字列を知っているブリッジ端末（bridge.html）だけが印刷キューを読み書きできるようになります。空欄のまま保存すると誰でも読み書きできる状態（従来どおり）に戻ります。bridge.html側の「キー」欄にも同じ文字列を入力してください。',
         emailOutboxTitle:'📧 eレシート送信（メール送信キュー）', emailOutboxUnavail:'⚠️ この機能は現在ご利用いただけません。メール送信の仕組み自体がまだ実装されていないため、下のボタンを押しても実際にeレシートが送信されることはありません。<br><br>代わりに、お客様へは店舗スタッフが会計時にレシートを紙で印刷（プリンタ設定でレシート自動印刷が有効な場合）してお渡しください。過去の会計内容は<a href="./receipts.html" style="color:#92400e;text-decoration:underline;">会計履歴</a>からいつでも再印刷できます。', emailOutboxBtn:'⏱ 自動送信を有効化（利用不可）', emailOutboxDone:'✅ 自動送信を有効化しました', emailOutboxAlready:'✅ 既に有効化されています',
         auditQueueTitle:'📝 監査ログ（記録キュー）', auditQueueObsolete:'✅ この設定は不要になりました。以前（Googleスプレッドシート版）は記録を1分おきの自動実行でまとめて反映する仕組みが必要でしたが、現在のシステム（Cloudflare D1）では注文確定・会計確定時に監査ログへ即時反映されます。下のボタンを押す必要はありません。', auditQueueBtn:'⏱ 自動反映を有効化', auditQueueDone:'✅ 自動反映を有効化しました', auditQueueAlready:'✅ 既に有効化されています',
         opLogQueueTitle:'🗒️ 操作ログ（記録キュー）', opLogQueueObsolete:'✅ この設定は不要になりました。監査ログと同様、現在のシステム（Cloudflare D1）では操作ログも各種操作時に即時反映されます。下のボタンを押す必要はありません。', opLogQueueBtn:'⏱ 自動反映を有効化', opLogQueueDone:'✅ 自動反映を有効化しました', opLogQueueAlready:'✅ 既に有効化されています',
@@ -615,6 +626,7 @@
         repLang:'Output language', repLangJa:'Japanese', repLangEn:'English', repLangBoth:'Japanese + English (both)',
         emailCfgTitle:'📧 Email settings (Resend)', emailCfgHint:'On 2026-08-23 we implemented email sending for scheduled reports, via an external email service called Resend. Setup steps required:<br>① Create a free account at <a href="https://resend.com" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:underline;">resend.com</a><br>② Add your sending domain and complete DNS verification<br>③ Issue an API key and paste/save it below<br>④ Also save a from-address under your verified domain (e.g. report@mail.izakanpai.com)<br><br>⚠️ Sending has not been verified with a real API key in this environment — after setup, please confirm with the "test send" buttons on the report card below.', emailApiKeyLbl:'Resend API key', emailFromLbl:'From address',
         bridgeTitle:'🖶 Print bridge (printer connection)', bridgeInterval:'Queue check interval (sec)', bridgeHint:'How often the print bridge (bridge.html) checks the server for print jobs. Shorter = faster printing but more server load. Default is 1.2 seconds.',
+        bridgeKeyLbl:'BRIDGE_KEY (optional shared secret)', bridgeKeyHint:'When set, only a bridge device (bridge.html) that knows this string can read/write the print queue. Leaving it blank and saving returns to the open (no-key) behavior. Enter the same string in the "Key" field on bridge.html.',
         emailOutboxTitle:'📧 e-Receipt sending (email outbox)', emailOutboxUnavail:'⚠️ This feature is currently unavailable. Email sending itself has not been implemented yet, so pressing the button below will not actually send any e-receipts.<br><br>Instead, print receipts on paper for customers at checkout (if auto-print is enabled in printer settings). Past bills can always be reprinted from <a href="./receipts.html" style="color:#92400e;text-decoration:underline;">Bill history</a>.', emailOutboxBtn:'⏱ Enable auto-send (unavailable)', emailOutboxDone:'✅ Auto-send enabled', emailOutboxAlready:'✅ Already enabled',
         auditQueueTitle:'📝 Audit log (record queue)', auditQueueObsolete:'✅ This setting is no longer needed. The old Google Sheets version needed a once-a-minute scheduled job to flush queued entries, but the current system (Cloudflare D1) writes audit-log entries immediately when an order or bill is finalized. No need to press the button below.', auditQueueBtn:'⏱ Enable auto-flush', auditQueueDone:'✅ Auto-flush enabled', auditQueueAlready:'✅ Already enabled',
         opLogQueueTitle:'🗒️ Operation log (record queue)', opLogQueueObsolete:'✅ This setting is no longer needed. Like the audit log, the current system (Cloudflare D1) writes operation-log entries immediately for every action. No need to press the button below.', opLogQueueBtn:'⏱ Enable auto-flush', opLogQueueDone:'✅ Auto-flush enabled', opLogQueueAlready:'✅ Already enabled',
