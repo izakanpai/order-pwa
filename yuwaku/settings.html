@@ -131,6 +131,7 @@
       <div class="card-title" data-t="payTitle">💳 決済方法（クレジット / GCash）</div>
       <div class="hint" data-t="payHint" style="margin-bottom:12px;">クレジットカードは通常、別のカード決済端末で処理します。ここではお会計画面にボタンを表示するかどうかだけを設定します。</div>
       <label class="chk" style="margin-bottom:10px;"><input type="checkbox" id="creditCardEnabled"><span data-t="ccEnable">クレジットカード決済ボタンを表示する</span></label>
+      <div class="hint" style="font-size:13px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;padding:10px 12px;margin-bottom:10px;" data-t="ccWarn">⚠️ このボタンはオンライン決済（カード情報の入力・実際の請求処理）は行いません。押すと「別のカード決済端末で処理済み」として記録されるだけです。表示をONにしても、決済自体はこれまでどおり別のカード決済端末で行ってください。</div>
       <button class="btn" onclick="saveCreditCard()" data-t="save">💾 保存</button>
       <div class="st" id="st-cc"></div>
       <hr style="border:0;border-top:1px solid var(--border);margin:16px 0;">
@@ -586,7 +587,7 @@
         entryHint:'入場料・延長料はいずれも「1円以上」設定されている場合のみ会計画面に表示・請求されます（0円のままなら従来どおり請求されません）。延長料は、卓/カウンター選択時にお客様が入力した人数と入店時刻を基準に、基本利用時間を超えた分を延長時間の単位で切り上げて自動計算します。',
         seniorTitle:'🧓 シニア/PWD割引', seniorEnable:'有効にする（無効の場合、会計画面から選択肢自体が消えます）',
         seniorHint:'有効にした場合でも、実際に割引を適用するには会計時に責任者（マネージャー以上）のログイン承認が必要です。従業員が無断で割引を適用することを防ぐための仕組みです。',
-        payTitle:'💳 決済方法（クレジット / GCash）', payHint:'クレジットカードは通常、別のカード決済端末で処理します。ここではお会計画面にボタンを表示するかどうかだけを設定します。', ccEnable:'クレジットカード決済ボタンを表示する', gcashQrLbl:'GCash QRコード（画像）', gcashQrHint:'お店のGCash用QRコード画像を登録すると、お会計画面でそのまま表示されます。お客様がスキャンして送金する簡易的な仕組みで、入金確認は従来どおりスタッフが目視で行ってください。', remove:'🗑️ 削除',
+        payTitle:'💳 決済方法（クレジット / GCash）', payHint:'クレジットカードは通常、別のカード決済端末で処理します。ここではお会計画面にボタンを表示するかどうかだけを設定します。', ccEnable:'クレジットカード決済ボタンを表示する', ccWarn:'⚠️ このボタンはオンライン決済（カード情報の入力・実際の請求処理）は行いません。押すと「別のカード決済端末で処理済み」として記録されるだけです。表示をONにしても、決済自体はこれまでどおり別のカード決済端末で行ってください。', gcashQrLbl:'GCash QRコード（画像）', gcashQrHint:'お店のGCash用QRコード画像を登録すると、お会計画面でそのまま表示されます。お客様がスキャンして送金する簡易的な仕組みで、入金確認は従来どおりスタッフが目視で行ってください。', remove:'🗑️ 削除',
         gemTitle:'🤖 Gemini APIキー（画像検索・在庫AIスキャン用・任意）', apiKey:'APIキー',
         cseTitle:'🔍 Pexels画像検索（メニュー画像・任意）', cseApiKey:'APIキー', cseHint:'メニュー編集画面の商品画像を、無料ストック写真サイトPexelsから検索して選べるようにします。pexels.com/api にアクセスし、無料アカウントでログイン後「Your API Key」ページに表示されるキーを貼り付けてください（即時発行・審査なし）。無料枠は1時間200件・1か月20,000件です。',
         geoTitle:'📍 勤怠・店舗位置', lat:'緯度', lng:'経度', radius:'許容半径 (m)', getLoc:'📡 現在地を取得',
@@ -611,7 +612,7 @@
         entryHint:'Both the entry fee and the extension fee are only shown/charged at checkout when set to 1 or more (leave at 0 to keep charging them off, as before). The extension fee is calculated automatically from the party size and entry time the guest entered when picking their table/counter, rounding up any time past the base usage time to whole extension units.',
         seniorTitle:'🧓 Senior/PWD discount', seniorEnable:'Enable (when off, the option disappears entirely from checkout)',
         seniorHint:'Even when enabled, actually applying the discount at checkout requires a manager-or-above login approval. This prevents staff from applying it without authorization.',
-        payTitle:'💳 Payment methods (Credit card / GCash)', payHint:'Credit cards are normally processed on a separate card terminal. This only controls whether the button is shown on the checkout screen.', ccEnable:'Show the credit card button at checkout', gcashQrLbl:'GCash QR code (image)', gcashQrHint:'Register your store’s GCash QR code image and it will be shown as-is on the checkout screen. Customers scan it and pay directly; please continue to confirm payment visually as staff, as before.', remove:'🗑️ Remove',
+        payTitle:'💳 Payment methods (Credit card / GCash)', payHint:'Credit cards are normally processed on a separate card terminal. This only controls whether the button is shown on the checkout screen.', ccEnable:'Show the credit card button at checkout', ccWarn:'⚠️ This button does not process online payments (no card entry, no real charge). Pressing it just records the sale as "paid on a separate card terminal." Even with this shown, keep processing card payments on your separate card terminal as before.', gcashQrLbl:'GCash QR code (image)', gcashQrHint:'Register your store’s GCash QR code image and it will be shown as-is on the checkout screen. Customers scan it and pay directly; please continue to confirm payment visually as staff, as before.', remove:'🗑️ Remove',
         gemTitle:'🤖 Gemini API key (image search & inventory AI scan, optional)', apiKey:'API key',
         cseTitle:'🔍 Pexels Image Search (menu images, optional)', cseApiKey:'API key', cseHint:'Lets you search free stock photos (Pexels) for product images right from the menu editor. Go to pexels.com/api, log in with a free account, and paste the key shown on the "Your API Key" page (issued instantly, no approval needed). Free tier is 200 requests/hour, 20,000/month.',
         geoTitle:'📍 Attendance / store location', lat:'Latitude', lng:'Longitude', radius:'Allowed radius (m)', getLoc:'📡 Get current location',
