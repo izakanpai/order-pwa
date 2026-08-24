@@ -240,12 +240,9 @@
       <label style="display:flex;align-items:center;gap:8px;margin:8px 0;"><input type="checkbox" id="ereceiptEnabled"> <span data-t="emailOutboxBtn">eレシートを有効にする</span></label>
       <button class="btn" onclick="saveEreceiptEnabled()" data-t="save">💾 保存</button>
       <div class="st" id="st-emailOutbox"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title" data-t="ereceiptTitle">📩 eレシート送付先（固定・複数登録可）</div>
-      <div class="hint" data-t="ereceiptHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。「eレシート機能」がオフの間は、ここに登録しても送信されません。</div>
-      <div class="fg"><label class="form-label" data-t="ereceiptEmailsLbl">送付先メール（複数可・カンマか改行区切り）</label><textarea id="ereceiptFixedEmails" class="fc" rows="2" placeholder="accounting@example.com, owner@example.com"></textarea></div>
+      <hr style="border:0;border-top:1px solid var(--border);margin:16px 0;">
+      <div class="fg"><label class="form-label" data-t="ereceiptEmailsLbl">送付先メール（固定・複数可・カンマか改行区切り）</label><textarea id="ereceiptFixedEmails" class="fc" rows="2" placeholder="accounting@example.com, owner@example.com"></textarea></div>
+      <div class="hint" data-t="ereceiptHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。上の「eレシートを有効にする」がオフの間は、ここに登録しても送信されません。</div>
       <button class="btn" onclick="saveEreceiptFixedEmails()" data-t="ereceiptSaveBtn">💾 保存</button>
       <div class="st" id="st-ereceipt"></div>
     </div>
@@ -598,7 +595,7 @@
         bridgeTitle:'🖶 印刷ブリッジ（プリンタ連携）', bridgeInterval:'キュー確認間隔（秒）', bridgeHint:'印刷キュー（bridge.html）がサーバーへ確認しにいく頻度です。短いほど印刷が早く始まりますが、サーバー負荷は増えます。既定値は1.2秒です。',
         bridgeKeyLbl:'BRIDGE_KEY（任意・共有シークレット）', bridgeKeyHint:'設定すると、この文字列を知っているブリッジ端末（bridge.html）だけが印刷キューを読み書きできるようになります。空欄のまま保存すると誰でも読み書きできる状態（従来どおり）に戻ります。bridge.html側の「キー」欄にも同じ文字列を入力してください。',
         emailOutboxTitle:'📧 eレシート機能', emailOutboxHint:'2026-08-24より、会計確定時にeレシートをメールで送信できるようになりました。上の「メール送信設定（Resend）」でAPIキー・送信元アドレスの設定が完了している必要があります。<br>有効にすると、会計画面（<code>#payEmail</code>欄）でお客様が入力したメール、および下の「固定送付先」に登録したメールへ、会計確定のたびにeレシートが自動送信されます。', emailOutboxBtn:'eレシートを有効にする',
-        ereceiptTitle:'📩 eレシート送付先（固定・複数登録可）', ereceiptSaveBtn:'💾 保存', ereceiptEmailsLbl:'送付先メール（複数可・カンマか改行区切り）', ereceiptHint:'ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。「eレシート機能」がオフの間は、ここに登録しても送信されません。',
+        ereceiptSaveBtn:'💾 保存', ereceiptEmailsLbl:'送付先メール（固定・複数可・カンマか改行区切り）', ereceiptHint:'ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。上の「eレシートを有効にする」がオフの間は、ここに登録しても送信されません。',
         saved:'✅ 保存しました', savedSched:'✅ 保存＆スケジュール設定しました', uploaded:'✅ アップロードしました', pickImg:'画像を選択してください', needKey:'キーを入力してください', noGeoDev:'この端末は位置情報に対応していません', gotLoc:'現在地を取得しました。「保存」を押してください。', noLoc:'位置情報を取得できませんでした。手動入力してください。', sending:'送信中…', testSent:'✅ テスト送信しました。受信箱をご確認ください', sendFail:'送信できませんでした', scopeReauth:'認証(スコープ)の再承認が必要かもしれません', errPrefix:'エラー: ' },
       en:{ title:'⚙️ Settings', back:'← Manage', save:'💾 Save', status:'Status:', unset:'Not set', set:'Set', phPaste:'Paste and save', close:'Close',
         qrCardTitle:'📱 Table QR Codes', qrCardDesc:'Print and place these QR codes on each table. Customers scan to open the order screen locked to their table.', qrShowBtn:'📱 Show QR Codes', qrModalTitle:'Table QR Codes', qrModalSub:'Scan to open the order screen', qrPrintBtn:'🖨️ Print', qrNoTables:'No tables are set up yet. Please save the table count first.',
@@ -623,7 +620,7 @@
         bridgeTitle:'🖶 Print bridge (printer connection)', bridgeInterval:'Queue check interval (sec)', bridgeHint:'How often the print bridge (bridge.html) checks the server for print jobs. Shorter = faster printing but more server load. Default is 1.2 seconds.',
         bridgeKeyLbl:'BRIDGE_KEY (optional shared secret)', bridgeKeyHint:'When set, only a bridge device (bridge.html) that knows this string can read/write the print queue. Leaving it blank and saving returns to the open (no-key) behavior. Enter the same string in the "Key" field on bridge.html.',
         emailOutboxTitle:'📧 e-Receipt', emailOutboxHint:'As of 2026-08-24, e-receipts can be sent by email when a bill is finalized. This requires the API key and from-address in the "Email sending (Resend)" section above to be configured.<br>When enabled, an e-receipt is sent automatically every time a bill is finalized — to whatever the customer entered at checkout (the <code>#payEmail</code> field), and to the fixed recipients registered below.', emailOutboxBtn:'Enable e-receipts',
-        ereceiptTitle:'📩 e-Receipt recipients (fixed, multiple allowed)', ereceiptSaveBtn:'💾 Save', ereceiptEmailsLbl:'Recipient email(s) — comma or newline separated', ereceiptHint:'Every time a bill is finalized, a copy of the e-receipt is automatically sent to the addresses registered here — separate from, and in addition to, whatever the customer optionally enters at checkout. Useful for accounting/owner copies. Leave blank to send nothing. Nothing is sent while "e-Receipt" above is off.',
+        ereceiptSaveBtn:'💾 Save', ereceiptEmailsLbl:'Recipient email(s) — fixed, multiple allowed, comma or newline separated', ereceiptHint:'Every time a bill is finalized, a copy of the e-receipt is automatically sent to the addresses registered here — separate from, and in addition to, whatever the customer optionally enters at checkout. Useful for accounting/owner copies. Leave blank to send nothing. Nothing is sent while "Enable e-receipts" above is off.',
         saved:'✅ Saved', savedSched:'✅ Saved & scheduled', uploaded:'✅ Uploaded', pickImg:'Please select an image', needKey:'Please enter a key', noGeoDev:'This device does not support location', gotLoc:'Location acquired. Please press Save.', noLoc:'Could not get location. Please enter manually.', sending:'Sending…', testSent:'✅ Test sent. Please check your inbox', sendFail:'Could not send', scopeReauth:'You may need to re-authorize (scopes)', errPrefix:'Error: ' }
     }, function(){ setBadge('gemBadge', gemConfigured); setBadge('cseBadge', cseConfigured); });
   </script>
