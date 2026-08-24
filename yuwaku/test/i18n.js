@@ -3,6 +3,10 @@
 //   <script src="./i18n.js"></script> を読み込み、
 //   ヘッダに <button data-tlang onclick="I18n.toggle()">EN</button> を置く。
 //   翻訳したい要素に data-t="key"（テキスト）/ data-tph="key"（placeholder）を付ける。
+//   注意書きなど、辞書の値に<br>や<a>を含めてHTMLとして描画したい要素だけは、data-t="key"の
+//   代わりに data-t-html="key" を使う（textContentではなくinnerHTMLで描画される。値は各画面の
+//   <script>内に直書きした固定文言のみを想定しており、ユーザー入力や外部データを流し込まない
+//   こと＝XSS対策としてdata-tがtextContentである原則は崩さない）。
 //   I18n.init({ ja:{key:'日本語'}, en:{key:'English'} }, function(lang){ /* 動的部分を再描画 */ });
 //   動的文字列は I18n.t('key') で取得（t().key スタイルで多用する画面は I18n.d() で辞書全体を取得してもよい）。
 //   言語の優先順位: ①ユーザーが手動で切替済み（localStorage.lang）②店舗設定の「既定言語」
@@ -16,6 +20,8 @@
   function apply() {
     var l = lang(), d = DICT[l] || {};
     document.querySelectorAll('[data-t]').forEach(function (el) { var k = el.getAttribute('data-t'); if (d[k] != null) el.textContent = d[k]; });
+    // ★2026-08-23: data-t-html（固定文言の<br>/<a>等をHTMLとして描画する用途のみ）を追加。
+    document.querySelectorAll('[data-t-html]').forEach(function (el) { var k = el.getAttribute('data-t-html'); if (d[k] != null) el.innerHTML = d[k]; });
     document.querySelectorAll('[data-tph]').forEach(function (el) { var k = el.getAttribute('data-tph'); if (d[k] != null) el.setAttribute('placeholder', d[k]); });
     document.querySelectorAll('[data-tlang]').forEach(function (el) { el.textContent = (l === 'ja' ? 'EN' : '日本語'); });
     document.documentElement.lang = l;
