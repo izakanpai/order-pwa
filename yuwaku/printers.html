@@ -91,6 +91,7 @@
     <div class="card">
       <div class="card-title">🔗 <span id="t-url">CloudPRNT Server URL</span></div>
       <div class="form-hint" id="url-help" style="margin-bottom:8px;line-height:1.7;"></div>
+      <div class="form-hint" id="cp-unavail" style="font-size:13px;font-weight:700;color:#0c4a6e;background:#e0f2fe;border:1px solid #bae6fd;border-radius:9px;padding:10px 12px;margin-bottom:10px;line-height:1.6;"></div>
       <div class="url-box" id="cpUrl">—</div>
       <button class="btn btn-outline" style="margin-top:8px;" id="btn-copy" onclick="copyUrl()">📋 <span id="t-copy">Copy</span></button>
     </div>
@@ -162,6 +163,7 @@
       ja: { title:'プリンタ設定', langBtn:'EN', enable:'プリンタ印刷', on:'✅ 有効（注文が自動で印刷されます）', off:'⛔ 無効（印刷しません）', receipt:'会計時にレシートを自動印刷', receiptHint:'会計確定時に登録プリンタへレシートを送信します',
         url:'CloudPRNT サーバーURL', copy:'コピー', copied:'✅ コピーしました',
         urlHelp:'Starプリンタの CloudPRNT 設定画面で、下記URLを「Server URL」に登録してください（各プリンタ共通）。ポーリング間隔は5〜10秒推奨。',
+        cpUnavail:'ℹ️ サーバー側のCloudPRNT対応は実装済みです（Star社の公開仕様書どおりに作成）。ただし実機（CloudPRNT対応プリンター）での動作確認はまだ行っていません。現在お使いのPT-210はBluetooth専用でCloudPRNTには対応していないため、今すぐ印刷したい場合は「印刷ブリッジ（bridge.html）」をご利用ください（レジ横のPC/スマホのChromeで開いておくと、PT-210へBluetoothで直接印字します）。CloudPRNT対応プリンター（Star Micronics製など）を導入する場合は、下の「プリンタの追加/編集」でそのプリンターのMACアドレスを登録し、プリンター側の設定画面で下記URLを「Server URL」に登録してください。導入時は必ず1台でテスト印字を試してからご利用ください。',
         queue:'印刷キュー', pend:'未印刷', prog:'印刷中', done:'印刷済', fail:'失敗', reall:'失敗を再印刷', clear:'印刷済を削除',
         prform:'プリンタの追加 / 編集', prname:'プリンタ名', prmac:'MACアドレス', hintMac:'CloudPRNTプリンタのMAC。設定画面や本体ラベルで確認できます。',
         prcat:'対応カテゴリ', hintCat:'選択したカテゴリの商品のみ印刷。未選択の場合は全カテゴリを印刷します。', prenabled:'有効', save:'保存', clear2:'クリア', prlist:'登録プリンタ',
@@ -170,6 +172,7 @@
       en: { title:'Printers', langBtn:'JP', enable:'Printer Output', on:'✅ On (orders print automatically)', off:'⛔ Off (no printing)', receipt:'Auto-print receipt on checkout', receiptHint:'Sends a receipt to registered printers when a bill is settled',
         url:'CloudPRNT Server URL', copy:'Copy', copied:'✅ Copied',
         urlHelp:'In each Star printer\u2019s CloudPRNT settings, set the URL below as the "Server URL" (same for all printers). Polling interval 5\u201310s recommended.',
+        cpUnavail:'\u2139\ufe0f Server-side CloudPRNT support is implemented (built to Star\u2019s published protocol spec), but it hasn\u2019t been tested against a real CloudPRNT printer yet. The PT-210 currently in use is Bluetooth-only and doesn\u2019t support CloudPRNT, so to print right now use the "print bridge" (bridge.html) instead \u2014 keep it open in Chrome on a PC or phone near the register and it writes to the PT-210 over Bluetooth. If you get a CloudPRNT-capable printer (e.g. Star Micronics), register its MAC address in "Add / Edit Printer" below and set the URL below as its "Server URL". Always test-print on one unit before relying on it.',
         queue:'Print Queue', pend:'Pending', prog:'Printing', done:'Done', fail:'Failed', reall:'Reprint failed', clear:'Clear done',
         prform:'Add / Edit Printer', prname:'Printer Name', prmac:'MAC Address', hintMac:'The CloudPRNT printer\u2019s MAC (see its settings screen or device label).',
         prcat:'Categories', hintCat:'Prints only the selected categories. If none selected, prints all categories.', prenabled:'Enabled', save:'Save', clear2:'Clear', prlist:'Registered Printers',
@@ -184,6 +187,7 @@
       var t=i18n[currentLang];
       $('page-title').innerText=t.title; $('langToggle').innerText=t.langBtn;
       $('t-enable').innerText=t.enable; $('t-url').innerText=t.url; $('url-help').innerText=t.urlHelp; $('t-copy').innerText=t.copy;
+      if($('cp-unavail')) $('cp-unavail').innerText=t.cpUnavail||'';
       if($('t-receipt')) $('t-receipt').innerText=t.receipt||'会計時にレシートを自動印刷'; if($('t-receipt-hint')) $('t-receipt-hint').innerText=t.receiptHint||'';
       if($('t-plang')) $('t-plang').innerText=t.plang||''; if($('t-plang-hint')) $('t-plang-hint').innerText=t.plangHint||'';
       $('t-queue').innerText=t.queue; $('l-pend').innerText=t.pend; $('l-prog').innerText=t.prog; $('l-done').innerText=t.done; $('l-fail').innerText=t.fail;
