@@ -342,18 +342,12 @@
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
   <script>
-    // このページはログイン不要の公開ツール（管理メニューには出さず、直接URLでのみ案内する）。
-    // 既にログイン済みの端末であれば保存されたトークンを使い、未ログインでも動作するようトークンなしで送る。
+    // 2026-08-24修正: このページは元々「ログイン不要の公開ツール」として管理メニューにも
+    // 出していなかったが、月次実績や既定値など細かな数字が未ログインでも見えてしまうため、
+    // 他の管理画面と同じくログイン必須に変更し、管理メニューにも追加した。
     var TOKEN = localStorage.getItem('mgmtToken') || '';
+    if (!TOKEN) { location.href = './manage.html'; }
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
-    // 月次実績の閲覧・既定値の保存はバックエンド側で本物のログイントークンを要求するようになった
-    // （サーバー側で必ず検証される。ここでの非表示はUX上のガードであり、画面側だけに頼らない）。
-    // 未ログイン（mgmtToken無し）の場合はボタン自体を隠し、代わりにログイン案内を表示する。
-    if (!TOKEN) {
-      document.getElementById('loadActualRow').style.display = 'none';
-      document.getElementById('loadActualLoginHint').style.display = 'block';
-      // 既定値保存はログイン不要（このページは仮運用中の一時的なツールのため）。
-    }
     // サーバーから'unauthorized'（トークン無し／期限切れ）が返った場合に、わかりやすいメッセージへ変換する。
     function _authErrMsg(e){
       var raw = String((e && e.message) || e || '');

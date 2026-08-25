@@ -65,6 +65,14 @@
 
 <script src="./config.js"></script>
 <script>
+// 2026-08-24: このページ自体はBRIDGE_KEY(任意)だけでバックエンド呼び出しをしており、
+// URLを直接開けばログイン無しで店舗設定(getSettings)等が見える状態だった。
+// 他の管理画面と同じくmgmtTokenでのログインを必須にし、未ログインならmanage.htmlへ戻す。
+(function(){
+  var __t = null;
+  try { __t = localStorage.getItem('mgmtToken') || ''; } catch(e){}
+  if (!__t) { location.href = './manage.html'; }
+})();
 var PRINT_WIDTH = 384;
 var API_URL = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
 var device=null, server=null, writeChar=null;
