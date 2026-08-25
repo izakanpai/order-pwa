@@ -5,7 +5,7 @@
 // （Workerサービス名 izakanpai-api ＋ Cloudflareアカウントのサブドメイン izakanpai）です。
 // 実際に `npx wrangler deploy` を実行すると、コンソールに実際のデプロイ先URLが表示されます。
 // もしそのURLがここと違っていたら、下のAPI_URLを実際のURLに書き換えてから
-// deploy.bat/deploy_all.batを実行してください。
+// deploy.bat/deploy_frontend.batを実行してください（2026-08-25: deploy_all.batから改名）。
 //
 // ★2026-08-23: テスト環境は ./test/config.js （URLで言うと /yuwaku/test/ 配下）で別管理。
 // このファイル（本番用）には、以前あったURLトグル切り替え機能は撤去した（複雑だったため、

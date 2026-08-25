@@ -26,7 +26,13 @@
 // 未登録バグ修正、settings.html/backup.html/purchasing.htmlのメール送信系・スプレッドシート
 // バックアップ機能を「利用不可」表示に変更＋代替案を明記）。静的資産（settings.html/backup.html/
 // purchasing.html）を変更したため、キャッシュを必ず入れ替える。
-const CACHE = 'yuwaku-pos-v148';
+// ★2026-08-25追記（v149・GPTレビューで発覚、v146と全く同じ不具合の再発）: SPAプロトタイプ
+// 開発中止に伴いdocs/yuwaku/spa.htmlを削除したが、このSHELL配列から './spa.html' を
+// 消し忘れていた。v146の教訓（このファイル上部のコメント参照）通り、caches.addAll(SHELL)は
+// 1件でも404すると全体が失敗するため、v148のインストールは実際には毎回失敗し続けていた
+// 可能性が高い。SHELLから './spa.html' を除去し、バージョンをv149へ上げて再インストールを
+// 発生させる。教訓を教訓のままにせず、SHELL変更のたびに実ファイル一覧との突き合わせを徹底する。
+const CACHE = 'yuwaku-pos-v149';
 const SHELL = [
   './',
   './index.html',
@@ -63,7 +69,6 @@ const SHELL = [
   './todo.html',
   './requests.html',
   './printers.html',
-  './spa.html',
   './overview.html',
   './system-overview.svg',
   './system-overview-en.svg',

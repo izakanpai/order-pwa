@@ -238,7 +238,8 @@
       else { tax = Math.round(afterSvc * (taxRate/100)); total = afterSvc + tax; }
       return { sub:s, service:svc, afterSvc:afterSvc, tax:tax, total:total };
     }
-    // [C1修正] Senior/PWD割引の計算式。ManagementSystemDev/code.js の _seniorPwdCalc と必ず同じ式にすること
+    // [C1修正] Senior/PWD割引の計算式。src/billing.js の seniorPwdCalc と必ず同じ式にすること
+    // （2026-08-25: GAS版ManagementSystemDev/code.jsは完全廃止済み。現在の正はsrc/billing.js）
     // （画面プレビューと会計確定額がズレていた不具合の修正。片方だけ直すと再びズレる）。
     function seniorPwdCalc(subtotal, eligible, b){
       var taxRate = Number(SETTINGS.taxRate)||0, taxIncl = String(SETTINGS.taxInclusive)==='true';
