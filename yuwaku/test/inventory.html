@@ -482,5 +482,21 @@
   </script>
   <datalist id="catList"></datalist>
   <datalist id="supList"></datalist>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '在庫管理',
+      titleEn: 'Inventory',
+      items: [
+        { ja: '① ドリンク・食材・備品などをまとめて一覧で数量管理します。「＋ 行を追加」で新しい商品を追加し、商品名・カテゴリ・仕入先・単位・在庫数・最小在庫・原価を入力後「💾 保存」で確定します。', en: '① Track drinks, ingredients, and supplies together in one list. Press "＋ Add row" to add a new item, fill in name/category/supplier/unit/stock/min stock/cost, then press "💾 Save" to confirm.' },
+        { ja: '② 在庫数が「最小在庫」を下回った行は赤く表示され、日報・レポートにも低在庫として通知されます。', en: '② Any row whose stock falls at or below its minimum turns red and is flagged as low stock in daily reports.' },
+        { ja: '③ 各行の「変動」ボタンから、入荷（＋）・廃棄（−）・棚卸（実数入力）を記録できます。📷ボタンでカメラを使い、商品を1つずつタップして数えることもできます。記録内容は「📋 変動履歴」から確認できます。', en: '③ Use the "Move" button on a row to log receiving (＋), waste (−), or a stocktake (enter the counted amount). The 📷 button lets you use the camera and tap each item to count it. All entries appear under "📋 History".' },
+        { ja: '④ 「🤖 AIスキャン」で棚の写真を撮影すると、AIが写っている商品名と本数を自動検出し、確認・修正してから一括で在庫数に反映できます。', en: '④ "🤖 AI Scan" lets you photograph a shelf — AI detects item names and quantities automatically, which you can review, edit, and apply to stock in bulk.' },
+        { ja: '⑤ 「🔗 メニューから追加」または各行の🔗ボタンで、在庫アイテムをメニューの商品と紐づけると、注文が入った際にレシピに応じて在庫が自動で減算されます。', en: '⑤ Use "🔗 Add from menu" or the 🔗 button on a row to link an inventory item to a menu item, so stock is automatically deducted based on the recipe whenever it is ordered.' },
+        { ja: '⑥ 「🌐 未翻訳を一括翻訳」で、英語名が未入力の商品をまとめて自動翻訳できます。', en: '⑥ "🌐 Translate missing" bulk-translates item names that have no English name yet.' }
+      ]
+    });
+  </script>
 </body>
 </html>

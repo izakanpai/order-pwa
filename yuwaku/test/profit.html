@@ -160,5 +160,19 @@
 
     load();
   </script>
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '月間粗利',
+      titleEn: 'Monthly gross profit',
+      items: [
+        { ja: '① 「対象月」を選んで「🔄 計算」を押すと、その月の売上から粗利（売上−原価）を計算して表示します。', en: '① Pick a "Target month" and tap "🔄 Calculate" to compute that month\'s gross profit (revenue − costs).' },
+        { ja: '② 売上・商品原価（レシピから自動算出）・従業員給与（勤怠から自動算出）はシステムから自動取得されます。', en: '② Revenue, product cost (auto from recipes), and wages (auto from attendance) are pulled automatically from the system.' },
+        { ja: '③ 商品原価は「自動(レシピ)」と「仕入実績」のどちらかをラジオボタンで選んで比較できます。', en: '③ Choose between "Auto (recipe)" and "Purchases" for product cost using the radio buttons to compare.' },
+        { ja: '④ 賃料・電気代・水道代・備品購入・その他の経費は「経費一覧」で当月に登録した金額が集計されます。', en: '④ Rent, electricity, water, supplies, and other costs are totals registered for the month in the Expenses list.' },
+        { ja: '⑤ 画面下部に粗利額と粗利率がまとめて表示され、経営状況を一目で把握できます。', en: '⑤ The bottom shows the gross profit amount and margin together for a quick view of financial health.' }
+      ]
+    });
+  </script>
 </body>
 </html>

@@ -196,7 +196,7 @@
       ja: { title:'注文管理', served:'✓ 提供済', servedBtn:'提供済にする', pay:'💳 会計する', noOrder:'未会計の注文はありません',
             cash:'現金', card:'Card', cancel:'キャンセル', pTitle:'お会計', sub:'小計', svc:'サービス料', tax:'税',
             openPay:'支払いページを開く', checkBtn:'支払い確認', checking:'確認中…', notYet:'まだ支払いが確認できません。',
-            noKey:'オンライン決済は未設定です。', cashRecv:'現金を受け取りましたか？', cardRecv:'カード決済を確認しましたか？（別のカード決済端末で処理）', gcashHint:'お客様にQRコードをスキャンして送金していただき、入金を確認したら下のボタンを押してください。', gcashConfirm:'入金を確認した', confirmed:'支払い完了', done:'完了（会計済にする）', processing:'処理中…', lang:'EN',
+            noKey:'オンライン決済は未設定です。', cashRecv:'現金を受け取りましたか？', cardRecv:'💳 決済端末でクレジットカード決済をしてください。決済を確認したら、下のボタンを押して会計を完了してください。', gcashHint:'お客様にQRコードをスキャンして送金していただき、入金を確認したら下のボタンを押してください。', gcashConfirm:'入金を確認した', confirmed:'支払い完了', done:'完了（会計済にする）', processing:'処理中…', lang:'EN',
             disc:'シニア/PWD割引', senior:'シニア', idPh:'ID番号', eligPh:'対象額', discLine:'割引', vatNote:'うちVAT', orLbl:'レシート番号', printBtn:'🖨️ レシート印刷', close:'閉じる', tableW:'卓', totalW:'合計',
             partial:'🧾 一部会計', partTitle:'一部会計 — 明細を選択', selected:'選択', selPay:'選択分を会計', splitLbl:'割り勘 ÷', each:'/人',
             callHdr:'🔔 呼び出し', callLbl:'スタッフ呼出', billLbl:'お会計希望', resolve:'対応済', agoMin:'分前', stay:'滞在', voidBtn:'取消', voidT:'注文の取消', reason:'取消理由', approver:'承認者（責任者ログイン）', loginPh:'ログインID', passPh:'パスワード', voidGo:'取消を承認', needReason:'取消理由を入力してください', authFail:'ログインIDまたはパスワードが違います', voided:'取消しました', alreadySettled:'会計済のため取消できません', eReceipt:'eレシート送信先メール（任意）',
@@ -205,7 +205,7 @@
       en: { title:'Orders', served:'✓ Served', servedBtn:'Mark served', pay:'💳 Checkout', noOrder:'No open orders',
             cash:'Cash', card:'Card', cancel:'Cancel', pTitle:'Payment', sub:'Subtotal', svc:'Service', tax:'Tax',
             openPay:'Open payment page', checkBtn:'Check status', checking:'Checking…', notYet:'Payment not confirmed yet.',
-            noKey:'Online payment is not set up.', cashRecv:'Cash received?', cardRecv:'Card payment confirmed? (processed on a separate card terminal)', gcashHint:'Ask the customer to scan the QR code and pay, then press the button below once you\'ve confirmed the payment.', gcashConfirm:'Payment confirmed', confirmed:'Paid', done:'Done (settle)', processing:'Processing…', lang:'JP',
+            noKey:'Online payment is not set up.', cashRecv:'Cash received?', cardRecv:'💳 Please process the credit card payment on the card terminal. Once confirmed, press the button below to complete checkout.', gcashHint:'Ask the customer to scan the QR code and pay, then press the button below once you\'ve confirmed the payment.', gcashConfirm:'Payment confirmed', confirmed:'Paid', done:'Done (settle)', processing:'Processing…', lang:'JP',
             disc:'Senior/PWD discount', senior:'Senior', idPh:'ID no.', eligPh:'Eligible amt', discLine:'Discount', vatNote:'incl. VAT', orLbl:'Receipt no.', printBtn:'🖨️ Print receipt', close:'Close', tableW:'Table', totalW:'TOTAL',
             partial:'🧾 Partial', partTitle:'Partial checkout — select items', selected:'Selected', selPay:'Checkout selected', splitLbl:'Split ÷', each:'/person',
             callHdr:'🔔 Requests', callLbl:'Call staff', billLbl:'Bill please', resolve:'Done', agoMin:'m ago', stay:'Seated', voidBtn:'Void', voidT:'Void order', reason:'Reason', approver:'Approver (manager login)', loginPh:'Login ID', passPh:'Password', voidGo:'Approve void', needReason:'Please enter a reason', authFail:'Wrong login ID or password', voided:'Order voided', alreadySettled:'Cannot void a settled order', eReceipt:'e-receipt email (optional)',
@@ -722,6 +722,22 @@
       if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(function(){}); }
     }
     document.addEventListener('DOMContentLoaded', boot);
+  </script>
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '注文管理画面の使い方',
+      titleEn: 'How to use Orders',
+      items: [
+        { ja: '① 未会計の注文が卓ごとにグループ表示されます。各明細の「提供済にする」ボタンで提供済みに、「取消」ボタンで注文取消（理由入力・責任者承認が必要）ができます。', en: '① Unpaid orders are grouped by table. Use "Mark served" on each line, or "Void" to cancel an order (requires a reason and manager approval).' },
+        { ja: '② 「💳会計する」ボタンでその卓の合計金額のお会計を開始し、現金／GCash／カードから支払い方法を選べます。「カード」を選ぶと「決済端末でクレジットカード決済をしてください」という案内が表示されるので、決済端末での処理を確認してから「完了」ボタンを押すと会計が済みになります。シニア/PWD割引はチェックボックスで適用でき、責任者ログインでの承認が必要です。', en: '② Tap "💳 Checkout" to settle a table\'s total and choose Cash, GCash, or Card. Choosing "Card" shows a prompt to process the payment on the card terminal — confirm it there, then tap "Done" to complete the checkout. Senior/PWD discount can be applied via checkbox but requires manager login approval.' },
+        { ja: '③ 「🧾一部会計」ボタンで卓の中の特定の明細だけを選んで先に会計できます（割り勘の入力欄もあります）。', en: '③ Tap "🧾 Partial" to select specific items on a table and check them out separately (a bill-splitting field is also available).' },
+        { ja: '④ 会計完了後は「🖨️レシート印刷」ボタンで領収書を印刷できます。会計時にeレシート送付先メールも入力できます。', en: '④ After checkout, tap "🖨️ Print receipt" to print a receipt. You can also enter an e-receipt email during checkout.' },
+        { ja: '⑤ 画面上部の🔔呼び出し欄に、お客様の「スタッフ呼出」「お会計希望」がリアルタイムで表示され、「対応済」ボタンで消せます。', en: '⑤ Customer "Call staff" and "Bill please" requests appear at the top in real time — tap "Done" to clear them.' },
+        { ja: '⑥ 「自動更新: ON/OFF」ボタンと10s/30s/60sの間隔ボタンで、画面の自動更新頻度を調整できます。↻ボタンで手動更新もできます。', en: '⑥ Use the Auto ON/OFF toggle and the 10s/30s/60s interval buttons to control how often the screen refreshes. Tap ↻ to refresh manually.' },
+        { ja: '⑦ 「🧾履歴」リンクで過去の会計履歴（receipts.html）に、「← 管理」でメニュー画面に戻れます。EN/JPボタンで表示言語を切り替えられます。', en: '⑦ Use the "🧾 History" link for past receipts, "← Manage" to return to the menu, and EN/JP to switch language.' }
+      ]
+    });
   </script>
 </body>
 </html>

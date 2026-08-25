@@ -93,5 +93,20 @@
       en:{ title:'🗓️ Reservations', back:'← Manage', reload:'↻', urlTitle:'🔗 Reservation form URL', urlHint:'Customers who open this URL can request a reservation. Share it on social media, Google Business Profile, etc.', urlCopy:'📋 Copy', urlCopied:'✅ Copied', thWhen:'Date & time', thPeople:'Party', thName:'Name', thPhone:'Phone', thSeat:'Seat', thNotes:'Notes', thStatus:'Status', loading:'Loading…', empty:'No reservations', loadErr:'Load error: ', stRecv:'Received', stOk:'Confirmed', stCame:'Arrived', stCxl:'Cancelled' }
     }, function(){ if(__loaded) render(); });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '予約管理',
+      titleEn: 'Reservations',
+      items: [
+        { ja: '① 画面上部の「予約フォームの共有URL」は、お客様が予約をリクエストできるページのリンクです。「📋 コピー」でコピーし、SNSやGoogleビジネスプロフィールなどに貼って使えます。', en: '① The “Reservation form URL” at the top links to the page where customers can request a reservation. Tap “📋 Copy” to copy it and share it on social media or Google Business Profile.' },
+        { ja: '② 一覧には予約日時・人数・氏名・電話番号・希望席・備考が並び、新しい予約もこの一覧に自動で反映されます。', en: '② The list shows the reservation date/time, party size, name, phone, requested seat, and notes; new requests appear here automatically.' },
+        { ja: '③ 各行右端のプルダウンで状態を「受付」「確定」「来店済」「キャンセル」に変更できます。変更は選択した瞬間に保存されます。', en: '③ Use the dropdown at the right of each row to change the status to Received, Confirmed, Arrived, or Cancelled. The change saves as soon as you select it.' },
+        { ja: '④ 状態は色分けされたラベルでも表示され、一目で対応状況が分かります。', en: '④ The status is also shown as a color-coded badge so you can see the situation at a glance.' },
+        { ja: '⑤ 右上の「↻」ボタンで最新の予約状況に手動で更新できます。', en: '⑤ Tap the “↻” button at the top right to manually refresh with the latest reservations.' }
+      ]
+    });
+  </script>
 </body>
 </html>

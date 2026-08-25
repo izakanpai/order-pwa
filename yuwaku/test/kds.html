@@ -257,5 +257,21 @@
     }, function(){ updateSoundBtn(); if(__booted) render(lastData); });
     document.addEventListener('DOMContentLoaded', boot);
   </script>
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'キッチンディスプレイの使い方',
+      titleEn: 'How to use the Kitchen Display',
+      items: [
+        { ja: '① 未提供の注文がチケットとして自動で並びます。赤枠（点滅）は新規未対応、黄枠は調理中を表します。', en: '① Pending orders appear automatically as tickets. A pulsing red border is a new unstarted order; amber means it is being cooked.' },
+        { ja: '② 経過時間バッジは緑（問題なし）→黄（6分以上）→赤（12分以上）の順で色が変わり、遅延に気づきやすくなっています。', en: '② The elapsed-time badge changes from green to amber (6+ min) to red (12+ min) so delays stand out.' },
+        { ja: '③ 「🔥調理開始」ボタンで調理中に、「✓提供完了」ボタンで提供済みにします。↩ボタンで新規に戻せます。', en: '③ Tap "🔥 Start" to mark cooking, "✓ Served" when done, and ↩ to move a ticket back to new.' },
+        { ja: '④ 🔔音ONボタンで新規注文が入った時のアラーム音のON/OFFを切り替えられます。', en: '④ Toggle the 🔔 sound button to turn the new-order alert chime on or off.' },
+        { ja: '⑤ ↻ボタンでメニュー設定・注文一覧を手動で最新の状態に更新できます（通常は自動更新されます）。', en: '⑤ Tap ↻ to manually refresh the menu and order list (it also refreshes automatically).' },
+        { ja: '⑥ 画面上部にEN切替ボタンがあり、表示言語を切り替えられます。長時間放置された注文は上部に別枠（滞留注文）で警告表示されます。', en: '⑥ Use the EN button to switch display language. Orders left too long appear as a stale-order warning banner at the top.' },
+        { ja: '⑦ 「← 管理」ボタンで管理画面（admin.html等）に戻れます。', en: '⑦ Tap "← Manage" to return to the management screens.' }
+      ]
+    });
+  </script>
 </body>
 </html>

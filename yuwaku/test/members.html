@@ -69,5 +69,21 @@
       en:{ title:'🎁 Members', back:'← Manage', search:'🔎 Search by phone or name', thPhone:'Phone', thName:'Name', thPts:'Points', thVisits:'Visits', thTotal:'Total spent', thLast:'Last visit', loading:'Loading…', none:'No matches', loadErr:'Load error: ' }
     }, function(){ if(__loaded) render(); });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '会員管理',
+      titleEn: 'Members',
+      items: [
+        { ja: '① 会員（電話番号・名前で登録された顧客）の一覧を、ポイントの多い順に自動で並べて表示します。', en: '① Shows the list of members (registered by phone number & name), automatically sorted by points, highest first.' },
+        { ja: '② 上部の検索欄に電話番号や名前の一部を入力すると、その場で一覧が絞り込まれます。', en: '② Type part of a phone number or name in the search box at the top to filter the list instantly.' },
+        { ja: '③ 各行では「保有ポイント」「来店回数」「累計利用額」「最終来店日」を確認できます。', en: '③ Each row shows the member’s current points, number of visits, total amount spent, and last visit date.' },
+        { ja: '④ この画面からは編集はできません。閲覧・検索専用のページです。', en: '④ This screen is view/search only — you cannot edit member data here.' },
+        { ja: '⑤ 右上の「EN」ボタンで日本語⇔英語の表示を切り替えられます。', en: '⑤ Use the “EN” button at the top right to switch the display between Japanese and English.' },
+        { ja: '⑥ 「← 管理へ」で管理メニューのトップに戻ります。', en: '⑥ Tap “← Manage” to return to the management menu.' }
+      ]
+    });
+  </script>
 </body>
 </html>

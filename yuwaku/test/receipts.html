@@ -122,5 +122,19 @@
       en:{ title:'🧾 Receipts', back:'Manage', toOrders:'← Orders', month:'Target month', monthTotal:'Month total', bills:'bills', thTime:'Time', thOr:'OR no.', thTable:'Table', thTotal:'Total', thMethod:'Paid', thDisc:'Discount', reprint:'🖨️ Reprint', sent:'Sent to print queue', loading:'Loading…', empty:'No receipts this month', errPrefix:'Error: ', loadErr:'Load error: ', loadMore:'Load more' }
     }, function(){ if(__loaded) render(); });
   </script>
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '会計履歴',
+      titleEn: 'Receipts',
+      items: [
+        { ja: '① 「対象月」で月を選ぶと、その月に会計した伝票（日時・OR番号・卓・合計・支払方法・割引）が一覧表示されます。', en: '① Pick a "Target month" to list bills closed that month (time, OR no., table, total, payment method, discount).' },
+        { ja: '② 画面右上に月合計金額と件数が表示されます。', en: '② The month\'s total amount and count are shown at the top right.' },
+        { ja: '③ 各行に明細（注文した商品と数量）が表示されます。', en: '③ Each row shows the order details (items and quantities).' },
+        { ja: '④ 各行の「🖨️ 再印刷」ボタンを押すと、そのレシートを印刷キューに再送信できます。', en: '④ Tap "🖨️ Reprint" on a row to resend that receipt to the print queue.' },
+        { ja: '⑤ 「さらに読み込む」ボタンで、100件ずつ追加の会計データを読み込めます。', en: '⑤ Tap "Load more" to fetch additional receipts, 100 at a time.' }
+      ]
+    });
+  </script>
 </body>
 </html>

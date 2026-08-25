@@ -77,5 +77,21 @@
       en:{ title:'🎂 Birthday coupons', back:'← Manage', month:'Target month', hint:'Members whose birthday is in the selected month. “Issue coupon” creates a one-time coupon valid until month end. Amount = setting birthdayCouponAmount (default ₱100).', thName:'Name', thPhone:'Phone', thBday:'Birthday', thVisits:'Visits', issue:'Issue coupon', expTil:'until', loading:'Loading…', empty:'No matching members', errPrefix:'Error: ', loadErr:'Load error: ' }
     }, function(){ if(__loaded) render(); });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '誕生日クーポン発行',
+      titleEn: 'Birthday coupons',
+      items: [
+        { ja: '① 上部の「対象月」で月を選ぶと、その月が誕生月の会員が一覧表示されます（初期表示は今月）。', en: '① Pick a month in “Target month” at the top to list members whose birthday falls in that month (defaults to the current month).' },
+        { ja: '② 一覧には氏名・電話番号・誕生日・来店回数が表示されます。', en: '② Each row shows the member’s name, phone number, birthday, and number of visits.' },
+        { ja: '③ 「クーポン発行」ボタンを押すと、その会員向けに当月末まで有効・1回限りのクーポンが発行されます。', en: '③ Tap “Issue coupon” to create a one-time coupon for that member, valid until the end of the selected month.' },
+        { ja: '④ クーポン金額は店舗設定（birthdayCouponAmount、既定 ₱100）で決まります。', en: '④ The coupon amount is determined by the store setting birthdayCouponAmount (default ₱100).' },
+        { ja: '⑤ 発行済みの会員には発行したクーポンコードと有効期限が表示され、二重発行はされません。', en: '⑤ Once issued, the coupon code and expiry date are shown for that member, preventing duplicate issuance.' },
+        { ja: '⑥ 月を切り替えると発行状況の表示はリセットされ、最新の対象月で再取得します。', en: '⑥ Switching the month resets the issued-status display and reloads the list for the newly selected month.' }
+      ]
+    });
+  </script>
 </body>
 </html>

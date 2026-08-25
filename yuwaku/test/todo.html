@@ -187,5 +187,21 @@
         needTitle:'Please enter a task', errPrefix:'Error: ' }
     }, function(){ if (__loaded) { renderAssigneeOptions(); render(); } });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'Todo管理（スタッフ共有タスク）',
+      titleEn: 'Shared Staff To-do Board',
+      items: [
+        { ja: '① 「新しいタスク」カードでタスク内容を入力し、担当者（未定・共有も選べます）と期限（任意）を設定して「追加」ボタンで登録します。', en: '① In "New task", enter the task, pick an assignee (or leave it unassigned/shared), optionally set a due date, and tap "Add".' },
+        { ja: '② タスク一覧のチェックボックスをタップすると完了/未完了を切り替えられます。完了したタスクは取り消し線で表示されます。', en: '② Tap the checkbox next to a task to mark it done or undone; completed tasks show a strikethrough.' },
+        { ja: '③ 期限を過ぎても未完了のタスクには「期限超過」の赤いバッジが表示されます。', en: '③ Overdue, unfinished tasks show a red "overdue" badge.' },
+        { ja: '④ 各タスクの🗑️ボタンで削除できます（確認ダイアログが出ます）。', en: '④ The 🗑️ button on each task deletes it (with a confirmation prompt).' },
+        { ja: '⑤ 各タスクには作成者・作成日時が表示され、完了したタスクには完了日時も表示されます。', en: '⑤ Each task shows who created it and when, and the completion time once done.' },
+        { ja: '⑥ 画面上部の↻ボタンで一覧を再読み込み、EN/JPボタンで表示言語を切り替えられます。', en: '⑥ Use the ↻ button to reload the list, and the EN/JP button to switch display language.' }
+      ]
+    });
+  </script>
 </body>
 </html>

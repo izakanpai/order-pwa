@@ -117,5 +117,19 @@
       en:{ title:'💾 Backup / Export', back:'← Manage', bkTitle:'📦 Back up all data', bkBtn:'📦 Download all data (ZIP)', bkWorking:'Preparing…', bkDone:'✅ Downloaded:', csvTitle:'📄 Export a sheet to CSV', csvHint:'Pick a sheet and download it as CSV (opens in Excel, etc.).', csvBtn:'⬇ Export CSV', csvDone:'✅ Exported:', errPrefix:'Error: ' }
     }, function(){});
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'バックアップ・書き出し',
+      titleEn: 'Backup & export',
+      items: [
+        { ja: '① 「📦 全データをZIPでダウンロード」ボタンを押すと、店舗の全テーブルをそれぞれCSVファイルにして1つのZIPにまとめ、端末にダウンロードします。作成には時間がかかることがあります。', en: '① The "Download all data (ZIP)" button exports every table as a CSV and bundles them all into one ZIP file, downloaded to your device. This can take a while.' },
+        { ja: '② 「シートをCSVで書き出し」では、プルダウンから1つのシート（テーブル）を選び、「⬇ CSVを書き出し」を押すとそのシートだけをCSVファイルとしてダウンロードできます（Excel等で開けます）。', en: '② In "Export a sheet to CSV", pick one sheet/table from the dropdown and press "Export CSV" to download just that sheet as a CSV file (opens in Excel, etc).' },
+        { ja: '③ ダウンロードが完了すると、それぞれの操作の下に緑色で完了メッセージ（ファイル名）が表示されます。失敗した場合は赤色でエラーが表示されます。', en: '③ After a successful download, a green message with the file name appears below the button. Failures show a red error message instead.' },
+        { ja: '④ 「← 管理へ」で管理メニューに戻ります。', en: '④ "← Manage" returns you to the management menu.' }
+      ]
+    });
+  </script>
 </body>
 </html>

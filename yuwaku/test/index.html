@@ -148,33 +148,6 @@
     </div>
   </div>
 
-  <!-- Payment method choice -->
-  <div class="overlay" id="payChoice">
-    <div class="sheet">
-      <div class="emoji">🧾</div>
-      <h3 id="pcTitle">How would you like to pay?</h3>
-      <p id="pcSub" style="font-size:20px;font-weight:900;color:var(--accent);"></p>
-      <button class="btn-send ok" id="pcLater" style="width:100%;background:#334155;">Pay at counter</button>
-      <button class="btn-send ok" id="pcGcash" style="width:100%;margin-top:8px;background:#2563eb;">GCash</button>
-      <button class="btn-send ok" id="pcCard" style="width:100%;margin-top:8px;background:#0f172a;">Card</button>
-      <button id="pcCancel" style="width:100%;margin-top:10px;background:#f1f5f9;color:#475569;border:none;padding:12px;border-radius:12px;font-weight:700;cursor:pointer;">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Payment (PayMongo) -->
-  <div class="overlay" id="payModal">
-    <div class="sheet">
-      <div class="emoji">💳</div>
-      <h3 id="pmTitle">Pay</h3>
-      <p id="pmAmount" style="font-size:22px;font-weight:900;color:var(--accent);"></p>
-      <img id="pmQr" alt="" style="width:180px;height:180px;margin:8px auto;display:none;">
-      <a id="pmOpen" href="#" target="_blank" rel="noopener" class="btn-send ok" style="display:block;width:100%;text-decoration:none;text-align:center;box-sizing:border-box;">Open payment page</a>
-      <button class="btn-send ok" id="pmCheck" style="width:100%;margin-top:8px;background:var(--green);">I've paid — check</button>
-      <div id="pmStatus" style="margin-top:10px;font-size:13px;font-weight:700;"></div>
-      <button id="pmCancel" style="width:100%;margin-top:10px;background:#f1f5f9;color:#475569;border:none;padding:12px;border-radius:12px;font-weight:700;cursor:pointer;">Cancel</button>
-    </div>
-  </div>
-
   <!-- My orders / status -->
   <div class="overlay" id="statusModal">
     <div class="sheet" style="max-height:80vh;overflow:auto;text-align:left;">
@@ -246,5 +219,21 @@
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
   <script src="./app.js"></script>
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'ご注文画面の使い方',
+      titleEn: 'How to order',
+      items: [
+        { ja: '① 上部のカテゴリタブでメニューを絞り込み、商品の＋ボタンでカートに追加します（オプションがある商品は選択画面が開きます）。', en: '① Use the category tabs to filter the menu, then tap + to add an item to your cart (items with options open a choice screen first).' },
+        { ja: '② 画面下の「注文」ボタンでカート内容を送信します。件数バッジで未送信の点数を確認できます。', en: '② Tap the Order button at the bottom to send your cart. The badge shows how many items are pending.' },
+        { ja: '③ クイックバーの🎁会員／🎟️クーポンで、会員証確認・ポイント利用・誕生日登録やクーポンコードの適用ができます。', en: '③ Use the 🎁 Member and 🎟️ Coupon buttons in the quick bar to check membership, use points, register a birthday, or apply a coupon code.' },
+        { ja: '④ 🔔スタッフ呼出でスタッフを呼び、🧾お会計でお支払い方法（会計時に精算／GCash／カード）を選べます。', en: '④ Use 🔔 to call staff, and 🧾 to choose how to pay (pay at counter / GCash / card).' },
+        { ja: '⑤ 📋注文状況でこれまで注文した内容・小計・未払い合計を確認できます。', en: '⑤ Use 📋 to see your order history, subtotal, and unpaid total.' },
+        { ja: '⑥ ⭐評価ボタンから星評価とコメントを送信できます。', en: '⑥ Use ⭐ to send a star rating and comment.' },
+        { ja: '⑦ 卓を選ばずにアクセスした場合は、最初に卓番号（と人数）を選ぶ画面が表示されます。', en: '⑦ If you open this without a table pre-selected, you will first be asked to choose your table (and party size).' }
+      ]
+    });
+  </script>
 </body>
 </html>

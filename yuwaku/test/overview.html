@@ -54,5 +54,22 @@
       applyDiagram();
     });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'システム利用イメージ',
+      titleEn: 'System overview',
+      items: [
+        { ja: '① 画面中央に、お客様・厨房・店員・管理者それぞれの操作の流れをまとめた1枚の図が表示されます。', en: '① The center of the screen shows a single diagram summarizing how customers, kitchen, staff and admins each use the system.' },
+        { ja: '② 図は横に長いので、指でピンチ操作して拡大したり、横スクロールして細部を確認できます。', en: '② The diagram is wide — pinch to zoom in or scroll sideways to see the details.' },
+        { ja: '③ 「画像を開く」で図を新しいタブで開いて大きく表示できます。', en: '③ "Open image" opens the diagram in a new tab for a larger view.' },
+        { ja: '④ 「保存」で図の画像ファイルを端末に保存できます。', en: '④ "Save" downloads the diagram image to your device.' },
+        { ja: '⑤ 右上の「EN」ボタンで表示言語を切り替えると、図自体も日本語版・英語版に自動で切り替わります。', en: '⑤ The "EN" button switches the display language, and the diagram image itself switches to the matching Japanese/English version automatically.' },
+        { ja: '⑥ この図は管理側で最新版に更新されると、この画面にも自動的に反映されます。', en: '⑥ When an admin updates the diagram to a newer version, it is reflected here automatically.' },
+        { ja: '⑦ 「← 管理へ」で管理メニューに戻ります。', en: '⑦ "← Manage" returns you to the management menu.' }
+      ]
+    });
+  </script>
 </body>
 </html>

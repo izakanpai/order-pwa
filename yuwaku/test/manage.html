@@ -228,5 +228,20 @@
     }, function(){ if(!document.getElementById('hubView').classList.contains('hidden')) showHub(lastAllowed); });
     document.addEventListener('DOMContentLoaded', checkAndShow);
   </script>
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '管理コンソール',
+      titleEn: 'Management console',
+      items: [
+        { ja: '① ログインIDとパスワードを入力して「🔓 ログイン」を押すと管理メニューに入れます。', en: '① Enter your login ID and password, then tap "🔓 Login" to enter the management menu.' },
+        { ja: '② パスワードを忘れた場合は「🔑 パスワードを変更」からログインIDと現在のパスワードで変更できます。', en: '② If you forget your password, use "🔑 Change password" with your login ID and current password.' },
+        { ja: '③ ログイン後は上部のタブ（接客・注文／売上・経営／在庫・仕入／スタッフ・勤怠／顧客・予約／システム・設定）で機能グループを切り替えられます。', en: '③ After logging in, switch feature groups using the tabs at the top (Service & Orders / Sales & Mgmt / Inventory / Staff / Customers / System).' },
+        { ja: '④ 各タイルをタップすると、その機能の画面（ダッシュボードや売上管理など）に移動します。表示されるタイルはアカウントの権限によって異なります。', en: '④ Tap a tile to open that feature\'s screen (Dashboard, Sales, etc.). Visible tiles depend on your account\'s permissions.' },
+        { ja: '⑤ 右上のEN/JAボタンで画面の言語を切り替えられます。', en: '⑤ Use the EN/JA button at top right to switch the display language.' },
+        { ja: '⑥ 「ログアウト」を押すとログインし直すまでメニューにアクセスできなくなります。', en: '⑥ Tap "Logout" to sign out; you\'ll need to log in again to access the menu.' }
+      ]
+    });
+  </script>
 </body>
 </html>

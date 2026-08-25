@@ -121,5 +121,19 @@
       en:{ title:'📋 Order Items', pur:'🚚 Purchasing', back:'← Manage', cardTitle:'📋 Order item master', hint:'Register items you order often, separate from inventory or the menu. Used by “Add from order items” on the new purchase order screen.', iName:'Item name', iNameEn:'English name (optional)', phNameEn:'e.g. Beer bottle', iUnit:'Unit (optional)', phUnit:'e.g. bottle, kg, box', iSupplier:'Default supplier (optional)', supUnset:'(none)', iMemo:'Memo (optional)', add:'💾 Save', thName:'Item', thUnit:'Unit', thSupplier:'Default supplier', thMemo:'Memo', loading:'Loading…', empty:'No order items registered yet', edit:'Edit', del:'Delete', delConfirm:'Delete this item?', needName:'Please enter an item name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ' }
     }, function(){ if(__loaded) render(); fillSupSel(); });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '発注アイテム管理',
+      titleEn: 'Order Items',
+      items: [
+        { ja: '① この画面では、在庫やメニューとは別に「発注時によく使う品目」をあらかじめ登録できます。品目名・単位・既定仕入先・備考を入力し「💾 登録」で保存します。', en: '① Register items you order often, separate from inventory or the menu. Enter name, unit, default supplier, and memo, then press "💾 Save".' },
+        { ja: '② 登録した品目は「仕入・発注」画面の新規発注で「📋 発注アイテムから追加」を押すと一覧から選べます。', en: '② Registered items appear on the "Purchasing" screen when you press "📋 Add from order items" while creating a new order.' },
+        { ja: '③ 一覧の「編集」で内容をフォームに呼び出して修正、「削除」で品目を削除できます。', en: '③ Use "Edit" in the list to load an item into the form for changes, or "Delete" to remove it.' },
+        { ja: '④ 右上の「🚚 仕入・発注」ボタンで発注画面へ移動できます。', en: '④ Use the "🚚 Purchasing" button at top-right to go to the purchasing screen.' }
+      ]
+    });
+  </script>
 </body>
 </html>

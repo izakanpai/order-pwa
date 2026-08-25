@@ -1026,5 +1026,22 @@
         saveDefaultsLoginHint:'Log in to save default values.' }
     }, function(){ updateRateNotes(); calc(); });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '営業利益シミュレーション',
+      titleEn: 'Operating Profit Simulator',
+      items: [
+        { ja: '① 「月間売上」に想定の月商を入力すると、下の経費合計と営業利益がリアルタイムで自動計算されます。', en: '① Enter your projected monthly revenue at the top — total expenses and operating profit below update automatically in real time.' },
+        { ja: '② 入場料・延長料金・VIP基本料金は、商品原価がかからない売上として別枠入力できます（人数×単価で自動計算）。', en: '② Entrance fee, extension fee, and VIP base charge can be entered separately as revenue with no product cost (auto-calculated as headcount × unit price).' },
+        { ja: '③ フード原価・ドリンク原価・ドリンクバック（レディースドリンク／ボトル／紹介料含む）は、割合(%)を入力すると金額が自動計算されます。金額欄を直接書き換えると固定金額として扱われます。', en: '③ Food COGS, drink COGS, and drink back (including ladies-drink, bottle, and referral commission) auto-calculate from a percentage you enter. Editing the amount field directly switches it to a fixed amount instead.' },
+        { ja: '④ 賃料・電気代・水道代などの固定費や、マネージャー〜一般初級までランク別の給与（日給・人数・出勤日数・夜勤／残業／休日出勤の割増）を入力できます。', en: '④ Enter fixed costs like rent, electricity, and water, plus salary by rank (Manager to Junior) — daily wage, headcount, workdays, and night/overtime/rest-day premiums.' },
+        { ja: '⑤ 「📥 その月の実績を読み込む」ボタンで、指定した月の実際の売上・経費データを自動入力できます（要ログイン）。', en: '⑤ Use "📥 Load actuals for that month" to auto-fill actual recorded revenue and expenses for a chosen month (requires login).' },
+        { ja: '⑥ 下部の「欲しい営業利益から売上を計算」で目標の営業利益額を入力し「→ 売上に反映」を押すと、必要な売上高が「月間売上」欄に自動反映されます。', en: '⑥ Under "Calculate revenue from a target operating profit," enter a target profit and press "→ Apply to revenue" to fill in the required revenue automatically.' },
+        { ja: '⑦ 「💾 現在の値を既定値として保存」を押すと、次回この画面を開いたときに同じ数字が自動入力されます。', en: '⑦ Press "💾 Save current values as defaults" so the same figures are pre-filled the next time you open this screen.' }
+      ]
+    });
+  </script>
 </body>
 </html>

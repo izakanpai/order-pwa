@@ -81,5 +81,20 @@
       en:{ title:'⭐ Customer feedback', back:'← Manage', reload:'↻', count:'Responses', thTime:'Time', thTable:'Table', thRating:'Rating', thComment:'Comment', loading:'Loading…', empty:'No feedback yet', loadErr:'Load error: ' }
     }, function(){ if(__loaded) render(); });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'お客様の声',
+      titleEn: 'Customer feedback',
+      items: [
+        { ja: '① お客様が投稿したアンケート回答（評価と自由コメント）を一覧できる画面です。', en: '① This screen lists the feedback customers submitted — their star rating and free-text comment.' },
+        { ja: '② 上部には全体の平均評価（5点満点）と回答件数、星1〜5それぞれの割合が棒グラフで表示されます。', en: '② The top shows the overall average rating (out of 5), the total number of responses, and a bar chart of the percentage for each star rating (1–5).' },
+        { ja: '③ 一覧の各行では投稿日時・卓番号・星評価・コメント内容を確認できます。', en: '③ Each row in the list shows the date/time, table number, star rating, and comment text.' },
+        { ja: '④ この画面は閲覧専用で、内容の編集や削除はできません。', en: '④ This screen is view-only — you cannot edit or delete entries here.' },
+        { ja: '⑤ 右上の「↻」ボタンで最新のフィードバックを手動で読み込み直せます。', en: '⑤ Tap the “↻” button at the top right to manually reload the latest feedback.' }
+      ]
+    });
+  </script>
 </body>
 </html>
