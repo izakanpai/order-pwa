@@ -626,5 +626,22 @@
         saved:'✅ Saved', savedSched:'✅ Saved & scheduled', uploaded:'✅ Uploaded', pickImg:'Please select an image', needKey:'Please enter a key', noGeoDev:'This device does not support location', gotLoc:'Location acquired. Please press Save.', noLoc:'Could not get location. Please enter manually.', sending:'Sending…', testSent:'✅ Test sent. Please check your inbox', sendFail:'Could not send', scopeReauth:'You may need to re-authorize (scopes)', errPrefix:'Error: ' }
     }, function(){ setBadge('gemBadge', gemConfigured); setBadge('cseBadge', cseConfigured); });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '店舗設定',
+      titleEn: 'Store settings',
+      items: [
+        { ja: '① 「🏪 店舗設定」で店名・住所・TIN番号（レシート表示用）、レシート先頭のロゴ画像と印字サイズ、テーブル数・カウンター数（注文画面で選べる席の数、0で非表示）を設定できます。', en: '① "Store settings" lets you set the store name, address, TIN (shown on receipts), the receipt logo image and its print size, and the number of tables/counters selectable on the order screen (0 hides that type).' },
+        { ja: '② 「📱 テーブルQRコード」の「QRコードを表示」ボタンで各テーブル専用の注文画面QRコードを一覧表示し、印刷したり、対応プリンタへ印刷キューとして送信できます。', en: '② "Table QR Codes" → "Show QR Codes" displays a QR code per table that opens that table\'s order screen; you can print them or send them to a connected printer\'s print queue.' },
+        { ja: '③ 「🌐 表示・地域」で通貨コード・記号、サービス料・税率（内税/外税のチェックで切替）、既定言語、アクセント色、深夜営業向けの営業日切替時刻を設定できます。', en: '③ "Display & region" sets the currency code/symbol, service charge and tax rate (checkbox toggles inclusive/exclusive), default language, accent color, and the business-day cutoff time for late-night operation.' },
+        { ja: '④ 「🎫 入場料・延長料」「🧓 シニア/PWD割引」「💳 決済方法」「🎁 ロイヤリティ」など、各カードのチェックボックスと金額欄で会計画面に表示する機能をON/OFF・数値設定し、それぞれの「💾 保存」ボタンで保存します。', en: '④ Cards like "Entry & extension fee", "Senior/PWD discount", "Payment methods" and "Loyalty" let you turn checkout-screen features on/off and set amounts, each with its own "Save" button.' },
+        { ja: '⑤ 「🤖 Gemini APIキー」「🔍 Pexels画像検索」「📧 メール送信設定（Resend）」のAPIキー欄は、貼り付けて保存すると即座に入力欄がクリアされ、以後は上の「設定済/未設定」バッジのみで状態を確認します（安全のため、保存後にキーの値がこの画面に表示され続けることはありません）。', en: '⑤ For the Gemini API key, Pexels API key and Resend email API key fields: after you paste and save, the field is cleared immediately — from then on only the "Set / Not set" badge above shows the status (for safety, the saved key value is never redisplayed on this screen).' },
+        { ja: '⑥ 「📧 定期レポート」では送信先メール・日次/週次/月次の送信タイミングと出力言語を設定し、「保存＆スケジュール」で反映、「日次/週次/月次テスト」ボタンで実際にテストメールを送信して確認できます（メール送信設定でAPIキー・送信元アドレスの登録が必要）。', en: '⑥ "Scheduled reports" sets recipient emails, daily/weekly/monthly send times, and output language; "Save & schedule" applies it, and the "Daily/Weekly/Monthly test" buttons send an actual test email to verify (requires the API key and from-address to be configured above).' },
+        { ja: '⑦ 「🖶 印刷ブリッジ」でプリンタ連携の確認間隔とBRIDGE_KEY（共有シークレット）を、「📧 eレシート機能」で会計確定時の自動メール送付を設定できます。', en: '⑦ "Print bridge" sets the printer-polling interval and an optional shared-secret BRIDGE_KEY; "e-Receipt" sets automatic email delivery on bill finalization.' }
+      ]
+    });
+  </script>
 </body>
 </html>

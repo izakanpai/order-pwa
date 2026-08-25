@@ -86,5 +86,18 @@
 
     load();
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '勤怠管理',
+      titleEn: 'Attendance',
+      items: [
+        { ja: '① 上部の「対象月」で月を選び「🔍 表示」を押すと、その月の従業員ごとの勤怠が一覧表示されます。', en: '① Pick a month in "Target month" and press "🔍 Show" to list each employee\'s attendance for that month.' },
+        { ja: '② 一覧には出勤日数・労働時間・残業（8時間超）・深夜（22〜5時）・時給・給与概算（時給×労働時間）が表示されます。', en: '② The list shows days worked, work hours, overtime (over 8h/day), late-night hours (22:00–5:00), hourly wage, and estimated pay (wage × hours).' },
+        { ja: '③ 画面を開くと自動的に当月のデータが表示されます。過去の月を確認したい場合は「対象月」を変更してください。', en: '③ The current month loads automatically when you open the screen. Change "Target month" to view a past month.' }
+      ]
+    });
+  </script>
 </body>
 </html>

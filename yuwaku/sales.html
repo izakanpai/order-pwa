@@ -307,5 +307,20 @@
       en:{ title:'📊 Sales', back:'← Manage', dailyTitle:'📈 Daily sales', monthlyTitle:'📅 Monthly summary', anaTitle:'🔎 Analysis (items / hours / days)', month:'Target month', analyze:'🔍 Analyze', byItem:'🏆 By item (ABC analysis)', byCat:'🍱 Sales by category', byHour:'🕐 By hour', byDow:'📅 By day of week', popTitle:'🍽️ Menu popularity score (last 30 days)', popHint:'Based on order quantity over the last 30 days (top seller = 100). Low-score / unsold items help you review the menu.', loading:'Loading…', noData:'No data', noSales:'No sales data.', dailySales:'Daily sales', colMonth:'Month', colTotal:'Total', sOrders:'Orders ', sOrdersU:'', sSales:'Sales ', sAvg:'Avg/order ', sCost:'Cost rate ', cItem:'Item', cQty:'Qty', cRev:'Revenue', cCost:'Cost', cCostR:'Cost %', cCum:'Cum %', cCat:'Category', cScore:'Score', other:'Other', hourU:':00', dowNames:'Sun,Mon,Tue,Wed,Thu,Fri,Sat', lHot:'🔥Popular', lOk:'Normal', lLow:'⚠️Low', lUnsold:'❌Unsold', loadErr:'Load error: ' }
     }, function(){ if(_sales) renderSales(); if(_ana) renderAnalytics(); if(_pop) renderPopularity(); });
   </script>
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '売上管理',
+      titleEn: 'Sales analytics',
+      items: [
+        { ja: '① 「📈 日別売上」のグラフで日ごとの売上推移を確認できます。', en: '① The "📈 Daily sales" chart shows the day-by-day sales trend.' },
+        { ja: '② 「📅 月別サマリー」で月ごとの合計売上を一覧できます。', en: '② "📅 Monthly summary" lists the total sales for each month.' },
+        { ja: '③ 「対象月」を選んで「🔍 分析」を押すと、商品別（ABC分析）・カテゴリ別売上・時間帯別・曜日別の集計が表示されます。', en: '③ Pick a "Target month" and tap "🔍 Analyze" to see breakdowns by item (ABC analysis), category, hour, and day of week.' },
+        { ja: '④ 商品別テーブルではABCランク（A/B/C）と原価率・売上累計比が確認でき、売れ筋・不振商品の判断材料になります。', en: '④ The item table shows ABC rank, cost rate, and cumulative sales share to help identify top and weak sellers.' },
+        { ja: '⑤ 「🍽️ メニュー人気度スコア」では直近30日の販売数量をスコア化し、🔥人気／標準／⚠️低調／❌未売上のラベルでメニュー見直しの参考にできます。', en: '⑤ "🍽️ Menu popularity score" scores items by quantity sold in the last 30 days, labeled 🔥Popular/Normal/⚠️Low/❌Unsold to help review the menu.' },
+        { ja: '⑥ 集計に時間がかかる場合は自動で構築中表示・再試行され、失敗時は「🔄 再試行」ボタンで手動再読み込みできます。', en: '⑥ Heavy aggregations show a building/retry status automatically; on failure, tap "🔄 Retry" to reload manually.' }
+      ]
+    });
+  </script>
 </body>
 </html>

@@ -177,5 +177,20 @@
 
     loadDashboard();
   </script>
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'ダッシュボード',
+      titleEn: 'Dashboard',
+      items: [
+        { ja: '① 画面上部に本日の売上・今月の売上・今月の粗利・プライムコスト率（原価+人件費÷売上）が一目で表示されます。', en: '① The top of the screen shows today\'s sales, this month\'s sales, this month\'s gross profit, and prime cost rate ((COGS+labor)÷sales) at a glance.' },
+        { ja: '② 「🎯 月間売上目標」で今月の売上目標を入力して「保存」を押すと、達成率がバーで表示されます。', en: '② Under "🎯 Monthly sales target", enter this month\'s target and tap "Save" to see progress as a bar.' },
+        { ja: '③ 「💴 今月の原価内訳」で商品原価（自動計算）・従業員給与・経費（賃料/電気代/水道代/備品/その他）の内訳を確認できます。', en: '③ "💴 Cost breakdown" shows product cost (auto), wages, and expenses (rent/electricity/water/supplies/other).' },
+        { ja: '④ 「低在庫アラート」の件数から「在庫管理へ」のリンクで在庫画面に移動できます。', en: '④ The "Low-stock alerts" count links to the Inventory screen.' },
+        { ja: '⑤ 「要注意メニュー」の件数から「売上分析へ」のリンクで売上管理画面に移動できます。', en: '⑤ The "Menu to review" count links to the Sales analytics screen.' },
+        { ja: '⑥ 集計に時間がかかる場合は自動で再試行し、失敗したときは「🔄 再試行」ボタンで手動再読み込みできます。', en: '⑥ If aggregation takes time it retries automatically; on failure, tap "🔄 Retry" to reload manually.' }
+      ]
+    });
+  </script>
 </body>
 </html>

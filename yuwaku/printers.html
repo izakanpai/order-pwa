@@ -281,5 +281,21 @@
     refreshQueue();
     refreshTimer=setInterval(refreshQueue, 8000);
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'プリンタ設定・印刷キュー管理',
+      titleEn: 'Printer Settings & Print Queue',
+      items: [
+        { ja: '① 「プリンタ印刷」スイッチで印刷全体のON/OFFを切替。OFFにすると注文が自動印刷されなくなります。', en: '① The "Printer Output" switch turns automatic order printing on or off.' },
+        { ja: '② 「会計時にレシートを自動印刷」スイッチで、会計確定時にレシートを自動送信するかどうかを設定。', en: '② The receipt toggle controls whether a receipt is auto-printed when a bill is settled.' },
+        { ja: '③ 「印刷の言語」でメニュー名の印刷言語（日本語／English／両方）を選択できます。', en: '③ "Print language" sets the language used for menu names on printed tickets/receipts.' },
+        { ja: '④ CloudPRNT対応プリンタ用のサーバーURLを表示・コピーできます。Bluetoothプリンタ（PT-210等）の場合はここは使わず、印刷ステーション（bridge.html）を使う旨の案内が表示されます。', en: '④ Shows/copies the CloudPRNT server URL for CloudPRNT-capable printers. For Bluetooth printers, use the Print Station (bridge.html) instead — the page explains this.' },
+        { ja: '⑤ 「印刷キュー」で未印刷・印刷中・印刷済・失敗の件数を確認でき、「失敗を再印刷」で失敗分を一括再送、「印刷済を削除」でキューを掃除できます。', en: '⑤ The Print Queue shows pending/printing/done/failed counts; "Reprint failed" requeues failures, "Clear done" removes completed jobs.' },
+        { ja: '⑥ 「プリンタの追加/編集」でプリンタ名・MACアドレス・対応カテゴリ・有効/無効を登録。下の一覧からテスト印刷・編集・削除ができます（CloudPRNT対応プリンタ専用）。', en: '⑥ "Add / Edit Printer" registers a printer name, MAC address, categories and enabled state (CloudPRNT printers only); the list below offers test print, edit, and delete.' }
+      ]
+    });
+  </script>
 </body>
 </html>

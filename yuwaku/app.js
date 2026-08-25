@@ -55,7 +55,7 @@
 
   var state = {
     lang: 'en', settings: {}, menu: [], cats: [], currentCat: 'all', ranking: [],
-    cart: {}, optLines: [], table: '', paymongo: false, member: null, usePoints: false, coupon: null,
+    cart: {}, optLines: [], table: '', member: null, usePoints: false, coupon: null,
     tableLocked: false,      // true = 卓番号はURLのQRで固定済み（客はタップで変更不可）
     checkoutStamp: 0,        // このセッション開始時点の「最終会計時刻」基準値
     sessionEnded: false,     // 基準値より新しい会計を検知＝このセッションは終了
@@ -534,8 +534,10 @@
   }
 
   // ---- 送信 ----
-  var pendingOrder = null, payCheckoutId = null, payPoll = null, payPollCount = 0;
-  var PAY_POLL_MAX = 120; // 5秒間隔×120回＝約10分でタイムアウトし、決済確認ポーリングを打ち切る（サーバ・外部決済APIへの無限リトライを防止）
+  // 2026-08-25削除: PayMongoによるセルフ決済（openPayChoice/startPay/checkPay等）は
+  // state.paymongoが常にfalseで一度も実行されない死んだコードだったため、あつしさんの
+  // 明示許可を得て削除した（対応するpayChoice/payModalのHTML・app.jsのイベント登録も
+  // 合わせて削除済み）。現状は常に「後会計」のみとなる。
 
   function send() {
     var x = t();
@@ -550,8 +552,8 @@
     var b = breakdown();
     var order = { tableNumber: state.table, items: items, totalPrice: b.total, phone: (state.member ? state.member.phone : ''), pointsUsed: (state.usePoints ? b.pointsUsed : 0),
       coupon: (state.coupon ? state.coupon.code : ''), couponDiscount: (b.couponDiscount || 0) };
-    if (state.paymongo) { pendingOrder = order; openPayChoice(); }        // セルフ決済あり→会計方法を選択
-    else { if (!confirm(x.confirm)) return; doSubmit(order, false); }     // 後会計のみ
+    if (!confirm(x.confirm)) return;
+    doSubmit(order, false);
   }
 
   function doSubmit(order, paid) {
@@ -581,55 +583,6 @@
       refreshPending();
     }).catch(function (err) { showErr(String(err && err.message || err)); })
       .then(function () { btn.disabled = false; });
-  }
-
-  // ---- セルフ決済（PayMongo） ----
-  function openPayChoice() {
-    var x = t();
-    $('pcTitle').textContent = x.payTitle;
-    $('pcSub').textContent = money(breakdown().total);
-    $('pcLater').textContent = x.payLater;
-    $('pcCard').textContent = x.payCard;
-    $('pcCancel').textContent = x.cancel;
-    $('payChoice').classList.add('show');
-  }
-  function closePayChoice() { $('payChoice').classList.remove('show'); }
-  function closePayModal() { stopPoll(); $('payModal').classList.remove('show'); }
-  function stopPoll() { if (payPoll) { clearInterval(payPoll); payPoll = null; } payPollCount = 0; }
-
-  function startPay(method) {
-    closePayChoice();
-    var x = t();
-    if (!pendingOrder) return;
-    var amt = pendingOrder.totalPrice;
-    $('pmTitle').textContent = x.payProcessing;
-    $('pmAmount').textContent = money(amt);
-    $('pmStatus').textContent = '';
-    $('pmQr').style.display = 'none';
-    $('payModal').classList.add('show');
-    API.post('createCheckout', { amount: amt, desc: 'Table ' + pendingOrder.tableNumber, method: method }).then(function (r) {
-      var d = r.data || {};
-      if (d.error) { closePayModal(); showErr(d.error === 'no_api_key' ? x.payNoKey : d.error); return; }
-      payCheckoutId = d.checkoutId;
-      $('pmQr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(d.checkoutUrl);
-      $('pmQr').style.display = 'block';
-      $('pmOpen').href = d.checkoutUrl;
-      $('pmTitle').textContent = x.payScan;
-      startPoll();
-    }).catch(function (e) { closePayModal(); showErr(String(e.message || e)); });
-  }
-  function startPoll() { stopPoll(); payPoll = setInterval(checkPay, 5000); }
-  function checkPay() {
-    if (!payCheckoutId) return;
-    var x = t();
-    // 決済確認ポーリングは上限回数（約10分）で打ち切る。外部決済APIへの無期限リトライを防止するための保険。
-    payPollCount++;
-    if (payPollCount > PAY_POLL_MAX) { stopPoll(); $('pmStatus').textContent = x.payTimeout; $('pmStatus').style.color = '#b91c1c'; return; }
-    API.post('checkoutStatus', { checkoutId: payCheckoutId }).then(function (r) {
-      var d = r.data || {};
-      if (d.paymentStatus === 'paid') { stopPoll(); closePayModal(); var o = pendingOrder; pendingOrder = null; payCheckoutId = null; doSubmit(o, true); }
-      else { $('pmStatus').textContent = x.payNotYet; $('pmStatus').style.color = '#b45309'; }
-    }).catch(function () {});
   }
 
   function showOk(title, msg, emoji) { $('okEmoji').textContent = emoji || '✅'; $('okTitle').textContent = title; $('okMsg').textContent = msg; $('okOverlay').classList.add('show'); }
@@ -864,7 +817,6 @@
   function applyBootstrap(r, fromCache) {
     state.settings = r.settings || {};
     state.menu = (r.menu || []);
-    state.paymongo = !!r.paymongo;
     if (state.settings.loyaltyEnabled === 'on' || state.settings.loyaltyEnabled === true || state.settings.loyaltyEnabled === 'true') $('memberBtn').style.display = '';
     var cats = [], catLabels = {};
     state.menu.forEach(function (it) { var c = it['カテゴリ']; if (c && cats.indexOf(c) === -1) cats.push(c); if (c && it['カテゴリ_EN'] && !catLabels[c]) catLabels[c] = it['カテゴリ_EN']; });
@@ -904,12 +856,6 @@
     $('sendBtn').addEventListener('click', send);
     $('okBtn').addEventListener('click', function () { $('okOverlay').classList.remove('show'); });
     $('errBtn').addEventListener('click', function () { $('errOverlay').classList.remove('show'); });
-    $('pcLater').addEventListener('click', function () { closePayChoice(); var o = pendingOrder; pendingOrder = null; doSubmit(o, false); });
-    $('pcGcash').addEventListener('click', function () { startPay('gcash'); });
-    $('pcCard').addEventListener('click', function () { startPay('card'); });
-    $('pcCancel').addEventListener('click', function () { closePayChoice(); pendingOrder = null; });
-    $('pmCheck').addEventListener('click', checkPay);
-    $('pmCancel').addEventListener('click', function () { closePayModal(); pendingOrder = null; payCheckoutId = null; });
     $('memberBtn').addEventListener('click', openMember);
     $('memLookup').addEventListener('click', lookupMember);
     $('couponBtn').addEventListener('click', openCoupon);
@@ -954,7 +900,7 @@
     startClock();
 
     API.post('bootstrap', {}).then(function (r) {
-      try { localStorage.setItem('bootCache', JSON.stringify({ settings: r.settings, menu: r.menu, paymongo: r.paymongo, tables: r.tables })); } catch (e) {}
+      try { localStorage.setItem('bootCache', JSON.stringify({ settings: r.settings, menu: r.menu, tables: r.tables })); } catch (e) {}
       applyBootstrap(r, false);
       API.flush().then(refreshPending); // オンライン起動時に保留分を流す
     }).catch(function (err) {

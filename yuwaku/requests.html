@@ -191,5 +191,22 @@
       if (__loaded) render();
     });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '運営への申し入れ（不具合・要望）',
+      titleEn: 'Staff Requests to Management',
+      items: [
+        { ja: '① 「新しい申し入れ」カードでカテゴリ（🐞システム不具合／🏪お店の運営について／💬その他）を選び、内容を自由に書いて「送信」ボタンで投稿します。', en: '① In "New request", choose a category (bug / operations / other), write the content freely, and tap "Send".' },
+        { ja: '② 記名式です。ログイン中の自分の名前が自動的に投稿者として記録され、画面上部に「投稿者: ○○」と表示されます。', en: '② Requests are attributed by name — your logged-in name is recorded automatically and shown at the top as "Posting as: ..."' },
+        { ja: '③ 投稿の一覧には投稿者名・日時・カテゴリバッジ・対応状況バッジ（未対応／対応中／解決済み）とともに内容が表示されます。', en: '③ The list shows each request\'s author, date/time, category badge, status badge (open/in progress/resolved), and content.' },
+        { ja: '④ マネージャー・管理者権限のあるスタッフは、各投稿の対応状況・対応メモ・対応納期をその場で変更できます。', en: '④ Staff with manager/admin permission can change a request\'s status, add a note, and set a due date directly on each item.' },
+        { ja: '⑤ 対応納期を過ぎても未解決の投稿には「期限超過」の赤いバッジが表示されます。', en: '⑤ Requests still unresolved past their due date show a red "overdue" badge.' },
+        { ja: '⑥ 一般スタッフは対応メモ（担当者からの返信）を閲覧できますが、状態変更や削除はマネージャー・管理者のみ可能です（🗑️ボタン、確認ダイアログあり）。', en: '⑥ Regular staff can read the response note, but only managers/admins can change status or delete a request (🗑️ button, with confirmation).' },
+        { ja: '⑦ 画面上部の↻ボタンで一覧を再読み込みできます。', en: '⑦ Use the ↻ button at the top to reload the list.' }
+      ]
+    });
+  </script>
 </body>
 </html>

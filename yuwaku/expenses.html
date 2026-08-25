@@ -213,5 +213,20 @@
       en:{ title:'💰 Expenses', back:'← Manage', addTitle:'➕ Add expense', lblDate:'Date', lblCat:'Category', lblItem:'Item / detail', phItem:'Pick from history or type', lblAmount:'Amount', lblPurchaser:'Purchaser', lblReceipt:'Receipt image', lblMemo:'Memo (optional)', add:'💾 Add', month:'Target month', monthTotal:'Month total', thDate:'Date', thCat:'Category', thItem:'Item', thAmount:'Amount', thPurchaser:'Purchaser', thReceipt:'Receipt', thMemo:'Memo', loading:'Loading…', empty:'No expenses this month', edit:'Edit', del:'Delete', delConfirm:'Delete this expense?', saved:'✅ Added', needDate:'Please enter a date', needAmount:'Please enter an amount', errPrefix:'Error: ', loadErr:'Load error: ', c_rent:'Rent', c_elec:'Electricity', c_water:'Water', c_goods:'Goods purchase', c_supply:'Supplies', c_other:'Other' }
     }, function(){ if(__loaded) render(); });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '経費一覧',
+      titleEn: 'Expenses',
+      items: [
+        { ja: '① 上部のフォームで日付・カテゴリ（賃料／電気代／水道代／商品仕入／備品購入／その他）・品目・金額を入力し「💾 登録」を押すと経費を記録できます。', en: '① Fill in the date, category (rent/electricity/water/goods/supplies/other), item, and amount at the top, then press "💾 Add" to record an expense.' },
+        { ja: '② 購入者名やレシート画像（写真）も一緒に登録できます。品目欄は過去に入力した品目の候補から選ぶこともできます。', en: '② You can also record the purchaser and a receipt photo. The item field suggests past entries you can pick from.' },
+        { ja: '③ 「対象月」を切り替えると、その月に登録された経費の一覧と月合計金額が表示されます。', en: '③ Switch the "Target month" to see the list of expenses recorded that month and the month total.' },
+        { ja: '④ 一覧の各行の「編集」ボタンで内容を修正でき、「削除」ボタンでその経費を削除できます（削除は確認ダイアログあり）。', en: '④ Use the "Edit" button on any row to update it, or "Delete" to remove that expense (a confirmation dialog appears first).' },
+        { ja: '⑤ レシート画像が登録されている行では小さな画像が表示され、クリックすると別タブで拡大表示されます。', en: '⑤ Rows with a receipt image show a thumbnail — click it to open the full image in a new tab.' }
+      ]
+    });
+  </script>
 </body>
 </html>

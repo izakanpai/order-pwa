@@ -426,5 +426,22 @@ async function requestWake(){ try{ if('wakeLock' in navigator){ wakeLock=await n
 function releaseWake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
 document.addEventListener('visibilitychange', async function(){ if(document.visibilityState==='visible' && looping && !wakeLock){ await requestWake(); } });
 </script>
+
+<script src="./help.js"></script>
+<script>
+  HelpUI.register({
+    title: '印刷ステーション（Bluetoothプリンタ）',
+    titleEn: 'Print Station (Bluetooth Printer)',
+    items: [
+      { ja: '① レジ横などに置いた端末（Android/Windows/Mac/LinuxのChrome。iOSは非対応）で、Bluetoothプリンタ(PT-210等)への出力を待ち受けるための画面です。電源・画面をONにして開いたままにしてください。', en: '① Runs on a fixed device near the register (Chrome on Android/Windows/Mac/Linux — iOS not supported), waiting to send jobs to a Bluetooth printer (e.g. PT-210). Keep the device powered, screen on, and this page open.' },
+      { ja: '② 「プリンタに接続」ボタンでBluetoothプリンタをペアリング（初回はデバイス選択ダイアログが出ます）。', en: '② "Connect printer" pairs the Bluetooth printer (a device picker appears the first time).' },
+      { ja: '③ 「監視開始」ボタンを押すと、注文・会計確定などで発生した印刷ジョブを自動的にポーリングして受け取り、Bluetooth経由でプリンタに送信します。', en: '③ "Start" begins automatically polling for print jobs (from orders/checkout) and sending them to the printer over Bluetooth.' },
+      { ja: '④ 「停止」ボタンで監視を止められます。', en: '④ "Stop" halts the monitoring loop.' },
+      { ja: '⑤ 画面上部に印刷済み件数・失敗件数・接続中のプリンタ名が表示されます。', en: '⑤ The top of the screen shows printed count, failed count, and the connected printer name.' },
+      { ja: '⑥ 「低速安全モード」にチェックを入れると送信を遅くし、文字化けや印字欠けが出る場合の改善を試せます。', en: '⑥ "Safe slow mode" sends data more slowly, useful if printouts are garbled or missing parts.' },
+      { ja: '⑦ 下のログ欄に接続状況・印刷結果・エラーが表示されます。うまくいかない時はこのログを共有してください。', en: '⑦ The log at the bottom shows connection status, print results, and errors — share it if something goes wrong.' }
+    ]
+  });
+</script>
 </body>
 </html>

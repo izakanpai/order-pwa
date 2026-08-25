@@ -5,8 +5,8 @@
   <!-- Header -->
   <rect x="0" y="0" width="1300" height="66" fill="#0f172a"/>
   <text x="36" y="42" fill="#ffffff" font-size="26" font-weight="800">🍶 Order Management System — Overview</text>
-  <text x="1264" y="28" fill="#93c5fd" font-size="13" text-anchor="end">A relaxing spot by the creek — Yuwaku Bar</text>
-  <text x="1264" y="48" fill="#cbd5e1" font-size="12" text-anchor="end">PWA + Google Apps Script + Spreadsheet</text>
+  <text x="1264" y="28" fill="#93c5fd" font-size="13" text-anchor="end">Izakaya Yuuwaku (誘惑)</text>
+  <text x="1264" y="48" fill="#cbd5e1" font-size="12" text-anchor="end">PWA + Cloudflare Workers + D1</text>
 
   <!-- Arrows (背面に描画) -->
   <defs>
@@ -45,8 +45,8 @@
   <!-- データ基盤 -->
   <rect x="486" y="432" width="328" height="96" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="1.6"/>
   <text x="650" y="462" fill="#0f172a" font-size="15" font-weight="800" text-anchor="middle">🗄️ Data Layer</text>
-  <text x="650" y="486" fill="#334155" font-size="12.5" text-anchor="middle">Google Sheets (all data)</text>
-  <text x="650" y="508" fill="#334155" font-size="12" text-anchor="middle">Google Apps Script (API, automation)</text>
+  <text x="650" y="486" fill="#334155" font-size="12.5" text-anchor="middle">Cloudflare D1 (all data)</text>
+  <text x="650" y="508" fill="#334155" font-size="12" text-anchor="middle">Cloudflare Workers (API, automation)</text>
 
   <!-- ================= 客 ================= -->
   <rect x="40" y="88" width="360" height="250" rx="14" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
@@ -55,7 +55,7 @@
     <text x="60" y="150">📱 Scan the table QR to order</text>
     <text x="60" y="174">🍽️ Order from menu (photo, options, qty)</text>
     <text x="60" y="198">🎟️ Coupons / 🎁 Member points</text>
-    <text x="60" y="222">💳 Self-checkout: GCash / Card (optional)</text>
+    <text x="60" y="222">💳 Pays by cash / a separate card terminal / GCash QR (off-app)</text>
     <text x="60" y="246">🔔 Call staff / 🧾 Bill / 📋 Order status</text>
     <text x="60" y="270">⭐ Feedback / 🎂 Birthday sign-up</text>
     <text x="60" y="294">🥡 Takeout orders / 🗓️ Reservations</text>
@@ -97,7 +97,7 @@
     <text x="60" y="670" font-size="11">🚫 Void (reason + approval) / ⏰ Photo+GPS clock-in</text>
     <text x="60" y="694">📇 Table QR codes print from here too</text>
     <text x="60" y="726" fill="#64748b" font-size="11.5">※ No login for entry/admin (shared device)</text>
-    <text x="60" y="762" fill="#047857" font-size="11" font-weight="700">🖨️ Print station (Android only, Bluetooth PT-210) &amp; 💳 payment terminal</text>
+    <text x="60" y="762" fill="#047857" font-size="11" font-weight="700">🖨️ Print station (login required, Bluetooth PT-210) / 💳 card terminal &amp; GCash QR (off-app)</text>
   </g>
   <g transform="translate(400,470)">
     <circle r="30" fill="#ffffff" stroke="#10b981" stroke-width="3"/>
@@ -121,7 +121,8 @@
     <text x="920" y="684">🛡️ Audit log / ⚙️ Settings</text>
     <text x="920" y="706">💾 Backup · CSV export</text>
     <text x="920" y="728" font-size="11.8">✉️ Daily/weekly/monthly reports (EN/JP)</text>
-    <text x="920" y="764" fill="#7e22ce" font-size="12" font-weight="700">🧪 Verify in test → deploy to prod</text>
+    <text x="920" y="748" font-size="11.8">📐 Operating profit simulator (login required)</text>
+    <text x="920" y="786" fill="#7e22ce" font-size="12" font-weight="700">🧪 Verify in test → deploy to prod</text>
   </g>
   <g transform="translate(1260,430)">
     <circle r="30" fill="#ffffff" stroke="#a855f7" stroke-width="3"/>
@@ -139,11 +140,11 @@
     <rect x="294" y="938" width="14" height="8" fill="#475569"/>
     <rect x="294" y="954" width="14" height="6" fill="#e2e8f0"/>
     <text x="245" y="970" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="middle">🖨️ Printer (Bluetooth PT-210)</text>
-    <text x="245" y="988" font-size="10" fill="#64748b" text-anchor="middle">Prints via a dedicated Android print station</text>
+    <text x="245" y="988" font-size="10" fill="#64748b" text-anchor="middle">Prints via the print-station device (bridge.html)</text>
 
     <rect x="392" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="517" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">💳 PayMongo</text>
-    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">GCash · card payments</text>
+    <text x="517" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">🤖 Gemini API</text>
+    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">AI stock count · image search</text>
 
     <rect x="664" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
     <text x="789" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ Email</text>

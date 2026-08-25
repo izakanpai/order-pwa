@@ -380,5 +380,21 @@
         lblLinkInv:'🔗 Linked inventory item (optional)', linkInvNone:'(No link)', linkInvHint:'Use this for items where 1 order = 1 inventory unit deducted directly (e.g. drinks) — no recipe needed. For food items that consume multiple ingredients, use the Recipes page instead.' }
     }, function(){ renderInvSel(); if(__loaded) render(); });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'メニュー編集',
+      titleEn: 'Menu Editor',
+      items: [
+        { ja: '① 上部フォームで商品名・価格・カテゴリ・ステータス（販売中/販売停止）を入力し「💾 保存」で新規商品を追加できます。英語名・英語カテゴリは空欄でも保存時に自動翻訳されます。', en: '① Enter name, price, category, and status (on sale / stopped) in the form, then press "💾 Save" to add a new item. English name/category auto-translate on save if left blank.' },
+        { ja: '② 「画像検索」でキーワードから候補画像を選ぶか、「画像のURLを直接指定」でURLから取得、またはファイルを直接アップロードできます。', en: '② Use "Search images" to pick from search results, "enter an image URL directly" to fetch from a URL, or upload a file directly.' },
+        { ja: '③ 「提供時間帯」で時間限定メニュー（深夜跨ぎも可）、「アレルゲン」「辛さ」も設定できます。「🍳 キッチン画面に表示する」をオフにするとドリンクなど調理不要な商品をキッチン画面から除外できます。', en: '③ Set "Service hours" for time-limited items (overnight spans allowed), plus allergens and spiciness. Turn off "Show on kitchen display" to hide items like drinks that need no cooking.' },
+        { ja: '④ 「🔗 在庫紐づけ」で、注文1点につき在庫を1点自動で減らしたい商品（ドリンク等）を設定できます。複数材料を使うフードは別の「レシピ・原価」ページで設定します。', en: '④ Use "Linked inventory item" for items where 1 order deducts 1 inventory unit automatically (e.g. drinks). Food using multiple ingredients is set up on the separate Recipes page.' },
+        { ja: '⑤ 「＋ オプショングループ追加」でサイズ・トッピングなどの選択肢（単一選択/複数選択、追加料金）を設定できます。', en: '⑤ Use "＋ Add option group" to set up choices like size or toppings (single/multiple choice, extra charge).' },
+        { ja: '⑥ 商品一覧の▲▼ボタンで並び替え（お客様の注文画面の表示順に反映）、「編集」「削除」、「売切にする/売切解除」で当日の在庫状況を切り替えられます。カテゴリタブで絞り込み表示も可能です。', en: '⑥ In the item list, use ▲▼ to reorder (reflected on the customer order screen), "Edit"/"Delete", and "Mark sold out"/"Undo sold out" for today\'s availability. Filter by category tabs.' }
+      ]
+    });
+  </script>
 </body>
 </html>

@@ -107,5 +107,22 @@
       en:{ title:'🎟️ Coupons', back:'← Manage', hint:'Set each code’s type (% off / amount off), minimum order, expiry, usage limit and on/off. Applied on the customer order & takeout screens. Usage counts are recorded automatically.', thCode:'Code', thType:'Type', thVal:'Value', thMin:'Min order', thExp:'Expiry', thLimit:'Limit', thActive:'On', thDesc:'Description', thUsed:'Used', addRow:'＋ Add row', save:'💾 Save', loading:'Loading…', empty:'Tap “＋ Add row” to register', typeAmount:'Amount(₱)', typePercent:'% off', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ' }
     }, function(){ if(__loaded) render(); });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'クーポン管理',
+      titleEn: 'Coupons',
+      items: [
+        { ja: '① 登録済みのクーポンコードが表の各行に並びます。「＋ 行を追加」で新しいクーポンの行を追加できます。', en: '① Each row of the table is one registered coupon code. Tap “＋ Add row” to add a new coupon.' },
+        { ja: '② 「種別」で「金額(₱)割引」か「％割引」を選び、「値」欄にその割引額または割引率を入力します。', en: '② Choose the type — “Amount(₱)” or “% off” — and enter the discount amount or percentage in the “Value” field.' },
+        { ja: '③ 「最小注文」でこのクーポンを使える最低注文額、「有効期限」で使える最終日、「上限」で使用回数の上限を設定できます。', en: '③ Set “Min order” for the minimum order amount required, “Expiry” for the last valid date, and “Limit” for the maximum number of uses.' },
+        { ja: '④ 「有効」のチェックを外すと、そのクーポンは客の注文画面・テイクアウトで使用できなくなります。', en: '④ Unchecking “On” disables the coupon so customers can no longer use it on the order or takeout screens.' },
+        { ja: '⑤ 「説明」欄には店内向けのメモを自由に入力でき、「利用」列には自動集計された使用回数が表示されます（編集不可）。', en: '⑤ The “Description” field is a free-text note for staff, and the “Used” column shows the automatically tracked usage count (not editable).' },
+        { ja: '⑥ 行の右端の🗑ボタンでその行を削除できます。', en: '⑥ Use the 🗑 button at the right of a row to delete that coupon.' },
+        { ja: '⑦ 変更後は必ず「💾 保存」を押してください。コードが空の行は保存時に無視されます。', en: '⑦ Always tap “💾 Save” after making changes. Rows with an empty code are ignored when saving.' }
+      ]
+    });
+  </script>
 </body>
 </html>

@@ -80,5 +80,18 @@
     };
     apply();
   </script>
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'ご予約フォームの使い方',
+      titleEn: 'How to request a reservation',
+      items: [
+        { ja: '① 右上のボタンで日本語／英語を切り替えられます。', en: '① Use the button in the top right to switch between Japanese and English.' },
+        { ja: '② 日時・人数・お名前・電話番号を入力します（日時とお名前は必須です）。', en: '② Enter the date & time, party size, name, and phone number (date/time and name are required).' },
+        { ja: '③ 席の希望（テーブル／カウンター）と備考（任意）を選択・入力できます。', en: '③ Optionally choose a seating preference (Table / Counter) and add notes.' },
+        { ja: '④ 「予約をリクエスト」ボタンで送信します。これは仮予約のリクエストであり、確認のため店舗から連絡が来ます。', en: '④ Tap "Request reservation" to submit. This is a request only — the shop will contact you to confirm.' }
+      ]
+    });
+  </script>
 </body>
 </html>

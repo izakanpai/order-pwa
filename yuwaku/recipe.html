@@ -93,5 +93,20 @@
       en:{ title:'📖 Recipes · Cost', back:'← Manage', hint:'Register the stock ingredients and amounts each menu item uses. Stock is auto-deducted on serving, and the cost ratio appears in sales analytics. Ingredients come from your Drink Stock names (e.g. Draft beer → Beer keg 0.33).', thMenu:'Menu', thMat:'Ingredient (stock)', thQty:'Amount', addRow:'＋ Add row', save:'💾 Save', loading:'Loading…', empty:'Tap “＋ Add row” to register', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ' }
     }, function(){ if(__loaded) render(); });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'レシピ・原価',
+      titleEn: 'Recipes · Cost',
+      items: [
+        { ja: '① 「＋ 行を追加」で行を追加し、「メニュー」欄で商品、「材料（在庫）」欄で使う在庫材料、「消費量」欄で1回の提供に使う量を選んで入力します（例: 生ビール → ビール樽 0.33）。', en: '① Press "＋ Add row", then choose a menu item, the stock ingredient it uses, and the amount consumed per serving (e.g. Draft beer → Beer keg 0.33).' },
+        { ja: '② 1つのメニューに複数の材料が必要な場合は、同じメニューで行を分けて複数登録できます。', en: '② If a menu item needs multiple ingredients, add a separate row for each one using the same menu item.' },
+        { ja: '③ 「💾 保存」を押すとレシピが確定します。以降、そのメニューが注文されるたびに登録した消費量ぶん在庫が自動で減算されます。', en: '③ Press "💾 Save" to confirm the recipe. From then on, stock is automatically deducted by the registered amount every time that menu item is ordered.' },
+        { ja: '④ 登録したレシピは売上分析での原価率の算出にも使われます。材料の選択肢は「在庫管理」に登録済みの商品名から選びます。', en: '④ Registered recipes are also used to calculate the cost ratio in sales analytics. Ingredient choices come from the item names already registered in "Inventory".' },
+        { ja: '⑤ 各行の🗑ボタンでその行（メニューと材料の組み合わせ）を削除できます。', en: '⑤ Use the 🗑 button on a row to delete that menu-to-ingredient pairing.' }
+      ]
+    });
+  </script>
 </body>
 </html>

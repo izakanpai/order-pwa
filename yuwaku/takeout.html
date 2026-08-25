@@ -97,13 +97,6 @@
           </div>
           <div id="cpMsg" style="margin-top:6px;font-size:13px;font-weight:700;"></div>
         </div>
-        <div class="fg" id="pmWrap" style="display:none;">
-          <label class="fl" id="lblPay">Payment</label>
-          <div class="pmrow">
-            <div class="pm on" id="pmCard" onclick="setPM('card')">💳 <span id="pmCardT">Card</span></div>
-            <div class="pm" id="pmGcash" onclick="setPM('gcash')">📱 GCash</div>
-          </div>
-        </div>
         <div id="coItems" style="margin:8px 0;"></div>
         <div class="sumrow tot"><span id="lblTotal">Total</span><span id="coTotal">₱0</span></div>
         <div id="coAlert" style="display:none;padding:11px;border-radius:10px;font-size:13px;margin:6px 0;"></div>
@@ -118,10 +111,13 @@
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
   <script>
-    var MENU = [], SETTINGS = {}, PAYMONGO = false;
-    var cart = {}, curCat = null, payMethod = 'card';
-    var pendingOrder = null, pollTimer = null, takeoutCoupon = null, payPollCount = 0;
-    var PAY_POLL_MAX = 150; // 4秒間隔×150回＝約10分でタイムアウトし、決済確認ポーリングを打ち切る（外部決済APIへの無期限リトライを防止）
+    // 2026-08-25削除: PayMongoによるオンライン決済（startPayment/checkPayment等）は
+    // PAYMONGOが常にfalseで一度も実行されない死んだコードだったため、あつしさんの明示許可を
+    // 得て削除した（対応するpmWrapのHTML・setPM関数も合わせて削除済み）。現状は常に
+    // 「店頭で支払う（Pay at counter）」のみとなる。
+    var MENU = [], SETTINGS = {};
+    var cart = {}, curCat = null;
+    var takeoutCoupon = null;
     // 言語の切替・優先順位・永続化は共通部品I18nに統一。lang はI18n.init()のonChangeコールバック経由で更新するミラー。
     var lang = 'en';
 
@@ -217,16 +213,14 @@
         return '<div class="cli"><span>'+esc(dispNameOf(i.name))+' ×'+i.count+'</span><span>'+money(priceOf(i.name)*i.count)+'</span></div>';
       }).join('');
       document.getElementById('coTotal').innerText = money(cartTotal());
-      document.getElementById('pmWrap').style.display = PAYMONGO ? 'block' : 'none';
-      document.getElementById('coConfirm').innerText = PAYMONGO ? t.payNow : t.payStore;
+      document.getElementById('coConfirm').innerText = t.payStore;
       document.getElementById('coForm').style.display = 'block';
       document.getElementById('coSuccess').style.display = 'none';
       document.getElementById('coAlert').style.display = 'none';
       fillPickupOptions();
       document.getElementById('coOverlay').classList.add('on');
     };
-    window.closeCheckout = function(){ document.getElementById('coOverlay').classList.remove('on'); if(pollTimer){clearInterval(pollTimer);pollTimer=null;} };
-    window.setPM = function(m){ payMethod=m; document.getElementById('pmCard').classList.toggle('on', m==='card'); document.getElementById('pmGcash').classList.toggle('on', m==='gcash'); };
+    window.closeCheckout = function(){ document.getElementById('coOverlay').classList.remove('on'); };
     function showAlert(msg, ok){ var a=document.getElementById('coAlert'); a.style.display='block'; a.style.background=ok?'#dcfce7':'#fee2e2'; a.style.color=ok?'#15803d':'#b91c1c'; a.innerText=msg; }
 
     function coDiscountedTotal(){ var v = cartTotal() - (takeoutCoupon?takeoutCoupon.discount:0); return v<0?0:v; }
@@ -257,48 +251,10 @@
         items: cartItems(), coupon: (takeoutCoupon ? takeoutCoupon.code : '')
       };
       var btn = document.getElementById('coConfirm'); btn.disabled=true;
-      if (PAYMONGO){ startPayment(order, btn); }
-      else {
-        order.paid = false;
-        API.post('submitTakeout', { order: order, __timeoutMs: API.TIMEOUT_MS.write }).then(function(r){ btn.disabled=false; onOrdered(r.data, false); })
-          .catch(function(e){ btn.disabled=false; showAlert(String(e.message||e), false); });
-      }
+      order.paid = false;
+      API.post('submitTakeout', { order: order, __timeoutMs: API.TIMEOUT_MS.write }).then(function(r){ btn.disabled=false; onOrdered(r.data, false); })
+        .catch(function(e){ btn.disabled=false; showAlert(String(e.message||e), false); });
     };
-    function startPayment(order, btn){
-      var t = tt();
-      showAlert(t.opening, true);
-      // [P0-4] 金額はクライアント申告値を使わず、サーバーが明細(items)・クーポンから再計算する。
-      API.post('createCheckout', { amount: coDiscountedTotal(), desc: 'Takeout order', method: payMethod, items: order.items, coupon: order.coupon }).then(function(r){
-        var d = r.data || {};
-        if (!d || d.error || !d.checkoutUrl){ btn.disabled=false; showAlert((d&&d.error)||t.payFail, false); return; }
-        pendingOrder = { order: order, checkoutId: d.checkoutId };
-        window.open(d.checkoutUrl, '_blank');
-        document.getElementById('coConfirm').innerText = t.confirmPay;
-        document.getElementById('coConfirm').disabled = false;
-        document.getElementById('coConfirm').onclick = checkPayment;
-        showAlert(t.waiting, true);
-        if (pollTimer) clearInterval(pollTimer);
-        payPollCount = 0;
-        pollTimer = setInterval(checkPayment, 4000);
-      }).catch(function(e){ btn.disabled=false; showAlert(String(e.message||e), false); });
-    }
-    function checkPayment(){
-      if (!pendingOrder) return;
-      // 決済確認ポーリングは上限回数（約10分）で打ち切る。外部決済APIへの無期限リトライを防止するための保険。
-      payPollCount++;
-      if (payPollCount > PAY_POLL_MAX) { if (pollTimer){ clearInterval(pollTimer); pollTimer=null; } showAlert(tt().payTimeout, false); return; }
-      API.post('checkoutStatus', { checkoutId: pendingOrder.checkoutId }).then(function(r){
-        var st = r.data || {};
-        if (st && (st.paymentStatus==='paid' || st.status==='paid')){
-          if (pollTimer){ clearInterval(pollTimer); pollTimer=null; }
-          // [修正点一覧C-1対応] o.paid=trueというクライアント申告はサーバーはもう信用しない。
-          // サーバー側がcheckoutIdを決済台帳・PayMongo双方と突き合わせて検証してから支払済みとする。
-          var o = pendingOrder.order; o.checkoutId = pendingOrder.checkoutId; pendingOrder = null;
-          API.post('submitTakeout', { order: o, __timeoutMs: API.TIMEOUT_MS.write }).then(function(rr){ onOrdered(rr.data, true); })
-            .catch(function(e){ showAlert(String(e.message||e), false); });
-        }
-      }).catch(function(){});
-    }
 
     function onOrdered(d, paid){
       var t = tt();
@@ -318,7 +274,7 @@
         '<button class="btn-primary2" onclick="resetAll()">'+t.newOrder+'</button>';
     }
     window.resetAll = function(){
-      cart={}; pendingOrder=null; takeoutCoupon=null; if(pollTimer){clearInterval(pollTimer);pollTimer=null;}
+      cart={}; takeoutCoupon=null;
       document.getElementById('fName').value=''; document.getElementById('fPhone').value=''; document.getElementById('fNotes').value='';
       document.getElementById('coConfirm').onclick = confirmOrder;
       closeCheckout(); renderMenu(); updateCart();
@@ -338,8 +294,6 @@
       document.getElementById('lblNotes').innerText = t.notes;
       document.getElementById('lblCoupon').innerText = t.coupon;
       document.getElementById('cpApplyBtn').innerText = t.apply;
-      document.getElementById('lblPay').innerText = t.pay;
-      document.getElementById('pmCardT').innerText = t.card;
       document.getElementById('lblTotal').innerText = t.total;
       document.getElementById('coCancel').innerText = t.cancel;
       renderMenu(); // [優先#7] 言語切替時、一覧の商品名（dispNm）もEN/JAで再描画する
@@ -350,7 +304,7 @@
       // 言語の初期化・切替・永続化は共通部品I18nに一本化（他画面と同じ仕組み）。
       I18n.init(T, onLangChange);
       API.post('bootstrap', {}).then(function(r){
-        SETTINGS = r.settings || {}; MENU = r.menu || []; PAYMONGO = !!r.paymongo;
+        SETTINGS = r.settings || {}; MENU = r.menu || [];
         var bid = SETTINGS.menuTopImageId;
         if (bid){ var b=document.getElementById('banner'); b.src='https://lh3.googleusercontent.com/d/'+bid; b.style.display='block'; }
         renderCats(); renderMenu(); onLangChange(I18n.lang()); updateCart();
@@ -361,6 +315,20 @@
       if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(function(){}); }
     }
     document.addEventListener('DOMContentLoaded', boot);
+  </script>
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'テイクアウト注文の使い方',
+      titleEn: 'How to order takeout',
+      items: [
+        { ja: '① 上部のカテゴリタブでメニューを絞り込み、商品右の＋／−ボタンで数量を増減してカートに入れます。', en: '① Use the category tabs to filter the menu, then use +/− next to each item to add it to your cart.' },
+        { ja: '② 画面下の「カート」ボタンで受取情報の入力画面に進みます。', en: '② Tap the Cart button at the bottom to go to the pickup details screen.' },
+        { ja: '③ お名前（必須）・電話番号・受取時刻・備考を入力します。クーポンコードがあれば入力して「適用」を押します。', en: '③ Enter your name (required), phone, pickup time, and notes. Enter a coupon code and tap Apply if you have one.' },
+        { ja: '④ オンライン決済に対応している店舗ではカード／GCashの支払い方法を選べます。それ以外は店頭でのお支払いになります。', en: '④ If online payment is available, choose Card or GCash; otherwise you will pay at the counter.' },
+        { ja: '⑤ 内容を確認し「注文へ進む」ボタンで注文を確定します。完了後は受取番号が表示されるので、店頭でお伝えください。', en: '⑤ Review your order and tap the checkout button to confirm. A pickup code will be shown afterward — tell it to staff at pickup.' }
+      ]
+    });
   </script>
 </body>
 </html>

@@ -295,5 +295,20 @@
         newOrderTitle:'🆕 New purchase order', newOrderHint:'Pick a supplier and add items — from the menu, the order item master, or typed directly.', poEmailUnavail:'⚠️ Automatic email to suppliers is currently unavailable (email sending isn’t implemented). Pressing “Request order” below copies the order text to your clipboard instead — send it via LINE, phone, or SMS.', poSupplier:'Supplier', poSupplierPh:'Select a supplier…', poNoEmailTag:'no email set', poNoEmailWarn:'This supplier has no email address registered. Add one in the supplier master first.', poThQty:'Qty', poThUnit:'Unit', poEmpty:'Tap “＋ Add row” to add items', poAddRow:'＋ Add row', poFromMenu:'🍽️ Add from menu', poFromItem:'📋 Add from order items', poPickPh:'Select…', poPickAdd:'＋ Add', poSendBtn:'📧 Request order', poSendBtnCopy:'📋 Copy order text (email unavailable)', poNeedSupplier:'Please select a supplier', poNeedEmailFirst:'This supplier has no email address registered. Add one in the supplier master first.', poNeedItems:'Please enter items and quantities', poSendConfirm:'Send the order email?\n', poItemsCountU:' item(s)', poSendDone:'✅ Order email sent', poCopyHeader:'[Purchase order] Supplier:', poCopyDone:'✅ Copied to clipboard. Please send it via LINE, phone, or SMS.', mvClose:'Close' }
     }, function(){ fillPoSupplierSel(); if(__loaded){ renderReorder(); renderSups(); } });
   </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: '仕入・発注',
+      titleEn: 'Purchasing',
+      items: [
+        { ja: '① 「新規発注」で仕入先を選び、品目を追加。「＋ 行を追加」で自由入力、「🍽️ メニューから追加」「📋 発注アイテムから追加」で登録済みの候補から選べます。', en: '① Under "New purchase order", pick a supplier and add items. Use "＋ Add row" to type freely, or "🍽️ Add from menu" / "📋 Add from order items" to pick from registered items.' },
+        { ja: '② メール自動送信は未実装のため、「📋 発注内容をコピー」を押すとテキストがクリップボードにコピーされます。LINEや電話・SMSで仕入先に送ってください。', en: '② Automatic email is not available. "📋 Copy order text" copies the order as text to your clipboard — send it via LINE, phone, or SMS.' },
+        { ja: '③ 「発注提案」には在庫が最小在庫を下回った品目が仕入先ごとに自動でまとまります。推奨数は最小在庫の2倍が目安です。各グループの「📋 発注内容をコピー」でその内容もコピーできます。', en: '③ "Reorder suggestions" auto-groups items at or below minimum stock by supplier (suggested qty ≈ 2× minimum). Each group also has a "📋 Copy order text" button.' },
+        { ja: '④ 「仕入先マスタ」で仕入先名・連絡先・メール・取扱品目などを登録・編集・削除できます。「編集」ボタンで既存の内容をフォームに呼び出せます。', en: '④ In "Suppliers", register/edit/delete supplier name, contact, email, and items handled. Use "Edit" to load an existing supplier into the form.' },
+        { ja: '⑤ 右上の「📋 発注アイテム」「📦 在庫」ボタンから関連画面へ移動できます。', en: '⑤ Use the "📋 Order items" and "📦 Inventory" buttons at top-right to jump to related screens.' }
+      ]
+    });
+  </script>
 </body>
 </html>
