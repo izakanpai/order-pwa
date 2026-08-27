@@ -80,6 +80,7 @@
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
+  <script src="./confirm.js"></script>
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
@@ -152,13 +153,15 @@
       }).catch(function(){ row.status=prev.status; row.note=prev.note; row.due=prev.due; render(); });
     };
     window.removeReq = function(id){
-      if (!confirm(I18n.t('confirmDelete'))) return;
       // [負荷試験レビュー対応/優先#6] deleteRequestも失敗時は例外を投げず{success:false}を返すため、
       // 結果を見ずに一覧から消していたのを修正。
-      rpc('deleteRequest',[id]).then(function(r){
-        if (r && r.success) { ROWS = ROWS.filter(function(r2){ return r2.id!==id; }); render(); }
-        else { var e = $('subErr'); if (e) { e.textContent = I18n.t('errPrefix')+((r&&r.error)||'delete_failed'); e.style.display='block'; } }
-      }).catch(function(){});
+      UIConfirm(I18n.t('confirmDelete')).then(function(ok){
+        if (!ok) return;
+        rpc('deleteRequest',[id]).then(function(r){
+          if (r && r.success) { ROWS = ROWS.filter(function(r2){ return r2.id!==id; }); render(); }
+          else { var e = $('subErr'); if (e) { e.textContent = I18n.t('errPrefix')+((r&&r.error)||'delete_failed'); e.style.display='block'; } }
+        }).catch(function(){});
+      });
     };
     window.reload = function(){
       return rpc('getRequests',[]).then(function(l){ ROWS=l||[]; render(); });

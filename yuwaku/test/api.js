@@ -127,6 +127,15 @@
     const timeoutMs = (typeof payload.__timeoutMs === 'number') ? payload.__timeoutMs : _FETCH_TIMEOUT_MS;
     const noInternalRetry = !!payload.__noInternalRetry;
     const send = Object.assign({}, payload); delete send.__silent; delete send.__msg; delete send.__timeoutMs; delete send.__noInternalRetry;
+    // 2026-08-25追加: 各画面はログイン時に取得したTOKENをページ内変数として持ち続けており、
+    // サーバー側がスライディング・エクスパイア（下記newToken参照）でトークンを再発行しても
+    // ページ内変数までは自動更新されない。送信直前にlocalStorageのmgmtToken（＝直前のレスポンスの
+    // newTokenで更新され得る最新値）があればそちらを優先することで、各画面のコードを一切
+    // 変更せずに「操作が続く限りログイン状態を保持する」を実現する。token不要な公開アクション
+    // （客注文画面等）には影響しない。
+    if (send.token) {
+      try { const _latest = localStorage.getItem('mgmtToken'); if (_latest) send.token = _latest; } catch (e) {}
+    }
     const body = JSON.stringify(Object.assign({ action: action }, send));
     const canRetry = !noInternalRetry && _isReadOnly(action, payload.fn);
     if (!silent) _load.show(payload.__msg);
@@ -153,6 +162,14 @@
           return new Promise(function () {}); // 遷移するのでこれ以上は解決しない
         }
         const e = new Error(json.error || 'api_error'); e.__server = true; throw e;
+      }
+      // 2026-08-25追加: サーバー側（gasApi.js handleGasCompatRequest）がスライディング・
+      // エクスパイアで再発行したトークンをlocalStorageへ反映する。これにより、設定画面で
+      // 設定したログイン保持時間の範囲内で操作が続く限りログイン状態が維持され、無操作のまま
+      // その時間が過ぎれば（新しいnewTokenが来ないため）元のトークンの期限どおり自動的に
+      // ログアウトされる。
+      if (json.newToken) {
+        try { if (localStorage.getItem('mgmtToken')) localStorage.setItem('mgmtToken', json.newToken); } catch (e) {}
       }
       return json;
     } finally {

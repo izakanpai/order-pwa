@@ -45,6 +45,7 @@
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
+  <script src="./confirm.js"></script>
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     var NAME = localStorage.getItem('mgmtName') || '';
@@ -61,7 +62,7 @@
     window.doOpen = function(){
       var f = Number(document.getElementById('flt').value)||0;
       var st = document.getElementById('stf').value;
-      rpc('openShift',[f, st]).then(function(r){ if(r&&r.success){ reload(); } else { alert((r&&r.error)||'error'); } }).catch(function(e){ alert(e.message||e); });
+      rpc('openShift',[f, st]).then(function(r){ if(r&&r.success){ reload(); } else { UIAlert((r&&r.error)||'error'); } }).catch(function(e){ UIAlert(e.message||e); });
     };
     window.doClose = function(){
       var counted = Number(document.getElementById('cnt').value);
