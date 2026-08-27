@@ -43,7 +43,6 @@
     <div class="card">
       <div class="card-title" data-t="newOrderTitle">🆕 新規発注</div>
       <div class="muted" data-t="newOrderHint" style="margin-bottom:10px;">仕入先を選び、品目を追加してください。メニュー・発注アイテムマスタから選ぶか、直接入力できます。</div>
-      <div class="muted" style="margin-bottom:10px;padding:10px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;color:#92400e;font-weight:700;" data-t="poEmailUnavail">⚠️ 仕入先へのメール自動送信は現在ご利用いただけません（メール送信の仕組み自体が未実装のため）。下の「発注依頼」ボタンを押すと、代わりに発注内容をテキストとしてコピーしますので、LINEや電話・SMS等で仕入先へ直接お送りください。</div>
       <div class="fg"><label class="form-label" data-t="poSupplier">仕入先</label><select id="poSupplier" class="fc" onchange="onPoSupplierChange()"></select></div>
       <div class="alert" id="poSupplierWarn" style="background:#fef9c3;color:#854d0e;"></div>
       <div style="overflow:auto;margin-top:6px;">
@@ -57,7 +56,7 @@
         <button class="btn-sm" onclick="openPoPicker('menu')" data-t="poFromMenu">🍽️ メニューから追加</button>
         <button class="btn-sm" onclick="openPoPicker('item')" data-t="poFromItem">📋 発注アイテムから追加</button>
       </div>
-      <button class="btn" style="margin-top:12px;" id="poSendBtn" onclick="sendPo()" data-t="poSendBtnCopy">📋 発注内容をコピー（メール送信は不可）</button>
+      <button class="btn" style="margin-top:12px;" id="poSendBtn" onclick="sendPo()" data-t="poSendBtn">📧 発注依頼</button>
       <div class="alert" id="poMsg"></div>
     </div>
 
@@ -103,6 +102,7 @@
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
+  <script src="./confirm.js"></script>
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
@@ -181,24 +181,37 @@
       poRenderRows(); closePoPicker();
     };
     function poMsg(text, ok){ var m=document.getElementById('poMsg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
-    // 2026-08-23: 仕入先へのメール自動送信（sendPurchaseOrderEmail）はバックエンド側で
-    // email_not_implementedを返す未実装機能のため、実際に送るのをやめ、代わりに発注内容を
-    // テキスト化してクリップボードにコピーする代替動作にした（LINE・SMS・電話等で手動送付）。
+    // 2026-08-25: sendPurchaseOrderEmailが実装され（src/purchasing.js、Resend経由でsrc/email.js
+    // を利用）、実際に仕入先へ発注メールを送信するようにした。仕入先にメールアドレスが未登録、
+    // またはRPCが失敗した場合（settings.htmlでメール送信が未設定な場合等）は、従来どおり発注内容を
+    // テキスト化してクリップボードへコピーする代替動作へ自動的にフォールバックする。
+    function poClipboardFallback(supplierName, items, reasonMsg){
+      var lines = [I18n.t('poCopyHeader')+'「'+supplierName+'」'];
+      items.forEach(function(it){ lines.push('・'+it.name+' × '+it.qty+(it.unit?(' '+it.unit):'')); });
+      var text = lines.join('\n');
+      var done = function(){ poMsg((reasonMsg?reasonMsg+'\n':'')+I18n.t('poCopyDone'), false); };
+      var fail = function(){ poMsg((reasonMsg?reasonMsg+'\n':'')+text, false); };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done).catch(fail);
+      } else { fail(); }
+    }
     window.sendPo = function(){
       var supplierName = document.getElementById('poSupplier').value;
       if(!supplierName){ poMsg(I18n.t('poNeedSupplier'), false); return; }
       var sup = SUPS.filter(function(s){ return s.name===supplierName; })[0];
       var items = PO_ROWS.filter(function(r){ return (r.name||'').trim() && Number(r.qty)>0; })
-        .map(function(r){ return { name:r.name.trim(), qty:Number(r.qty)||0, unit:(r.unit||'').trim() }; });
+        .map(function(r){ return { name:r.name.trim(), nameEn:(r.nameEn||'').trim(), qty:Number(r.qty)||0, unit:(r.unit||'').trim() }; });
       if(!items.length){ poMsg(I18n.t('poNeedItems'), false); return; }
-      var lines = [I18n.t('poCopyHeader')+'「'+supplierName+'」'];
-      items.forEach(function(it){ lines.push('・'+it.name+' × '+it.qty+(it.unit?(' '+it.unit):'')); });
-      var text = lines.join('\n');
-      var done = function(){ poMsg(I18n.t('poCopyDone'), true); };
-      var fail = function(){ poMsg(text, false); };
-      if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(text).then(done).catch(fail);
-      } else { fail(); }
+      if(!sup || !sup.email){ poClipboardFallback(supplierName, items, I18n.t('poNeedEmailFirst')); return; }
+      var btn = document.getElementById('poSendBtn'); if(btn) btn.disabled = true;
+      rpc('sendPurchaseOrderEmail', [supplierName, items]).then(function(r){
+        if(btn) btn.disabled = false;
+        if(r && r.success){ poMsg(I18n.t('poSendDone'), true); }
+        else { poClipboardFallback(supplierName, items, I18n.t('sendMailFail')+((r&&r.error)||'')); }
+      }).catch(function(e){
+        if(btn) btn.disabled = false;
+        poClipboardFallback(supplierName, items, I18n.t('sendMailFail')+((e&&e.message)||e));
+      });
     };
 
     function renderReorder(){
@@ -209,23 +222,39 @@
           return '<tr><td>'+esc(loc(it.name, it.nameEn))+'</td><td class="num low">'+it.stock+' '+esc(it.unit)+'</td><td class="num muted">'+it.minimum+'</td><td class="num" style="font-weight:800;">+'+it.suggest+' '+esc(it.unit)+'</td></tr>';
         }).join('');
         var mailBtn = g.supplier ?
-          '<button class="btn-sm" style="background:#dcfce7;color:#15803d;" id="mailBtn'+gi+'" onclick="sendOrderEmail('+gi+')">'+I18n.t('sendMailBtn')+'</button>'
+          '<button class="btn-sm" style="background:#dcfce7;color:#15803d;" id="mailBtn'+gi+'" onclick="sendOrderEmail('+gi+')" title="'+(g.email?'':esc(I18n.t('noEmailHint')))+'">'+I18n.t('sendMailBtn')+(g.email?'':(' <span class="muted" style="font-weight:400;">('+I18n.t('noEmailBadge')+')</span>'))+'</button>'
           : '';
         return '<div class="sup-group"><div class="sup-h" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;"><span>🏢 '+head+'</span>'+mailBtn+'</div>'+
           '<table><thead><tr><th>'+I18n.t('thItem')+'</th><th class="num">'+I18n.t('thStock')+'</th><th class="num">'+I18n.t('thMin')+'</th><th class="num">'+I18n.t('thSuggest')+'</th></tr></thead><tbody>'+rows+'</tbody></table>'+
           '<div class="muted" id="mailStatus'+gi+'" style="margin-top:6px;"></div></div>';
       }).join('');
     }
-    // 2026-08-23: こちらもsendReorderEmailが未実装のため、クリップボードコピーに変更。
-    window.sendOrderEmail = function(gi){
-      var g = REORDER[gi]; if(!g) return;
-      var st = document.getElementById('mailStatus'+gi);
+    // 2026-08-25: sendReorderEmailが実装され、発注提案の推奨発注数をそのまま使って
+    // 対象仕入先へ1クリックで発注メールを送信できるようにした（内部でgetReorderSuggestionsの
+    // 内容をsendPurchaseOrderEmailへ渡している）。失敗時（メールアドレス未登録・未設定等）は
+    // 従来どおりクリップボードコピーへフォールバックする。
+    function reorderClipboardFallback(g, st, reasonMsg){
       var lines = [I18n.t('poCopyHeader')+'「'+g.supplier+'」'];
       (g.items||[]).forEach(function(it){ lines.push('・'+loc(it.name, it.nameEn)+' × '+it.suggest+(it.unit?(' '+it.unit):'')); });
       var text = lines.join('\n');
+      var prefix = reasonMsg ? (reasonMsg+' ') : '';
       if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(text).then(function(){ if(st) st.innerText = I18n.t('poCopyDone'); }).catch(function(){ if(st) st.innerText = text; });
-      } else if(st){ st.innerText = text; }
+        navigator.clipboard.writeText(text).then(function(){ if(st) st.innerText = prefix + I18n.t('poCopyDone'); }).catch(function(){ if(st) st.innerText = prefix + text; });
+      } else if(st){ st.innerText = prefix + text; }
+    }
+    window.sendOrderEmail = function(gi){
+      var g = REORDER[gi]; if(!g) return;
+      var st = document.getElementById('mailStatus'+gi);
+      if(!g.email){ reorderClipboardFallback(g, st, I18n.t('poNeedEmailFirst')); return; }
+      var btn = document.getElementById('mailBtn'+gi); if(btn) btn.disabled = true;
+      rpc('sendReorderEmail', [g.supplier]).then(function(r){
+        if(btn) btn.disabled = false;
+        if(r && r.success){ if(st) st.innerText = I18n.t('poSendDone'); }
+        else { reorderClipboardFallback(g, st, I18n.t('sendMailFail')+((r&&r.error)||'')); }
+      }).catch(function(e){
+        if(btn) btn.disabled = false;
+        reorderClipboardFallback(g, st, I18n.t('sendMailFail')+((e&&e.message)||e));
+      });
     };
     function langLabel(v){ return v==='en' ? I18n.t('langEn') : (v==='both' ? I18n.t('langBoth') : I18n.t('langJa')); }
     function renderSups(){
@@ -250,12 +279,14 @@
       renderReorder();
     }
     window.del = function(id){
-      if(!confirm(I18n.t('delConfirm'))) return;
-      rpc('deleteSupplier',[id]).then(function(d){
-        if(d&&d.error){ msg(I18n.t('errPrefix')+d.error, false); return; }
-        SUPS = SUPS.filter(function(s){ return s.id!==id; });
-        renderSups(); fillPoSupplierSel();
-      }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
+      UIConfirm(I18n.t('delConfirm')).then(function(ok){
+        if(!ok) return;
+        rpc('deleteSupplier',[id]).then(function(d){
+          if(d&&d.error){ msg(I18n.t('errPrefix')+d.error, false); return; }
+          SUPS = SUPS.filter(function(s){ return s.id!==id; });
+          renderSups(); fillPoSupplierSel();
+        }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
+      });
     };
     window.save = function(){
       var sup = { id:document.getElementById('sId').value, name:document.getElementById('sName').value.trim(), nameEn:document.getElementById('sNameEn').value.trim(), contact:document.getElementById('sContact').value.trim(), email:document.getElementById('sEmail').value.trim(), language:document.getElementById('sLanguage').value, items:document.getElementById('sItems').value.trim(), memo:document.getElementById('sMemo').value.trim() };
@@ -288,10 +319,10 @@
 
     I18n.init({
       ja:{ title:'🚚 仕入・発注', back:'← 管理へ', inv:'📦 在庫', orderItemsLink:'📋 発注アイテム', reorderTitle:'🔔 発注提案（最小在庫以下）', reorderHint:'在庫が最小在庫を下回った品目を仕入先ごとにまとめます。推奨数＝最小在庫の2倍を目標に補充。', reorderEmpty:'発注が必要な品目はありません 🎉', noSupplier:'仕入先未設定', thItem:'品目', thStock:'在庫', thMin:'最小', thSuggest:'推奨発注', supTitle:'🏢 仕入先マスタ', sName:'仕入先名', sNameEn:'英語名（任意）', phNameEn:'e.g. ABC Trading Co.', sContact:'連絡先', phContact:'電話・担当など', sEmail:'メールアドレス（任意・発注メール送信用）', phEmail:'order@supplier.example', sLanguage:'発注メール言語', langJa:'日本語', langEn:'英語', langBoth:'日本語＋英語（両方）', thLanguage:'言語', sItems:'取扱品目（任意）', phItems:'例: ビール, 焼酎, 生鮮', sMemo:'備考（任意）', add:'💾 登録', thName:'仕入先', thContact:'連絡先', thEmail:'メール', thItems:'取扱品目', loading:'読み込み中…', supEmpty:'仕入先が未登録です', edit:'編集', del:'削除', delConfirm:'この仕入先を削除しますか？', needName:'仕入先名を入力してください', saved:'✅ 登録しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ',
-        sendMailBtn:'📋 発注内容をコピー', noEmailBadge:'✉️ メール未設定', noEmailHint:'仕入先マスタにメールアドレスを登録すると送信できます', sendMailConfirm:'発注メールを送信しますか？\n', sendMailDone:'✅ 送信しました', sendMailFail:'❌ 送信失敗: ',
+        sendMailBtn:'📧 メール送信', noEmailBadge:'✉️ メール未設定', noEmailHint:'仕入先マスタにメールアドレスを登録すると送信できます', sendMailConfirm:'発注メールを送信しますか？\n', sendMailDone:'✅ 送信しました', sendMailFail:'❌ 送信失敗: ',
         newOrderTitle:'🆕 新規発注', newOrderHint:'仕入先を選び、品目を追加してください。メニュー・発注アイテムマスタから選ぶか、直接入力できます。', poEmailUnavail:'⚠️ 仕入先へのメール自動送信は現在ご利用いただけません（メール送信の仕組み自体が未実装のため）。下の「発注依頼」ボタンを押すと、代わりに発注内容をテキストとしてコピーしますので、LINEや電話・SMS等で仕入先へ直接お送りください。', poSupplier:'仕入先', poSupplierPh:'仕入先を選択…', poNoEmailTag:'メール未設定', poNoEmailWarn:'この仕入先にはメールアドレスが未登録です。先に仕入先マスタで登録してください。', poThQty:'数量', poThUnit:'単位', poEmpty:'「＋ 行を追加」で品目を追加してください', poAddRow:'＋ 行を追加', poFromMenu:'🍽️ メニューから追加', poFromItem:'📋 発注アイテムから追加', poPickPh:'選択してください…', poPickAdd:'＋ 追加', poSendBtn:'📧 発注依頼', poSendBtnCopy:'📋 発注内容をコピー（メール送信は不可）', poNeedSupplier:'仕入先を選択してください', poNeedEmailFirst:'この仕入先にはメールアドレスが未登録です。先に仕入先マスタで登録してください。', poNeedItems:'品目と数量を入力してください', poSendConfirm:'発注メールを送信しますか？\n', poItemsCountU:'件の品目', poSendDone:'✅ 発注メールを送信しました', poCopyHeader:'【発注内容】仕入先:', poCopyDone:'✅ クリップボードにコピーしました。LINEや電話・SMS等で仕入先へお送りください。', mvClose:'閉じる' },
       en:{ title:'🚚 Purchasing', back:'← Manage', inv:'📦 Inventory', orderItemsLink:'📋 Order items', reorderTitle:'🔔 Reorder suggestions (at/below min)', reorderHint:'Items at or below minimum stock, grouped by supplier. Suggested qty targets twice the minimum stock.', reorderEmpty:'Nothing to reorder 🎉', noSupplier:'No supplier set', thItem:'Item', thStock:'Stock', thMin:'Min', thSuggest:'Suggested', supTitle:'🏢 Suppliers', sName:'Supplier name', sNameEn:'English name (optional)', phNameEn:'e.g. ABC Trading Co.', sContact:'Contact', phContact:'Phone / person', sEmail:'Email (optional, for sending orders)', phEmail:'order@supplier.example', sLanguage:'Order email language', langJa:'Japanese', langEn:'English', langBoth:'Japanese + English (both)', thLanguage:'Language', sItems:'Items handled (optional)', phItems:'e.g. beer, shochu, fresh', sMemo:'Memo (optional)', add:'💾 Save', thName:'Supplier', thContact:'Contact', thEmail:'Email', thItems:'Items', loading:'Loading…', supEmpty:'No suppliers yet', edit:'Edit', del:'Delete', delConfirm:'Delete this supplier?', needName:'Please enter a supplier name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ',
-        sendMailBtn:'📋 Copy order text', noEmailBadge:'✉️ No email set', noEmailHint:'Add an email address in the supplier master to enable sending', sendMailConfirm:'Send the order email?\n', sendMailDone:'✅ Sent', sendMailFail:'❌ Failed: ',
+        sendMailBtn:'📧 Send email', noEmailBadge:'✉️ No email set', noEmailHint:'Add an email address in the supplier master to enable sending', sendMailConfirm:'Send the order email?\n', sendMailDone:'✅ Sent', sendMailFail:'❌ Failed: ',
         newOrderTitle:'🆕 New purchase order', newOrderHint:'Pick a supplier and add items — from the menu, the order item master, or typed directly.', poEmailUnavail:'⚠️ Automatic email to suppliers is currently unavailable (email sending isn’t implemented). Pressing “Request order” below copies the order text to your clipboard instead — send it via LINE, phone, or SMS.', poSupplier:'Supplier', poSupplierPh:'Select a supplier…', poNoEmailTag:'no email set', poNoEmailWarn:'This supplier has no email address registered. Add one in the supplier master first.', poThQty:'Qty', poThUnit:'Unit', poEmpty:'Tap “＋ Add row” to add items', poAddRow:'＋ Add row', poFromMenu:'🍽️ Add from menu', poFromItem:'📋 Add from order items', poPickPh:'Select…', poPickAdd:'＋ Add', poSendBtn:'📧 Request order', poSendBtnCopy:'📋 Copy order text (email unavailable)', poNeedSupplier:'Please select a supplier', poNeedEmailFirst:'This supplier has no email address registered. Add one in the supplier master first.', poNeedItems:'Please enter items and quantities', poSendConfirm:'Send the order email?\n', poItemsCountU:' item(s)', poSendDone:'✅ Order email sent', poCopyHeader:'[Purchase order] Supplier:', poCopyDone:'✅ Copied to clipboard. Please send it via LINE, phone, or SMS.', mvClose:'Close' }
     }, function(){ fillPoSupplierSel(); if(__loaded){ renderReorder(); renderSups(); } });
   </script>

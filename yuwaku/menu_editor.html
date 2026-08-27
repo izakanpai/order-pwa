@@ -108,6 +108,7 @@
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
+  <script src="./confirm.js"></script>
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
@@ -310,12 +311,14 @@
     // [応答速度対応] 削除成功後は全件再取得せず、ローカル配列からその1件だけ除去して再描画する。
     window.del = function(i){
       var m = MENU[i]; if(!m) return;
-      if(!confirm(m['商品名']+' — '+I18n.t('delConfirm'))) return;
-      rpc('deleteMenuItem',[m['商品名']]).then(function(res){
-        if(String(res).indexOf('Error')===0){ msg(I18n.t('errPrefix')+res, false); return; }
-        msg(I18n.t('deleted'), true); if(document.getElementById('oldName').value===m['商品名']) clearForm();
-        MENU.splice(i,1); render();
-      }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
+      UIConfirm(m['商品名']+' — '+I18n.t('delConfirm')).then(function(ok){
+        if(!ok) return;
+        rpc('deleteMenuItem',[m['商品名']]).then(function(res){
+          if(String(res).indexOf('Error')===0){ msg(I18n.t('errPrefix')+res, false); return; }
+          msg(I18n.t('deleted'), true); if(document.getElementById('oldName').value===m['商品名']) clearForm();
+          MENU.splice(i,1); render();
+        }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
+      });
     };
     window.edit = function(i){
       var m = MENU[i]; if(!m) return;

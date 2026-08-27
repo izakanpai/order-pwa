@@ -52,6 +52,7 @@
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
+  <script src="./confirm.js"></script>
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
@@ -89,7 +90,7 @@
         return main + detRow;
       }).join('');
     }
-    window.reprint = function(orNo){ rpc('reprintReceipt',[orNo]).then(function(d){ d=d||{}; if(d.ok){ alert(I18n.t('sent')); } else { alert(I18n.t('errPrefix')+(d.error||'error')); } }).catch(function(e){ alert(I18n.t('errPrefix')+(e.message||e)); }); };
+    window.reprint = function(orNo){ rpc('reprintReceipt',[orNo]).then(function(d){ d=d||{}; if(d.ok){ UIAlert(I18n.t('sent')); } else { UIAlert(I18n.t('errPrefix')+(d.error||'error')); } }).catch(function(e){ UIAlert(I18n.t('errPrefix')+(e.message||e)); }); };
     function load(){
       var mo=document.getElementById('month').value;
       PAGE=1; ROWS=[];
@@ -105,7 +106,7 @@
       rpc('getReceipts',[mo, nextPage, PAGE_SIZE]).then(function(d){
         d=d||{}; PAGE=nextPage; ROWS=ROWS.concat(d.rows||[]); SUM_TOTAL=Number(d.sumTotal)||0; CNT_TOTAL=Number(d.count)||0; HAS_MORE=!!d.hasMore;
         render();
-      }).catch(function(e){ alert(I18n.t('errPrefix')+(e.message||e)); });
+      }).catch(function(e){ UIAlert(I18n.t('errPrefix')+(e.message||e)); });
     };
     // 2026-08-24修正: toISOString()はUTC基準のため、フィリピン時間で月初の午前0〜8時頃に開くと
     // 前月が選択されてしまう不具合があった（profit_sim.htmlで先に見つけて修正済みだった同じ問題を

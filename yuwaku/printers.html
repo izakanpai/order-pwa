@@ -152,6 +152,7 @@
 
   <script src="./config.js"></script>
   <script src="./api.js"></script>
+  <script src="./confirm.js"></script>
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
@@ -245,7 +246,7 @@
       rpc('savePrinter',[p]).then(function(){ $('btn-pr-save').disabled=false; msg.innerText=t.saved; msg.className='alert alert-success'; msg.style.display='block'; clearPrForm(); loadPrinters(); })
         .catch(function(e){ $('btn-pr-save').disabled=false; onErr(e); msg.innerText=t.err+': '+(e.message||e); msg.className='alert alert-error'; msg.style.display='block'; });
     };
-    window.delPr=function(id){ if(!confirm(i18n[currentLang].delConfirm)) return; rpc('deletePrinter',[id]).then(loadPrinters).catch(onErr); };
+    window.delPr=function(id){ UIConfirm(i18n[currentLang].delConfirm).then(function(ok){ if(!ok) return; rpc('deletePrinter',[id]).then(loadPrinters).catch(onErr); }); };
     window.testPr=function(id){ rpc('testPrint',[id]).then(function(){ toast(i18n[currentLang].testDone); refreshQueue(); }).catch(onErr); };
 
     function refreshQueue(){

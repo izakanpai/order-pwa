@@ -32,7 +32,9 @@
 // 1件でも404すると全体が失敗するため、v148のインストールは実際には毎回失敗し続けていた
 // 可能性が高い。SHELLから './spa.html' を除去し、バージョンをv149へ上げて再インストールを
 // 発生させる。教訓を教訓のままにせず、SHELL変更のたびに実ファイル一覧との突き合わせを徹底する。
-const CACHE = 'yuwaku-pos-v149';
+// ★2026-08-25追記（v150）: confirm()/alert()の共通ダイアログ部品として新規追加した
+// ./confirm.js をSHELLへ追加。新規ファイルなのでバージョンを上げてキャッシュへ確実に含める。
+const CACHE = 'yuwaku-pos-v150';
 const SHELL = [
   './',
   './index.html',
@@ -76,6 +78,7 @@ const SHELL = [
   './config.js',
   './api.js',
   './i18n.js',
+  './confirm.js',
   './app.js',
   './manifest.webmanifest',
   './admin.webmanifest',

@@ -177,6 +177,7 @@
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
+  <script src="./confirm.js"></script>
   <script>
     // [P0-2] 会計・注文操作はスタッフ操作のため、事前ログイン（1回のみ）を必須にする。
     var TOKEN = localStorage.getItem('mgmtToken') || '';
@@ -681,15 +682,15 @@
         __timeoutMs: API.TIMEOUT_MS.write }; // [タイムアウト共通化] 会計確定は複数注文まとめての場合もあり時間がかかり得るため専用枠を使う
       API.post('finalizeBill', req).then(function(r){
         btn.disabled=false; btn.innerText=t().done; var d=r.data||{};
-        if (d.error==='discount_auth'){ alert(t().authFail); return; }
-        if (d.error==='discount_not_manager'){ alert(t().discNotManager); return; }
-        if (d.error==='senior_discount_disabled'){ alert(t().discDisabled); return; }
-        if (d.error){ alert('Error: '+d.error); return; }
+        if (d.error==='discount_auth'){ UIAlert(t().authFail); return; }
+        if (d.error==='discount_not_manager'){ UIAlert(t().discNotManager); return; }
+        if (d.error==='senior_discount_disabled'){ UIAlert(t().discDisabled); return; }
+        if (d.error){ UIAlert('Error: '+d.error); return; }
         // 表示・印刷・eレシートは全てサーバーが再計算した金額を正とする。
         var bill = { table: payTable, method: payMethod, subtotal: d.subtotal, vat: d.vat, service: d.service,
           discountType: pv.discountType||'', discountId: pv.discountId||'', discountAmount: d.discountAmount, total: d.total };
         showReceipt(d.orNo||'', bill);
-      }).catch(function(e){ btn.disabled=false; btn.innerText=t().done; alert('Error: '+(e.message||e)); });
+      }).catch(function(e){ btn.disabled=false; btn.innerText=t().done; UIAlert('Error: '+(e.message||e)); });
     };
 
     // ヘッダの現在日時表示

@@ -341,6 +341,7 @@
   <script src="./config.js"></script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
+  <script src="./confirm.js"></script>
   <script>
     // 2026-08-24修正: このページは元々「ログイン不要の公開ツール」として管理メニューにも
     // 出していなかったが、月次実績や既定値など細かな数字が未ログインでも見えてしまうため、
@@ -780,7 +781,8 @@
     window.loadActual = function(){
       var mo = document.getElementById('pMonth').value;
       if (!mo){ msg('loadMsg', I18n.t('needMonth'), false); return; }
-      if (!confirm(I18n.t('loadConfirm'))) return;
+      UIConfirm(I18n.t('loadConfirm')).then(function(ok){
+      if (!ok) return;
       rpc('profitSimGetMonthly',[mo]).then(function(d){
         if (!d){ msg('loadMsg', I18n.t('loadFail'), false); return; }
         var e = d.exp || {};
@@ -807,6 +809,7 @@
         var wageNote = (d.wages != null) ? (' ' + I18n.t('loadWageNote') + ' ' + money(d.wages) + ')') : '';
         msg('loadMsg', I18n.t('loadOk') + wageNote, true);
       }).catch(function(e){ msg('loadMsg', _authErrMsg(e), false); });
+      });
     };
 
     function applySyms(){
