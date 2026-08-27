@@ -195,6 +195,9 @@
         navigator.clipboard.writeText(text).then(done).catch(fail);
       } else { fail(); }
     }
+    // 2026-08-27修正（GPT確認レポート_Claude追加修正依頼_2026-08-27.md 指摘事項）: poSendConfirm
+    // 文言は定義済みだったが未使用で、確認なしにメールが即送信されていた。宛先・品目・数量を
+    // 表示するUIConfirmを送信直前に追加する。
     window.sendPo = function(){
       var supplierName = document.getElementById('poSupplier').value;
       if(!supplierName){ poMsg(I18n.t('poNeedSupplier'), false); return; }
@@ -203,14 +206,19 @@
         .map(function(r){ return { name:r.name.trim(), nameEn:(r.nameEn||'').trim(), qty:Number(r.qty)||0, unit:(r.unit||'').trim() }; });
       if(!items.length){ poMsg(I18n.t('poNeedItems'), false); return; }
       if(!sup || !sup.email){ poClipboardFallback(supplierName, items, I18n.t('poNeedEmailFirst')); return; }
-      var btn = document.getElementById('poSendBtn'); if(btn) btn.disabled = true;
-      rpc('sendPurchaseOrderEmail', [supplierName, items]).then(function(r){
-        if(btn) btn.disabled = false;
-        if(r && r.success){ poMsg(I18n.t('poSendDone'), true); }
-        else { poClipboardFallback(supplierName, items, I18n.t('sendMailFail')+((r&&r.error)||'')); }
-      }).catch(function(e){
-        if(btn) btn.disabled = false;
-        poClipboardFallback(supplierName, items, I18n.t('sendMailFail')+((e&&e.message)||e));
+      var lines = items.map(function(it){ return '・'+loc(it.name, it.nameEn)+' × '+it.qty+(it.unit?(' '+it.unit):''); });
+      var confirmMsg = I18n.t('poSendConfirm') + supplierName + '（' + sup.email + '）\n' + lines.join('\n');
+      UIConfirm(confirmMsg).then(function(ok){
+        if(!ok) return;
+        var btn = document.getElementById('poSendBtn'); if(btn) btn.disabled = true;
+        rpc('sendPurchaseOrderEmail', [supplierName, items]).then(function(r){
+          if(btn) btn.disabled = false;
+          if(r && r.success){ poMsg(I18n.t('poSendDone'), true); }
+          else { poClipboardFallback(supplierName, items, I18n.t('sendMailFail')+((r&&r.error)||'')); }
+        }).catch(function(e){
+          if(btn) btn.disabled = false;
+          poClipboardFallback(supplierName, items, I18n.t('sendMailFail')+((e&&e.message)||e));
+        });
       });
     };
 
@@ -242,18 +250,26 @@
         navigator.clipboard.writeText(text).then(function(){ if(st) st.innerText = prefix + I18n.t('poCopyDone'); }).catch(function(){ if(st) st.innerText = prefix + text; });
       } else if(st){ st.innerText = prefix + text; }
     }
+    // 2026-08-27修正（GPT確認レポート_Claude追加修正依頼_2026-08-27.md 指摘事項）: sendMailConfirm
+    // 文言は定義済みだったが未使用で、確認なしにメールが即送信されていた。宛先・品目・推奨発注数を
+    // 表示するUIConfirmを送信直前に追加する。
     window.sendOrderEmail = function(gi){
       var g = REORDER[gi]; if(!g) return;
       var st = document.getElementById('mailStatus'+gi);
       if(!g.email){ reorderClipboardFallback(g, st, I18n.t('poNeedEmailFirst')); return; }
-      var btn = document.getElementById('mailBtn'+gi); if(btn) btn.disabled = true;
-      rpc('sendReorderEmail', [g.supplier]).then(function(r){
-        if(btn) btn.disabled = false;
-        if(r && r.success){ if(st) st.innerText = I18n.t('poSendDone'); }
-        else { reorderClipboardFallback(g, st, I18n.t('sendMailFail')+((r&&r.error)||'')); }
-      }).catch(function(e){
-        if(btn) btn.disabled = false;
-        reorderClipboardFallback(g, st, I18n.t('sendMailFail')+((e&&e.message)||e));
+      var lines = (g.items||[]).map(function(it){ return '・'+loc(it.name, it.nameEn)+' × '+it.suggest+(it.unit?(' '+it.unit):''); });
+      var confirmMsg = I18n.t('sendMailConfirm') + g.supplier + '（' + g.email + '）\n' + lines.join('\n');
+      UIConfirm(confirmMsg).then(function(ok){
+        if(!ok) return;
+        var btn = document.getElementById('mailBtn'+gi); if(btn) btn.disabled = true;
+        rpc('sendReorderEmail', [g.supplier]).then(function(r){
+          if(btn) btn.disabled = false;
+          if(r && r.success){ if(st) st.innerText = I18n.t('poSendDone'); }
+          else { reorderClipboardFallback(g, st, I18n.t('sendMailFail')+((r&&r.error)||'')); }
+        }).catch(function(e){
+          if(btn) btn.disabled = false;
+          reorderClipboardFallback(g, st, I18n.t('sendMailFail')+((e&&e.message)||e));
+        });
       });
     };
     function langLabel(v){ return v==='en' ? I18n.t('langEn') : (v==='both' ? I18n.t('langBoth') : I18n.t('langJa')); }
