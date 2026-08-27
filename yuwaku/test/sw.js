@@ -34,7 +34,11 @@
 // 発生させる。教訓を教訓のままにせず、SHELL変更のたびに実ファイル一覧との突き合わせを徹底する。
 // ★2026-08-25追記（v150）: confirm()/alert()の共通ダイアログ部品として新規追加した
 // ./confirm.js をSHELLへ追加。新規ファイルなのでバージョンを上げてキャッシュへ確実に含める。
-const CACHE = 'yuwaku-pos-test-v150';
+// ★2026-08-27追記（v151・GPT確認レポート_Claude追加修正依頼_2026-08-27.md 指摘事項）: 店内注文
+// 画面（index.html）がconfirm.jsを読み込んでいなかった（./app.jsのalert 1件・confirm 2件が
+// ネイティブダイアログのまま残存）不具合を修正。index.html/app.jsの内容が変わったため、
+// キャッシュを必ず入れ替える。
+const CACHE = 'yuwaku-pos-test-v151';
 const SHELL = [
   './',
   './index.html',

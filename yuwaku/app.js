@@ -391,7 +391,7 @@
         extra += Number(inp.getAttribute('data-price')) || 0;
       });
     });
-    if (!ok) { alert(x.optPick); return; }
+    if (!ok) { UIAlert(x.optPick); return; }
     var label = chosen.filter(function (s) { return s; }).join(', ');
     var basePrice = Number(it['価格']) || 0;
     var unit = basePrice + extra;
@@ -492,10 +492,12 @@
   function requestStaff(type) {
     var x = t();
     if (!state.table) { showErr(x.noTable); return; }
-    if (!confirm(type === 'bill' ? x.billConfirm : x.callConfirm)) return;
-    API.post('callStaff', { table: state.table, type: type }).then(function () {
-      showOk(type === 'bill' ? x.billTitle : x.callTitle, type === 'bill' ? x.billMsg : x.callMsg, type === 'bill' ? '🧾' : '🔔');
-    }).catch(function (e) { showErr(String(e && e.message || e)); });
+    UIConfirm(type === 'bill' ? x.billConfirm : x.callConfirm).then(function (ok) {
+      if (!ok) return;
+      API.post('callStaff', { table: state.table, type: type }).then(function () {
+        showOk(type === 'bill' ? x.billTitle : x.callTitle, type === 'bill' ? x.billMsg : x.callMsg, type === 'bill' ? '🧾' : '🔔');
+      }).catch(function (e) { showErr(String(e && e.message || e)); });
+    });
   }
 
   // ---- フィードバック（評価） ----
@@ -552,8 +554,10 @@
     var b = breakdown();
     var order = { tableNumber: state.table, items: items, totalPrice: b.total, phone: (state.member ? state.member.phone : ''), pointsUsed: (state.usePoints ? b.pointsUsed : 0),
       coupon: (state.coupon ? state.coupon.code : ''), couponDiscount: (b.couponDiscount || 0) };
-    if (!confirm(x.confirm)) return;
-    doSubmit(order, false);
+    UIConfirm(x.confirm).then(function (ok) {
+      if (!ok) return;
+      doSubmit(order, false);
+    });
   }
 
   function doSubmit(order, paid) {
