@@ -40,7 +40,9 @@
 // キャッシュを必ず入れ替える。
 // ★2026-08-27追記（v152）: システム管理者専用の新規画面 data_admin.html（データインポート/
 // 削除）を追加したため、SHELLへ追加してキャッシュを必ず入れ替える。
-const CACHE = 'yuwaku-pos-test-v152';
+// ★2026-08-28追記（v153）: backup.htmlとdata_admin.htmlを「データバックアップ・管理」へ
+// 統合し、管理メニューの導線も一本化したためキャッシュを更新する。
+const CACHE = 'yuwaku-pos-v153';
 const SHELL = [
   './',
   './index.html',

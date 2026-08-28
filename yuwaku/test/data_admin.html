@@ -11,7 +11,7 @@
   <link rel="manifest" href="./data_admin.webmanifest">
   <title>Data Admin</title>
   <style>
-    :root{ --bg:#f6f7f9; --surface:#fff; --border:#e5e7eb; --navy:#0f172a; --text-3:#64748b; --red:#dc2626; --red-bg:#fef2f2; }
+    :root{ --bg:#f6f7f9; --surface:#fff; --border:#e5e7eb; --navy:#0f172a; --text-3:#64748b; --red:#dc2626; --red-bg:#fef2f2; --green:#16a34a; }
     *{ box-sizing:border-box; }
     body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans JP',sans-serif; background:var(--bg); color:var(--navy); }
     .head{ position:sticky; top:0; z-index:20; background:#7f1d1d; color:#fff; display:flex; align-items:center; justify-content:space-between; padding:12px 16px; }
@@ -23,6 +23,7 @@
     .card-title{ font-weight:900; font-size:15px; margin-bottom:8px; }
     .muted{ color:var(--text-3); font-size:13px; line-height:1.7; }
     .btn{ border:0; border-radius:11px; padding:13px 16px; font-size:15px; font-weight:900; cursor:pointer; font-family:inherit; background:var(--navy); color:#fff; width:100%; margin-top:10px; }
+    .btn.green{ background:var(--green); }
     .btn.danger{ background:var(--red); }
     .btn:disabled{ opacity:.45; cursor:not-allowed; }
     .btn-sm{ background:#eef2f7; color:var(--navy); padding:8px 10px; border-radius:8px; font-weight:800; border:0; cursor:pointer; font-family:inherit; font-size:13px; }
@@ -41,14 +42,28 @@
   </style>
 </head>
 <body>
-  <div class="head"><h1 data-t="title">🛡️ データ管理（システム管理者専用）</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
-
-  <div id="forbidView" class="forbidWrap" style="display:none;">
-    <div style="font-size:40px;">🔒</div>
-    <div style="font-weight:800;margin-top:8px;" data-t="forbidMsg">この画面はシステム管理者専用です。</div>
-  </div>
+  <div class="head"><h1 data-t="title">💾 データバックアップ・管理</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
 
   <div id="mainView" class="wrap" style="display:none;">
+    <div class="card">
+      <div class="card-title" data-t="exportAllTitle">📦 全データを一括バックアップ</div>
+      <button class="btn green" id="exportAllBtn" onclick="backupAll()" data-t="exportAllBtn">📦 全データをZIPでダウンロード</button>
+      <div class="alert" id="exportAllMsg"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" data-t="csvExportTitle">📄 テーブルをCSVで書き出し</div>
+      <div class="muted" data-t="csvExportHint">テーブルを選んでCSVをダウンロードできます（Excel等で開けます）。</div>
+      <select id="sheetSel" class="fc"></select>
+      <button class="btn" onclick="exportCsv()" data-t="csvExportBtn">⬇ CSVを書き出し</button>
+      <div class="alert" id="csvExportMsg"></div>
+    </div>
+
+    <div id="adminOnlyNote" class="card" style="display:none;">
+      <div class="card-title" data-t="adminOnlyTitle">🔒 削除・復元</div>
+      <div class="muted" data-t="adminOnlyBody">テーブルの削除、CSV全置換、バックアップからの復元はシステム管理者だけが実施できます。</div>
+    </div>
+
+    <div id="systemAdminView" style="display:none;">
     <div class="card danger">
       <div class="card-title" data-t="warnTitle">⚠️ ご注意</div>
       <div class="muted" data-t="warnBody">この画面の操作（テーブルの全件削除・CSVインポートによる全置換・バックアップからの復元）は取り返しがつきません。実行するとご本人のログインパスワードの再入力を求めます。実行の直前に自動でバックアップが作られ、下部の「バックアップ履歴」から復元できます。</div>
@@ -90,6 +105,7 @@
       </tr></thead><tbody id="bkRows"></tbody></table>
       <div class="alert" id="bkMsg"></div>
     </div>
+    </div>
   </div>
 
   <!-- 復元用パスワード確認 -->
@@ -109,6 +125,7 @@
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
   <script src="./confirm.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script>
     var TOKEN = localStorage.getItem('mgmtToken') || '';
     var ROLE = localStorage.getItem('mgmtRole') || '';
@@ -120,6 +137,57 @@
     var DEL_ROWS = 0;
 
     function csvCell(v){ var s=(v==null)?'':String(v); if(/[",\n]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }
+    function toCsv(rows){ return (rows||[]).map(function(row){ return row.map(csvCell).join(','); }).join('\r\n'); }
+    function pad2(n){ return (n<10?'0':'')+n; }
+    function loadExportTables(){
+      rpc('getSheetNames', []).then(function(names){
+        document.getElementById('sheetSel').innerHTML = (names||[]).map(function(name){
+          return '<option value="'+esc(name)+'">'+esc(name)+'</option>';
+        }).join('');
+      }).catch(function(e){ alertBox('csvExportMsg', I18n.t('errPrefix')+(e.message||e), false); });
+    }
+    window.backupAll = function(){
+      var btn = document.getElementById('exportAllBtn');
+      var original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = I18n.t('exportWorking');
+      rpc('getSheetNames', []).then(function(names){
+        var zip = new JSZip();
+        var chain = Promise.resolve();
+        (names||[]).forEach(function(name){
+          chain = chain.then(function(){
+            return rpc('exportSheetData', [name]).then(function(data){
+              data = data || {};
+              zip.file(name+'.csv', data.error ? '# error: '+data.error : '﻿'+toCsv(data.rows));
+            });
+          });
+        });
+        return chain.then(function(){ return zip.generateAsync({type:'blob'}); });
+      }).then(function(blob){
+        var now = new Date();
+        var stamp = now.getFullYear()+pad2(now.getMonth()+1)+pad2(now.getDate())+'_'+pad2(now.getHours())+pad2(now.getMinutes());
+        var name = 'izakanpai_backup_'+stamp+'.zip';
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+        alertBox('exportAllMsg', I18n.t('exportDone')+' '+name, true);
+      }).catch(function(e){
+        alertBox('exportAllMsg', I18n.t('errPrefix')+(e.message||e), false);
+      }).finally(function(){ btn.disabled = false; btn.textContent = original; });
+    };
+    window.exportCsv = function(){
+      var name = document.getElementById('sheetSel').value;
+      if (!name) return;
+      rpc('exportSheetData', [name]).then(function(data){
+        data = data || {};
+        if (data.error) { alertBox('csvExportMsg', I18n.t('errPrefix')+data.error, false); return; }
+        var blob = new Blob(['﻿'+toCsv(data.rows)], {type:'text/csv;charset=utf-8;'});
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url; link.download = name+'.csv'; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+        alertBox('csvExportMsg', I18n.t('csvExportDone')+' '+name+'.csv', true);
+      }).catch(function(e){ alertBox('csvExportMsg', I18n.t('errPrefix')+(e.message||e), false); });
+    };
     // RFC4180寄りの簡易CSVパーサ（引用符内のカンマ・改行・""エスケープに対応）。
     // backup.htmlのtoCsv()が生成する形式と対で使う想定。
     function parseCsv(text){
@@ -291,7 +359,10 @@
 
     I18n.init({
       ja:{
-        title:'🛡️ データ管理（システム管理者専用）', back:'← 管理へ', forbidMsg:'この画面はシステム管理者専用です。',
+        title:'💾 データバックアップ・管理', back:'← 管理へ',
+        exportAllTitle:'📦 全データを一括バックアップ', exportAllBtn:'📦 全データをZIPでダウンロード', exportWorking:'作成中…', exportDone:'✅ ダウンロードしました:',
+        csvExportTitle:'📄 テーブルをCSVで書き出し', csvExportHint:'テーブルを選んでCSVをダウンロードできます（Excel等で開けます）。', csvExportBtn:'⬇ CSVを書き出し', csvExportDone:'✅ 書き出しました:',
+        adminOnlyTitle:'🔒 削除・復元', adminOnlyBody:'テーブルの削除、CSV全置換、バックアップからの復元はシステム管理者だけが実施できます。',
         warnTitle:'⚠️ ご注意', warnBody:'この画面の操作（テーブルの全件削除・CSVインポートによる全置換・バックアップからの復元）は取り返しがつきません。実行するとご本人のログインパスワードの再入力を求めます。実行の直前に自動でバックアップが作られ、下部の「バックアップ履歴」から復元できます。',
         delTitle:'🗑️ テーブルの全件削除', tblLbl:'対象テーブル', confirmPhraseLbl:'確認のため、対象テーブル名を入力してください', pwLbl:'ご自身のログインパスワード', delBtn:'🗑️ このテーブルを全件削除する',
         curRows:'現在の件数: ', needPass:'パスワードを入力してください', errPrefix:'エラー: ',
@@ -305,7 +376,10 @@
         restoreTitle:'「{table}」を復元', restoreHint:'当時の{n}件の内容へ丸ごと戻します。現在の内容は新しいバックアップとして残ります。', restoreGo:'↩️ 復元する', restoreCancel:'キャンセル', restoreDone:'✅ {n}件へ復元しました'
       },
       en:{
-        title:'🛡️ Data Admin (System role only)', back:'← Manage', forbidMsg:'This page is restricted to the System role.',
+        title:'💾 Data Backup & Management', back:'← Manage',
+        exportAllTitle:'📦 Back up all data', exportAllBtn:'📦 Download all data (ZIP)', exportWorking:'Preparing…', exportDone:'✅ Downloaded:',
+        csvExportTitle:'📄 Export a table to CSV', csvExportHint:'Select a table and download it as CSV (opens in Excel, etc.).', csvExportBtn:'⬇ Export CSV', csvExportDone:'✅ Exported:',
+        adminOnlyTitle:'🔒 Delete & restore', adminOnlyBody:'Deleting tables, replacing data via CSV, and restoring backups are restricted to the System role.',
         warnTitle:'⚠️ Warning', warnBody:'Actions on this page (wiping a table, replacing it via CSV import, or restoring a backup) cannot be undone. Each one requires re-entering your own login password. A backup is taken automatically right before the action runs, and can be restored from "Backup history" below.',
         delTitle:'🗑️ Wipe a table', tblLbl:'Target table', confirmPhraseLbl:'Type the table name to confirm', pwLbl:'Your login password', delBtn:'🗑️ Wipe this table',
         curRows:'Current rows: ', needPass:'Please enter your password', errPrefix:'Error: ',
@@ -323,24 +397,26 @@
     // すべてのwindowハンドラを定義してから初期化する。以前はスクリプト上部でinit()を
     // 実行していたため、通信完了タイミングによってonDelTableChange/loadBackupsが未定義になった。
     // 表示ガードはUX用で、実際の権限はサーバー側（src/dataAdmin.js）が再検証する。
-    if (ROLE !== 'システム') {
-      document.getElementById('forbidView').style.display = 'block';
-    } else {
-      document.getElementById('mainView').style.display = 'block';
+    document.getElementById('mainView').style.display = 'block';
+    loadExportTables();
+    if (ROLE === 'システム') {
+      document.getElementById('systemAdminView').style.display = 'block';
       init();
+    } else {
+      document.getElementById('adminOnlyNote').style.display = 'block';
     }
   </script>
 
   <script src="./help.js"></script>
   <script>
     HelpUI.register({
-      title: 'データ管理（システム管理者専用）',
-      titleEn: 'Data Admin (System role only)',
+      title: 'データバックアップ・管理',
+      titleEn: 'Data Backup & Management',
       items: [
-        { ja: '① この画面はシステム管理者（role=システム）だけが使えます。他の権限グループでは開けません。', en: '① Only the System role can use this page. Other role groups cannot open it.' },
-        { ja: '② 「テーブルの全件削除」は、選んだテーブル名をそのまま入力し、ご自身のパスワードを入力してから実行できます。実行前に必ず自動でバックアップされます。', en: '② "Wipe a table" is enabled once you type the exact table name and your password. A backup is always taken automatically before it runs.' },
-        { ja: '③ 「CSVインポート」は、「バックアップ / 書き出し」で書き出したCSVをそのまま読み込んで、テーブルの内容を丸ごと置き換えます。差分の反映ではありません。', en: '③ "CSV import" loads a CSV exported from "Backup / Export" as-is and fully replaces the table content. It is not a diff/merge.' },
-        { ja: '④ 「バックアップ履歴」から、削除・インポート・復元の直前に自動で取られたバックアップの一覧を確認し、「復元」で当時の内容へ丸ごと戻せます。', en: '④ "Backup history" lists automatic backups taken before each delete/import/restore, and "Restore" puts the table back to that content.' }
+        { ja: '① ZIP一括バックアップとテーブル単位のCSV書き出しは、この画面を利用できる全ユーザーが実行できます。', en: '① ZIP backup and per-table CSV export are available to every user who can access this page.' },
+        { ja: '② テーブルの全件削除、CSVによる全置換、バックアップからの復元はシステム管理者だけが実行できます。', en: '② Wiping tables, replacing data via CSV, and restoring backups are restricted to the System role.' },
+        { ja: '③ 削除・全置換・復元ではご自身のパスワードを再入力し、実行前の内容が自動バックアップされます。', en: '③ Delete, replace, and restore require your password and automatically back up the current data first.' },
+        { ja: '④ バックアップ履歴の「復元」で、対象テーブルと関連明細を当時の状態へ戻せます。', en: '④ Use "Restore" in backup history to return a table and its related detail rows to that state.' }
       ]
     });
   </script>

@@ -131,14 +131,9 @@
       { grp:'system', key:'printers', ic:'🖨️', tt:'プリンタ設定', ds:'厨房印刷', ttEn:'Printers', dsEn:'Kitchen printing', url:'./printers.html', active:true },
       { grp:'system', key:null, ic:'🖨️', tt:'印刷ステーション', ds:'Bluetoothプリンタの出力待機画面', ttEn:'Print station', dsEn:'Bluetooth printer standby', url:'./bridge.html', active:true, newTab:true },
       { grp:'system', key:'audit', ic:'🧾', tt:'監査ログ', ds:'注文取消・承認履歴', ttEn:'Audit log', dsEn:'Voids · approvals', url:'./audit.html', active:true },
-      { grp:'system', key:'backup', ic:'💾', tt:'バックアップ', ds:'全データ複製・CSV書出', ttEn:'Backup', dsEn:'Copy all · CSV export', url:'./backup.html', active:true },
-      // 2026-08-27新規: システム管理者専用のデータインポート/削除。keyをpermission_matrix経由の
-      // 通常ページと同じ仕組みには乗せない（未設定ロールはデフォルト全許可というsrc/permissions.js
-      // の安全策があるため、この機能だけは緩められると困る）。sysOnly:trueで別枠として、
-      // role==='システム'のときだけ描画する（下のvisGroups/tiles描画の両方でチェックしている。
-      // 実際の実行可否はsrc/dataAdmin.js側で厳格に再検証されるので、ここはあくまで見せる/見せない
-      // というUXの話）。
-      { grp:'system', key:null, sysOnly:true, ic:'🛡️', tt:'データ管理', ds:'インポート・削除（システム管理者専用）', ttEn:'Data admin', dsEn:'Import · delete (System role only)', url:'./data_admin.html', active:true },
+      // バックアップとデータ管理を1画面へ統合。ZIP/CSV書き出しはbackup権限で利用でき、
+      // 削除・全置換・復元は統合画面内とAPI側の両方でシステムロールだけに限定する。
+      { grp:'system', key:'backup', ic:'💾', tt:'データバックアップ・管理', ds:'書出・削除・復元', ttEn:'Data backup & management', dsEn:'Export · delete · restore', url:'./data_admin.html', active:true },
       { grp:'system', key:'settings', ic:'⚙️', tt:'設定', ds:'店舗設定', ttEn:'Settings', dsEn:'Store settings', url:'./settings.html', active:true },
       { grp:'system', key:null, ic:'📖', tt:'利用ガイド', ds:'システム利用イメージ', ttEn:'Guide', dsEn:'System overview', url:'./overview.html', active:true }
     ];
