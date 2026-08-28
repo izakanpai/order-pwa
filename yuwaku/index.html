@@ -90,8 +90,8 @@
        [応答速度対応] 以前は「卓選択」→（サーバへ既存人数を確認）→「人数入力」→（サーバへ保存）の
        2画面・2回の逐次サーバ往復だった。卓選択と人数入力を同じ画面にまとめ、既存人数の事前確認は
        行わず、送信は1回（人数機能を使わない店舗では0回）にすることで体感速度を上げる。
-       tableSelectWrap: ?table=なし（店員のオーダー入力）でのみ表示。partySection: 入場料/延長料の
-       設定（entryFeeAmount/extensionFeeAmount）がどちらも0の店舗では丸ごと非表示・サーバ往復なし。 -->
+       tableSelectWrap: ?table=なし（店員のオーダー入力）でのみ表示。partySection: 入場料/延長料が
+       どちらも無効の店舗では丸ごと非表示・サーバ往復なし。 -->
   <div class="overlay" id="tableOverlay">
     <div class="sheet">
       <div class="emoji">🪑</div>
@@ -232,7 +232,7 @@
         { ja: '④ 🔔スタッフ呼出でスタッフを呼び、🧾お会計でお支払い方法（会計時に精算／GCash／カード）を選べます。', en: '④ Use 🔔 to call staff, and 🧾 to choose how to pay (pay at counter / GCash / card).' },
         { ja: '⑤ 📋注文状況でこれまで注文した内容・小計・未払い合計を確認できます。', en: '⑤ Use 📋 to see your order history, subtotal, and unpaid total.' },
         { ja: '⑥ ⭐評価ボタンから星評価とコメントを送信できます。', en: '⑥ Use ⭐ to send a star rating and comment.' },
-        { ja: '⑦ 卓を選ばずにアクセスした場合は、最初に卓番号（と人数）を選ぶ画面が表示されます。', en: '⑦ If you open this without a table pre-selected, you will first be asked to choose your table (and party size).' }
+        { ja: '⑦ 卓を選ばずにアクセスした場合は、最初に卓番号を選びます。入場料または延長料が有効な店舗では、請求に必要な人数も入力します。', en: '⑦ If you open this without a table pre-selected, first choose your table. If entry or extension fees are enabled, also enter the party size used for billing.' }
       ]
     });
   </script>

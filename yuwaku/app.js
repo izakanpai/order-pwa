@@ -10,7 +10,7 @@
       offline:'Offline — orders will be sent automatically when back online', lang:'JP',
       svc:'Service', tax:'Tax', ranking:'🏆 Ranking',
       tblTitle:'Select your table', tblMsg:'Scan the QR at your table, or pick your table number.', tblGo:'Start',
-      partyTitle:'How many guests?', partyLabel:'Guests', partyMsg:'Used for entry/extension fee billing.', partyGo:'OK',
+      partyTitle:'How many guests?', partyLabel:'Guests', partyMsg:'Used for entry and extension fee billing.', partyMsgEntry:'Used for entry fee billing.', partyMsgExtension:'Used for extension fee billing.', partyGo:'OK',
       payTitle:'How would you like to pay?', payLater:'👤 Pay at counter', payCard:'💳 Card', payProcessing:'Preparing…', payScan:'Scan the QR to pay', payNotYet:'Payment not confirmed yet.', payNoKey:'Online payment is not set up.', payTimeout:'Payment confirmation timed out. If you already paid, please tell a staff member.', paidTitle:'Paid & ordered', paidMsg:'Payment received. Your order was sent.', cancel:'Cancel',
       memberTitle:'Member (points)', memberSub:'Enter your phone to earn / use points.', check:'Check', usePoints:'Use points', points:'pts', discountLbl:'Points', earned:'pts earned',
       couponTitle:'Coupon / Voucher', couponSub:'Enter a code to get a discount.', apply:'Apply', remove:'Remove coupon', close:'Close', couponLbl:'Coupon',
@@ -34,7 +34,7 @@
       offline:'オフライン — 復帰時に自動送信します', lang:'EN',
       svc:'サービス料', tax:'税', ranking:'🏆 ランキング',
       tblTitle:'テーブルを選択', tblMsg:'QRを読み取るか、テーブル番号を選んでください。', tblGo:'開始',
-      partyTitle:'ご来店人数は？', partyLabel:'人数', partyMsg:'入場料・延長料の請求に使用します。', partyGo:'OK',
+      partyTitle:'ご来店人数は？', partyLabel:'人数', partyMsg:'入場料・延長料の請求に使用します。', partyMsgEntry:'入場料の請求に使用します。', partyMsgExtension:'延長料の請求に使用します。', partyGo:'OK',
       payTitle:'お支払い方法', payLater:'👤 店員に支払う（後会計）', payCard:'💳 カード', payProcessing:'準備中…', payScan:'QRを読み取ってお支払い', payNotYet:'まだ支払いが確認できません。', payNoKey:'オンライン決済は未設定です。', payTimeout:'決済確認がタイムアウトしました。お支払い済みの場合は店員にお伝えください。', paidTitle:'支払い完了・注文しました', paidMsg:'お支払いを受け付けました。注文を送信しました。', cancel:'キャンセル',
       memberTitle:'会員（ポイント）', memberSub:'電話番号を入力するとポイントが貯まる/使えます。', check:'確認', usePoints:'ポイントを使う', points:'pt', discountLbl:'ポイント割引', earned:'pt 獲得',
       couponTitle:'クーポン／バウチャー', couponSub:'コードを入力すると割引されます。', apply:'適用', remove:'クーポンを外す', close:'閉じる', couponLbl:'クーポン',
@@ -634,11 +634,18 @@
     var c = s.match(/^カウンター(\d+)$/); if (c) return (x.counter || 'Counter') + ' ' + c[1];
     return s;
   }
-  // 入場料・延長料機能をこの店舗が使っているか（設定のいずれかが1以上）。
-  // 使っていなければ人数入力欄は一切表示せず、関連のサーバ往復も発生させない。
-  function _partyFeeEnabled() {
+  function _feeSettingEnabled(enabledKey, amountKey) {
     var s = state.settings || {};
-    return (Number(s.entryFeeAmount) > 0) || (Number(s.extensionFeeAmount) > 0);
+    if (Object.prototype.hasOwnProperty.call(s, enabledKey)) return s[enabledKey] === true || s[enabledKey] === 1 || s[enabledKey] === '1' || s[enabledKey] === 'on' || s[enabledKey] === 'true';
+    return Number(s[amountKey]) >= 1;
+  }
+  // 明示フラグを優先し、旧設定は単価から推定する。単価0の不整合設定では人数を尋ねない。
+  function _partyFeeUsage() {
+    var s = state.settings || {};
+    return {
+      entry: _feeSettingEnabled('entryFeeEnabled', 'entryFeeAmount') && Number(s.entryFeeAmount) >= 1,
+      extension: _feeSettingEnabled('extensionFeeEnabled', 'extensionFeeAmount') && Number(s.extensionFeeAmount) >= 1
+    };
   }
   // [応答速度対応] 以前は「卓選択」（店員操作）→ maybeAskPartySize()がサーバへ既存人数の
   // 有無を確認 → 未記録なら別画面で人数入力 → サーバへ保存、という2画面・最大2回の逐次サーバ
@@ -649,7 +656,8 @@
   function showTableAndPartyPicker(tables) {
     var x = t();
     var needTable = !!tables;
-    var needParty = _partyFeeEnabled();
+    var feeUsage = _partyFeeUsage();
+    var needParty = feeUsage.entry || feeUsage.extension;
     if (!needTable && !needParty) return; // どちらも不要なら画面自体を出さない
     $('tableSelectWrap').style.display = needTable ? '' : 'none';
     $('partySection').style.display = needParty ? '' : 'none';
@@ -658,10 +666,11 @@
       sel.innerHTML = '';
       (tables || []).forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = seatLabel(n); sel.appendChild(o); });
     }
+    var partyFeeMsg = feeUsage.entry && feeUsage.extension ? x.partyMsg : (feeUsage.entry ? x.partyMsgEntry : x.partyMsgExtension);
     $('tblTitle').textContent = needTable ? x.tblTitle : x.partyTitle;
-    $('tblMsg').textContent = needTable ? x.tblMsg : x.partyMsg;
+    $('tblMsg').textContent = needTable ? x.tblMsg : partyFeeMsg;
     $('partyLabel').textContent = x.partyLabel;
-    $('partyMsg').textContent = needTable ? x.partyMsg : '';
+    $('partyMsg').textContent = needTable && needParty ? partyFeeMsg : '';
     $('partyCount').value = '';
     $('tblGo').textContent = x.tblGo;
     $('tableOverlay').classList.add('show');

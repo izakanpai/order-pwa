@@ -446,13 +446,21 @@
     // 途中の分割会計では二重請求防止のため0。残る全注文を選ぶ最後の分割では徴収する。
     // skipForSplit引数はopenPay（会計モーダル）専用。一覧表示（render）ではpayOrderIdsという
     // グローバル状態を参照すべきでないため、明示的な引数として切り出した。
+    function feeSettingEnabled(enabledKey, amountKey){
+      if (Object.prototype.hasOwnProperty.call(SETTINGS, enabledKey)) {
+        var v=SETTINGS[enabledKey]; return v===true || v===1 || v==='1' || v==='on' || v==='true';
+      }
+      return Number(SETTINGS[amountKey])>=1;
+    }
     function computeEntryFeesPreview(party, skipForSplit){
       var entryUnit = Number(SETTINGS.entryFeeAmount)||0, extUnit = Number(SETTINGS.extensionFeeAmount)||0;
-      if (skipForSplit || (entryUnit<1 && extUnit<1) || !party || !(Number(party.count)>0)) return { entryFee:0, extensionFee:0, partySize:0, extensionUnits:0 };
+      var entryEnabled=feeSettingEnabled('entryFeeEnabled','entryFeeAmount') && entryUnit>=1;
+      var extensionEnabled=feeSettingEnabled('extensionFeeEnabled','extensionFeeAmount') && extUnit>=1;
+      if (skipForSplit || (!entryEnabled && !extensionEnabled) || !party || !(Number(party.count)>0)) return { entryFee:0, extensionFee:0, partySize:0, extensionUnits:0 };
       var count = Number(party.count)||0;
-      var entryFee = entryUnit>=1 ? Math.round(entryUnit*count) : 0;
+      var entryFee = entryEnabled ? Math.round(entryUnit*count) : 0;
       var extensionFee = 0, extensionUnits = 0;
-      if (extUnit>=1 && party.enteredAt){
+      if (extensionEnabled && party.enteredAt){
         var baseMin = Math.max(0, Number(SETTINGS.baseUsageMinutes)||0);
         var unitMin = Math.max(1, Number(SETTINGS.extensionUnitMinutes)||0) || 30;
         var extraMin = (Date.now() - Number(party.enteredAt))/60000 - baseMin;

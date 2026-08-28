@@ -118,13 +118,17 @@
 
     <div class="card">
       <div class="card-title" data-t="entryTitle">🎫 入場料・延長料</div>
+      <label class="chk" style="margin-bottom:10px;"><input type="checkbox" id="entryFeeEnabled" onchange="syncEntryFeeControls()"><span data-t="entryFeeEnable">入場料を有効にする</span></label>
       <div class="grid2">
         <div class="fg"><label class="form-label" data-t="entryFeeAmount">入場料（1人あたり）</label><input id="entryFeeAmount" type="number" min="0" step="any" class="fc"></div>
+      </div>
+      <label class="chk" style="margin:14px 0 10px;"><input type="checkbox" id="extensionFeeEnabled" onchange="syncEntryFeeControls()"><span data-t="extensionFeeEnable">延長料を有効にする</span></label>
+      <div class="grid2">
         <div class="fg"><label class="form-label" data-t="baseUsageMinutes">基本利用時間（分）</label><input id="baseUsageMinutes" type="number" min="0" step="1" class="fc"></div>
         <div class="fg"><label class="form-label" data-t="extensionFeeAmount">延長料（1人・1単位あたり）</label><input id="extensionFeeAmount" type="number" min="0" step="any" class="fc"></div>
         <div class="fg"><label class="form-label" data-t="extensionUnitMinutes">延長時間の単位（分）</label><input id="extensionUnitMinutes" type="number" min="1" step="1" class="fc"></div>
       </div>
-      <div class="form-hint" data-t="entryHint" style="margin:6px 0 10px;">入場料・延長料はいずれも「1円以上」設定されている場合のみ会計画面に表示・請求されます（0円のままなら従来どおり請求されません）。延長料は、卓/カウンター選択時にお客様が入力した人数と入店時刻を基準に、基本利用時間を超えた分を延長時間の単位で切り上げて自動計算します。</div>
+      <div class="form-hint" data-t="entryHint" style="margin:6px 0 10px;">チェックを入れた料金だけが会計時に請求されます。チェックを外しても入力金額は保持されます。延長料は、卓/カウンター選択時に入力した人数と入店時刻を基準に、基本利用時間を超えた分を延長時間の単位で切り上げて自動計算します。両方とも無効の場合、注文画面では人数入力を表示しません。</div>
       <button class="btn" onclick="saveEntryFee()" data-t="save">💾 保存</button>
       <div class="st" id="st-entry"></div>
     </div>
@@ -431,9 +435,26 @@
       if (v < 1) v = 1; if (v > 720) v = 720;
       rpc('saveSettings',[{ sessionTimeoutHours: v }]).then(function(){ st('st-security',I18n.t('saved'), true); }).catch(function(e){ st('st-security',I18n.t('errPrefix')+(e.message||e), false); });
     };
+    function _settingEnabled(d, key, amountKey){
+      if(Object.prototype.hasOwnProperty.call(d, key)) return d[key]===true || d[key]===1 || d[key]==='1' || d[key]==='on' || d[key]==='true';
+      return Number(d[amountKey]) >= 1;
+    }
+    window.syncEntryFeeControls = function(){
+      var entryOn=$('entryFeeEnabled').checked, extensionOn=$('extensionFeeEnabled').checked;
+      $('entryFeeAmount').disabled=!entryOn;
+      $('baseUsageMinutes').disabled=!extensionOn;
+      $('extensionFeeAmount').disabled=!extensionOn;
+      $('extensionUnitMinutes').disabled=!extensionOn;
+    };
     window.saveEntryFee = function(){
-      rpc('saveSettings',[{ entryFeeAmount:Number($('entryFeeAmount').value)||0, baseUsageMinutes:Number($('baseUsageMinutes').value)||0,
-        extensionFeeAmount:Number($('extensionFeeAmount').value)||0, extensionUnitMinutes:Number($('extensionUnitMinutes').value)||0 }])
+      var entryOn=$('entryFeeEnabled').checked, extensionOn=$('extensionFeeEnabled').checked;
+      var entryAmount=Number($('entryFeeAmount').value)||0, extensionAmount=Number($('extensionFeeAmount').value)||0;
+      var extensionUnit=Number($('extensionUnitMinutes').value)||0;
+      if(entryOn && entryAmount<1){ st('st-entry',I18n.t('entryAmountRequired'),false); return; }
+      if(extensionOn && extensionAmount<1){ st('st-entry',I18n.t('extensionAmountRequired'),false); return; }
+      if(extensionOn && extensionUnit<1){ st('st-entry',I18n.t('extensionUnitRequired'),false); return; }
+      rpc('saveSettings',[{ entryFeeEnabled:entryOn?'on':'', extensionFeeEnabled:extensionOn?'on':'', entryFeeAmount:entryAmount, baseUsageMinutes:Number($('baseUsageMinutes').value)||0,
+        extensionFeeAmount:extensionAmount, extensionUnitMinutes:extensionUnit }])
         .then(function(){ st('st-entry',I18n.t('saved'), true); }).catch(function(e){ st('st-entry',I18n.t('errPrefix')+(e.message||e), false); });
     };
     // 2026-08-24: メール送信基盤（Resend）実装に伴い、eレシート送付先の保存を実装。
@@ -573,6 +594,9 @@
       $('sessionTimeoutHours').value = (d.sessionTimeoutHours!==undefined && d.sessionTimeoutHours!=='') ? d.sessionTimeoutHours : 8;
       $('entryFeeAmount').value = d.entryFeeAmount || ''; $('baseUsageMinutes').value = d.baseUsageMinutes || '';
       $('extensionFeeAmount').value = d.extensionFeeAmount || ''; $('extensionUnitMinutes').value = d.extensionUnitMinutes || '';
+      $('entryFeeEnabled').checked = _settingEnabled(d,'entryFeeEnabled','entryFeeAmount');
+      $('extensionFeeEnabled').checked = _settingEnabled(d,'extensionFeeEnabled','extensionFeeAmount');
+      syncEntryFeeControls();
       $('seniorDiscountEnabled').checked = (d.seniorDiscountEnabled==='on'||d.seniorDiscountEnabled===true||d.seniorDiscountEnabled==='true');
       $('ereceiptFixedEmails').value = (d.ereceiptFixedEmails || '').replace(/,/g,'\n');
       $('ereceiptEnabled').checked = (d.ereceiptEnabled==='on'||d.ereceiptEnabled===true||d.ereceiptEnabled==='true');
@@ -603,8 +627,8 @@
         svcInclLabel:'内税（価格に含む）', taxInclLabel:'内税（価格に含む）', chargesHint:'チェックなし＝外税（表示価格に加算）。チェックあり＝内税（表示価格に含む）。一般的には税＝内税、サービス料＝外税です。',
         bizCutoff:'営業日切替時刻', bizCutoffHint:'深夜営業の場合に設定してください。例：2:30を設定すると、午前2時30分までの売上は前日の営業日として日報・週報・月報・売上集計に計上されます。0:00＝通常どおり午前0時で区切り。指定できるのは0:00〜11:59の範囲です（それ以外は0:00として扱われます）。',
         securityTitle:'🔐 セキュリティ', sessionTimeout:'ログイン保持時間（時間）', sessionTimeoutHint:'スタッフの管理画面ログインが自動的に切れるまでの時間です。未設定の場合は8時間。ログイン中に管理画面を操作していれば、その都度この時間だけ自動延長されます（ログインしたまま何も操作しない状態がこの時間続くと自動的にログアウトされます）。最大720時間（30日）まで設定できます。',
-        entryTitle:'🎫 入場料・延長料', entryFeeAmount:'入場料（1人あたり）', baseUsageMinutes:'基本利用時間（分）', extensionFeeAmount:'延長料（1人・1単位あたり）', extensionUnitMinutes:'延長時間の単位（分）',
-        entryHint:'入場料・延長料はいずれも「1円以上」設定されている場合のみ会計画面に表示・請求されます（0円のままなら従来どおり請求されません）。延長料は、卓/カウンター選択時にお客様が入力した人数と入店時刻を基準に、基本利用時間を超えた分を延長時間の単位で切り上げて自動計算します。',
+        entryTitle:'🎫 入場料・延長料', entryFeeEnable:'入場料を有効にする', extensionFeeEnable:'延長料を有効にする', entryFeeAmount:'入場料（1人あたり）', baseUsageMinutes:'基本利用時間（分）', extensionFeeAmount:'延長料（1人・1単位あたり）', extensionUnitMinutes:'延長時間の単位（分）',
+        entryHint:'チェックを入れた料金だけが会計時に請求されます。チェックを外しても入力金額は保持されます。延長料は、卓/カウンター選択時に入力した人数と入店時刻を基準に、基本利用時間を超えた分を延長時間の単位で切り上げて自動計算します。両方とも無効の場合、注文画面では人数入力を表示しません。', entryAmountRequired:'入場料を有効にする場合は、1以上の金額を入力してください。', extensionAmountRequired:'延長料を有効にする場合は、1以上の金額を入力してください。', extensionUnitRequired:'延長料を有効にする場合は、延長時間の単位を1分以上で入力してください。',
         seniorTitle:'🧓 シニア/PWD割引', seniorEnable:'有効にする（無効の場合、会計画面から選択肢自体が消えます）',
         seniorHint:'有効にした場合でも、実際に割引を適用するには会計時に責任者（マネージャー以上）のログイン承認が必要です。従業員が無断で割引を適用することを防ぐための仕組みです。',
         payTitle:'💳 決済方法（クレジット / GCash）', payHint:'クレジットカードは通常、別のカード決済端末で処理します。ここではお会計画面にボタンを表示するかどうかだけを設定します。', ccEnable:'クレジットカード決済ボタンを表示する', ccWarn:'⚠️ このボタンはオンライン決済（カード情報の入力・実際の請求処理）は行いません。押すと「別のカード決済端末で処理済み」として記録されるだけです。表示をONにしても、決済自体はこれまでどおり別のカード決済端末で行ってください。', gcashQrLbl:'GCash QRコード（画像）', gcashQrHint:'お店のGCash用QRコード画像を登録すると、お会計画面でそのまま表示されます。お客様がスキャンして送金する簡易的な仕組みで、入金確認は従来どおりスタッフが目視で行ってください。', remove:'🗑️ 削除',
@@ -629,8 +653,8 @@
         svcInclLabel:'Tax-inclusive (included in price)', taxInclLabel:'Tax-inclusive (included in price)', chargesHint:'Unchecked = exclusive (added on top of the listed price). Checked = inclusive (already included in the listed price). Typically tax is inclusive and the service charge is exclusive.',
         bizCutoff:'Business day cutoff time', bizCutoffHint:'Set this if you stay open past midnight. E.g. setting 2:30 means sales up to 2:30am count toward the previous day’s business day in the daily/weekly/monthly reports and sales totals. 0:00 = normal midnight cutoff. Valid range is 0:00–11:59 (anything else is treated as 0:00).',
         securityTitle:'🔐 Security', sessionTimeout:'Login session length (hours)', sessionTimeoutHint:'How long a staff management login stays valid before it automatically expires. Defaults to 8 hours if unset. Each action taken while logged in extends the session by this amount (staying logged in with no activity for this long logs you out automatically). Max 720 hours (30 days).',
-        entryTitle:'🎫 Entry & extension fee', entryFeeAmount:'Entry fee (per person)', baseUsageMinutes:'Base usage time (minutes)', extensionFeeAmount:'Extension fee (per person, per unit)', extensionUnitMinutes:'Extension unit (minutes)',
-        entryHint:'Both the entry fee and the extension fee are only shown/charged at checkout when set to 1 or more (leave at 0 to keep charging them off, as before). The extension fee is calculated automatically from the party size and entry time the guest entered when picking their table/counter, rounding up any time past the base usage time to whole extension units.',
+        entryTitle:'🎫 Entry & extension fee', entryFeeEnable:'Enable entry fee', extensionFeeEnable:'Enable extension fee', entryFeeAmount:'Entry fee (per person)', baseUsageMinutes:'Base usage time (minutes)', extensionFeeAmount:'Extension fee (per person, per unit)', extensionUnitMinutes:'Extension unit (minutes)',
+        entryHint:'Only checked fees are charged at checkout. Amounts remain saved while unchecked. Extension fees are calculated from the party size and entry time entered when selecting the table/counter, with time past the base duration rounded up by extension units. When both fees are off, the order screen does not ask for party size.', entryAmountRequired:'Enter an entry fee amount of 1 or more when entry fee is enabled.', extensionAmountRequired:'Enter an extension fee amount of 1 or more when extension fee is enabled.', extensionUnitRequired:'Enter an extension unit of at least 1 minute when extension fee is enabled.',
         seniorTitle:'🧓 Senior/PWD discount', seniorEnable:'Enable (when off, the option disappears entirely from checkout)',
         seniorHint:'Even when enabled, actually applying the discount at checkout requires a manager-or-above login approval. This prevents staff from applying it without authorization.',
         payTitle:'💳 Payment methods (Credit card / GCash)', payHint:'Credit cards are normally processed on a separate card terminal. This only controls whether the button is shown on the checkout screen.', ccEnable:'Show the credit card button at checkout', ccWarn:'⚠️ This button does not process online payments (no card entry, no real charge). Pressing it just records the sale as "paid on a separate card terminal." Even with this shown, keep processing card payments on your separate card terminal as before.', gcashQrLbl:'GCash QR code (image)', gcashQrHint:'Register your store’s GCash QR code image and it will be shown as-is on the checkout screen. Customers scan it and pay directly; please continue to confirm payment visually as staff, as before.', remove:'🗑️ Remove',
