@@ -202,7 +202,7 @@
             partial:'🧾 一部会計', partTitle:'一部会計 — 明細を選択', selected:'選択', selPay:'選択分を会計', splitLbl:'割り勘 ÷', each:'/人',
             callHdr:'🔔 呼び出し', callLbl:'スタッフ呼出', billLbl:'お会計希望', resolve:'対応済', agoMin:'分前', stay:'滞在', voidBtn:'取消', voidT:'注文の取消', reason:'取消理由', approver:'承認者（責任者ログイン）', loginPh:'ログインID', passPh:'パスワード', voidGo:'取消を承認', needReason:'取消理由を入力してください', authFail:'ログインIDまたはパスワードが違います', voided:'取消しました', alreadySettled:'会計済のため取消できません', eReceipt:'eレシート送信先メール（任意）',
             entryFeeLbl:'入場料', extFeeLbl:'延長料',
-            discApprover:'承認者（マネージャー以上のログイン）', discNeedAppr:'承認者のログインID・パスワードを入力してください', discNotManager:'マネージャー以上の権限が必要です', discDisabled:'シニア/PWD割引は現在無効化されています', discVerifying:'承認確認中…' },
+            discApprover:'承認者（マネージャー以上のログイン）', discNeedAppr:'承認者のログインID・パスワードを入力してください', discNotManager:'マネージャー以上の権限が必要です', discDisabled:'シニア/PWD割引は現在無効化されています', discVerifying:'承認確認中…', unservedBill:'未提供の注文が含まれています。先に対象明細を「提供済」にしてから会計してください。' },
       en: { title:'Orders', served:'✓ Served', servedBtn:'Mark served', pay:'💳 Checkout', noOrder:'No open orders',
             cash:'Cash', card:'Card', cancel:'Cancel', pTitle:'Payment', sub:'Subtotal', svc:'Service', tax:'Tax',
             openPay:'Open payment page', checkBtn:'Check status', checking:'Checking…', notYet:'Payment not confirmed yet.',
@@ -211,7 +211,7 @@
             partial:'🧾 Partial', partTitle:'Partial checkout — select items', selected:'Selected', selPay:'Checkout selected', splitLbl:'Split ÷', each:'/person',
             callHdr:'🔔 Requests', callLbl:'Call staff', billLbl:'Bill please', resolve:'Done', agoMin:'m ago', stay:'Seated', voidBtn:'Void', voidT:'Void order', reason:'Reason', approver:'Approver (manager login)', loginPh:'Login ID', passPh:'Password', voidGo:'Approve void', needReason:'Please enter a reason', authFail:'Wrong login ID or password', voided:'Order voided', alreadySettled:'Cannot void a settled order', eReceipt:'e-receipt email (optional)',
             entryFeeLbl:'Entry fee', extFeeLbl:'Extension fee',
-            discApprover:'Approver (manager-or-above login)', discNeedAppr:'Please enter the approver login ID and password', discNotManager:'Manager-level login required', discDisabled:'Senior/PWD discount is currently disabled', discVerifying:'Verifying approval…' }
+            discApprover:'Approver (manager-or-above login)', discNeedAppr:'Please enter the approver login ID and password', discNotManager:'Manager-level login required', discDisabled:'Senior/PWD discount is currently disabled', discVerifying:'Verifying approval…', unservedBill:'This checkout includes unserved orders. Mark every selected order as served before checkout.' }
     };
     function t(){ return I18n.d(); }
     function sym(){ return SETTINGS.currencySymbol || '₱'; }
@@ -692,6 +692,7 @@
         if (d.error==='discount_auth'){ UIAlert(t().authFail); return; }
         if (d.error==='discount_not_manager'){ UIAlert(t().discNotManager); return; }
         if (d.error==='senior_discount_disabled'){ UIAlert(t().discDisabled); return; }
+        if (d.error==='unserved_orders'){ UIAlert(t().unservedBill); step(1); return; }
         if (d.error){ UIAlert('Error: '+d.error); return; }
         // 表示・印刷・eレシートは全てサーバーが再計算した金額を正とする。
         var bill = { table: payTable, method: payMethod, subtotal: d.subtotal, vat: d.vat, service: d.service,

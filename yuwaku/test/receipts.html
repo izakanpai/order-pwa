@@ -17,7 +17,7 @@
     .head{ position:sticky; top:0; z-index:20; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:12px 16px; }
     .head h1{ font-size:18px; margin:0; font-weight:900; }
     .hbtn{ background:rgba(255,255,255,.14); color:#fff; border:0; border-radius:9px; padding:8px 12px; font-size:13px; font-weight:800; cursor:pointer; text-decoration:none; }
-    .wrap{ padding:16px; max-width:960px; margin:0 auto; }
+    .wrap{ padding:16px; max-width:1200px; margin:0 auto; }
     .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; }
     .bar{ display:flex; gap:12px; align-items:flex-end; margin-bottom:12px; flex-wrap:wrap; }
     .fc{ padding:10px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); }
@@ -64,9 +64,17 @@
     // 一覧本体は1ページ100件ずつ「さらに読み込む」で追加取得する（一度に全件は読まない）。
     var PAGE=1, PAGE_SIZE=100, HAS_MORE=false, SUM_TOTAL=0, CNT_TOTAL=0;
     function seatLabel(v){ var s=String(v==null?'':v); var en=(window.I18n&&I18n.lang&&I18n.lang()==='en'); var m=s.match(/^テーブル(\d+)$/); if(m) return (en?'Table ':'テーブル')+m[1]; var c=s.match(/^カウンター(\d+)$/); if(c) return (en?'Counter ':'カウンター')+c[1]; return s; }
-    function transDetails(details){
-      if (!(window.I18n && I18n.lang && I18n.lang()==='en')) return details;
-      return String(details||'').split(',').map(function(tok){
+    function readableDetails(details){
+      var raw=String(details||'').trim(); if(!raw) return '';
+      try {
+        var parsed=JSON.parse(raw);
+        if(Array.isArray(parsed)) raw=parsed.map(function(it){
+          var name=String((it&&it.item_name)||'').trim(); var qty=Number(it&&it.qty)||0;
+          return name ? (name+' x'+qty) : '';
+        }).filter(Boolean).join(', ');
+      } catch(e) {}
+      if (!(window.I18n && I18n.lang && I18n.lang()==='en')) return raw;
+      return raw.split(',').map(function(tok){
         var m=tok.trim().match(/^(.+?)x(\d+)$/); if(!m) return tok;
         var nm=m[1].trim(); var base=nm.replace(/\s*[（(][^（(]*[)）]\s*$/,'').trim();
         var en=MENU_EN[base]; if(!en) return tok;
@@ -85,8 +93,8 @@
           '<td class="num" style="font-weight:800;">'+SYM+(Number(r.total)||0).toLocaleString()+'</td><td>'+esc(r.method)+'</td><td class="muted">'+disc+'</td>'+
           '<td><button class="btn-sm" onclick="reprint(\''+esc(r.orNo).replace(/'/g,"\\'")+'\')">'+I18n.t('reprint')+'</button></td></tr>';
         // 明細（あれば2行目に表示）
-        var det = (r.details||'').trim();
-        var detRow = det ? ('<tr><td></td><td colspan="6" class="muted" style="white-space:normal;padding-top:0;font-size:12px;">🧾 '+esc(transDetails(det))+'</td></tr>') : '';
+        var det = readableDetails(r.details);
+        var detRow = det ? ('<tr><td></td><td colspan="6" class="muted" style="white-space:normal;padding-top:0;font-size:12px;">🧾 '+esc(det)+'</td></tr>') : '';
         return main + detRow;
       }).join('');
     }
