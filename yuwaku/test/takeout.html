@@ -306,7 +306,7 @@
       API.post('bootstrap', {}).then(function(r){
         SETTINGS = r.settings || {}; MENU = r.menu || [];
         var bid = SETTINGS.menuTopImageId;
-        if (bid){ var b=document.getElementById('banner'); b.src='https://lh3.googleusercontent.com/d/'+bid; b.style.display='block'; }
+        if (bid){ var b=document.getElementById('banner'); b.src=API.imageUrl(bid); b.style.display='block'; }
         renderCats(); renderMenu(); onLangChange(I18n.lang()); updateCart();
       }).catch(function(){
         document.getElementById('loadMsg').innerText = tt().loadErr;

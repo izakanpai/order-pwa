@@ -3,6 +3,10 @@
 (function () {
   const CFG = window.APP_CONFIG;
   const API = {};
+  API.imageUrl = function (value) {
+    var v = String(value || '');
+    return /^https:\/\//i.test(v) ? v : '';
+  };
 
   // ---- ロード中オーバーレイ（全アクション共通の待機表示。完了で自動クローズ）----
   // api.js は全ページが読み込むため、ここに置くだけで共通部品になる。
@@ -180,7 +184,7 @@
   // ---- IndexedDB（送信待ち注文の保管） ----
   function openDB() {
     return new Promise((resolve, reject) => {
-      const r = indexedDB.open('pos-pwa', 1);
+      const r = indexedDB.open(CFG.OFFLINE_DB_NAME, 1);
       r.onupgradeneeded = function () {
         const db = r.result;
         if (!db.objectStoreNames.contains('outbox')) {

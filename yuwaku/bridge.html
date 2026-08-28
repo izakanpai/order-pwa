@@ -113,7 +113,7 @@ function short(u){ u=String(u); var m=/0000([0-9a-f]{4})-0000-1000-8000-00805f9b
 function getKey(){ return (document.getElementById('key').value||'').trim(); }
 
 // URLの ?key= を初期値に
-(function(){ try{ var k=new URLSearchParams(location.search).get('key'); if(k){ document.getElementById('key').value=k; localStorage.setItem('bridgeKey',k);} else { var s=localStorage.getItem('bridgeKey'); if(s) document.getElementById('key').value=s; } }catch(e){} })();
+(function(){ try{ var sk=(window.APP_CONFIG.STORAGE_PREFIX||'')+'bridgeKey'; var k=new URLSearchParams(location.search).get('key'); if(k){ document.getElementById('key').value=k; localStorage.setItem(sk,k);} else { var s=localStorage.getItem(sk); if(s) document.getElementById('key').value=s; } }catch(e){} })();
 applyLang(curLang); setStat(tt('disconnected'));
 
 async function connect(){

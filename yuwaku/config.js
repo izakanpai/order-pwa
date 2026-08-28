@@ -13,5 +13,7 @@
 window.APP_CONFIG = {
   API_URL: 'https://izakanpai-api.izakanpai.workers.dev',
   VERSION: 'v1.0.0',
-  AUTH_STORAGE_PREFIX: 'izakanpai:production:'
+  AUTH_STORAGE_PREFIX: 'izakanpai:production:',
+  STORAGE_PREFIX: 'izakanpai:production:',
+  OFFLINE_DB_NAME: 'izakanpai-pos-production'
 };

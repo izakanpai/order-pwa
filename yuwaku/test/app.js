@@ -836,7 +836,7 @@
     state.cats = cats; state.catLabels = catLabels;
     applyAccent();
     var _bid = state.settings.menuTopImageId;
-    if (_bid) { var _b = $('shopBanner'); _b.src = 'https://lh3.googleusercontent.com/d/' + _bid; _b.style.display = 'block'; }
+    if (_bid) { var _b = $('shopBanner'); _b.src = API.imageUrl(_bid); _b.style.display = 'block'; }
     state.tables = r.tables || [];   // 卓一覧を保持（卓チップから選び直せるように）
     renderTexts(); renderCats(); renderMenu(); updateTotal();
     if (!state.table) showTableAndPartyPicker(state.tables); // QR無し（店員のオーダー入力）時はテーブル選択（＋必要なら人数）を促す
@@ -913,12 +913,12 @@
     startClock();
 
     API.post('bootstrap', {}).then(function (r) {
-      try { localStorage.setItem('bootCache', JSON.stringify({ settings: r.settings, menu: r.menu, tables: r.tables })); } catch (e) {}
+      try { localStorage.setItem((window.APP_CONFIG.STORAGE_PREFIX || '') + 'bootCache', JSON.stringify({ settings: r.settings, menu: r.menu, tables: r.tables })); } catch (e) {}
       applyBootstrap(r, false);
       API.flush().then(refreshPending); // オンライン起動時に保留分を流す
     }).catch(function (err) {
       var cached = null;
-      try { cached = JSON.parse(localStorage.getItem('bootCache') || 'null'); } catch (e) {}
+      try { cached = JSON.parse(localStorage.getItem((window.APP_CONFIG.STORAGE_PREFIX || '') + 'bootCache') || 'null'); } catch (e) {}
       if (cached && cached.menu) {
         document.body.classList.add('offline'); // キャッシュ表示中＝実質オフライン
         applyBootstrap(cached, true);            // 保存済みメニューで注文可能（送信はキューへ）

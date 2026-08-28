@@ -42,7 +42,8 @@
 // 削除）を追加したため、SHELLへ追加してキャッシュを必ず入れ替える。
 // ★2026-08-28追記（v153）: backup.htmlとdata_admin.htmlを「データバックアップ・管理」へ
 // 統合し、管理メニューの導線も一本化したためキャッシュを更新する。
-const CACHE = 'yuwaku-pos-v153';
+const CACHE_PREFIX = 'yuwaku-production-';
+const CACHE = CACHE_PREFIX + 'v154';
 const SHELL = [
   './',
   './index.html',
@@ -133,7 +134,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => (k.startsWith(CACHE_PREFIX) || /^yuwaku-pos-v\d+$/.test(k)) && k !== CACHE).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });

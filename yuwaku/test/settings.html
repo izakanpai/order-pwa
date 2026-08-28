@@ -580,8 +580,8 @@
       if($('logoScale')) $('logoScale').value = Number(d.logoScalePct)||100;
       $('tableCount').value = (d.tableCount!==undefined && d.tableCount!=='') ? d.tableCount : 20;
       $('counterCount').value = (d.counterCount!==undefined && d.counterCount!=='') ? d.counterCount : 0;
-      if (d.menuTopImageId){ var e1=$('prevOrder'); e1.src='https://lh3.googleusercontent.com/d/'+d.menuTopImageId; e1.style.display='block'; }
-      if (d.systemTopImageId){ var e2=$('prevLogin'); e2.src='https://lh3.googleusercontent.com/d/'+d.systemTopImageId; e2.style.display='block'; }
+      if (d.menuTopImageId){ var e1=$('prevOrder'); e1.src=API.imageUrl(d.menuTopImageId); e1.style.display='block'; }
+      if (d.systemTopImageId){ var e2=$('prevLogin'); e2.src=API.imageUrl(d.systemTopImageId); e2.style.display='block'; }
       $('currencyCode').value = d.currencyCode || 'PHP';
       $('currencySymbol').value = (d.currencySymbol!==undefined && d.currencySymbol!=='') ? d.currencySymbol : '₱';
       $('serviceRate').value = d.serviceRate || '';
