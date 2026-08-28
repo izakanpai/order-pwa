@@ -117,15 +117,6 @@
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     function alertBox(id, text, ok){ var m=document.getElementById(id); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
 
-    // ★この画面はサーバー側（src/dataAdmin.js）でrole==='システム'を厳格に要求しており、
-    // ここでの表示ガードはあくまでUX目的（見せない）。実際の実行可否はサーバー側で必ず再検証される。
-    if (ROLE !== 'システム') {
-      document.getElementById('forbidView').style.display = 'block';
-    } else {
-      document.getElementById('mainView').style.display = 'block';
-      init();
-    }
-
     var DEL_ROWS = 0;
 
     function csvCell(v){ var s=(v==null)?'':String(v); if(/[",\n]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }
@@ -165,9 +156,9 @@
         var opts = names.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join('');
         document.getElementById('delTable').innerHTML = opts;
         document.getElementById('impTable').innerHTML = opts;
-        onDelTableChange();
+        window.onDelTableChange();
       }).catch(function(e){ alertBox('delMsg', I18n.t('errPrefix')+(e.message||e), false); });
-      loadBackups();
+      window.loadBackups();
 
       document.getElementById('impFile').addEventListener('change', onImpFileChange);
       document.getElementById('impPass').addEventListener('input', updateImpBtn);
@@ -206,8 +197,8 @@
           alertBox('delMsg', I18n.t('delDone').replace('{n}', d.deletedCount), true);
           document.getElementById('delPass').value = '';
           document.getElementById('delPhrase').value = '';
-          onDelTableChange();
-          loadBackups();
+          window.onDelTableChange();
+          window.loadBackups();
         }).catch(function(e){ btn.disabled = false; alertBox('delMsg', I18n.t('errPrefix')+(e.message||e), false); });
       });
     };
@@ -253,8 +244,8 @@
           IMP_PARSED = null;
           document.getElementById('impPreview').innerText = '';
           updateImpBtn();
-          onDelTableChange();
-          loadBackups();
+          window.onDelTableChange();
+          window.loadBackups();
         }).catch(function(e){ btn.disabled = false; alertBox('impMsg', I18n.t('errPrefix')+(e.message||e), false); });
       });
     };
@@ -291,10 +282,10 @@
       if (!pass) { var a=document.getElementById('restoreAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=I18n.t('needPass'); return; }
       rpc('restoreDataBackup', [RESTORE_TARGET.backupId, pass]).then(function(d){
         if (d && d.error) { var a=document.getElementById('restoreAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=I18n.t('errPrefix')+d.error; return; }
-        closeRestoreOv();
+        window.closeRestoreOv();
         alertBox('bkMsg', I18n.t('restoreDone').replace('{n}', d.restoredCount), true);
-        onDelTableChange();
-        loadBackups();
+        window.onDelTableChange();
+        window.loadBackups();
       }).catch(function(e){ var a=document.getElementById('restoreAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=I18n.t('errPrefix')+(e.message||e); });
     };
 
@@ -328,6 +319,16 @@
         restoreTitle:'Restore "{table}"', restoreHint:'This will put the table back to its {n}-row content at that time. The current content is saved as a new backup first.', restoreGo:'↩️ Restore', restoreCancel:'Cancel', restoreDone:'✅ Restored {n} rows'
       }
     }, function(){});
+
+    // すべてのwindowハンドラを定義してから初期化する。以前はスクリプト上部でinit()を
+    // 実行していたため、通信完了タイミングによってonDelTableChange/loadBackupsが未定義になった。
+    // 表示ガードはUX用で、実際の権限はサーバー側（src/dataAdmin.js）が再検証する。
+    if (ROLE !== 'システム') {
+      document.getElementById('forbidView').style.display = 'block';
+    } else {
+      document.getElementById('mainView').style.display = 'block';
+      init();
+    }
   </script>
 
   <script src="./help.js"></script>
