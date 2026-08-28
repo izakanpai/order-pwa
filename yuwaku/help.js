@@ -66,8 +66,6 @@
   }
 
   function buildOverlay(cfg) {
-    var lang = currentLang();
-    var isEn = lang === 'en';
     var overlay = document.createElement('div');
     overlay.className = 'helpOverlay';
     overlay.id = 'helpOverlay';
@@ -81,26 +79,33 @@
     var closeBtn = document.createElement('button');
     closeBtn.className = 'helpClose';
     closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', isEn ? 'Close' : '閉じる');
     closeBtn.onclick = function () { overlay.classList.remove('on'); };
 
     var h3 = document.createElement('h3');
-    h3.textContent = '❓ ' + (isEn && cfg.titleEn ? cfg.titleEn : cfg.title);
 
     var sub = document.createElement('p');
     sub.className = 'helpSub';
-    sub.textContent = isEn ? 'What you can do on this screen' : 'この画面でできること';
 
     sheet.appendChild(closeBtn);
     sheet.appendChild(h3);
     sheet.appendChild(sub);
 
-    (cfg.items || []).forEach(function (it) {
-      var row = document.createElement('div');
-      row.className = 'helpItem';
-      row.textContent = (isEn && it.en) ? it.en : it.ja;
-      sheet.appendChild(row);
-    });
+    function renderLanguage() {
+      var isEn = currentLang() === 'en';
+      closeBtn.setAttribute('aria-label', isEn ? 'Close' : '閉じる');
+      h3.textContent = '❓ ' + (isEn && cfg.titleEn ? cfg.titleEn : cfg.title);
+      sub.textContent = isEn ? 'What you can do on this screen' : 'この画面でできること';
+      Array.prototype.forEach.call(sheet.querySelectorAll('.helpItem'), function (row) { row.remove(); });
+      (cfg.items || []).forEach(function (it) {
+        var row = document.createElement('div');
+        row.className = 'helpItem';
+        row.textContent = (isEn && it.en) ? it.en : it.ja;
+        sheet.appendChild(row);
+      });
+    }
+
+    renderLanguage();
+    overlay._helpRefreshLanguage = renderLanguage;
 
     wrap.appendChild(sheet);
     overlay.appendChild(wrap);
@@ -169,7 +174,10 @@
       fab.id = 'helpFab';
       fab.textContent = '？';
       fab.setAttribute('aria-label', 'Help');
-      fab.onclick = function () { overlay.classList.add('on'); };
+      fab.onclick = function () {
+        overlay._helpRefreshLanguage();
+        overlay.classList.add('on');
+      };
       document.body.appendChild(fab);
       keepFabClear(fab);
     }
