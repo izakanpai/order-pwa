@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7f1d1d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Data Admin">
+
+  <link rel="manifest" href="./data_admin.webmanifest">
+  <title>Data Admin</title>
+  <style>
+    :root{ --bg:#f6f7f9; --surface:#fff; --border:#e5e7eb; --navy:#0f172a; --text-3:#64748b; --red:#dc2626; --red-bg:#fef2f2; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans JP',sans-serif; background:var(--bg); color:var(--navy); }
+    .head{ position:sticky; top:0; z-index:20; background:#7f1d1d; color:#fff; display:flex; align-items:center; justify-content:space-between; padding:12px 16px; }
+    .head h1{ font-size:18px; margin:0; font-weight:900; }
+    .hbtn{ background:rgba(255,255,255,.16); color:#fff; border:0; border-radius:9px; padding:8px 12px; font-size:13px; font-weight:800; cursor:pointer; text-decoration:none; }
+    .wrap{ padding:16px; max-width:720px; margin:0 auto; }
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
+    .card.danger{ border-color:#fecaca; }
+    .card-title{ font-weight:900; font-size:15px; margin-bottom:8px; }
+    .muted{ color:var(--text-3); font-size:13px; line-height:1.7; }
+    .btn{ border:0; border-radius:11px; padding:13px 16px; font-size:15px; font-weight:900; cursor:pointer; font-family:inherit; background:var(--navy); color:#fff; width:100%; margin-top:10px; }
+    .btn.danger{ background:var(--red); }
+    .btn:disabled{ opacity:.45; cursor:not-allowed; }
+    .btn-sm{ background:#eef2f7; color:var(--navy); padding:8px 10px; border-radius:8px; font-weight:800; border:0; cursor:pointer; font-family:inherit; font-size:13px; }
+    .fc{ padding:11px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); width:100%; margin-top:8px; }
+    label.lbl{ display:block; font-size:12px; font-weight:800; color:var(--text-3); margin-top:12px; }
+    .alert{ margin-top:12px; display:none; padding:12px; border-radius:9px; font-size:14px; font-weight:700; white-space:pre-wrap; }
+    .rowCount{ font-size:13px; color:var(--text-3); margin-top:6px; }
+    table.bk{ width:100%; border-collapse:collapse; font-size:12px; margin-top:10px; }
+    table.bk th, table.bk td{ padding:6px 4px; border-bottom:1px solid var(--border); text-align:left; }
+    table.bk th{ color:var(--text-3); font-weight:700; }
+    .tag{ display:inline-block; padding:2px 7px; border-radius:6px; font-size:11px; font-weight:800; }
+    .tag.delete{ background:#fee2e2; color:#b91c1c; }
+    .tag.import_replace{ background:#fef3c7; color:#92400e; }
+    .tag.pre_restore{ background:#dbeafe; color:#1d4ed8; }
+    .forbidWrap{ padding:60px 20px; text-align:center; color:var(--text-3); }
+  </style>
+</head>
+<body>
+  <div class="head"><h1 data-t="title">🛡️ データ管理（システム管理者専用）</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
+
+  <div id="forbidView" class="forbidWrap" style="display:none;">
+    <div style="font-size:40px;">🔒</div>
+    <div style="font-weight:800;margin-top:8px;" data-t="forbidMsg">この画面はシステム管理者専用です。</div>
+  </div>
+
+  <div id="mainView" class="wrap" style="display:none;">
+    <div class="card danger">
+      <div class="card-title" data-t="warnTitle">⚠️ ご注意</div>
+      <div class="muted" data-t="warnBody">この画面の操作（テーブルの全件削除・CSVインポートによる全置換・バックアップからの復元）は取り返しがつきません。実行するとご本人のログインパスワードの再入力を求めます。実行の直前に自動でバックアップが作られ、下部の「バックアップ履歴」から復元できます。</div>
+    </div>
+
+    <div class="card danger">
+      <div class="card-title" data-t="delTitle">🗑️ テーブルの全件削除</div>
+      <label class="lbl" data-t="tblLbl">対象テーブル</label>
+      <select id="delTable" class="fc" onchange="onDelTableChange()"></select>
+      <div class="rowCount" id="delRowCount"></div>
+      <label class="lbl" data-t="confirmPhraseLbl">確認のため、対象テーブル名を入力してください</label>
+      <input id="delPhrase" class="fc" oninput="onDelPhraseInput()">
+      <label class="lbl" data-t="pwLbl">ご自身のログインパスワード</label>
+      <input id="delPass" class="fc" type="password">
+      <button class="btn danger" id="delBtn" disabled onclick="doDelete()" data-t="delBtn">🗑️ このテーブルを全件削除する</button>
+      <div class="alert" id="delMsg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-t="impTitle">📥 CSVインポート（全置換）</div>
+      <div class="muted" data-t="impHint">「バックアップ / 書き出し」でエクスポートしたCSVをそのまま読み込めます。取り込むと、対象テーブルの現在の内容はCSVの内容へ丸ごと置き換わります（差分反映ではありません）。</div>
+      <label class="lbl" data-t="tblLbl">対象テーブル</label>
+      <select id="impTable" class="fc"></select>
+      <label class="lbl" data-t="fileLbl">CSVファイル</label>
+      <input id="impFile" class="fc" type="file" accept=".csv,text/csv">
+      <div class="rowCount" id="impPreview"></div>
+      <label class="lbl" data-t="pwLbl">ご自身のログインパスワード</label>
+      <input id="impPass" class="fc" type="password">
+      <button class="btn danger" id="impBtn" disabled onclick="doImport()" data-t="impBtn">📥 このCSVで全置換する</button>
+      <div class="alert" id="impMsg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-t="bkTitle">🕘 バックアップ履歴</div>
+      <div class="muted" data-t="bkHint">削除・インポート・復元の直前に自動で作られたバックアップです。「復元」を押すと、そのテーブルを当時の内容へ丸ごと戻します（実行前の現状も新しいバックアップとして残ります）。</div>
+      <button class="btn-sm" style="margin-top:10px;" onclick="loadBackups()" data-t="bkReload">🔄 更新</button>
+      <table class="bk" id="bkTable"><thead><tr>
+        <th data-t="bkColTable">テーブル</th><th data-t="bkColAction">操作</th><th data-t="bkColRows">件数</th><th data-t="bkColActor">実行者</th><th data-t="bkColTime">日時</th><th></th>
+      </tr></thead><tbody id="bkRows"></tbody></table>
+      <div class="alert" id="bkMsg"></div>
+    </div>
+  </div>
+
+  <!-- 復元用パスワード確認 -->
+  <div id="restoreOv" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:60;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;padding:20px;max-width:360px;width:calc(100% - 32px);">
+      <div style="font-weight:900;font-size:15px;margin-bottom:4px;" id="restoreTitle"></div>
+      <div class="muted" id="restoreHint" style="margin-bottom:10px;"></div>
+      <label class="lbl" data-t="pwLbl">ご自身のログインパスワード</label>
+      <input id="restorePass" class="fc" type="password">
+      <div class="alert" id="restoreAlert" style="display:none;"></div>
+      <button class="btn danger" style="margin-top:12px;" onclick="confirmRestore()" data-t="restoreGo">↩️ 復元する</button>
+      <button class="btn-sm" style="width:100%;margin-top:8px;padding:11px;" onclick="closeRestoreOv()" data-t="restoreCancel">キャンセル</button>
+    </div>
+  </div>
+
+  <script src="./config.js"></script>
+  <script src="./api.js"></script>
+  <script src="./i18n.js"></script>
+  <script src="./confirm.js"></script>
+  <script>
+    var TOKEN = localStorage.getItem('mgmtToken') || '';
+    var ROLE = localStorage.getItem('mgmtRole') || '';
+    if (!TOKEN) location.href = './manage.html';
+    function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    function alertBox(id, text, ok){ var m=document.getElementById(id); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
+
+    // ★この画面はサーバー側（src/dataAdmin.js）でrole==='システム'を厳格に要求しており、
+    // ここでの表示ガードはあくまでUX目的（見せない）。実際の実行可否はサーバー側で必ず再検証される。
+    if (ROLE !== 'システム') {
+      document.getElementById('forbidView').style.display = 'block';
+    } else {
+      document.getElementById('mainView').style.display = 'block';
+      init();
+    }
+
+    var DEL_ROWS = 0;
+
+    function csvCell(v){ var s=(v==null)?'':String(v); if(/[",\n]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }
+    // RFC4180寄りの簡易CSVパーサ（引用符内のカンマ・改行・""エスケープに対応）。
+    // backup.htmlのtoCsv()が生成する形式と対で使う想定。
+    function parseCsv(text){
+      text = String(text||'').replace(/^﻿/, '');
+      var rows = [], row = [], field = '', inQuotes = false;
+      for (var i = 0; i < text.length; i++) {
+        var c = text[i];
+        if (inQuotes) {
+          if (c === '"') {
+            if (text[i+1] === '"') { field += '"'; i++; } else { inQuotes = false; }
+          } else { field += c; }
+        } else if (c === '"') {
+          inQuotes = true;
+        } else if (c === ',') {
+          row.push(field); field = '';
+        } else if (c === '\r') {
+          // no-op（\r\nの\rはここで無視。単独\rは次のcで処理継続）
+        } else if (c === '\n') {
+          row.push(field); field = ''; rows.push(row); row = [];
+        } else {
+          field += c;
+        }
+      }
+      if (field !== '' || row.length) { row.push(field); rows.push(row); }
+      // 末尾の空行を除去
+      while (rows.length && rows[rows.length-1].length === 1 && rows[rows.length-1][0] === '') rows.pop();
+      return rows;
+    }
+
+    function init(){
+      rpc('getDestructiveTableNames', []).then(function(d){
+        if (d && d.error) { alertBox('delMsg', I18n.t('errPrefix')+d.error, false); return; }
+        var names = (d && d.names) || [];
+        var opts = names.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join('');
+        document.getElementById('delTable').innerHTML = opts;
+        document.getElementById('impTable').innerHTML = opts;
+        onDelTableChange();
+      }).catch(function(e){ alertBox('delMsg', I18n.t('errPrefix')+(e.message||e), false); });
+      loadBackups();
+
+      document.getElementById('impFile').addEventListener('change', onImpFileChange);
+      document.getElementById('impPass').addEventListener('input', updateImpBtn);
+    }
+
+    // ---- 全件削除 ----
+    window.onDelTableChange = function(){
+      var t = document.getElementById('delTable').value;
+      document.getElementById('delPhrase').value = '';
+      document.getElementById('delRowCount').innerText = '';
+      DEL_ROWS = 0;
+      updateDelBtn();
+      if (!t) return;
+      rpc('exportSheetData', [t]).then(function(d){
+        var n = (d && d.rows) ? Math.max(0, d.rows.length - 1) : 0;
+        DEL_ROWS = n;
+        document.getElementById('delRowCount').innerText = I18n.t('curRows') + n;
+      }).catch(function(){});
+    };
+    window.onDelPhraseInput = function(){ updateDelBtn(); };
+    function updateDelBtn(){
+      var t = document.getElementById('delTable').value;
+      var phrase = document.getElementById('delPhrase').value;
+      document.getElementById('delBtn').disabled = !(t && phrase === t);
+    }
+    window.doDelete = function(){
+      var t = document.getElementById('delTable').value;
+      var pass = document.getElementById('delPass').value;
+      if (!pass) { alertBox('delMsg', I18n.t('needPass'), false); return; }
+      UIConfirm(I18n.t('delConfirmMsg').replace('{table}', t).replace('{n}', DEL_ROWS), { danger: true, okLabel: I18n.t('delConfirmOk') }).then(function(ok){
+        if (!ok) return;
+        var btn = document.getElementById('delBtn'); btn.disabled = true;
+        rpc('wipeTableData', [t, pass]).then(function(d){
+          btn.disabled = false;
+          if (d && d.error) { alertBox('delMsg', I18n.t('errPrefix')+d.error, false); return; }
+          alertBox('delMsg', I18n.t('delDone').replace('{n}', d.deletedCount), true);
+          document.getElementById('delPass').value = '';
+          document.getElementById('delPhrase').value = '';
+          onDelTableChange();
+          loadBackups();
+        }).catch(function(e){ btn.disabled = false; alertBox('delMsg', I18n.t('errPrefix')+(e.message||e), false); });
+      });
+    };
+
+    // ---- CSVインポート ----
+    var IMP_PARSED = null; // {header, rows}
+    function onImpFileChange(){
+      IMP_PARSED = null;
+      document.getElementById('impPreview').innerText = '';
+      updateImpBtn();
+      var f = document.getElementById('impFile').files[0];
+      if (!f) return;
+      var reader = new FileReader();
+      reader.onload = function(e){
+        var parsed = parseCsv(e.target.result);
+        if (!parsed.length) { alertBox('impMsg', I18n.t('csvEmpty'), false); return; }
+        var header = parsed[0];
+        var rows = parsed.slice(1);
+        IMP_PARSED = { header: header, rows: rows };
+        document.getElementById('impPreview').innerText = I18n.t('csvRows').replace('{n}', rows.length).replace('{cols}', header.length);
+        updateImpBtn();
+      };
+      reader.onerror = function(){ alertBox('impMsg', I18n.t('csvReadErr'), false); };
+      reader.readAsText(f, 'utf-8');
+    }
+    function updateImpBtn(){
+      var pass = document.getElementById('impPass').value;
+      document.getElementById('impBtn').disabled = !(IMP_PARSED && pass);
+    }
+    window.doImport = function(){
+      var t = document.getElementById('impTable').value;
+      var pass = document.getElementById('impPass').value;
+      if (!IMP_PARSED || !pass || !t) return;
+      UIConfirm(I18n.t('impConfirmMsg').replace('{table}', t).replace('{n}', IMP_PARSED.rows.length), { danger: true, okLabel: I18n.t('impConfirmOk') }).then(function(ok){
+        if (!ok) return;
+        var btn = document.getElementById('impBtn'); btn.disabled = true;
+        rpc('importTableData', [t, IMP_PARSED.header, IMP_PARSED.rows, pass]).then(function(d){
+          btn.disabled = false;
+          if (d && d.error) { alertBox('impMsg', I18n.t('errPrefix')+d.error, false); return; }
+          alertBox('impMsg', I18n.t('impDone').replace('{n}', d.importedCount), true);
+          document.getElementById('impPass').value = '';
+          document.getElementById('impFile').value = '';
+          IMP_PARSED = null;
+          document.getElementById('impPreview').innerText = '';
+          updateImpBtn();
+          onDelTableChange();
+          loadBackups();
+        }).catch(function(e){ btn.disabled = false; alertBox('impMsg', I18n.t('errPrefix')+(e.message||e), false); });
+      });
+    };
+
+    // ---- バックアップ履歴・復元 ----
+    var RESTORE_TARGET = null;
+    function actionLabel(a){
+      var m = { delete: I18n.t('actDelete'), import_replace: I18n.t('actImport'), pre_restore: I18n.t('actPreRestore') };
+      return m[a] || a;
+    }
+    window.loadBackups = function(){
+      rpc('listDataBackups', []).then(function(d){
+        if (d && d.error) { alertBox('bkMsg', I18n.t('errPrefix')+d.error, false); return; }
+        var rows = (d && d.backups) || [];
+        document.getElementById('bkRows').innerHTML = rows.length ? rows.map(function(b){
+          return '<tr><td>'+esc(b.table_name)+'</td><td><span class="tag '+esc(b.action)+'">'+esc(actionLabel(b.action))+'</span></td>'+
+            '<td>'+esc(b.row_count)+'</td><td>'+esc(b.actor_name)+'</td><td>'+esc(b.created_at)+'</td>'+
+            '<td><button class="btn-sm" onclick="openRestore(\''+esc(b.backup_id)+'\',\''+esc(b.table_name)+'\','+Number(b.row_count)+')">'+I18n.t('bkRestore')+'</button></td></tr>';
+        }).join('') : '<tr><td colspan="6" style="color:#aaa;text-align:center;padding:10px;">'+I18n.t('bkEmpty')+'</td></tr>';
+      }).catch(function(e){ alertBox('bkMsg', I18n.t('errPrefix')+(e.message||e), false); });
+    };
+    window.openRestore = function(backupId, tableName, rowCount){
+      RESTORE_TARGET = { backupId: backupId, tableName: tableName, rowCount: rowCount };
+      document.getElementById('restoreTitle').innerText = I18n.t('restoreTitle').replace('{table}', tableName);
+      document.getElementById('restoreHint').innerText = I18n.t('restoreHint').replace('{n}', rowCount);
+      document.getElementById('restorePass').value = '';
+      document.getElementById('restoreAlert').style.display = 'none';
+      document.getElementById('restoreOv').style.display = 'flex';
+    };
+    window.closeRestoreOv = function(){ document.getElementById('restoreOv').style.display = 'none'; RESTORE_TARGET = null; };
+    window.confirmRestore = function(){
+      if (!RESTORE_TARGET) return;
+      var pass = document.getElementById('restorePass').value;
+      if (!pass) { var a=document.getElementById('restoreAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=I18n.t('needPass'); return; }
+      rpc('restoreDataBackup', [RESTORE_TARGET.backupId, pass]).then(function(d){
+        if (d && d.error) { var a=document.getElementById('restoreAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=I18n.t('errPrefix')+d.error; return; }
+        closeRestoreOv();
+        alertBox('bkMsg', I18n.t('restoreDone').replace('{n}', d.restoredCount), true);
+        onDelTableChange();
+        loadBackups();
+      }).catch(function(e){ var a=document.getElementById('restoreAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=I18n.t('errPrefix')+(e.message||e); });
+    };
+
+    I18n.init({
+      ja:{
+        title:'🛡️ データ管理（システム管理者専用）', back:'← 管理へ', forbidMsg:'この画面はシステム管理者専用です。',
+        warnTitle:'⚠️ ご注意', warnBody:'この画面の操作（テーブルの全件削除・CSVインポートによる全置換・バックアップからの復元）は取り返しがつきません。実行するとご本人のログインパスワードの再入力を求めます。実行の直前に自動でバックアップが作られ、下部の「バックアップ履歴」から復元できます。',
+        delTitle:'🗑️ テーブルの全件削除', tblLbl:'対象テーブル', confirmPhraseLbl:'確認のため、対象テーブル名を入力してください', pwLbl:'ご自身のログインパスワード', delBtn:'🗑️ このテーブルを全件削除する',
+        curRows:'現在の件数: ', needPass:'パスワードを入力してください', errPrefix:'エラー: ',
+        delConfirmMsg:'「{table}」の全{n}件を削除します。よろしいですか？（削除前に自動でバックアップされます）', delConfirmOk:'削除する', delDone:'✅ {n}件を削除しました（自動バックアップ済み）',
+        impTitle:'📥 CSVインポート（全置換）', impHint:'「バックアップ / 書き出し」でエクスポートしたCSVをそのまま読み込めます。取り込むと、対象テーブルの現在の内容はCSVの内容へ丸ごと置き換わります（差分反映ではありません）。',
+        fileLbl:'CSVファイル', impBtn:'📥 このCSVで全置換する', csvEmpty:'CSVが空です', csvReadErr:'CSVの読み込みに失敗しました', csvRows:'{n}行 × {cols}列を読み込みました',
+        impConfirmMsg:'「{table}」を、読み込んだCSVの{n}行で全置換します。現在の内容は自動バックアップされます。よろしいですか？', impConfirmOk:'置換する', impDone:'✅ {n}行をインポートしました（置換前は自動バックアップ済み）',
+        bkTitle:'🕘 バックアップ履歴', bkHint:'削除・インポート・復元の直前に自動で作られたバックアップです。「復元」を押すと、そのテーブルを当時の内容へ丸ごと戻します（実行前の現状も新しいバックアップとして残ります）。',
+        bkReload:'🔄 更新', bkColTable:'テーブル', bkColAction:'操作', bkColRows:'件数', bkColActor:'実行者', bkColTime:'日時', bkRestore:'↩️ 復元', bkEmpty:'バックアップはまだありません',
+        actDelete:'削除', actImport:'インポート', actPreRestore:'復元前退避',
+        restoreTitle:'「{table}」を復元', restoreHint:'当時の{n}件の内容へ丸ごと戻します。現在の内容は新しいバックアップとして残ります。', restoreGo:'↩️ 復元する', restoreCancel:'キャンセル', restoreDone:'✅ {n}件へ復元しました'
+      },
+      en:{
+        title:'🛡️ Data Admin (System role only)', back:'← Manage', forbidMsg:'This page is restricted to the System role.',
+        warnTitle:'⚠️ Warning', warnBody:'Actions on this page (wiping a table, replacing it via CSV import, or restoring a backup) cannot be undone. Each one requires re-entering your own login password. A backup is taken automatically right before the action runs, and can be restored from "Backup history" below.',
+        delTitle:'🗑️ Wipe a table', tblLbl:'Target table', confirmPhraseLbl:'Type the table name to confirm', pwLbl:'Your login password', delBtn:'🗑️ Wipe this table',
+        curRows:'Current rows: ', needPass:'Please enter your password', errPrefix:'Error: ',
+        delConfirmMsg:'This will delete all {n} rows in "{table}". Continue? (A backup will be taken automatically first.)', delConfirmOk:'Delete', delDone:'✅ Deleted {n} rows (backed up automatically)',
+        impTitle:'📥 CSV import (full replace)', impHint:'You can load a CSV exported from "Backup / Export" as-is. Importing replaces the entire current content of the table with the CSV content (not a diff/merge).',
+        fileLbl:'CSV file', impBtn:'📥 Replace with this CSV', csvEmpty:'The CSV is empty', csvReadErr:'Failed to read the CSV', csvRows:'Loaded {n} rows × {cols} columns',
+        impConfirmMsg:'This will fully replace "{table}" with the {n} rows from the CSV. The current content will be backed up automatically. Continue?', impConfirmOk:'Replace', impDone:'✅ Imported {n} rows (previous content backed up automatically)',
+        bkTitle:'🕘 Backup history', bkHint:'Automatic backups taken right before a delete, import, or restore. "Restore" puts that table back to its content at that time (the current content is also saved as a new backup first).',
+        bkReload:'🔄 Refresh', bkColTable:'Table', bkColAction:'Action', bkColRows:'Rows', bkColActor:'By', bkColTime:'When', bkRestore:'↩️ Restore', bkEmpty:'No backups yet',
+        actDelete:'Delete', actImport:'Import', actPreRestore:'Pre-restore snapshot',
+        restoreTitle:'Restore "{table}"', restoreHint:'This will put the table back to its {n}-row content at that time. The current content is saved as a new backup first.', restoreGo:'↩️ Restore', restoreCancel:'Cancel', restoreDone:'✅ Restored {n} rows'
+      }
+    }, function(){});
+  </script>
+
+  <script src="./help.js"></script>
+  <script>
+    HelpUI.register({
+      title: 'データ管理（システム管理者専用）',
+      titleEn: 'Data Admin (System role only)',
+      items: [
+        { ja: '① この画面はシステム管理者（role=システム）だけが使えます。他の権限グループでは開けません。', en: '① Only the System role can use this page. Other role groups cannot open it.' },
+        { ja: '② 「テーブルの全件削除」は、選んだテーブル名をそのまま入力し、ご自身のパスワードを入力してから実行できます。実行前に必ず自動でバックアップされます。', en: '② "Wipe a table" is enabled once you type the exact table name and your password. A backup is always taken automatically before it runs.' },
+        { ja: '③ 「CSVインポート」は、「バックアップ / 書き出し」で書き出したCSVをそのまま読み込んで、テーブルの内容を丸ごと置き換えます。差分の反映ではありません。', en: '③ "CSV import" loads a CSV exported from "Backup / Export" as-is and fully replaces the table content. It is not a diff/merge.' },
+        { ja: '④ 「バックアップ履歴」から、削除・インポート・復元の直前に自動で取られたバックアップの一覧を確認し、「復元」で当時の内容へ丸ごと戻せます。', en: '④ "Backup history" lists automatic backups taken before each delete/import/restore, and "Restore" puts the table back to that content.' }
+      ]
+    });
+  </script>
+</body>
+</html>
