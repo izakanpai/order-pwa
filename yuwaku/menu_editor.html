@@ -356,7 +356,7 @@
         nameEn:document.getElementById('mNameEn').value.trim(), categoryEn:categoryEn, options:JSON.stringify(cleanOpts()),
         svcStart:document.getElementById('mSvcStart').value, svcEnd:document.getElementById('mSvcEnd').value,
         allergens:document.getElementById('mAllergens').value.trim(), spicy:document.getElementById('mSpicy').value,
-        kitchenDisplay:document.getElementById('mKitchen').checked, linkedInventory:document.getElementById('mLinkInv').value };
+        kitchenDisplay:document.getElementById('mKitchen').checked, inventoryLink:document.getElementById('mLinkInv').value };
       var btn=document.getElementById('saveBtn'); btn.disabled=true;
       var file = document.getElementById('mFile').files[0];
       function send(fd){

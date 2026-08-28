@@ -443,7 +443,7 @@
 
     // ── Payment ──
     // [要望対応] 入場料・延長料のプレビュー計算（サーバー側_computeEntryFeesと同じ考え方）。
-    // 分割会計（orderIds指定）では二重請求防止のため常に0（サーバー側と挙動を合わせる）。
+    // 途中の分割会計では二重請求防止のため0。残る全注文を選ぶ最後の分割では徴収する。
     // skipForSplit引数はopenPay（会計モーダル）専用。一覧表示（render）ではpayOrderIdsという
     // グローバル状態を参照すべきでないため、明示的な引数として切り出した。
     function computeEntryFeesPreview(party, skipForSplit){
@@ -468,6 +468,12 @@
       var b = breakdown(subtotal);
       var f = computeEntryFeesPreview(PARTY_SIZES[table], false);
       return b.total + f.entryFee + f.extensionFee;
+    }
+    function partialCoversAllActive(table, ids){
+      if (!ids || !ids.length) return false;
+      var selected={}; ids.forEach(function(id){ selected[String(id)]=1; });
+      var active=orders.filter(function(o){ return String(o.table)===String(table) && o.status!=='会計済' && o.status!=='取消'; });
+      return active.length>0 && active.every(function(o){ return !!selected[String(o.id)]; });
     }
     window.openPay = function(tn, subtotal, orderIds){
       resetPs3();
@@ -499,10 +505,11 @@
       recompPay();
       step(1);
       document.getElementById('payModal').classList.add('on');
-      if (!payOrderIds){
+      var shouldPreviewFees = !payOrderIds || partialCoversAllActive(tn, payOrderIds);
+      if (shouldPreviewFees){
         API.post('getTablePartySize', { table: tn }).then(function(r){
           if (payTable !== tn) return; // その間にモーダルが閉じ/別卓が開かれていたら無視
-          var f = computeEntryFeesPreview(r && r.data, !!payOrderIds);
+          var f = computeEntryFeesPreview(r && r.data, false);
           payEntryFee = f.entryFee; payExtensionFee = f.extensionFee; payPartySize = f.partySize;
           recompPay();
         }).catch(function(){});
