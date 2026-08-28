@@ -38,7 +38,8 @@
   function injectStyles() {
     if (document.getElementById('helpUiStyles')) return;
     var css = ''
-      + '.helpFab{position:fixed;right:16px;bottom:16px;z-index:9999;width:46px;height:46px;border-radius:50%;'
+      + '.helpFab{position:fixed;right:max(16px,env(safe-area-inset-right));'
+      + 'bottom:max(var(--help-fab-bottom,16px),env(safe-area-inset-bottom));z-index:9999;width:46px;height:46px;border-radius:50%;'
       + 'background:#0f172a;color:#fff;border:0;font-size:20px;font-weight:900;cursor:pointer;'
       + 'box-shadow:0 6px 18px rgba(15,23,42,.35);display:flex;align-items:center;justify-content:center;'
       + 'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}'
@@ -112,6 +113,50 @@
     return overlay;
   }
 
+  // 下部固定バー（注文・カート等）が右下を占有する画面では、その直上へ退避する。
+  // 全画面モーダルは対象外とし、高さが画面の40%以下の「操作バー」だけを判定する。
+  function positionFab(fab) {
+    var baseBottom = 16;
+    var gap = 12;
+    var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    var fabRect = fab.getBoundingClientRect();
+    var fabLeft = fabRect.left || (viewportWidth - 16 - 46);
+    var maxBarHeight = Math.min(220, viewportHeight * 0.4);
+    var bottom = baseBottom;
+
+    Array.prototype.forEach.call(document.querySelectorAll('body *'), function (el) {
+      if (el === fab || el.getAttribute('data-help-fab-ignore') === 'true' || el.closest('.helpOverlay')) return;
+      var style = window.getComputedStyle(el);
+      if (style.position !== 'fixed' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return;
+
+      var rect = el.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0 || rect.height > maxBarHeight) return;
+      var touchesBottom = rect.bottom >= viewportHeight - 2;
+      var overlapsFabColumn = rect.right > fabLeft && rect.left < viewportWidth - 16;
+      if (touchesBottom && overlapsFabColumn) {
+        bottom = Math.max(bottom, Math.ceil(viewportHeight - rect.top + gap));
+      }
+    });
+
+    fab.style.setProperty('--help-fab-bottom', bottom + 'px');
+  }
+
+  function keepFabClear(fab) {
+    var frame = 0;
+    function schedule() {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(function () {
+        frame = 0;
+        positionFab(fab);
+      });
+    }
+    schedule();
+    window.addEventListener('load', schedule, { once: true });
+    window.addEventListener('resize', schedule);
+    window.addEventListener('orientationchange', schedule);
+  }
+
   window.HelpUI = {
     register: function (cfg) {
       if (!cfg || !cfg.title) return;
@@ -126,6 +171,7 @@
       fab.setAttribute('aria-label', 'Help');
       fab.onclick = function () { overlay.classList.add('on'); };
       document.body.appendChild(fab);
+      keepFabClear(fab);
     }
   };
 })();
