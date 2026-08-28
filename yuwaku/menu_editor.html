@@ -335,7 +335,7 @@
       document.getElementById('mSvcEnd').value = m['提供終了']||'';
       document.getElementById('mAllergens').value = m['アレルゲン']||'';
       document.getElementById('mSpicy').value = String(Number(m['辛さ'])||0);
-      document.getElementById('mKitchen').checked = (String(m['厨房表示']||'1') !== '0');
+      document.getElementById('mKitchen').checked = (String(m['厨房表示']==null?'1':m['厨房表示']) !== '0');
       renderInvSel(); document.getElementById('mLinkInv').value = m['在庫紐づけ']||'';
       try { curOpts = JSON.parse(m['オプション']||'[]')||[]; } catch(e){ curOpts=[]; }
       renderOpts();
