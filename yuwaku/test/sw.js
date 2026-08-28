@@ -38,7 +38,9 @@
 // 画面（index.html）がconfirm.jsを読み込んでいなかった（./app.jsのalert 1件・confirm 2件が
 // ネイティブダイアログのまま残存）不具合を修正。index.html/app.jsの内容が変わったため、
 // キャッシュを必ず入れ替える。
-const CACHE = 'yuwaku-pos-test-v151';
+// ★2026-08-27追記（v152）: システム管理者専用の新規画面 data_admin.html（データインポート/
+// 削除）を追加したため、SHELLへ追加してキャッシュを必ず入れ替える。
+const CACHE = 'yuwaku-pos-test-v152';
 const SHELL = [
   './',
   './index.html',
@@ -68,6 +70,7 @@ const SHELL = [
   './order_items.html',
   './feedback.html',
   './backup.html',
+  './data_admin.html',
   './reserve.html',
   './reservations.html',
   './birthdays.html',
@@ -89,6 +92,7 @@ const SHELL = [
   './attendance.webmanifest',
   './audit.webmanifest',
   './backup.webmanifest',
+  './data_admin.webmanifest',
   './birthdays.webmanifest',
   './coupons.webmanifest',
   './dashboard.webmanifest',
