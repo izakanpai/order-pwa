@@ -863,7 +863,7 @@
     // 言語の初期化・切替・永続化は共通部品I18nに一本化（他画面と同じ仕組み）。
     I18n.init(i18n, onLangChange);
     // 管理メニューからログイン中の端末でだけ「← 管理へ」を表示（客のQRスキャンでは非表示）
-    try { if (localStorage.getItem('mgmtToken') && $('mgmtBackBtn')) $('mgmtBackBtn').style.display = 'inline-block'; } catch (e) {}
+    try { if (localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') && $('mgmtBackBtn')) $('mgmtBackBtn').style.display = 'inline-block'; } catch (e) {}
 
     $('langBtn').addEventListener('click', function () { I18n.toggle(); });
     $('sendBtn').addEventListener('click', send);

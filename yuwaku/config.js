@@ -12,5 +12,6 @@
 // 昔ながらのURL分離方式＝/yuwaku/test/ に一本化）。
 window.APP_CONFIG = {
   API_URL: 'https://izakanpai-api.izakanpai.workers.dev',
-  VERSION: 'v1.0.0'
+  VERSION: 'v1.0.0',
+  AUTH_STORAGE_PREFIX: 'izakanpai:production:'
 };

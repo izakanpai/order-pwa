@@ -70,7 +70,7 @@
 // 他の管理画面と同じくmgmtTokenでのログインを必須にし、未ログインならmanage.htmlへ戻す。
 (function(){
   var __t = null;
-  try { __t = localStorage.getItem('mgmtToken') || ''; } catch(e){}
+  try { __t = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || ''; } catch(e){}
   if (!__t) { location.href = './manage.html'; }
 })();
 var PRINT_WIDTH = 384;

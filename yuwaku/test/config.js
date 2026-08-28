@@ -7,5 +7,6 @@
 window.APP_CONFIG = {
   API_URL: 'https://izakanpai-api-test.izakanpai.workers.dev',
   VERSION: 'test',
+  AUTH_STORAGE_PREFIX: 'izakanpai:test:',
   TEST_ENV: true             // 画面左下に「🧪 TEST」バッジを表示（api.jsの既存の仕組み）
 };

@@ -75,7 +75,7 @@
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
   <script>
-    var TOKEN = localStorage.getItem('mgmtToken') || '';
+    var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
     // opts: {silent:bool, timeoutMs:number, noInternalRetry:bool}（[GPT第22回レポート対応/G22-1・G22-2]）
     function rpc(fn,args,opts){

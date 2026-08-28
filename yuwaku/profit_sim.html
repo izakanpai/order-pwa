@@ -346,7 +346,7 @@
     // 2026-08-24修正: このページは元々「ログイン不要の公開ツール」として管理メニューにも
     // 出していなかったが、月次実績や既定値など細かな数字が未ログインでも見えてしまうため、
     // 他の管理画面と同じくログイン必須に変更し、管理メニューにも追加した。
-    var TOKEN = localStorage.getItem('mgmtToken') || '';
+    var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
     if (!TOKEN) { location.href = './manage.html'; }
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     // サーバーから'unauthorized'（トークン無し／期限切れ）が返った場合に、わかりやすいメッセージへ変換する。

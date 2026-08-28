@@ -293,7 +293,7 @@
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
   <script>
-    var TOKEN = localStorage.getItem('mgmtToken') || '';
+    var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function $(id){ return document.getElementById(id); }

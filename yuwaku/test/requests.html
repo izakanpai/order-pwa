@@ -82,10 +82,10 @@
   <script src="./i18n.js"></script>
   <script src="./confirm.js"></script>
   <script>
-    var TOKEN = localStorage.getItem('mgmtToken') || '';
+    var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
-    var MY_NAME = localStorage.getItem('mgmtName') || '';
-    var MY_ROLE = localStorage.getItem('mgmtRole') || '';
+    var MY_NAME = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtName') || '';
+    var MY_ROLE = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtRole') || '';
     var CAN_MANAGE = (MY_ROLE === 'マネージャー' || MY_ROLE === '管理者' || MY_ROLE === 'システム');
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function $(id){ return document.getElementById(id); }

@@ -70,7 +70,7 @@
   <script src="./i18n.js"></script>
   <script>
     // [P0-2] 注文状態の変更はスタッフ操作のため、このKDS端末でも事前ログイン（1回のみ）を必須にする。
-    var TOKEN = localStorage.getItem('mgmtToken') || '';
+    var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
     var soundOn = true, lastNewIds = {}, firstPaint = true;
     var KITCHEN_MAP = {}; // 商品名(基底名) -> true(キッチン表示)/false(非表示)。未取得/未登録の商品は常にtrue扱い（安全側）。

@@ -67,7 +67,6 @@
 <body>
   <a class="lang-btn lang-fab" id="mgmtBack" href="./manage.html" style="display:none;left:12px;right:auto;">← 管理</a>
   <button class="lang-btn lang-fab" id="langToggle" data-tlang onclick="I18n.toggle()">JP/EN</button>
-  <script>try{if(localStorage.getItem('mgmtToken')){var _mb=document.getElementById('mgmtBack');if(_mb)_mb.style.display='block';}}catch(e){}</script>
   <img id="banner" class="to-banner" alt="">
   <div class="to-head">
     <span class="to-shop" id="shopName">Takeout</span><span class="to-tag" id="tagTakeout">🥡 Takeout</span>
@@ -108,6 +107,7 @@
   </div>
 
   <script src="./config.js"></script>
+  <script>try{if(localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken')){var _mb=document.getElementById('mgmtBack');if(_mb)_mb.style.display='block';}}catch(e){}</script>
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
   <script>

@@ -87,9 +87,9 @@
   <script src="./api.js"></script>
   <script src="./i18n.js"></script>
   <script>
-    var TOKEN = localStorage.getItem('mgmtToken') || '';
-    var NAME = localStorage.getItem('mgmtName') || '';
-    var ROLE = localStorage.getItem('mgmtRole') || '';
+    var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
+    var NAME = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtName') || '';
+    var ROLE = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtRole') || '';
     var lastAllowed = {};
 
     // key: 権限キー（null=公開・常時表示）, active: 移設済みか
@@ -186,14 +186,14 @@
       API.post('login', { loginId: id, pass: pass }).then(function(r){
         btn.disabled=false;
         TOKEN = r.token; NAME = r.name || ''; ROLE = r.role || '';
-        localStorage.setItem('mgmtToken', TOKEN); localStorage.setItem('mgmtName', NAME); localStorage.setItem('mgmtRole', ROLE);
+        localStorage.setItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken', TOKEN); localStorage.setItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtName', NAME); localStorage.setItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtRole', ROLE);
         // [応答速度改善(2026-08-22)/ログイン再改善] loginレスポンスに権限メニュー(me)が
         // 同封されるようになったため、直後のcheckToken往復を省いて即座に表示する。
         // 念のため未同封（旧サーバー版との混在デプロイ等）の場合のみ従来通りcheckAndShowにフォールバック。
         if (r.me) { showHub(r.me.allowed || {}); } else { checkAndShow(); }
       }).catch(function(){ btn.disabled=false; errEl.textContent = I18n.t('loginErr'); errEl.style.display='block'; });
     };
-    window.logout = function(){ localStorage.removeItem('mgmtToken'); localStorage.removeItem('mgmtName'); localStorage.removeItem('mgmtRole'); TOKEN=''; NAME=''; ROLE=''; showLogin(); };
+    window.logout = function(){ localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken'); localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtName'); localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtRole'); TOKEN=''; NAME=''; ROLE=''; showLogin(); };
 
     // ログイン画面からのパスワード変更（ログインID＋現在のパスワードで本人確認）
     window.toggleChgPw = function(show){
@@ -225,7 +225,7 @@
           // 変更された場合、次回ログインまで古いROLEのままdata_adminタイル等が出続ける/消えない
           // という表示上のズレを防ぐ。実際の実行可否は常にサーバー側で再検証されるため、これは
           // あくまで表示の鮮度の話）。
-          if (r.me.role !== undefined) { ROLE = r.me.role || ''; try { localStorage.setItem('mgmtRole', ROLE); } catch(e){} }
+          if (r.me.role !== undefined) { ROLE = r.me.role || ''; try { localStorage.setItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtRole', ROLE); } catch(e){} }
           showHub(r.me.allowed || {});
         }
         else { logout(); }

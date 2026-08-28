@@ -134,7 +134,7 @@
     // 変更せずに「操作が続く限りログイン状態を保持する」を実現する。token不要な公開アクション
     // （客注文画面等）には影響しない。
     if (send.token) {
-      try { const _latest = localStorage.getItem('mgmtToken'); if (_latest) send.token = _latest; } catch (e) {}
+      try { const _latest = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken'); if (_latest) send.token = _latest; } catch (e) {}
     }
     const body = JSON.stringify(Object.assign({ action: action }, send));
     const canRetry = !noInternalRetry && _isReadOnly(action, payload.fn);
@@ -156,8 +156,8 @@
       _errBar.hide();
       if (!json.ok) {
         // ログイントークン失効（unauthorized）は生のエラーを見せず、管理画面（ログイン）へ自動的に戻す
-        if (json.error === 'unauthorized' && (function () { try { return !!localStorage.getItem('mgmtToken'); } catch (e) { return false; } })()) {
-          try { localStorage.removeItem('mgmtToken'); localStorage.removeItem('mgmtName'); localStorage.removeItem('mgmtRole'); } catch (e) {}
+        if (json.error === 'unauthorized' && (function () { try { return !!localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken'); } catch (e) { return false; } })()) {
+          try { localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken'); localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtName'); localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtRole'); } catch (e) {}
           location.href = './manage.html';
           return new Promise(function () {}); // 遷移するのでこれ以上は解決しない
         }
@@ -169,7 +169,7 @@
       // その時間が過ぎれば（新しいnewTokenが来ないため）元のトークンの期限どおり自動的に
       // ログアウトされる。
       if (json.newToken) {
-        try { if (localStorage.getItem('mgmtToken')) localStorage.setItem('mgmtToken', json.newToken); } catch (e) {}
+        try { if (localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken')) localStorage.setItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken', json.newToken); } catch (e) {}
       }
       return json;
     } finally {

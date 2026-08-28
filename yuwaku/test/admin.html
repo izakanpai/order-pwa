@@ -180,7 +180,7 @@
   <script src="./confirm.js"></script>
   <script>
     // [P0-2] 会計・注文操作はスタッフ操作のため、事前ログイン（1回のみ）を必須にする。
-    var TOKEN = localStorage.getItem('mgmtToken') || '';
+    var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
     var SETTINGS = {}, PAYMONGO = false, orders = [], calls = [], voidId = '', MENU_MAP = {}, PARTY_SIZES = {};
     var autoOn = (function(){ try{ var v=localStorage.getItem('adminAuto'); return v===null?true:(v==='1'); }catch(e){ return true; } })();
