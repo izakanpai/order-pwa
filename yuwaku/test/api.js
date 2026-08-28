@@ -3,6 +3,26 @@
 (function () {
   const CFG = window.APP_CONFIG;
   const API = {};
+
+  // 同一originの本番／テスト間で、古い親Service Workerが別環境のconfig.jsを返しても
+  // データ取得前にfail closedする。認証情報は削除せず、誤環境での表示とAPI通信だけを止める。
+  function environmentMismatch() {
+    var pathIsTest = /\/test(?:\/|$)/i.test(location.pathname);
+    var configIsTest = CFG.TEST_ENV === true || /^test$/i.test(String(CFG.VERSION || '')) || /api-test\./i.test(String(CFG.API_URL || ''));
+    return pathIsTest !== configIsTest;
+  }
+  function blockEnvironmentMismatch() {
+    if (!environmentMismatch() || document.getElementById('izEnvMismatch')) return;
+    var el = document.createElement('div');
+    el.id = 'izEnvMismatch';
+    el.setAttribute('role', 'alert');
+    el.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#fff;color:#991b1b;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font:700 18px/1.6 sans-serif';
+    el.textContent = '環境情報が一致しないため表示を停止しました。ページを再読み込みしてください。 / Environment mismatch. Reload this page.';
+    (document.body || document.documentElement).appendChild(el);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', blockEnvironmentMismatch, { once: true });
+  else blockEnvironmentMismatch();
+  window.addEventListener('pageshow', blockEnvironmentMismatch);
   API.imageUrl = function (value) {
     var v = String(value || '');
     return /^https:\/\//i.test(v) ? v : '';
@@ -126,6 +146,10 @@
   //   payload.__noInternalRetry   : trueならAPI.post自身の内部再送を行わない（＝常に1 fetchのみ）
   // これにより「内部再送」と「画面側再送」の責務を分離し、二重再試行を避ける。
   API.post = async function (action, payload) {
+    if (environmentMismatch()) {
+      blockEnvironmentMismatch();
+      throw new Error('environment_mismatch');
+    }
     payload = payload || {};
     const silent = !!payload.__silent || BG_ACTIONS[action] || (action === 'rpc' && BG_RPC[payload.fn]);
     const timeoutMs = (typeof payload.__timeoutMs === 'number') ? payload.__timeoutMs : _FETCH_TIMEOUT_MS;

@@ -42,8 +42,9 @@
 // 削除）を追加したため、SHELLへ追加してキャッシュを必ず入れ替える。
 // ★2026-08-28追記（v153）: backup.htmlとdata_admin.htmlを「データバックアップ・管理」へ
 // 統合し、管理メニューの導線も一本化したためキャッシュを更新する。
+// v155: 本番SW側のtest除外と環境不一致fail-closedを配布するため更新。
 const CACHE_PREFIX = 'yuwaku-test-';
-const CACHE = CACHE_PREFIX + 'v154';
+const CACHE = CACHE_PREFIX + 'v155';
 const SHELL = [
   './',
   './index.html',

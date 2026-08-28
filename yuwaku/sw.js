@@ -42,8 +42,10 @@
 // 削除）を追加したため、SHELLへ追加してキャッシュを必ず入れ替える。
 // ★2026-08-28追記（v153）: backup.htmlとdata_admin.htmlを「データバックアップ・管理」へ
 // 統合し、管理メニューの導線も一本化したためキャッシュを更新する。
+// v155: 本番SWのscope (/yuwaku/) は子階層の /yuwaku/test/ も含むため、初回テスト遷移を
+// 本番SWが処理して本番キャッシュを見せることがあった。test配下は一切interceptしない。
 const CACHE_PREFIX = 'yuwaku-production-';
-const CACHE = CACHE_PREFIX + 'v154';
+const CACHE = CACHE_PREFIX + 'v155';
 const SHELL = [
   './',
   './index.html',
@@ -145,6 +147,11 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+
+  // 認証・データ環境の分離境界。本番SWは、より深いtest環境のnavigation／静的資産を
+  // キャッシュ取得もオフラインfallbackもせず、必ずブラウザの通常ネットワーク処理へ渡す。
+  const scopePath = new URL(self.registration.scope).pathname;
+  if (url.pathname.startsWith(scopePath + 'test/')) return;
 
   // ページ遷移はネット優先→失敗時キャッシュのindex
   if (req.mode === 'navigate') {
