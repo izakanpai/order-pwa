@@ -5,6 +5,7 @@
 // テスト用D1・テスト用Workerのセットアップ手順は、リポジトリ直下の
 // 「デプロイ手順_テスト環境構築_2026-08-23.md」を参照してください。
 window.APP_CONFIG = {
+  AUTH_SCHEMA_VERSION: 2,
   API_URL: 'https://izakanpai-api-test.izakanpai.workers.dev',
   VERSION: 'test',
   AUTH_STORAGE_PREFIX: 'izakanpai:test:',

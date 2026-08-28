@@ -44,7 +44,7 @@
 // 統合し、管理メニューの導線も一本化したためキャッシュを更新する。
 // v155: 本番SW側のtest除外と環境不一致fail-closedを配布するため更新。
 const CACHE_PREFIX = 'yuwaku-test-';
-const CACHE = CACHE_PREFIX + 'v155';
+const CACHE = CACHE_PREFIX + 'v156';
 const SHELL = [
   './',
   './index.html',
@@ -86,11 +86,11 @@ const SHELL = [
   './system-overview.svg',
   './system-overview-en.svg',
   './styles.css',
-  './config.js',
-  './api.js',
-  './i18n.js',
-  './confirm.js',
-  './app.js',
+  './config.js?v=auth2',
+  './api.js?v=auth2',
+  './i18n.js?v=auth2',
+  './confirm.js?v=auth2',
+  './app.js?v=auth2',
   './manifest.webmanifest',
   './admin.webmanifest',
   './attendance.webmanifest',
@@ -147,20 +147,23 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // ページ遷移はネット優先→失敗時キャッシュのindex
-  if (req.mode === 'navigate') {
-    event.respondWith(
-      fetch(req).catch(() => caches.match('./index.html'))
-    );
-    return;
-  }
-
-  // 静的資産はキャッシュ優先
-  event.respondWith(
-    caches.match(req).then((hit) => hit || fetch(req).then((res) => {
-      const copy = res.clone();
-      caches.open(CACHE).then((c) => c.put(req, copy));
+  // Cache reads are scoped to this environment AND release, never global caches.match.
+  const critical = /\/(?:config|api)\.js$/.test(url.pathname);
+  event.respondWith(caches.open(CACHE).then(async (cache) => {
+    const hit = await cache.match(req);
+    if (!critical && req.mode !== 'navigate' && hit) return hit;
+    try {
+      const res = await fetch(req, critical ? { cache: 'no-store' } : undefined);
+      if (!res.ok) throw new Error('http_' + res.status);
+      // Unversioned auth resources must never become a fallback for versioned HTML.
+      if (!critical || url.searchParams.get('v') === 'auth2') {
+        event.waitUntil(cache.put(req, res.clone()).catch(() => {}));
+      }
       return res;
-    }).catch(() => hit))
-  );
+    } catch (error) {
+      if (hit && (!critical || url.searchParams.get('v') === 'auth2')) return hit;
+      // Do not substitute index.html for an unrelated management page.
+      return Response.error();
+    }
+  }));
 });

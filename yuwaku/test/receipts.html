@@ -49,10 +49,10 @@
     <div style="text-align:center;margin-top:12px;"><button class="btn-sm" id="moreBtn" style="display:none;" onclick="loadMore()" data-t="loadMore">さらに読み込む</button></div>
   </div></div>
 
-  <script src="./config.js"></script>
-  <script src="./api.js"></script>
-  <script src="./i18n.js"></script>
-  <script src="./confirm.js"></script>
+  <script src="./config.js?v=auth2"></script>
+  <script src="./api.js?v=auth2"></script>
+  <script src="./i18n.js?v=auth2"></script>
+  <script src="./confirm.js?v=auth2"></script>
   <script>
     var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
@@ -131,7 +131,7 @@
       en:{ title:'🧾 Receipts', back:'Manage', toOrders:'← Orders', month:'Target month', monthTotal:'Month total', bills:'bills', thTime:'Time', thOr:'OR no.', thTable:'Table', thTotal:'Total', thMethod:'Paid', thDisc:'Discount', reprint:'🖨️ Reprint', sent:'Sent to print queue', loading:'Loading…', empty:'No receipts this month', errPrefix:'Error: ', loadErr:'Load error: ', loadMore:'Load more' }
     }, function(){ if(__loaded) render(); });
   </script>
-  <script src="./help.js"></script>
+  <script src="./help.js?v=auth2"></script>
   <script>
     HelpUI.register({
       title: '会計履歴',

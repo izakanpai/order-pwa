@@ -58,10 +58,10 @@
     </div>
   </div>
 
-  <script src="./config.js"></script>
-  <script src="./api.js"></script>
-  <script src="./i18n.js"></script>
-  <script src="./confirm.js"></script>
+  <script src="./config.js?v=auth2"></script>
+  <script src="./api.js?v=auth2"></script>
+  <script src="./i18n.js?v=auth2"></script>
+  <script src="./confirm.js?v=auth2"></script>
   <script>
     var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
@@ -123,7 +123,7 @@
     }, function(){ if(__loaded) render(); fillSupSel(); });
   </script>
 
-  <script src="./help.js"></script>
+  <script src="./help.js?v=auth2"></script>
   <script>
     HelpUI.register({
       title: '発注アイテム管理',

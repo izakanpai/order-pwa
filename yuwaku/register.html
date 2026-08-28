@@ -42,10 +42,10 @@
   <div class="head"><h1 data-t="title">💵 レジ開け／締め</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
   <div class="wrap" id="wrap"><div class="loading" data-t="loading">読み込み中…</div></div>
 
-  <script src="./config.js"></script>
-  <script src="./api.js"></script>
-  <script src="./i18n.js"></script>
-  <script src="./confirm.js"></script>
+  <script src="./config.js?v=auth2"></script>
+  <script src="./api.js?v=auth2"></script>
+  <script src="./i18n.js?v=auth2"></script>
+  <script src="./confirm.js?v=auth2"></script>
   <script>
     var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
     var NAME = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtName') || '';
@@ -146,7 +146,7 @@
 
     reload();
   </script>
-  <script src="./help.js"></script>
+  <script src="./help.js?v=auth2"></script>
   <script>
     HelpUI.register({
       title: 'レジ開け／締め',

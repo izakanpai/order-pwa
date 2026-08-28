@@ -63,7 +63,7 @@
 
   <canvas id="cv" width="384" height="10"></canvas>
 
-<script src="./config.js"></script>
+<script src="./config.js?v=auth2"></script>
 <script>
 // 2026-08-24: このページ自体はBRIDGE_KEY(任意)だけでバックエンド呼び出しをしており、
 // URLを直接開けばログイン無しで店舗設定(getSettings)等が見える状態だった。
@@ -427,7 +427,7 @@ function releaseWake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } 
 document.addEventListener('visibilitychange', async function(){ if(document.visibilityState==='visible' && looping && !wakeLock){ await requestWake(); } });
 </script>
 
-<script src="./help.js"></script>
+<script src="./help.js?v=auth2"></script>
 <script>
   HelpUI.register({
     title: '印刷ステーション（Bluetoothプリンタ）',

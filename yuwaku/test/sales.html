@@ -71,9 +71,9 @@
     </div>
   </div>
 
-  <script src="./config.js"></script>
-  <script src="./api.js"></script>
-  <script src="./i18n.js"></script>
+  <script src="./config.js?v=auth2"></script>
+  <script src="./api.js?v=auth2"></script>
+  <script src="./i18n.js?v=auth2"></script>
   <script>
     var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
@@ -307,7 +307,7 @@
       en:{ title:'📊 Sales', back:'← Manage', dailyTitle:'📈 Daily sales', monthlyTitle:'📅 Monthly summary', anaTitle:'🔎 Analysis (items / hours / days)', month:'Target month', analyze:'🔍 Analyze', byItem:'🏆 By item (ABC analysis)', byCat:'🍱 Sales by category', byHour:'🕐 By hour', byDow:'📅 By day of week', popTitle:'🍽️ Menu popularity score (last 30 days)', popHint:'Based on order quantity over the last 30 days (top seller = 100). Low-score / unsold items help you review the menu.', loading:'Loading…', noData:'No data', noSales:'No sales data.', dailySales:'Daily sales', colMonth:'Month', colTotal:'Total', sOrders:'Orders ', sOrdersU:'', sSales:'Sales ', sAvg:'Avg/order ', sCost:'Cost rate ', cItem:'Item', cQty:'Qty', cRev:'Revenue', cCost:'Cost', cCostR:'Cost %', cCum:'Cum %', cCat:'Category', cScore:'Score', other:'Other', hourU:':00', dowNames:'Sun,Mon,Tue,Wed,Thu,Fri,Sat', lHot:'🔥Popular', lOk:'Normal', lLow:'⚠️Low', lUnsold:'❌Unsold', loadErr:'Load error: ' }
     }, function(){ if(_sales) renderSales(); if(_ana) renderAnalytics(); if(_pop) renderPopularity(); });
   </script>
-  <script src="./help.js"></script>
+  <script src="./help.js?v=auth2"></script>
   <script>
     HelpUI.register({
       title: '売上管理',

@@ -11,6 +11,7 @@
 // このファイル（本番用）には、以前あったURLトグル切り替え機能は撤去した（複雑だったため、
 // 昔ながらのURL分離方式＝/yuwaku/test/ に一本化）。
 window.APP_CONFIG = {
+  AUTH_SCHEMA_VERSION: 2,
   API_URL: 'https://izakanpai-api.izakanpai.workers.dev',
   VERSION: 'v1.0.0',
   AUTH_STORAGE_PREFIX: 'izakanpai:production:',

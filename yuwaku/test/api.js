@@ -1,7 +1,8 @@
 // API クライアント ＋ オフライン送信キュー（IndexedDB）
 // GASは Content-Type: text/plain でPOSTするとプリフライトを回避できる。
 (function () {
-  const CFG = window.APP_CONFIG;
+  const CFG = Object.freeze(Object.assign({}, window.APP_CONFIG || {}));
+  const AUTH_PREFIX = CFG.AUTH_STORAGE_PREFIX;
   const API = {};
 
   // 同一originの本番／テスト間で、古い親Service Workerが別環境のconfig.jsを返しても
@@ -9,7 +10,12 @@
   function environmentMismatch() {
     var pathIsTest = /\/test(?:\/|$)/i.test(location.pathname);
     var configIsTest = CFG.TEST_ENV === true || /^test$/i.test(String(CFG.VERSION || '')) || /api-test\./i.test(String(CFG.API_URL || ''));
-    return pathIsTest !== configIsTest;
+    var env = pathIsTest ? 'test' : 'production';
+    return pathIsTest !== configIsTest || CFG.AUTH_SCHEMA_VERSION !== 2 ||
+      AUTH_PREFIX !== 'izakanpai:' + env + ':' ||
+      CFG.STORAGE_PREFIX !== AUTH_PREFIX || CFG.OFFLINE_DB_NAME !== 'izakanpai-pos-' + env ||
+      !/^https:\/\//i.test(String(CFG.API_URL || '')) ||
+      /api-test\./i.test(String(CFG.API_URL || '')) !== pathIsTest;
   }
   function blockEnvironmentMismatch() {
     if (!environmentMismatch() || document.getElementById('izEnvMismatch')) return;
@@ -23,6 +29,33 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', blockEnvironmentMismatch, { once: true });
   else blockEnvironmentMismatch();
   window.addEventListener('pageshow', blockEnvironmentMismatch);
+  API.authReady = function () {
+    blockEnvironmentMismatch();
+    return !environmentMismatch();
+  };
+  function storedToken() {
+    try { return localStorage.getItem(AUTH_PREFIX + 'mgmtToken') || ''; } catch (e) { return ''; }
+  }
+  // Structural validation only; authenticity/authorization always remains server-side.
+  function tokenInfo(token) {
+    if (typeof token !== 'string') return null;
+    var dot = token.lastIndexOf('.'), parts = token.slice(0, dot).split('~');
+    if (dot < 0 || !/^[a-f0-9]{64}$/.test(token.slice(dot + 1)) || parts.length !== 6 ||
+        parts[0] !== 'v2' || !Number.isFinite(Number(parts[1])) || Number(parts[1]) <= Date.now() ||
+        !parts[2] || !parts[3] || !parts[4] || parts[5] !== (CFG.TEST_ENV ? 'test' : 'production')) return null;
+    return { role: parts[2], store: parts[3], uid: parts[4], audience: parts[5] };
+  }
+  API.acceptLogin = function (r) {
+    if (!API.authReady()) throw new Error('environment_mismatch');
+    var info = tokenInfo(r && r.token);
+    if (!info || info.role !== r.role) throw new Error('invalid_login_response');
+    // Token is written last: partially failed persistence must not announce login success.
+    localStorage.setItem(AUTH_PREFIX + 'mgmtName', r.name || '');
+    localStorage.setItem(AUTH_PREFIX + 'mgmtRole', r.role);
+    localStorage.setItem(AUTH_PREFIX + 'mgmtToken', r.token);
+    if (storedToken() !== r.token) throw new Error('auth_storage_unavailable');
+  };
+  API.isCurrentToken = function (token) { return !!token && storedToken() === token; };
   API.imageUrl = function (value) {
     var v = String(value || '');
     return /^https:\/\//i.test(v) ? v : '';
@@ -162,7 +195,8 @@
     // 変更せずに「操作が続く限りログイン状態を保持する」を実現する。token不要な公開アクション
     // （客注文画面等）には影響しない。
     if (send.token) {
-      try { const _latest = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken'); if (_latest) send.token = _latest; } catch (e) {}
+      const latest = storedToken();
+      if (latest) send.token = latest;
     }
     const body = JSON.stringify(Object.assign({ action: action }, send));
     const canRetry = !noInternalRetry && _isReadOnly(action, payload.fn);
@@ -184,20 +218,31 @@
       _errBar.hide();
       if (!json.ok) {
         // ログイントークン失効（unauthorized）は生のエラーを見せず、管理画面（ログイン）へ自動的に戻す
-        if (json.error === 'unauthorized' && (function () { try { return !!localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken'); } catch (e) { return false; } })()) {
-          try { localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken'); localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtName'); localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtRole'); } catch (e) {}
+        if (json.error === 'unauthorized' && API.isCurrentToken(send.token)) {
+          try { localStorage.removeItem(AUTH_PREFIX + 'mgmtToken'); localStorage.removeItem(AUTH_PREFIX + 'mgmtName'); localStorage.removeItem(AUTH_PREFIX + 'mgmtRole'); } catch (e) {}
           location.href = './manage.html';
-          return new Promise(function () {}); // 遷移するのでこれ以上は解決しない
         }
-        const e = new Error(json.error || 'api_error'); e.__server = true; throw e;
+        // Legacy page catch handlers redirect on the literal "unauthorized".
+        // A stale rejection must not trigger those handlers against a newer login.
+        const stale = json.error === 'unauthorized' && storedToken() && !API.isCurrentToken(send.token);
+        const e = new Error(stale ? 'stale_session_response' : (json.error || 'api_error')); e.__server = true; throw e;
+      }
+      if (send.token && !API.isCurrentToken(send.token)) {
+        const sent = tokenInfo(send.token), current = tokenInfo(storedToken());
+        if (!current || !sent || sent.uid !== current.uid || sent.store !== current.store || sent.role !== current.role || sent.audience !== current.audience) {
+          throw new Error('stale_session_response');
+        }
       }
       // 2026-08-25追加: サーバー側（gasApi.js handleGasCompatRequest）がスライディング・
       // エクスパイアで再発行したトークンをlocalStorageへ反映する。これにより、設定画面で
       // 設定したログイン保持時間の範囲内で操作が続く限りログイン状態が維持され、無操作のまま
       // その時間が過ぎれば（新しいnewTokenが来ないため）元のトークンの期限どおり自動的に
       // ログアウトされる。
-      if (json.newToken) {
-        try { if (localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken')) localStorage.setItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken', json.newToken); } catch (e) {}
+      if (json.newToken && API.isCurrentToken(send.token)) {
+        const before = tokenInfo(send.token), after = tokenInfo(json.newToken);
+        if (before && after && before.role === after.role && before.store === after.store && before.uid === after.uid && before.audience === after.audience) {
+          try { localStorage.setItem(AUTH_PREFIX + 'mgmtToken', json.newToken); } catch (e) {}
+        }
       }
       return json;
     } finally {
@@ -309,16 +354,11 @@
     if (document.body) _mkBadge(); else document.addEventListener('DOMContentLoaded', _mkBadge);
   }
 
-  // ---- Service Worker 自動更新（更新後に一度だけ自動リロード）----
-  // デプロイ後に古いキャッシュのまま動くのを防ぐ。初回制御取得では再読み込みしない。
+  // Register on every screen, including login. Never reload during login/form entry:
+  // Critical auth scripts prefer network, with exact-release offline fallback only.
   if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     try {
-      var _hadController = !!navigator.serviceWorker.controller;
-      var _reloading = false;
-      navigator.serviceWorker.addEventListener('controllerchange', function () {
-        if (_reloading) return; _reloading = true;
-        if (_hadController) { try { window.location.reload(); } catch (e) {} }
-      });
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(function () {});
     } catch (e) {}
   }
 

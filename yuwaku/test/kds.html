@@ -65,9 +65,9 @@
   <div id="staleWrap" style="display:none;background:#fffbeb;border-bottom:2px solid #fcd34d;padding:8px 14px;font-size:13px;color:#92400e;font-weight:800;"></div>
   <div class="kgrid" id="grid"><div class="kempty" id="loadMsg" data-t="loading">読み込み中…</div></div>
 
-  <script src="./config.js"></script>
-  <script src="./api.js"></script>
-  <script src="./i18n.js"></script>
+  <script src="./config.js?v=auth2"></script>
+  <script src="./api.js?v=auth2"></script>
+  <script src="./i18n.js?v=auth2"></script>
   <script>
     // [P0-2] 注文状態の変更はスタッフ操作のため、このKDS端末でも事前ログイン（1回のみ）を必須にする。
     var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
@@ -257,7 +257,7 @@
     }, function(){ updateSoundBtn(); if(__booted) render(lastData); });
     document.addEventListener('DOMContentLoaded', boot);
   </script>
-  <script src="./help.js"></script>
+  <script src="./help.js?v=auth2"></script>
   <script>
     HelpUI.register({
       title: 'キッチンディスプレイの使い方',

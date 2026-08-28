@@ -42,8 +42,8 @@
     </div>
   </div>
 
-  <script src="./config.js"></script>
-  <script src="./api.js"></script>
+  <script src="./config.js?v=auth2"></script>
+  <script src="./api.js?v=auth2"></script>
   <script>
     var lang = (localStorage.getItem('lang')||'').match(/^(ja|en)$/) ? localStorage.getItem('lang') : 'en';
     var T = {
@@ -80,7 +80,7 @@
     };
     apply();
   </script>
-  <script src="./help.js"></script>
+  <script src="./help.js?v=auth2"></script>
   <script>
     HelpUI.register({
       title: 'ご予約フォームの使い方',

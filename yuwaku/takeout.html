@@ -106,10 +106,10 @@
     </div>
   </div>
 
-  <script src="./config.js"></script>
+  <script src="./config.js?v=auth2"></script>
   <script>try{if(localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken')){var _mb=document.getElementById('mgmtBack');if(_mb)_mb.style.display='block';}}catch(e){}</script>
-  <script src="./api.js"></script>
-  <script src="./i18n.js"></script>
+  <script src="./api.js?v=auth2"></script>
+  <script src="./i18n.js?v=auth2"></script>
   <script>
     // 2026-08-25削除: PayMongoによるオンライン決済（startPayment/checkPayment等）は
     // PAYMONGOが常にfalseで一度も実行されない死んだコードだったため、あつしさんの明示許可を
@@ -316,7 +316,7 @@
     }
     document.addEventListener('DOMContentLoaded', boot);
   </script>
-  <script src="./help.js"></script>
+  <script src="./help.js?v=auth2"></script>
   <script>
     HelpUI.register({
       title: 'テイクアウト注文の使い方',
