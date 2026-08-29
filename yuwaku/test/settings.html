@@ -96,11 +96,23 @@
           <label class="form-label" data-t="taxRate">税率 (%)</label><input id="taxRate" type="number" min="0" step="any" class="fc">
           <label class="chk" style="margin-top:6px;"><input type="checkbox" id="taxInclusive"><span data-t="taxInclLabel">内税（価格に含む）</span></label>
         </div>
+        <div class="fg"><label class="form-label" data-t="timezoneLbl">標準時間（タイムゾーン）</label><input id="timezone" class="fc" list="timezoneOptions" placeholder="Asia/Manila" autocomplete="off"><datalist id="timezoneOptions">
+          <option value="Asia/Manila">Philippines</option><option value="Asia/Tokyo">Japan</option>
+          <option value="Asia/Singapore">Singapore</option><option value="Asia/Seoul">South Korea</option>
+          <option value="Asia/Hong_Kong">Hong Kong</option><option value="Asia/Taipei">Taiwan</option>
+          <option value="Asia/Bangkok">Thailand</option><option value="Asia/Ho_Chi_Minh">Vietnam</option>
+          <option value="Asia/Kuala_Lumpur">Malaysia</option><option value="Asia/Jakarta">Indonesia (West)</option>
+          <option value="Asia/Kolkata">India</option><option value="Australia/Sydney">Australia (Sydney)</option>
+          <option value="America/New_York">USA (Eastern)</option><option value="America/Los_Angeles">USA (Pacific)</option>
+          <option value="Europe/London">United Kingdom</option><option value="Europe/Paris">Central Europe</option>
+          <option value="UTC">UTC</option>
+        </datalist></div>
         <div class="fg"><label class="form-label" data-t="defLang">既定言語</label><select id="defaultLang" class="fc"><option value="en">English</option><option value="ja">日本語</option></select></div>
         <div class="fg"><label class="form-label" data-t="accent">アクセント色</label><input id="accentColor" type="color" class="fc" style="height:44px;"></div>
         <div class="fg"><label class="form-label" data-t="bizCutoff">営業日切替時刻</label><input id="bizDayCutoff" type="time" class="fc" step="60"></div>
       </div>
       <div class="form-hint" data-t="chargesHint" style="margin:6px 0 10px;">チェックなし＝外税（表示価格に加算）。チェックあり＝内税（表示価格に含む）。一般的には税＝内税、サービス料＝外税です。</div>
+      <div class="form-hint" data-t="timezoneHint" style="margin:0 0 10px;">店舗所在地のIANAタイムゾーンを選択または入力してください。営業日、売上集計、勤怠、提供時間、定期レポートの時刻へ共通反映されます。</div>
       <div class="form-hint" data-t="bizCutoffHint" style="margin:0 0 10px;">深夜営業の場合に設定してください。例：2:30を設定すると、午前2時30分までの売上は前日の営業日として日報・週報・月報・売上集計に計上されます。0:00＝通常どおり午前0時で区切り。指定できるのは0:00〜11:59の範囲です（それ以外は0:00として扱われます）。</div>
       <button class="btn" onclick="saveLocale()" data-t="save">💾 保存</button>
       <div class="st" id="st-locale"></div>
@@ -425,7 +437,15 @@
     function _splitTime(v){ var m=/^(\d{1,2}):(\d{2})$/.exec(v||''); return m? [Number(m[1]), Number(m[2])] : [0,0]; }
     // 時・分（数値）からtime input用の"HH:MM"文字列を作る。
     function _fmtTime(h,m){ h=parseInt(h,10)||0; m=parseInt(m,10)||0; return (h<10?'0':'')+h+':'+(m<10?'0':'')+m; }
-    window.saveLocale = function(){ var bc=_splitTime($('bizDayCutoff').value); rpc('saveSettings',[{ currencyCode:$('currencyCode').value, currencySymbol:$('currencySymbol').value, serviceRate:$('serviceRate').value, taxRate:$('taxRate').value, serviceInclusive:$('serviceInclusive').checked?'true':'false', taxInclusive:$('taxInclusive').checked?'true':'false', defaultLang:$('defaultLang').value, accentColor:$('accentColor').value, bizDayCutoffHour:bc[0], bizDayCutoffMin:bc[1] }]).then(function(){ st('st-locale',I18n.t('saved'), true); }).catch(function(e){ st('st-locale',I18n.t('errPrefix')+(e.message||e), false); }); };
+    window.saveLocale = function(){
+      var bc=_splitTime($('bizDayCutoff').value), tz=String($('timezone').value||'').trim();
+      try { if(!tz) throw new Error('blank'); new Intl.DateTimeFormat('en-US',{timeZone:tz}).format(); }
+      catch(e){ st('st-locale',I18n.t('invalidTimezone'), false); return; }
+      rpc('saveSettings',[{ timezone:tz, currencyCode:$('currencyCode').value, currencySymbol:$('currencySymbol').value, serviceRate:$('serviceRate').value, taxRate:$('taxRate').value, serviceInclusive:$('serviceInclusive').checked?'true':'false', taxInclusive:$('taxInclusive').checked?'true':'false', defaultLang:$('defaultLang').value, accentColor:$('accentColor').value, bizDayCutoffHour:bc[0], bizDayCutoffMin:bc[1] }]).then(function(d){
+        if(!d || d.success===false){ st('st-locale',I18n.t('errPrefix')+((d&&d.error)||'save_failed'), false); return; }
+        $('timezone').value=d.timezone||tz; st('st-locale',I18n.t('saved'), true);
+      }).catch(function(e){ st('st-locale',I18n.t('errPrefix')+(e.message||e), false); });
+    };
     // 2026-08-25追加: ログイン保持時間（あつしさんのご要望「設定画面に持ち、操作があればログイン
     // 状態を保持したい」対応）。実際のスライディング・エクスパイア処理はサーバー側
     // （src/gasApi.js handleGasCompatRequest）とapi.js側で行っており、ここでは保持時間（時間数）を
@@ -583,6 +603,7 @@
       if (d.menuTopImageId){ var e1=$('prevOrder'); e1.src=API.imageUrl(d.menuTopImageId); e1.style.display='block'; }
       if (d.systemTopImageId){ var e2=$('prevLogin'); e2.src=API.imageUrl(d.systemTopImageId); e2.style.display='block'; }
       $('currencyCode').value = d.currencyCode || 'PHP';
+      $('timezone').value = d.timezone || 'Asia/Tokyo';
       $('currencySymbol').value = (d.currencySymbol!==undefined && d.currencySymbol!=='') ? d.currencySymbol : '₱';
       $('serviceRate').value = d.serviceRate || '';
       $('taxRate').value = d.taxRate || '';
@@ -623,7 +644,7 @@
         qrBridgeLabel:'🖶 プリンタへ送信', qrEnqueueAllBtn:'全卓をキューへ', qrEnqueueOneBtn:'🖶 印刷キューへ', qrNoPrinters:'有効なプリンタがありません（プリンタ設定を確認してください）', qrQueued:'✅ {n}件を印刷キューへ送信しました',
         shopTitle:'🏪 店舗設定', shopName:'店舗名', shopAddress:'住所（レシート表示）', shopTin:'TIN番号（レシート表示）', shopLogo:'レシートのロゴ（先頭に中央印字）', logoClear:'クリア', logoSize:'印字サイズ（%）', logoHint:'白黒の感熱印刷用に自動で縮小・変換します。58mm幅を100%として、下の値で印字サイズを調整できます。', tableCount:'テーブル数', counterCount:'カウンター数', seatHint:'注文画面で「テーブル1〜」「カウンター1〜」から席を選べます。0にするとその種別は非表示。', tableHint:'注文画面のテーブル番号の上限。',
         imgTitle:'🖼️ トップ画像', orderImg:'オーダートップ画像（注文画面）', loginImg:'ログイン画面の画像（管理ログイン画面に表示）', upload:'⬆️ アップロード',
-        localeTitle:'🌐 表示・地域', curCode:'通貨コード', curSym:'通貨記号', svcRate:'サービス料 (%)', taxRate:'税率 (%)', defLang:'既定言語', accent:'アクセント色',
+        localeTitle:'🌐 表示・地域', curCode:'通貨コード', curSym:'通貨記号', svcRate:'サービス料 (%)', taxRate:'税率 (%)', timezoneLbl:'標準時間（タイムゾーン）', timezoneHint:'店舗所在地のIANAタイムゾーンを選択または入力してください。営業日、売上集計、勤怠、提供時間、定期レポートの時刻へ共通反映されます。', invalidTimezone:'有効なタイムゾーンを選択または入力してください（例：Asia/Manila）。', defLang:'既定言語', accent:'アクセント色',
         svcInclLabel:'内税（価格に含む）', taxInclLabel:'内税（価格に含む）', chargesHint:'チェックなし＝外税（表示価格に加算）。チェックあり＝内税（表示価格に含む）。一般的には税＝内税、サービス料＝外税です。',
         bizCutoff:'営業日切替時刻', bizCutoffHint:'深夜営業の場合に設定してください。例：2:30を設定すると、午前2時30分までの売上は前日の営業日として日報・週報・月報・売上集計に計上されます。0:00＝通常どおり午前0時で区切り。指定できるのは0:00〜11:59の範囲です（それ以外は0:00として扱われます）。',
         securityTitle:'🔐 セキュリティ', sessionTimeout:'ログイン保持時間（時間）', sessionTimeoutHint:'スタッフの管理画面ログインが自動的に切れるまでの時間です。未設定の場合は8時間。ログイン中に管理画面を操作していれば、その都度この時間だけ自動延長されます（ログインしたまま何も操作しない状態がこの時間続くと自動的にログアウトされます）。最大720時間（30日）まで設定できます。',
@@ -649,7 +670,7 @@
         qrBridgeLabel:'🖶 Send to printer', qrEnqueueAllBtn:'Queue all tables', qrEnqueueOneBtn:'🖶 Queue print', qrNoPrinters:'No enabled printer found (check printer settings)', qrQueued:'✅ Sent {n} to the print queue',
         shopTitle:'🏪 Store settings', shopName:'Store name', shopAddress:'Address (on receipt)', shopTin:'TIN (on receipt)', shopLogo:'Receipt logo (centered on top)', logoClear:'Clear', logoSize:'Print size (%)', logoHint:'Auto-resized & converted for B/W thermal printing. 58mm width = 100%; adjust the print size below.', tableCount:'Tables', counterCount:'Counter seats', seatHint:'On the order screen guests pick from “Table 1…” / “Counter 1…”. Set 0 to hide that type.', tableHint:'Max table number on the order screen.',
         imgTitle:'🖼️ Top images', orderImg:'Order top image (order screen)', loginImg:'Login screen image (shown on admin login)', upload:'⬆️ Upload',
-        localeTitle:'🌐 Display & region', curCode:'Currency code', curSym:'Currency symbol', svcRate:'Service charge (%)', taxRate:'Tax (%)', defLang:'Default language', accent:'Accent color',
+        localeTitle:'🌐 Display & region', curCode:'Currency code', curSym:'Currency symbol', svcRate:'Service charge (%)', taxRate:'Tax (%)', timezoneLbl:'Standard time (time zone)', timezoneHint:'Choose or enter the store location’s IANA time zone. It is applied consistently to business dates, sales totals, attendance, service hours, and scheduled reports.', invalidTimezone:'Choose or enter a valid time zone (for example, Asia/Manila).', defLang:'Default language', accent:'Accent color',
         svcInclLabel:'Tax-inclusive (included in price)', taxInclLabel:'Tax-inclusive (included in price)', chargesHint:'Unchecked = exclusive (added on top of the listed price). Checked = inclusive (already included in the listed price). Typically tax is inclusive and the service charge is exclusive.',
         bizCutoff:'Business day cutoff time', bizCutoffHint:'Set this if you stay open past midnight. E.g. setting 2:30 means sales up to 2:30am count toward the previous day’s business day in the daily/weekly/monthly reports and sales totals. 0:00 = normal midnight cutoff. Valid range is 0:00–11:59 (anything else is treated as 0:00).',
         securityTitle:'🔐 Security', sessionTimeout:'Login session length (hours)', sessionTimeoutHint:'How long a staff management login stays valid before it automatically expires. Defaults to 8 hours if unset. Each action taken while logged in extends the session by this amount (staying logged in with no activity for this long logs you out automatically). Max 720 hours (30 days).',
@@ -681,7 +702,7 @@
       items: [
         { ja: '① 「🏪 店舗設定」で店名・住所・TIN番号（レシート表示用）、レシート先頭のロゴ画像と印字サイズ、テーブル数・カウンター数（注文画面で選べる席の数、0で非表示）を設定できます。', en: '① "Store settings" lets you set the store name, address, TIN (shown on receipts), the receipt logo image and its print size, and the number of tables/counters selectable on the order screen (0 hides that type).' },
         { ja: '② 「📱 テーブルQRコード」の「QRコードを表示」ボタンで各テーブル専用の注文画面QRコードを一覧表示し、印刷したり、対応プリンタへ印刷キューとして送信できます。', en: '② "Table QR Codes" → "Show QR Codes" displays a QR code per table that opens that table\'s order screen; you can print them or send them to a connected printer\'s print queue.' },
-        { ja: '③ 「🌐 表示・地域」で通貨コード・記号、サービス料・税率（内税/外税のチェックで切替）、既定言語、アクセント色、深夜営業向けの営業日切替時刻を設定できます。', en: '③ "Display & region" sets the currency code/symbol, service charge and tax rate (checkbox toggles inclusive/exclusive), default language, accent color, and the business-day cutoff time for late-night operation.' },
+        { ja: '③ 「🌐 表示・地域」で店舗所在地の標準時間（IANAタイムゾーン）、通貨、税・サービス料、言語、色、営業日切替時刻を設定できます。標準時間は売上集計・勤怠・提供時間・定期レポートへ共通反映されます。', en: '③ "Display & region" sets the store’s standard time (IANA time zone), currency, tax/service charge, language, color, and business-day cutoff. The time zone is shared by sales totals, attendance, service hours, and scheduled reports.' },
         { ja: '④ 「🎫 入場料・延長料」「🧓 シニア/PWD割引」「💳 決済方法」「🎁 ロイヤリティ」など、各カードのチェックボックスと金額欄で会計画面に表示する機能をON/OFF・数値設定し、それぞれの「💾 保存」ボタンで保存します。', en: '④ Cards like "Entry & extension fee", "Senior/PWD discount", "Payment methods" and "Loyalty" let you turn checkout-screen features on/off and set amounts, each with its own "Save" button.' },
         { ja: '⑤ 「🤖 Gemini APIキー」「🔍 Pexels画像検索」「📧 メール送信設定（Resend）」のAPIキー欄は、貼り付けて保存すると即座に入力欄がクリアされ、以後は上の「設定済/未設定」バッジのみで状態を確認します（安全のため、保存後にキーの値がこの画面に表示され続けることはありません）。', en: '⑤ For the Gemini API key, Pexels API key and Resend email API key fields: after you paste and save, the field is cleared immediately — from then on only the "Set / Not set" badge above shows the status (for safety, the saved key value is never redisplayed on this screen).' },
         { ja: '⑥ 「📧 定期レポート」では送信先メール・日次/週次/月次の送信タイミングと出力言語を設定し、「保存＆スケジュール」で反映、「日次/週次/月次テスト」ボタンで実際にテストメールを送信して確認できます（メール送信設定でAPIキー・送信元アドレスの登録が必要）。', en: '⑥ "Scheduled reports" sets recipient emails, daily/weekly/monthly send times, and output language; "Save & schedule" applies it, and the "Daily/Weekly/Monthly test" buttons send an actual test email to verify (requires the API key and from-address to be configured above).' },
