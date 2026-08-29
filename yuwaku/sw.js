@@ -45,8 +45,8 @@
 // v155: 本番SWのscope (/yuwaku/) は子階層の /yuwaku/test/ も含むため、初回テスト遷移を
 // 本番SWが処理して本番キャッシュを見せることがあった。test配下は一切interceptしない。
 const CACHE_PREFIX = 'yuwaku-production-';
-// v157: 全画面共通ヘッダーheader.jsを追加し、既存の個別ヘッダーを統一する。
-const CACHE = CACHE_PREFIX + 'v157';
+// v158: 共通ヘッダーを1段へ圧縮し、画面固有操作も同一行へ統合する。
+const CACHE = CACHE_PREFIX + 'v158';
 const SHELL = [
   './',
   './index.html',
@@ -89,7 +89,7 @@ const SHELL = [
   './system-overview-en.svg',
   './styles.css',
   './config.js?v=auth2',
-  './header.js?v=auth2',
+  './header.js?v=auth3',
   './api.js?v=auth2',
   './i18n.js?v=auth2',
   './confirm.js?v=auth2',

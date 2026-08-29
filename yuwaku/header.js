@@ -97,6 +97,7 @@
   function text(isJa, ja, en) { return isJa ? ja : en; }
   function renderLanguage() {
     var isJa = currentLang() === 'ja';
+    var compact = typeof matchMedia === 'function' && matchMedia('(max-width:720px)').matches;
     if (state.lang) {
       state.lang.textContent = isJa ? 'EN' : '日本語';
       state.lang.setAttribute('aria-label', text(isJa, '英語へ切替', 'Switch to Japanese'));
@@ -105,9 +106,9 @@
     var refresh = document.getElementById('izHeaderRefresh');
     var manage = document.getElementById('izHeaderManage');
     var back = document.getElementById('izHeaderBack');
-    if (refresh) { refresh.textContent = text(isJa, '↻ 更新', '↻ Refresh'); refresh.title = text(isJa, '画面を更新', 'Refresh page'); }
-    if (manage) { manage.textContent = text(isJa, '⌂ 管理', '⌂ Manage'); manage.title = text(isJa, '管理メニューに戻る', 'Return to management menu'); }
-    if (back) { back.textContent = text(isJa, '← 戻る', '← Back'); back.title = text(isJa, '前の画面に戻る', 'Go back'); }
+    if (refresh) { refresh.textContent = compact ? '↻' : text(isJa, '↻ 更新', '↻ Refresh'); refresh.title = text(isJa, '画面を更新', 'Refresh page'); refresh.setAttribute('aria-label', refresh.title); }
+    if (manage) { manage.textContent = compact ? '⌂' : text(isJa, '⌂ 管理', '⌂ Manage'); manage.title = text(isJa, '管理メニューに戻る', 'Return to management menu'); manage.setAttribute('aria-label', manage.title); }
+    if (back) { back.textContent = compact ? '←' : text(isJa, '← 戻る', '← Back'); back.title = text(isJa, '前の画面に戻る', 'Go back'); back.setAttribute('aria-label', back.title); }
   }
 
   function switchLanguage() {
@@ -179,19 +180,19 @@
     var s = document.createElement('style'); s.id = 'izHeaderStyle';
     s.textContent =
       '#izCommonHeader{position:sticky;top:0;z-index:2147483000;background:#0f172a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;box-shadow:0 1px 0 rgba(255,255,255,.1)}' +
-      '#izCommonHeader .iz-header-main{display:flex;align-items:center;gap:10px;padding:10px 14px;min-height:58px;flex-wrap:wrap}' +
-      '#izHeaderTitle{font-size:17px;font-weight:900;line-height:1.25;flex:1 1 180px;min-width:120px}' +
-      '#izHeaderTitle>*{font:inherit!important;margin:0!important;color:inherit!important}' +
-      '#izHeaderMeta,#izHeaderActions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}' +
+      '#izCommonHeader .iz-header-main{display:flex;align-items:center;gap:8px;padding:8px 12px;min-height:50px;flex-wrap:nowrap}' +
+      '#izHeaderTitle{font-size:16px;font-weight:900;line-height:1.2;flex:1 1 140px;min-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+      '#izHeaderTitle>*{font:inherit!important;margin:0!important;color:inherit!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+      '#izHeaderMeta,#izHeaderActions{display:flex;align-items:center;gap:6px;flex:0 0 auto;flex-wrap:nowrap}' +
       '.iz-header-clock,.iz-header-user{font-size:12px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;background:rgba(255,255,255,.1);padding:7px 9px;border-radius:8px}' +
       '.iz-header-user{max-width:180px;overflow:hidden;text-overflow:ellipsis}' +
       '.iz-header-btn{border:0;border-radius:8px;background:rgba(255,255,255,.15);color:#fff;padding:8px 10px;min-height:34px;font:800 12px/1.2 inherit;cursor:pointer;white-space:nowrap}' +
       '.iz-header-btn:hover{background:rgba(255,255,255,.25)}' +
-      '#izHeaderExtra{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:7px 14px;background:#0b1220;border-top:1px solid rgba(255,255,255,.08)}' +
+      '#izHeaderExtra{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex:0 1 auto;min-width:0;flex-wrap:nowrap;padding:0;background:transparent;border:0}' +
       '#izHeaderExtra[hidden]{display:none}' +
       '#izHeaderExtra a,#izHeaderExtra button{margin:0!important}' +
-      '@media(max-width:720px){#izCommonHeader .iz-header-main{gap:7px;padding:8px 10px}#izHeaderTitle{flex-basis:100%;font-size:15px}#izHeaderMeta{flex:1}.iz-header-clock{font-size:11px}.iz-header-user{max-width:130px}.iz-header-btn{padding:7px 8px;font-size:11px}}' +
-      '@media(max-width:430px){.iz-header-clock{font-size:10px}.iz-header-user{max-width:110px}#izHeaderActions{gap:5px}}';
+      '@media(max-width:720px){#izCommonHeader .iz-header-main{gap:5px;padding:6px 8px;min-height:44px;flex-wrap:wrap}#izHeaderTitle{flex:1 1 55px;min-width:55px;font-size:14px}#izHeaderExtra{gap:4px}.iz-header-clock{font-size:10px;padding:6px}.iz-header-user{max-width:100px;padding:6px}.iz-header-btn{width:32px;min-height:32px;padding:6px;font-size:13px}#izHeaderLang{width:auto;min-width:38px}}' +
+      '@media(max-width:430px){#izHeaderActions{gap:4px}}';
     document.head.appendChild(s);
   }
 
@@ -242,14 +243,15 @@
     actions.appendChild(button('izHeaderRefresh', '↻', function () { location.reload(); }));
     if (policy.showManage) actions.appendChild(button('izHeaderManage', '⌂', function () { location.href = './manage.html'; }));
     if (policy.showBack) actions.appendChild(button('izHeaderBack', '←', function () { goBack(policy); }));
-    main.appendChild(title); main.appendChild(meta); main.appendChild(actions); header.appendChild(main);
-    var extra = document.createElement('div'); extra.id = 'izHeaderExtra'; extra.hidden = true; header.appendChild(extra);
+    var extra = document.createElement('div'); extra.id = 'izHeaderExtra'; extra.hidden = true;
+    main.appendChild(title); main.appendChild(extra); main.appendChild(meta); main.appendChild(actions); header.appendChild(main);
     document.body.insertBefore(header, document.body.firstChild);
     takeLegacyExtras(legacy, extra);
     state.timezone = cachedTimezone(); renderClock(); renderLanguage();
     state.timer = setInterval(renderClock, 1000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) renderClock(); });
     window.addEventListener('storage', function () { renderLanguage(); renderClock(); });
+    window.addEventListener('resize', renderLanguage);
     try { new MutationObserver(renderLanguage).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] }); } catch (e) {}
     fetchTimezone(session, policy);
   }
