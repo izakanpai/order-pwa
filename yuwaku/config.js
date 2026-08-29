@@ -18,3 +18,13 @@ window.APP_CONFIG = {
   STORAGE_PREFIX: 'izakanpai:production:',
   OFFLINE_DB_NAME: 'izakanpai-pos-production'
 };
+
+// 全画面共通ヘッダーを一元読込する。各HTMLへ同じマークアップを複製しない。
+(function () {
+  if (typeof document === 'undefined' || document.querySelector('script[data-iz-common-header]')) return;
+  var script = document.createElement('script');
+  script.src = './header.js?v=auth2';
+  script.async = false;
+  script.setAttribute('data-iz-common-header', '');
+  document.head.appendChild(script);
+})();
