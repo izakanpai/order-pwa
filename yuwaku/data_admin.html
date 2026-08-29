@@ -36,6 +36,7 @@
     table.bk th{ color:var(--text-3); font-weight:700; }
     .tag{ display:inline-block; padding:2px 7px; border-radius:6px; font-size:11px; font-weight:800; }
     .tag.delete{ background:#fee2e2; color:#b91c1c; }
+    .tag.delete_all{ background:#7f1d1d; color:#fff; }
     .tag.import_replace{ background:#fef3c7; color:#92400e; }
     .tag.pre_restore{ background:#dbeafe; color:#1d4ed8; }
     .forbidWrap{ padding:60px 20px; text-align:center; color:var(--text-3); }
@@ -74,7 +75,7 @@
       <label class="lbl" data-t="tblLbl">対象テーブル</label>
       <select id="delTable" class="fc" onchange="onDelTableChange()"></select>
       <div class="rowCount" id="delRowCount"></div>
-      <label class="lbl" data-t="confirmPhraseLbl">確認のため、対象テーブル名を入力してください</label>
+      <label class="lbl" id="delPhraseLabel" data-t="confirmPhraseLbl">確認のため、対象テーブル名を入力してください</label>
       <input id="delPhrase" class="fc" oninput="onDelPhraseInput()">
       <label class="lbl" data-t="pwLbl">ご自身のログインパスワード</label>
       <input id="delPass" class="fc" type="password">
@@ -135,6 +136,8 @@
     function alertBox(id, text, ok){ var m=document.getElementById(id); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
 
     var DEL_ROWS = 0;
+    var ALL_TABLES_VALUE = '__all__';
+    var ALL_TABLES_CONFIRM = 'DELETE ALL TABLES';
 
     function csvCell(v){ var s=(v==null)?'':String(v); if(/[",\n]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }
     function toCsv(rows){ return (rows||[]).map(function(row){ return row.map(csvCell).join(','); }).join('\r\n'); }
@@ -221,9 +224,11 @@
       rpc('getDestructiveTableNames', []).then(function(d){
         if (d && d.error) { alertBox('delMsg', I18n.t('errPrefix')+d.error, false); return; }
         var names = (d && d.names) || [];
-        var opts = names.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join('');
+        var tableOpts = names.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join('');
+        var opts = tableOpts+
+          '<option value="'+ALL_TABLES_VALUE+'">'+esc(I18n.t('allTablesOpt'))+'</option>';
         document.getElementById('delTable').innerHTML = opts;
-        document.getElementById('impTable').innerHTML = opts;
+        document.getElementById('impTable').innerHTML = tableOpts;
         window.onDelTableChange();
       }).catch(function(e){ alertBox('delMsg', I18n.t('errPrefix')+(e.message||e), false); });
       window.loadBackups();
@@ -238,8 +243,16 @@
       document.getElementById('delPhrase').value = '';
       document.getElementById('delRowCount').innerText = '';
       DEL_ROWS = 0;
+      var isAll = t === ALL_TABLES_VALUE;
+      document.getElementById('delPhraseLabel').innerText = isAll ? I18n.t('allConfirmPhraseLbl') : I18n.t('confirmPhraseLbl');
+      document.getElementById('delBtn').innerText = isAll ? I18n.t('delAllBtn') : I18n.t('delBtn');
       updateDelBtn();
       if (!t) return;
+      if (isAll) {
+        DEL_ROWS = null;
+        document.getElementById('delRowCount').innerText = I18n.t('allTablesHint');
+        return;
+      }
       rpc('exportSheetData', [t]).then(function(d){
         var n = (d && d.rows) ? Math.max(0, d.rows.length - 1) : 0;
         DEL_ROWS = n;
@@ -250,19 +263,24 @@
     function updateDelBtn(){
       var t = document.getElementById('delTable').value;
       var phrase = document.getElementById('delPhrase').value;
-      document.getElementById('delBtn').disabled = !(t && phrase === t);
+      var expected = t === ALL_TABLES_VALUE ? ALL_TABLES_CONFIRM : t;
+      document.getElementById('delBtn').disabled = !(t && phrase === expected);
     }
     window.doDelete = function(){
       var t = document.getElementById('delTable').value;
       var pass = document.getElementById('delPass').value;
       if (!pass) { alertBox('delMsg', I18n.t('needPass'), false); return; }
-      UIConfirm(I18n.t('delConfirmMsg').replace('{table}', t).replace('{n}', DEL_ROWS), { danger: true, okLabel: I18n.t('delConfirmOk') }).then(function(ok){
+      var isAll = t === ALL_TABLES_VALUE;
+      var confirmMsg = isAll ? I18n.t('delAllConfirmMsg') : I18n.t('delConfirmMsg').replace('{table}', t).replace('{n}', DEL_ROWS);
+      UIConfirm(confirmMsg, { danger: true, okLabel: I18n.t('delConfirmOk') }).then(function(ok){
         if (!ok) return;
         var btn = document.getElementById('delBtn'); btn.disabled = true;
-        rpc('wipeTableData', [t, pass]).then(function(d){
+        var request = isAll ? rpc('wipeAllTableData', [pass]) : rpc('wipeTableData', [t, pass]);
+        request.then(function(d){
           btn.disabled = false;
           if (d && d.error) { alertBox('delMsg', I18n.t('errPrefix')+d.error, false); return; }
-          alertBox('delMsg', I18n.t('delDone').replace('{n}', d.deletedCount), true);
+          var done = isAll ? I18n.t('delAllDone').replace('{n}', d.deletedCount).replace('{tables}', d.tableCount) : I18n.t('delDone').replace('{n}', d.deletedCount);
+          alertBox('delMsg', done, true);
           document.getElementById('delPass').value = '';
           document.getElementById('delPhrase').value = '';
           window.onDelTableChange();
@@ -321,7 +339,7 @@
     // ---- バックアップ履歴・復元 ----
     var RESTORE_TARGET = null;
     function actionLabel(a){
-      var m = { delete: I18n.t('actDelete'), import_replace: I18n.t('actImport'), pre_restore: I18n.t('actPreRestore') };
+      var m = { delete: I18n.t('actDelete'), delete_all: I18n.t('actDeleteAll'), import_replace: I18n.t('actImport'), pre_restore: I18n.t('actPreRestore') };
       return m[a] || a;
     }
     window.loadBackups = function(){
@@ -364,15 +382,16 @@
         csvExportTitle:'📄 テーブルをCSVで書き出し', csvExportHint:'テーブルを選んでCSVをダウンロードできます（Excel等で開けます）。', csvExportBtn:'⬇ CSVを書き出し', csvExportDone:'✅ 書き出しました:',
         adminOnlyTitle:'🔒 削除・復元', adminOnlyBody:'テーブルの削除、CSV全置換、バックアップからの復元はシステム管理者だけが実施できます。',
         warnTitle:'⚠️ ご注意', warnBody:'この画面の操作（テーブルの全件削除・CSVインポートによる全置換・バックアップからの復元）は取り返しがつきません。実行するとご本人のログインパスワードの再入力を求めます。実行の直前に自動でバックアップが作られ、下部の「バックアップ履歴」から復元できます。',
-        delTitle:'🗑️ テーブルの全件削除', tblLbl:'対象テーブル', confirmPhraseLbl:'確認のため、対象テーブル名を入力してください', pwLbl:'ご自身のログインパスワード', delBtn:'🗑️ このテーブルを全件削除する',
+        delTitle:'🗑️ テーブルの全件削除', tblLbl:'対象テーブル', allTablesOpt:'⚠️ 全テーブル一括（従業員を除く）', confirmPhraseLbl:'確認のため、対象テーブル名を入力してください', allConfirmPhraseLbl:'確認のため「DELETE ALL TABLES」と入力してください', pwLbl:'ご自身のログインパスワード', delBtn:'🗑️ このテーブルを全件削除する', delAllBtn:'🗑️ 全テーブルを一括削除する',
         curRows:'現在の件数: ', needPass:'パスワードを入力してください', errPrefix:'エラー: ',
         delConfirmMsg:'「{table}」の全{n}件を削除します。よろしいですか？（削除前に自動でバックアップされます）', delConfirmOk:'削除する', delDone:'✅ {n}件を削除しました（自動バックアップ済み）',
+        allTablesHint:'従業員・バックアップ管理データを除く全対象テーブルを削除します。', delAllConfirmMsg:'従業員とバックアップ管理データを除く全テーブルを一括削除します。よろしいですか？（全データを1つの復元可能なバックアップへ退避してから削除します）', delAllDone:'✅ 全{tables}テーブル・合計{n}件を削除しました（自動バックアップ済み）',
         impTitle:'📥 CSVインポート（全置換）', impHint:'「バックアップ / 書き出し」でエクスポートしたCSVをそのまま読み込めます。取り込むと、対象テーブルの現在の内容はCSVの内容へ丸ごと置き換わります（差分反映ではありません）。',
         fileLbl:'CSVファイル', impBtn:'📥 このCSVで全置換する', csvEmpty:'CSVが空です', csvReadErr:'CSVの読み込みに失敗しました', csvRows:'{n}行 × {cols}列を読み込みました',
         impConfirmMsg:'「{table}」を、読み込んだCSVの{n}行で全置換します。現在の内容は自動バックアップされます。よろしいですか？', impConfirmOk:'置換する', impDone:'✅ {n}行をインポートしました（置換前は自動バックアップ済み）',
         bkTitle:'🕘 バックアップ履歴', bkHint:'削除・インポート・復元の直前に自動で作られたバックアップです。「復元」を押すと、そのテーブルを当時の内容へ丸ごと戻します（実行前の現状も新しいバックアップとして残ります）。',
         bkReload:'🔄 更新', bkColTable:'テーブル', bkColAction:'操作', bkColRows:'件数', bkColActor:'実行者', bkColTime:'日時', bkRestore:'↩️ 復元', bkEmpty:'バックアップはまだありません',
-        actDelete:'削除', actImport:'インポート', actPreRestore:'復元前退避',
+        actDelete:'削除', actDeleteAll:'全テーブル削除', actImport:'インポート', actPreRestore:'復元前退避',
         restoreTitle:'「{table}」を復元', restoreHint:'当時の{n}件の内容へ丸ごと戻します。現在の内容は新しいバックアップとして残ります。', restoreGo:'↩️ 復元する', restoreCancel:'キャンセル', restoreDone:'✅ {n}件へ復元しました'
       },
       en:{
@@ -381,15 +400,16 @@
         csvExportTitle:'📄 Export a table to CSV', csvExportHint:'Select a table and download it as CSV (opens in Excel, etc.).', csvExportBtn:'⬇ Export CSV', csvExportDone:'✅ Exported:',
         adminOnlyTitle:'🔒 Delete & restore', adminOnlyBody:'Deleting tables, replacing data via CSV, and restoring backups are restricted to the System role.',
         warnTitle:'⚠️ Warning', warnBody:'Actions on this page (wiping a table, replacing it via CSV import, or restoring a backup) cannot be undone. Each one requires re-entering your own login password. A backup is taken automatically right before the action runs, and can be restored from "Backup history" below.',
-        delTitle:'🗑️ Wipe a table', tblLbl:'Target table', confirmPhraseLbl:'Type the table name to confirm', pwLbl:'Your login password', delBtn:'🗑️ Wipe this table',
+        delTitle:'🗑️ Wipe table data', tblLbl:'Target table', allTablesOpt:'⚠️ All tables (except employees)', confirmPhraseLbl:'Type the table name to confirm', allConfirmPhraseLbl:'Type “DELETE ALL TABLES” to confirm', pwLbl:'Your login password', delBtn:'🗑️ Wipe this table', delAllBtn:'🗑️ Wipe all tables',
         curRows:'Current rows: ', needPass:'Please enter your password', errPrefix:'Error: ',
         delConfirmMsg:'This will delete all {n} rows in "{table}". Continue? (A backup will be taken automatically first.)', delConfirmOk:'Delete', delDone:'✅ Deleted {n} rows (backed up automatically)',
+        allTablesHint:'Deletes every eligible table except employees and backup-management data.', delAllConfirmMsg:'This will wipe all tables except employees and backup-management data. Continue? (All data will first be stored as one restorable backup.)', delAllDone:'✅ Deleted {n} rows from {tables} tables (backed up automatically)',
         impTitle:'📥 CSV import (full replace)', impHint:'You can load a CSV exported from "Backup / Export" as-is. Importing replaces the entire current content of the table with the CSV content (not a diff/merge).',
         fileLbl:'CSV file', impBtn:'📥 Replace with this CSV', csvEmpty:'The CSV is empty', csvReadErr:'Failed to read the CSV', csvRows:'Loaded {n} rows × {cols} columns',
         impConfirmMsg:'This will fully replace "{table}" with the {n} rows from the CSV. The current content will be backed up automatically. Continue?', impConfirmOk:'Replace', impDone:'✅ Imported {n} rows (previous content backed up automatically)',
         bkTitle:'🕘 Backup history', bkHint:'Automatic backups taken right before a delete, import, or restore. "Restore" puts that table back to its content at that time (the current content is also saved as a new backup first).',
         bkReload:'🔄 Refresh', bkColTable:'Table', bkColAction:'Action', bkColRows:'Rows', bkColActor:'By', bkColTime:'When', bkRestore:'↩️ Restore', bkEmpty:'No backups yet',
-        actDelete:'Delete', actImport:'Import', actPreRestore:'Pre-restore snapshot',
+        actDelete:'Delete', actDeleteAll:'Delete all tables', actImport:'Import', actPreRestore:'Pre-restore snapshot',
         restoreTitle:'Restore "{table}"', restoreHint:'This will put the table back to its {n}-row content at that time. The current content is saved as a new backup first.', restoreGo:'↩️ Restore', restoreCancel:'Cancel', restoreDone:'✅ Restored {n} rows'
       }
     }, function(){});
@@ -414,7 +434,7 @@
       titleEn: 'Data Backup & Management',
       items: [
         { ja: '① ZIP一括バックアップとテーブル単位のCSV書き出しは、この画面を利用できる全ユーザーが実行できます。', en: '① ZIP backup and per-table CSV export are available to every user who can access this page.' },
-        { ja: '② テーブルの全件削除、CSVによる全置換、バックアップからの復元はシステム管理者だけが実行できます。', en: '② Wiping tables, replacing data via CSV, and restoring backups are restricted to the System role.' },
+        { ja: '② 1テーブルまたは全テーブルの一括削除、CSVによる全置換、バックアップからの復元はシステム管理者だけが実行できます。全テーブル削除でも従業員とバックアップ管理データは保護されます。', en: '② Single-table or all-table deletion, CSV replacement, and backup restoration are restricted to the System role. Employees and backup-management data remain protected during an all-table wipe.' },
         { ja: '③ 削除・全置換・復元ではご自身のパスワードを再入力し、実行前の内容が自動バックアップされます。', en: '③ Delete, replace, and restore require your password and automatically back up the current data first.' },
         { ja: '④ バックアップ履歴の「復元」で、対象テーブルと関連明細を当時の状態へ戻せます。', en: '④ Use "Restore" in backup history to return a table and its related detail rows to that state.' }
       ]
