@@ -160,6 +160,9 @@
       <div id="stSvcRow" style="display:none;justify-content:space-between;font-size:14px;color:var(--text-2);">
         <span id="stSvcLbl">Service</span><span id="stSvcVal">—</span>
       </div>
+      <div id="stTaxRow" style="display:none;justify-content:space-between;font-size:14px;color:var(--text-2);">
+        <span id="stTaxLbl">VAT</span><span id="stTaxVal">—</span>
+      </div>
       <div id="stTotalRow" style="display:flex;justify-content:space-between;font-weight:900;font-size:17px;border-top:2px solid var(--border);padding-top:10px;margin-top:6px;">
         <span id="stTotalLbl">Unpaid total</span><span id="stTotalVal">—</span>
       </div>
@@ -219,7 +222,7 @@
   <script src="./api.js?v=auth2"></script>
   <script src="./i18n.js?v=auth2"></script>
   <script src="./confirm.js?v=auth2"></script>
-  <script src="./app.js?v=auth2"></script>
+  <script src="./app.js?v=auth3"></script>
   <script src="./help.js?v=auth2"></script>
   <script>
     HelpUI.register({
@@ -230,7 +233,7 @@
         { ja: '② 画面下の「注文」ボタンでカート内容を送信します。件数バッジで未送信の点数を確認できます。', en: '② Tap the Order button at the bottom to send your cart. The badge shows how many items are pending.' },
         { ja: '③ クイックバーの🎁会員／🎟️クーポンで、会員証確認・ポイント利用・誕生日登録やクーポンコードの適用ができます。', en: '③ Use the 🎁 Member and 🎟️ Coupon buttons in the quick bar to check membership, use points, register a birthday, or apply a coupon code.' },
         { ja: '④ 🔔スタッフ呼出でスタッフを呼び、🧾お会計でお支払い方法（会計時に精算／GCash／カード）を選べます。', en: '④ Use 🔔 to call staff, and 🧾 to choose how to pay (pay at counter / GCash / card).' },
-        { ja: '⑤ 📋注文状況でこれまで注文した内容・小計・未払い合計を確認できます。', en: '⑤ Use 📋 to see your order history, subtotal, and unpaid total.' },
+        { ja: '⑤ 📋注文状況で注文内容・小計・サービス料・VAT・未払い合計を確認できます。内税は「うちVAT（内税）」と表示され、合計へ重ねて加算されません。', en: '⑤ Use 📋 to see your orders, subtotal, service charge, VAT, and unpaid total. Included VAT is labeled "VAT (included)" and is not added to the total again.' },
         { ja: '⑥ ⭐評価ボタンから星評価とコメントを送信できます。', en: '⑥ Use ⭐ to send a star rating and comment.' },
         { ja: '⑦ 卓を選ばずにアクセスした場合は、最初に卓番号を選びます。入場料または延長料が有効な店舗では、請求に必要な人数も入力します。', en: '⑦ If you open this without a table pre-selected, first choose your table. If entry or extension fees are enabled, also enter the party size used for billing.' }
       ]

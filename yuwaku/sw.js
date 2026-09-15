@@ -45,8 +45,8 @@
 // v155: 本番SWのscope (/yuwaku/) は子階層の /yuwaku/test/ も含むため、初回テスト遷移を
 // 本番SWが処理して本番キャッシュを見せることがあった。test配下は一切interceptしない。
 const CACHE_PREFIX = 'yuwaku-production-';
-// v158: 共通ヘッダーを1段へ圧縮し、画面固有操作も同一行へ統合する。
-const CACHE = CACHE_PREFIX + 'v158';
+// v159: 注文状況のVAT内税表示・合計整合修正を確実に配布する。
+const CACHE = CACHE_PREFIX + 'v159';
 const SHELL = [
   './',
   './index.html',
@@ -93,7 +93,7 @@ const SHELL = [
   './api.js?v=auth2',
   './i18n.js?v=auth2',
   './confirm.js?v=auth2',
-  './app.js?v=auth2',
+  './app.js?v=auth3',
   './manifest.webmanifest',
   './admin.webmanifest',
   './attendance.webmanifest',

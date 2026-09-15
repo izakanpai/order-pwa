@@ -21,7 +21,7 @@
       callConfirm:'Call a staff member to your table?', billConfirm:'Request your bill?',
       fbTitle:'How was it?', fbSub:'Your rating helps us improve.', fbComment:'Comment', fbSend:'Send', fbPick:'Please tap the stars to rate.', fbCommentRequired:'Please enter a comment.', fbThanks:'Thank you!', fbThanksMsg:'Thanks for your feedback.',
       bdayLbl:'🎂 Register your birthday for a treat', bdaySave:'Save', bdaySaved:'Saved! 🎉', bdayBad:'Enter as MM-DD (e.g. 08-15)',
-      stTitle:'My orders', stSubLbl:'Subtotal', stTotalLbl:'Unpaid total', stRefresh:'Refresh', stEmpty:'No orders yet for this table.', stPending:'Preparing', stServed:'Served',
+      stTitle:'My orders', stSubLbl:'Subtotal', stSvcInclLbl:'Service charge (included)', stSvcExclLbl:'Service charge', stTaxInclLbl:'VAT (included)', stTaxExclLbl:'VAT', stTotalLbl:'Unpaid total', stRefresh:'Refresh', stEmpty:'No orders yet for this table.', stPending:'Preparing', stServed:'Served',
       taxInclText:'Prices include VAT {v}%.', taxExclText:'VAT {v}% will be added at checkout.',
       svcInclText:'Prices include a {v}% service charge.', svcExclText:'A {v}% service charge applies separately.',
       btnMember:'Rewards', btnCoupon:'Coupon', btnCall:'Call', btnBill:'Bill', btnStatus:'Orders', btnFeedback:'Rate',
@@ -45,7 +45,7 @@
       callConfirm:'スタッフを呼びますか？', billConfirm:'お会計を依頼しますか？',
       fbTitle:'ご感想は？', fbSub:'評価は今後の改善に役立ちます。', fbComment:'コメント', fbSend:'送信', fbPick:'星をタップして評価してください。', fbCommentRequired:'コメントを入力してください。', fbThanks:'ありがとうございます！', fbThanksMsg:'ご意見ありがとうございました。',
       bdayLbl:'🎂 お誕生日を登録すると特典があります', bdaySave:'登録', bdaySaved:'登録しました！🎉', bdayBad:'MM-DD 形式で入力（例: 08-15）',
-      stTitle:'注文状況', stSubLbl:'小計', stTotalLbl:'未会計 合計', stRefresh:'更新', stEmpty:'この卓の注文はまだありません。', stPending:'準備中', stServed:'提供済み',
+      stTitle:'注文状況', stSubLbl:'小計', stSvcInclLbl:'うちサービス料（内税）', stSvcExclLbl:'サービス料', stTaxInclLbl:'うちVAT（内税）', stTaxExclLbl:'VAT', stTotalLbl:'未会計 合計', stRefresh:'更新', stEmpty:'この卓の注文はまだありません。', stPending:'準備中', stServed:'提供済み',
       taxInclText:'表示価格はVAT{v}%込みです。', taxExclText:'お会計時に別途VAT{v}%を頂戴いたします。',
       svcInclText:'表示価格はサービス料{v}%込みです。', svcExclText:'別途サービス料{v}%を頂戴いたします。',
       btnMember:'特典', btnCoupon:'クーポン', btnCall:'呼出', btnBill:'会計', btnStatus:'状況', btnFeedback:'評価',
@@ -444,7 +444,8 @@
     var x = t();
     $('stTitle').textContent = x.stTitle;
     $('stSubLbl').textContent = x.stSubLbl;
-    $('stSvcLbl').textContent = x.svc;
+    $('stSvcLbl').textContent = String(state.settings.serviceInclusive) === 'true' ? x.stSvcInclLbl : x.stSvcExclLbl;
+    $('stTaxLbl').textContent = String(state.settings.taxInclusive) === 'true' ? x.stTaxInclLbl : x.stTaxExclLbl;
     $('stTotalLbl').textContent = x.stTotalLbl;
     $('stRefresh').textContent = x.stRefresh;
     $('stClose').textContent = x.close;
@@ -456,6 +457,7 @@
     $('stBody').innerHTML = '<div style="text-align:center;color:var(--text-2);padding:14px;">…</div>';
     $('stSubVal').textContent = '—';
     $('stSvcRow').style.display = 'none';
+    $('stTaxRow').style.display = 'none';
     $('stTotalVal').textContent = '—';
     if (!state.table) { $('stBody').innerHTML = '<div style="text-align:center;color:var(--text-2);padding:14px;">' + escHtml(x.noTable) + '</div>'; return; }
     // 注文状況は集計画面ではないため、画面操作開始から5秒以内で必ず完了させる。
@@ -484,6 +486,8 @@
       $('stSubVal').textContent = money(b.sub);
       if (b.service > 0) { $('stSvcRow').style.display = 'flex'; $('stSvcVal').textContent = money(b.service); }
       else { $('stSvcRow').style.display = 'none'; }
+      if (b.tax > 0) { $('stTaxRow').style.display = 'flex'; $('stTaxVal').textContent = money(b.tax); }
+      else { $('stTaxRow').style.display = 'none'; }
       $('stTotalVal').textContent = money(b.total);
     }).catch(function (e) { $('stBody').innerHTML = '<div style="text-align:center;color:var(--red);padding:14px;">' + escHtml(String(e && e.message || e)) + '</div>'; });
   }

@@ -1,0 +1,35 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>izakanpai Email Verification</title><link rel="stylesheet" href="./legal.css"></head><body><header class="top"><a href="../">izakanpai</a><h1><span class="ja">メールアドレスの確認</span><span class="en">Email verification</span></h1><button id="langBtn">EN</button></header><main class="wrap"><section class="card"><div id="msg" class="msg info"><span class="ja">確認しています…</span><span class="en">Verifying…</span></div><div id="resend" class="hidden"><div class="ja"><p>確認メールを再送できます。</p></div><div class="en"><p>You can request a new verification email.</p></div><label class="field" for="email"><span class="ja">登録したメールアドレス</span><span class="en">Registered email address</span></label><input id="email" type="email" autocomplete="email"><button class="btn" id="resendBtn"><span class="ja">確認メールを再送する</span><span class="en">Resend verification email</span></button><div id="resendMsg" class="msg"></div></div></section><div class="card links"><a href="mailto:admin@izakanpai.com">admin@izakanpai.com</a><a href="./support.html">Support</a></div></main><script src="./legal.js"></script><script>
+(function(){
+  var endpoint='https://izakanpai-api.izakanpai.workers.dev';
+  function en(){return document.documentElement.dataset.lang==='en';}
+  function show(id,text,ok){var e=document.getElementById(id);e.textContent=text;e.className='msg '+(ok?'ok':'err');}
+  async function post(body){var r=await fetch(endpoint,{method:'POST',headers:{'content-type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});var j=await r.json();if(!j.ok)throw new Error(j.error||'api_error');return j;}
+  var token=new URLSearchParams(location.search).get('token')||'';
+  (async function(){
+    if(!token){show('msg',en()?'This link is missing a verification token.':'このリンクには確認トークンが含まれていません。',false);document.getElementById('resend').classList.remove('hidden');return;}
+    try{
+      var result=await post({action:'verifyEmailAddress',token:token});
+      if(!result.data||!result.data.success)throw new Error((result.data&&result.data.error)||'verify_failed');
+      show('msg',en()?'Your email address is confirmed. You can now log in.':'メールアドレスの確認が完了しました。ログインできます。',true);
+    }catch(e){
+      var code=String(e&&e.message||e);
+      var text=code.indexOf('token_expired')>=0
+        ?(en()?'This link has expired. Request a new one below.':'このリンクの有効期限が切れています。下記から再送してください。')
+        :(en()?'This link is invalid or already used.':'このリンクは無効か、既に使用されています。');
+      show('msg',text,false);
+      document.getElementById('resend').classList.remove('hidden');
+    }
+  })();
+  document.getElementById('resendBtn').addEventListener('click',async function(){
+    var email=document.getElementById('email').value.trim();
+    if(!email){show('resendMsg',en()?'Enter your registered email address.':'登録したメールアドレスを入力してください。',false);return;}
+    this.disabled=true;
+    try{
+      await post({action:'resendVerificationEmail',email:email});
+      show('resendMsg',en()?'If that email is registered and unconfirmed, a new link was sent.':'該当する未確認のメールアドレスであれば、新しい確認リンクを送信しました。',true);
+    }catch(e){
+      show('resendMsg',en()?'Could not send the email right now. Please try again later.':'現在メールを送信できませんでした。しばらくしてから再度お試しください。',false);
+    }finally{this.disabled=false;}
+  });
+})();
+</script></body></html>
