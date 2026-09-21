@@ -33,8 +33,6 @@
     .tile .ic{ font-size:26px; }
     .tile .tt{ font-weight:800; font-size:15px; }
     .tile .ds{ font-size:12px; color:var(--text-3); }
-    .tile.soon{ opacity:.45; cursor:default; }
-    .tile.soon .ds:after{ content:' ・準備中'; }
     .hidden{ display:none; }
     .mtabs{ display:flex; gap:8px; overflow-x:auto; padding-bottom:12px; -webkit-overflow-scrolling:touch; }
     .mtab{ flex:0 0 auto; background:var(--surface); border:1px solid var(--border); color:var(--text-3); border-radius:999px; padding:9px 16px; font-size:14px; font-weight:800; cursor:pointer; font-family:inherit; white-space:nowrap; }
@@ -129,14 +127,14 @@
       { grp:'customer', key:'birthdays', ic:'🎂', tt:'誕生日クーポン', ds:'今月の会員・発行', ttEn:'Birthdays', dsEn:'This month · issue', url:'./birthdays.html', active:true },
       { grp:'customer', key:'coupons', ic:'🎟️', tt:'クーポン', ds:'割引・バウチャー', ttEn:'Coupons', dsEn:'Discounts · vouchers', url:'./coupons.html', active:true },
       { grp:'customer', key:'reservations', ic:'🗓️', tt:'予約管理', ds:'受付・確定・来店', ttEn:'Reservations', dsEn:'Requests · status', url:'./reservations.html', active:true },
-      { grp:'system', key:'printers', ic:'🖨️', tt:'プリンタ設定', ds:'厨房印刷', ttEn:'Printers', dsEn:'Kitchen printing', url:'./printers.html', active:true },
-      { grp:'system', key:null, ic:'🖨️', tt:'印刷ステーション', ds:'Bluetoothプリンタの出力待機画面', ttEn:'Print station', dsEn:'Bluetooth printer standby', url:'./bridge.html', active:true, newTab:true },
+      { grp:'system', key:'printers', ic:'🖨️', tt:'プリンタ・出力設定', ds:'厨房印刷の設定と履歴', ttEn:'Printer & output settings', dsEn:'Kitchen printing setup and history', url:'./printers.html', active:true },
+      { grp:'system', key:null, ic:'📡', tt:'印刷待受（Bluetooth）', ds:'端末をプリンタへ接続して待機', ttEn:'Bluetooth print standby', dsEn:'Connect this device and wait for jobs', url:'./bridge.html', active:true, newTab:true },
       { grp:'system', key:'audit', ic:'🧾', tt:'監査ログ', ds:'注文取消・承認履歴', ttEn:'Audit log', dsEn:'Voids · approvals', url:'./audit.html', active:true },
       // バックアップとデータ管理を1画面へ統合。ZIP/CSV書き出しはbackup権限で利用でき、
       // 削除・全置換・復元は統合画面内とAPI側の両方でシステムロールだけに限定する。
       { grp:'system', key:'backup', ic:'💾', tt:'データバックアップ・管理', ds:'書出・削除・復元', ttEn:'Data backup & management', dsEn:'Export · delete · restore', url:'./data_admin.html', active:true },
       { grp:'system', key:'settings', ic:'⚙️', tt:'設定', ds:'店舗設定', ttEn:'Settings', dsEn:'Store settings', url:'./settings.html', active:true },
-      { grp:'system', key:null, ic:'📖', tt:'利用ガイド', ds:'システム利用イメージ', ttEn:'Guide', dsEn:'System overview', url:'./overview.html', active:true }
+      { grp:'system', key:null, ic:'📖', tt:'全体利用ガイド', ds:'システム全体の利用イメージ', ttEn:'Full user guide', dsEn:'System-wide overview', url:'./overview.html', active:true }
     ];
     var curTab = (function(){ try { return localStorage.getItem('mgmtTab') || null; } catch(e){ return null; } })();
 

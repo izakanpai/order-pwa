@@ -27,12 +27,15 @@
   function pagePolicy(pathname, loggedIn) {
     var page = pageName(pathname);
     var customerOrder = page === 'index.html' || page === 'takeout.html';
+    var loginPage = page === 'manage.html' && !loggedIn;
     return {
       page: page,
       customerOrder: customerOrder,
-      showBack: !customerOrder,
+      showBack: !customerOrder && !loginPage,
       showManage: !!loggedIn && page !== 'manage.html',
       showUser: !!loggedIn,
+      showClock: !loginPage,
+      showRefresh: !loginPage,
     };
   }
 
@@ -179,7 +182,8 @@
     if (document.getElementById('izHeaderStyle')) return;
     var s = document.createElement('style'); s.id = 'izHeaderStyle';
     s.textContent =
-      '#izCommonHeader{position:sticky;top:0;z-index:2147483000;background:#0f172a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;box-shadow:0 1px 0 rgba(255,255,255,.1)}' +
+      'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP",sans-serif!important}' +
+      '#izCommonHeader{position:sticky;top:0;z-index:2147483000;background:#0f172a;color:#fff;font-family:inherit;box-shadow:0 1px 0 rgba(255,255,255,.1)}' +
       '#izCommonHeader .iz-header-main{display:flex;align-items:center;gap:8px;padding:8px 12px;min-height:50px;flex-wrap:nowrap}' +
       '#izHeaderTitle{font-size:16px;font-weight:900;line-height:1.2;flex:1 1 140px;min-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
       '#izHeaderTitle>*{font:inherit!important;margin:0!important;color:inherit!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
@@ -191,7 +195,8 @@
       '#izHeaderExtra{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex:0 1 auto;min-width:0;flex-wrap:nowrap;padding:0;background:transparent;border:0}' +
       '#izHeaderExtra[hidden]{display:none}' +
       '#izHeaderExtra a,#izHeaderExtra button{margin:0!important}' +
-      '@media(max-width:720px){#izCommonHeader .iz-header-main{gap:5px;padding:6px 8px;min-height:44px;flex-wrap:wrap}#izHeaderTitle{flex:1 1 55px;min-width:55px;font-size:14px}#izHeaderExtra{gap:4px}.iz-header-clock{font-size:10px;padding:6px}.iz-header-user{max-width:100px;padding:6px}.iz-header-btn{width:32px;min-height:32px;padding:6px;font-size:13px}#izHeaderLang{width:auto;min-width:38px}}' +
+      '@media(max-width:720px){#izCommonHeader .iz-header-main{gap:5px;padding:6px 8px;min-height:44px}#izHeaderTitle{flex:1 1 55px;min-width:0;font-size:14px}#izHeaderExtra{gap:4px}.iz-header-clock{font-size:10px;padding:6px}.iz-header-user{max-width:88px;padding:6px}.iz-header-btn{width:32px;min-height:32px;padding:6px;font-size:13px}#izHeaderLang{width:auto;min-width:38px}}' +
+      '@media(max-width:480px){.iz-header-clock{display:none}#tagTakeout{display:none!important}}' +
       '@media(max-width:430px){#izHeaderActions{gap:4px}}';
     document.head.appendChild(s);
   }
@@ -233,14 +238,14 @@
     var main = document.createElement('div'); main.className = 'iz-header-main';
     var title = document.createElement('div'); title.id = 'izHeaderTitle'; title.textContent = document.title || '';
     var meta = document.createElement('div'); meta.id = 'izHeaderMeta';
-    var clock = document.createElement('span'); clock.id = 'izHeaderClock'; clock.className = 'iz-header-clock'; meta.appendChild(clock); state.clock = clock;
+    if (policy.showClock) { var clock = document.createElement('span'); clock.id = 'izHeaderClock'; clock.className = 'iz-header-clock'; meta.appendChild(clock); state.clock = clock; }
     if (policy.showUser && session.name) {
       var user = document.createElement('span'); user.id = 'izHeaderUser'; user.className = 'iz-header-user';
       user.textContent = '👤 ' + session.name + (session.role ? ' (' + session.role + ')' : ''); meta.appendChild(user); state.user = user;
     }
     var actions = document.createElement('div'); actions.id = 'izHeaderActions';
     var lang = button('izHeaderLang', '', switchLanguage); lang.setAttribute('data-tlang', ''); actions.appendChild(lang); state.lang = lang;
-    actions.appendChild(button('izHeaderRefresh', '↻', function () { location.reload(); }));
+    if (policy.showRefresh) actions.appendChild(button('izHeaderRefresh', '↻', function () { location.reload(); }));
     if (policy.showManage) actions.appendChild(button('izHeaderManage', '⌂', function () { location.href = './manage.html'; }));
     if (policy.showBack) actions.appendChild(button('izHeaderBack', '←', function () { goBack(policy); }));
     var extra = document.createElement('div'); extra.id = 'izHeaderExtra'; extra.hidden = true;

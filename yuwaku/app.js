@@ -12,7 +12,7 @@
       tblTitle:'Select your table', tblMsg:'Scan the QR at your table, or pick your table number.', tblGo:'Start',
       partyTitle:'How many guests?', partyLabel:'Guests', partyMsg:'Used for entry and extension fee billing.', partyMsgEntry:'Used for entry fee billing.', partyMsgExtension:'Used for extension fee billing.', partyGo:'OK',
       payTitle:'How would you like to pay?', payLater:'👤 Pay at counter', payCard:'💳 Card', payProcessing:'Preparing…', payScan:'Scan the QR to pay', payNotYet:'Payment not confirmed yet.', payNoKey:'Online payment is not set up.', payTimeout:'Payment confirmation timed out. If you already paid, please tell a staff member.', paidTitle:'Paid & ordered', paidMsg:'Payment received. Your order was sent.', cancel:'Cancel',
-      memberTitle:'Member (points)', memberSub:'Enter your phone to earn / use points.', check:'Check', usePoints:'Use points', points:'pts', discountLbl:'Points', earned:'pts earned',
+      memberTitle:'Member (points)', memberSub:'Enter your phone to earn points. For privacy, balance checks and point use are handled by staff.', check:'Register', usePoints:'Use points', points:'pts', discountLbl:'Points', earned:'pts earned',
       couponTitle:'Coupon / Voucher', couponSub:'Enter a code to get a discount.', apply:'Apply', remove:'Remove coupon', close:'Close', couponLbl:'Coupon',
       cpApplied:'Applied', cpEmpty:'Enter a code', cpNotfound:'Code not found', cpInactive:'Not available', cpExpired:'Expired', cpLimit:'Usage limit reached', cpMin:'Minimum order not met', cpInvalid:'Invalid code',
       optChoose:'Choose options', optAdd:'Add to order', optQty:'Qty', optRequired:'required', optPick:'Please choose the required options.', optInCart:'In your order', optClose:'Close',
@@ -36,7 +36,7 @@
       tblTitle:'テーブルを選択', tblMsg:'QRを読み取るか、テーブル番号を選んでください。', tblGo:'開始',
       partyTitle:'ご来店人数は？', partyLabel:'人数', partyMsg:'入場料・延長料の請求に使用します。', partyMsgEntry:'入場料の請求に使用します。', partyMsgExtension:'延長料の請求に使用します。', partyGo:'OK',
       payTitle:'お支払い方法', payLater:'👤 店員に支払う（後会計）', payCard:'💳 カード', payProcessing:'準備中…', payScan:'QRを読み取ってお支払い', payNotYet:'まだ支払いが確認できません。', payNoKey:'オンライン決済は未設定です。', payTimeout:'決済確認がタイムアウトしました。お支払い済みの場合は店員にお伝えください。', paidTitle:'支払い完了・注文しました', paidMsg:'お支払いを受け付けました。注文を送信しました。', cancel:'キャンセル',
-      memberTitle:'会員（ポイント）', memberSub:'電話番号を入力するとポイントが貯まる/使えます。', check:'確認', usePoints:'ポイントを使う', points:'pt', discountLbl:'ポイント割引', earned:'pt 獲得',
+      memberTitle:'会員（ポイント）', memberSub:'電話番号を入力するとポイントが貯まります。残高確認・利用は個人情報保護のためスタッフへお申し付けください。', check:'登録', usePoints:'ポイントを使う', points:'pt', discountLbl:'ポイント割引', earned:'pt 獲得',
       couponTitle:'クーポン／バウチャー', couponSub:'コードを入力すると割引されます。', apply:'適用', remove:'クーポンを外す', close:'閉じる', couponLbl:'クーポン',
       cpApplied:'適用しました', cpEmpty:'コードを入力してください', cpNotfound:'コードが見つかりません', cpInactive:'利用できません', cpExpired:'期限切れ', cpLimit:'利用上限に達しています', cpMin:'最低注文額に達していません', cpInvalid:'無効なコード',
       optChoose:'オプションを選ぶ', optAdd:'注文に追加', optQty:'数量', optRequired:'必須', optPick:'必須オプションを選択してください。', optInCart:'注文内', optClose:'閉じる',
@@ -720,13 +720,12 @@
   function showMemberInfo() {
     if (!state.member) { $('memInfo').style.display = 'none'; return; }
     var x = t();
-    $('memName').textContent = state.member.name || '';
-    $('memPoints').textContent = state.member.points + ' ' + x.points;
-    $('memUse').checked = !!state.usePoints;
-    $('memBdayLbl').textContent = x.bdayLbl;
-    $('memBdaySave').textContent = x.bdaySave;
-    $('memBday').value = state.member.birthday || '';
-    $('memBdayMsg').textContent = '';
+    state.usePoints = false;
+    $('memName').textContent = state.lang === 'ja' ? '電話番号を登録しました' : 'Phone number registered';
+    $('memPoints').textContent = '';
+    $('memUse').checked = false;
+    $('memUse').parentElement.style.display = 'none';
+    $('memBdayLbl').parentElement.style.display = 'none';
     $('memInfo').style.display = 'block';
   }
   function saveMemberBirthday() {

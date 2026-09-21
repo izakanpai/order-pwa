@@ -44,8 +44,8 @@
 // 統合し、管理メニューの導線も一本化したためキャッシュを更新する。
 // v155: 本番SW側のtest除外と環境不一致fail-closedを配布するため更新。
 const CACHE_PREFIX = 'yuwaku-test-';
-// v159: 注文状況のVAT内税表示・合計整合修正を確実に配布する。
-const CACHE = CACHE_PREFIX + 'v159';
+// v160: 権限・予約・ポイント保護・共通ヘッダー・画面統一修正を確実に配布する。
+const CACHE = CACHE_PREFIX + 'v160';
 const SHELL = [
   './',
   './index.html',
@@ -88,7 +88,7 @@ const SHELL = [
   './system-overview-en.svg',
   './styles.css',
   './config.js?v=auth2',
-  './header.js?v=auth3',
+  './header.js?v=auth4',
   './api.js?v=auth2',
   './i18n.js?v=auth2',
   './confirm.js?v=auth2',

@@ -61,13 +61,14 @@
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     var ROWS=[], __loaded=false;
     var STATUSES=['受付','確定','来店済','キャンセル'];
+    var NEXT={ '受付':['受付','確定','キャンセル'], '確定':['確定','来店済','キャンセル'], '来店済':['来店済'], 'キャンセル':['キャンセル'] };
     var STCLS={ '受付':'s-recv','確定':'s-ok','来店済':'s-came','キャンセル':'s-cxl' };
     function stLabel(s){ var k={'受付':'stRecv','確定':'stOk','来店済':'stCame','キャンセル':'stCxl'}[s]; return k?I18n.t(k):s; }
 
     function render(){
       if(!ROWS.length){ document.getElementById('rows').innerHTML='<tr><td colspan="7" class="muted" style="padding:16px;text-align:center;">'+I18n.t('empty')+'</td></tr>'; return; }
       document.getElementById('rows').innerHTML = ROWS.map(function(r){
-        var opts = STATUSES.map(function(s){ return '<option value="'+s+'"'+(s===r.status?' selected':'')+'>'+esc(stLabel(s))+'</option>'; }).join('');
+        var opts = (NEXT[r.status]||[r.status]).map(function(s){ return '<option value="'+s+'"'+(s===r.status?' selected':'')+'>'+esc(stLabel(s))+'</option>'; }).join('');
         return '<tr><td style="white-space:nowrap;font-weight:800;">'+esc(r.datetime)+'</td><td class="num">'+r.people+'</td><td>'+esc(r.name)+'</td>'+
           '<td class="muted">'+esc(r.phone)+'</td><td>'+esc(r.seat)+'</td><td class="muted" style="white-space:normal;max-width:200px;">'+esc(r.notes)+'</td>'+
           '<td><span class="st '+(STCLS[r.status]||'')+'" style="margin-right:6px;">'+esc(stLabel(r.status))+'</span><select class="mini" onchange="setStatus(\''+r.id+'\',this.value)">'+opts+'</select></td></tr>';

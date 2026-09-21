@@ -17,11 +17,13 @@
     body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif; background:var(--bg); color:var(--navy); padding-bottom:120px; -webkit-tap-highlight-color:transparent; }
     .lang-btn{ background:rgba(15,23,42,.7); color:#fff; border:0; border-radius:999px; padding:6px 12px; font-size:12px; font-weight:800; cursor:pointer; }
     .lang-fab{ position:fixed; top:12px; right:12px; z-index:12; }
-    .to-banner{ width:100%; max-height:190px; object-fit:contain; background:var(--bg,#f6f7f9); display:none; }
+    .to-banner{ width:100%; max-height:160px; object-fit:contain; background:var(--bg,#f6f7f9); display:none; }
     .to-head{ padding:14px 16px 6px; }
     .to-shop{ font-size:20px; font-weight:900; }
     .to-tag{ display:inline-block; background:#065f46; color:#d1fae5; font-size:12px; font-weight:800; padding:2px 10px; border-radius:999px; margin-left:6px; vertical-align:middle; }
-    .cats{ display:flex; gap:8px; overflow-x:auto; padding:8px 16px; position:sticky; top:0; background:var(--bg); z-index:10; }
+    .cats{ display:flex; gap:8px; overflow-x:auto; padding:8px 16px; position:sticky; top:0; background:var(--bg); z-index:10; scrollbar-width:none; }
+    .cats::-webkit-scrollbar{ display:none; }
+    @media(max-width:480px){ .to-banner{max-height:120px}.to-head{padding:9px 10px 4px}.cats{padding:7px 10px} }
     .cat{ flex:0 0 auto; border:1px solid var(--border); background:var(--surface); border-radius:999px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
     .cat.on{ background:var(--navy); color:#fff; border-color:var(--navy); }
     .menu{ padding:6px 16px; }
