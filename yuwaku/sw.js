@@ -45,8 +45,8 @@
 // v155: 本番SWのscope (/yuwaku/) は子階層の /yuwaku/test/ も含むため、初回テスト遷移を
 // 本番SWが処理して本番キャッシュを見せることがあった。test配下は一切interceptしない。
 const CACHE_PREFIX = 'yuwaku-production-';
-// v160: 権限・予約・ポイント保護・共通ヘッダー・画面統一修正を確実に配布する。
-const CACHE = CACHE_PREFIX + 'v160';
+// v164: 短期アクセストークンと更新セッション対応のapi.jsを確実に配布する。
+const CACHE = CACHE_PREFIX + 'v164';
 const SHELL = [
   './',
   './index.html',

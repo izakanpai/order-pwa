@@ -51,7 +51,8 @@
     if (!TOKEN) location.href = './manage.html';
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-    var DATA = { avg:0, count:0, dist:{}, rows:[] }, __loaded=false;
+    var DATA = { avg:0, count:0, dist:{}, rows:[] }, SETTINGS={}, __loaded=false;
+    function seatLabel(v){ var s=String(v==null?'':v),en=(window.I18n&&I18n.lang&&I18n.lang()==='en'); var tableTerm=(en?SETTINGS.tableLabelEn:SETTINGS.tableLabelJa)||(en?'Table':'テーブル'); var counterTerm=(en?SETTINGS.counterLabelEn:SETTINGS.counterLabelJa)||(en?'Counter':'カウンター'); var m=s.match(/^テーブル(\d+)$/)||s.match(/^(\d+)$/); if(m)return tableTerm+' '+m[1]; var c=s.match(/^カウンター(\d+)$/); if(c)return counterTerm+' '+c[1]; return s; }
     function stars(n){ var o=''; for(var i=1;i<=5;i++) o+=(i<=n?'★':'☆'); return o; }
     // 2026-08-24修正: バックエンドが返すtsはSQLiteのdatetime('now')によるUTC時刻（末尾にZ無し）。
     // そのままnew Date()に渡すとローカル時刻として誤解釈され、表示が数時間ずれるため、
@@ -64,17 +65,20 @@
     function fmt(ts){ try{ return toUtcDate(ts).toLocaleString(); }catch(e){ return esc(ts); } }
     function render(){
       var d = DATA;
+      var seatHead=document.querySelector('[data-t="thTable"]'),en=(window.I18n&&I18n.lang&&I18n.lang()==='en');
+      if(seatHead) seatHead.textContent=(en?SETTINGS.seatGroupLabelEn:SETTINGS.seatGroupLabelJa)||(en?'Seating':'席');
       var bars='';
       for(var v=5; v>=1; v--){ var c=(d.dist&&d.dist[v])||0; var pct=d.count?Math.round(c/d.count*100):0; bars+='<div class="bar"><span class="stars">'+v+'★</span><div class="track"><div class="fill" style="width:'+pct+'%"></div></div><span class="muted">'+c+'</span></div>'; }
       document.getElementById('kpi').innerHTML = '<div><div class="avg">'+(d.avg||0)+' <small>/ 5</small></div><div class="muted">'+I18n.t('count')+': '+(d.count||0)+'</div></div><div style="flex:1;min-width:200px;">'+bars+'</div>';
       if(!d.rows.length){ document.getElementById('rows').innerHTML='<tr><td colspan="4" class="muted" style="padding:16px;text-align:center;">'+I18n.t('empty')+'</td></tr>'; return; }
       document.getElementById('rows').innerHTML = d.rows.map(function(r){
-        return '<tr><td class="muted" style="white-space:nowrap;">'+esc(fmt(r.ts))+'</td><td>'+esc(r.table)+'</td><td class="stars">'+stars(r.rating)+'</td><td style="white-space:normal;max-width:260px;">'+esc(r.comment)+'</td></tr>';
+        return '<tr><td class="muted" style="white-space:nowrap;">'+esc(fmt(r.ts))+'</td><td>'+esc(seatLabel(r.table))+'</td><td class="stars">'+stars(r.rating)+'</td><td style="white-space:normal;max-width:260px;">'+esc(r.comment)+'</td></tr>';
       }).join('');
     }
     window.reload = function(){ rpc('getFeedback',[200]).then(function(d){ DATA=d||DATA; render(); }).catch(function(){}); };
     rpc('getFeedback',[200]).then(function(d){ DATA=d||DATA; __loaded=true; render(); })
       .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="4" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+    API.post('getSettings',{}).then(function(r){SETTINGS=(r&&r.data)||{};if(__loaded)render();}).catch(function(){});
 
     I18n.init({
       ja:{ title:'⭐ お客様の声', back:'← 管理へ', reload:'↻', count:'件数', thTime:'日時', thTable:'卓', thRating:'評価', thComment:'コメント', loading:'読み込み中…', empty:'まだフィードバックはありません', loadErr:'読み込みエラー: ' },
@@ -90,7 +94,7 @@
       items: [
         { ja: '① お客様が投稿したアンケート回答（評価と自由コメント）を一覧できる画面です。', en: '① This screen lists the feedback customers submitted — their star rating and free-text comment.' },
         { ja: '② 上部には全体の平均評価（5点満点）と回答件数、星1〜5それぞれの割合が棒グラフで表示されます。', en: '② The top shows the overall average rating (out of 5), the total number of responses, and a bar chart of the percentage for each star rating (1–5).' },
-        { ja: '③ 一覧の各行では投稿日時・卓番号・星評価・コメント内容を確認できます。', en: '③ Each row in the list shows the date/time, table number, star rating, and comment text.' },
+        { ja: '③ 一覧の各行では投稿日時・設定した席呼称・星評価・コメント内容を確認できます。', en: '③ Each row shows the date/time, configured seating label, star rating, and comment text.' },
         { ja: '④ この画面は閲覧専用で、内容の編集や削除はできません。', en: '④ This screen is view-only — you cannot edit or delete entries here.' },
         { ja: '⑤ 右上の「↻」ボタンで最新のフィードバックを手動で読み込み直せます。', en: '⑤ Tap the “↻” button at the top right to manually reload the latest feedback.' }
       ]

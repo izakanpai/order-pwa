@@ -72,7 +72,7 @@
     // [P0-2] 注文状態の変更はスタッフ操作のため、このKDS端末でも事前ログイン（1回のみ）を必須にする。
     var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
-    var soundOn = true, lastNewIds = {}, firstPaint = true;
+    var soundOn = true, lastNewIds = {}, firstPaint = true, SETTINGS = {};
     var KITCHEN_MAP = {}; // 商品名(基底名) -> true(キッチン表示)/false(非表示)。未取得/未登録の商品は常にtrue扱い（安全側）。
     // [負荷試験レビュー対応/優先#7] 商品名(基底名) -> 商品名_EN。KDSはEN切替ボタンがUI文言のみに作用し、
     // チケットの商品名は常に日本語のまま表示されていた。他画面（index.html/receipts.html等）と同様、
@@ -80,6 +80,8 @@
     var MENU_EN = {};
 
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    function seatLabel(v){ var s=String(v==null?'':v),en=(window.I18n&&I18n.lang&&I18n.lang()==='en'); var tableTerm=(en?SETTINGS.tableLabelEn:SETTINGS.tableLabelJa)||(en?'Table':'テーブル'); var counterTerm=(en?SETTINGS.counterLabelEn:SETTINGS.counterLabelJa)||(en?'Counter':'カウンター'); var m=s.match(/^テーブル(\d+)$/)||s.match(/^(\d+)$/); if(m)return tableTerm+' '+m[1]; var c=s.match(/^カウンター(\d+)$/); if(c)return counterTerm+' '+c[1]; return s; }
+    function loadTerminology(){ API.post('getSettings',{}).then(function(r){SETTINGS=(r&&r.data)||{};if(__booted)render(lastData);}).catch(function(){}); }
     // オプション付き商品名（例:「コーラ (氷なし)」）から基底の商品名を取り出す
     function baseName(nm){ return String(nm||'').replace(/\s*[（(][^（(]*[)）]\s*$/, '').trim(); }
     function parseItems(details){
@@ -161,7 +163,7 @@
         var isNew = o.status === '未対応';
         var el = elapsedInfo(o.date);
         html += '<div class="ticket ' + (isNew?'new':'cook') + '">';
-        html += '<div class="t-head"><div class="t-table">🪑 ' + esc(o.table) + '</div>'
+        html += '<div class="t-head"><div class="t-table">🪑 ' + esc(seatLabel(o.table)) + '</div>'
              +  '<div style="display:flex;gap:6px;align-items:center;">'
              +  '<span class="t-badge ' + (isNew?'b-new':'b-cook') + '">' + (isNew?I18n.t('new'):I18n.t('cook')) + '</span>'
              +  '<span class="t-elapsed ' + el.cls + '">' + el.mins + I18n.t('min') + '</span></div></div>';
@@ -187,7 +189,7 @@
       if (!stale.length){ w.style.display='none'; w.innerHTML=''; return; }
       w.style.display='block';
       w.innerHTML = '⚠️ ' + stale.length + ' ' + I18n.t('staleNote') + '：' +
-        stale.map(function(o){ return esc(o.table) + '(' + Math.floor((Date.now()-new Date(o.date).getTime())/60000) + 'm)'; }).join(', ');
+        stale.map(function(o){ return esc(seatLabel(o.table)) + '(' + Math.floor((Date.now()-new Date(o.date).getTime())/60000) + 'm)'; }).join(', ');
     }
     window.setStatus = function(id, status){
       API.post('updateOrderStatus', { id: id, status: status, token: TOKEN }).then(function(){ load(true); }).catch(function(){ load(true); });
@@ -241,6 +243,7 @@
       if (document.visibilityState === 'visible') load(true);
     });
     function boot(){
+      loadTerminology();
       loadMenu();
       load();
       _resetPoll();   // 旧: 8秒/60秒の二重登録だった重複バグを解消（loadが2倍の頻度で呼ばれていた）

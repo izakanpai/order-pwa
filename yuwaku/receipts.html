@@ -58,12 +58,12 @@
     if (!TOKEN) location.href = './manage.html';
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-    var ROWS=[], SYM='₱', __loaded=false, MENU_EN={};
+    var ROWS=[], SYM='₱', SETTINGS={}, __loaded=false, MENU_EN={};
     // [負荷試験レビュー対応/優先#4] サーバー側ページングに対応。月合計(SUM_TOTAL)・件数(CNT_TOTAL)は
     // 「その月の全レシート」に対してサーバー側で集計した値を使う（表示中の行数に依存しない、常に正確な値）。
     // 一覧本体は1ページ100件ずつ「さらに読み込む」で追加取得する（一度に全件は読まない）。
     var PAGE=1, PAGE_SIZE=100, HAS_MORE=false, SUM_TOTAL=0, CNT_TOTAL=0;
-    function seatLabel(v){ var s=String(v==null?'':v); var en=(window.I18n&&I18n.lang&&I18n.lang()==='en'); var m=s.match(/^テーブル(\d+)$/); if(m) return (en?'Table ':'テーブル')+m[1]; var c=s.match(/^カウンター(\d+)$/); if(c) return (en?'Counter ':'カウンター')+c[1]; return s; }
+    function seatLabel(v){ var s=String(v==null?'':v); var en=(window.I18n&&I18n.lang&&I18n.lang()==='en'); var tableTerm=(en?SETTINGS.tableLabelEn:SETTINGS.tableLabelJa)||(en?'Table':'テーブル'); var counterTerm=(en?SETTINGS.counterLabelEn:SETTINGS.counterLabelJa)||(en?'Counter':'カウンター'); var m=s.match(/^テーブル(\d+)$/)||s.match(/^(\d+)$/); if(m) return tableTerm+' '+m[1]; var c=s.match(/^カウンター(\d+)$/); if(c) return counterTerm+' '+c[1]; return s; }
     function readableDetails(details){
       var raw=String(details||'').trim(); if(!raw) return '';
       try {
@@ -83,6 +83,7 @@
     }
 
     function render(){
+      var seatHead=document.querySelector('[data-t="thTable"]'),en=(window.I18n&&I18n.lang&&I18n.lang()==='en'); if(seatHead) seatHead.textContent=(en?SETTINGS.seatGroupLabelEn:SETTINGS.seatGroupLabelJa)||(en?'Seating':'席');
       document.getElementById('total').innerText = SYM + SUM_TOTAL.toLocaleString();
       document.getElementById('cnt').innerText = CNT_TOTAL + ' ' + I18n.t('bills');
       document.getElementById('moreBtn').style.display = HAS_MORE ? '' : 'none';
@@ -90,7 +91,7 @@
       document.getElementById('rows').innerHTML = ROWS.map(function(r){
         var disc = (Number(r.discountAmount)>0) ? ('-'+SYM+(Number(r.discountAmount)||0).toLocaleString()+(r.discountType?(' '+esc(r.discountType)):'')) : '';
         var main = '<tr><td class="muted">'+esc(r.datetime)+'</td><td style="font-weight:800;">'+esc(r.orNo)+'</td><td>'+esc(seatLabel(r.table))+'</td>'+
-          '<td class="num" style="font-weight:800;">'+SYM+(Number(r.total)||0).toLocaleString()+'</td><td>'+esc(r.method)+'</td><td class="muted">'+disc+'</td>'+
+          '<td class="num" style="font-weight:800;">'+SYM+(Number(r.total)||0).toLocaleString()+'</td><td>'+esc(r.methodLabel||r.method)+'</td><td class="muted">'+disc+'</td>'+
           '<td><button class="btn-sm" onclick="reprint(\''+esc(r.orNo).replace(/'/g,"\\'")+'\')">'+I18n.t('reprint')+'</button></td></tr>';
         // 明細（あれば2行目に表示）
         var det = readableDetails(r.details);
@@ -122,7 +123,7 @@
     document.getElementById('month').value = (function(){ var n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); })();
     document.getElementById('month').addEventListener('change', load);
 
-    API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; render(); }).catch(function(){});
+    API.post('getSettings', {}).then(function(r){ SETTINGS=r.data||{}; if(SETTINGS.currencySymbol) SYM=SETTINGS.currencySymbol; render(); }).catch(function(){});
     rpc('getAllMenuForAdmin',[]).then(function(l){ (l||[]).forEach(function(m){ if(m['商品名']&&m['商品名_EN']) MENU_EN[String(m['商品名'])]=String(m['商品名_EN']); }); render(); }).catch(function(){});
     __loaded=true; load();
 

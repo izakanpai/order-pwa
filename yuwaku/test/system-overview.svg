@@ -55,7 +55,7 @@
     <text x="60" y="150">📱 QRコードから注文画面にアクセス</text>
     <text x="60" y="174">🍽️ メニュー注文（写真・オプション・数量）</text>
     <text x="60" y="198">🎟️ クーポン／🎁 会員ポイント利用</text>
-    <text x="60" y="222">💳 セルフ決済 GCash・カード（任意）</text>
+    <text x="60" y="222">💳 セルフ決済 QR・カード（任意）</text>
     <text x="60" y="246">🔔 スタッフ呼出／🧾 お会計／📋 注文状況</text>
     <text x="60" y="270">⭐ フィードバック／🎂 誕生日登録</text>
     <text x="60" y="294">🥡 テイクアウト注文／🗓️ 予約</text>
@@ -92,7 +92,7 @@
     <text x="60" y="550">　 （管理画面→テーブル/カウンターを選択して入力）</text>
     <text x="60" y="574">② 🧾 注文一覧で状況を確認（卓別・滞在タイマー）</text>
     <text x="60" y="598">③ 🔔 客からの呼出・お会計依頼に対応</text>
-    <text x="60" y="622">④ 💴 会計：現金／カード／GCash（割勘・一部・シニア/PWD割引）</text>
+    <text x="60" y="622">④ 💴 会計：現金／カード／QR決済（割勘・一部・シニア/PWD割引）</text>
     <text x="60" y="646">⑤ 🖨️ レシート印刷／✉️ eレシート</text>
     <text x="60" y="670">🚫 注文取消（理由＋責任者の承認制）／⏰ 写真＋GPS打刻</text>
     <text x="60" y="694">📇 卓QRコードもこの端末から印刷</text>
@@ -143,7 +143,7 @@
 
     <rect x="392" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
     <text x="517" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">💳 PayMongo</text>
-    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">GCash・カード決済</text>
+    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">QR・カード決済</text>
 
     <rect x="664" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
     <text x="789" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ メール</text>

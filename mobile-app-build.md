@@ -80,6 +80,8 @@ Workspace-aware login is enabled in the app. New-store registration is implement
 5. Apply migration `0013_signup_rate_limits.sql` to that environment.
 6. Set `SELF_SIGNUP_AVAILABLE` to `true` only in that environment's frontend `config.js`, then rebuild the app.
 
+Before deploying the short-lived session-token build, apply `migrations/0020_auth_sessions.sql` to the matching production or test D1 database. Deploying the Worker before this migration would make new logins fail because the server cannot create refresh sessions.
+
 New workspaces receive a system-owner account, five tables, safe zero-tax/zero-service defaults, and the Free plan. Public signup without an invitation code is not enabled. Registration attempts are limited by a salted hash of Cloudflare's connection IP header; raw IP addresses are not stored, and stale aggregate rows are removed. Before removing the beta invitation gate, add verified email ownership and stronger bot protection such as Turnstile.
 
 ## Release gates
@@ -88,6 +90,7 @@ New workspaces receive a system-owner account, five tables, safe zero-tax/zero-s
 - [x] Native assets synchronize to both platform projects and the Android debug APK contains the current attendance assets.
 - [x] Production/test tenant and authentication separation tests pass.
 - [x] Native tokens use iOS Keychain / Android Keystore, with fail-closed behavior when the plugin is unavailable.
+- [x] Access tokens expire after 15 minutes; refresh tokens are separately stored, hash-only in D1, rotated on use, and revocable on logout or password change.
 - [x] Invite-only signup and owner-verified account deletion requests are implemented.
 - [x] Refund and commission reversal handling is implemented and regression-tested.
 - [x] Production deletion-fulfilment runbook, retention schedule, finite R2 deletion, and owner confirmation are implemented and locally regression-tested.

@@ -6,12 +6,11 @@
     en: { order:'Order', total:'Total', all:'All', send:'Order', empty:'Please select items',
       confirm:'Send this order?', okTitle:'Order sent', okMsg:'Your order was received.',
       queuedTitle:'Saved (offline)', queuedMsg:'No connection now. It will be sent automatically when back online.',
-      errTitle:'Error', ok:'OK', table:'Table', counter:'Counter', noTable:'No table number in the QR link.',
+      errTitle:'Error', ok:'OK', table:'Table', counter:'Counter', noTable:'Please scan the signed QR code at your location.',
       offline:'Offline — orders will be sent automatically when back online', lang:'JP',
       svc:'Service', tax:'Tax', ranking:'🏆 Ranking',
-      tblTitle:'Select your table', tblMsg:'Scan the QR at your table, or pick your table number.', tblGo:'Start',
+      tblTitle:'Select a location', tblMsg:'Staff may select a location here. Guests must scan the signed QR code at their location.', tblGo:'Start',
       partyTitle:'How many guests?', partyLabel:'Guests', partyMsg:'Used for entry and extension fee billing.', partyMsgEntry:'Used for entry fee billing.', partyMsgExtension:'Used for extension fee billing.', partyGo:'OK',
-      payTitle:'How would you like to pay?', payLater:'👤 Pay at counter', payCard:'💳 Card', payProcessing:'Preparing…', payScan:'Scan the QR to pay', payNotYet:'Payment not confirmed yet.', payNoKey:'Online payment is not set up.', payTimeout:'Payment confirmation timed out. If you already paid, please tell a staff member.', paidTitle:'Paid & ordered', paidMsg:'Payment received. Your order was sent.', cancel:'Cancel',
       memberTitle:'Member (points)', memberSub:'Enter your phone to earn points. For privacy, balance checks and point use are handled by staff.', check:'Register', usePoints:'Use points', points:'pts', discountLbl:'Points', earned:'pts earned',
       couponTitle:'Coupon / Voucher', couponSub:'Enter a code to get a discount.', apply:'Apply', remove:'Remove coupon', close:'Close', couponLbl:'Coupon',
       cpApplied:'Applied', cpEmpty:'Enter a code', cpNotfound:'Code not found', cpInactive:'Not available', cpExpired:'Expired', cpLimit:'Usage limit reached', cpMin:'Minimum order not met', cpInvalid:'Invalid code',
@@ -21,21 +20,20 @@
       callConfirm:'Call a staff member to your table?', billConfirm:'Request your bill?',
       fbTitle:'How was it?', fbSub:'Your rating helps us improve.', fbComment:'Comment', fbSend:'Send', fbPick:'Please tap the stars to rate.', fbCommentRequired:'Please enter a comment.', fbThanks:'Thank you!', fbThanksMsg:'Thanks for your feedback.',
       bdayLbl:'🎂 Register your birthday for a treat', bdaySave:'Save', bdaySaved:'Saved! 🎉', bdayBad:'Enter as MM-DD (e.g. 08-15)',
-      stTitle:'My orders', stSubLbl:'Subtotal', stSvcInclLbl:'Service charge (included)', stSvcExclLbl:'Service charge', stTaxInclLbl:'VAT (included)', stTaxExclLbl:'VAT', stTotalLbl:'Unpaid total', stRefresh:'Refresh', stEmpty:'No orders yet for this table.', stPending:'Preparing', stServed:'Served',
-      taxInclText:'Prices include VAT {v}%.', taxExclText:'VAT {v}% will be added at checkout.',
+      stTitle:'My orders', stSubLbl:'Subtotal', stSvcInclLbl:'Service charge (included)', stSvcExclLbl:'Service charge', stTaxInclLbl:'{tax} (included)', stTaxExclLbl:'{tax}', stTotalLbl:'Unpaid total', stRefresh:'Refresh', stEmpty:'No orders yet for this table.', stPending:'Preparing', stServed:'Served',
+      taxInclText:'Prices include {tax} {v}%.', taxExclText:'{tax} {v}% will be added at checkout.',
       svcInclText:'Prices include a {v}% service charge.', svcExclText:'A {v}% service charge applies separately.',
       btnMember:'Rewards', btnCoupon:'Coupon', btnCall:'Call', btnBill:'Bill', btnStatus:'Orders', btnFeedback:'Rate',
-      doneTitle:'Thank you!', doneMsg:'Your bill has been settled. If you\'d like to order again, please scan the table QR code once more.',
+      doneTitle:'Thank you!', doneMsg:'Your bill has been settled. To order again, please scan the location QR code once more.',
       mgmtBack:'← Manage' },
     ja: { order:'ご注文', total:'合計', all:'すべて', send:'注文する', empty:'商品を選んでください',
       confirm:'この内容で注文しますか？', okTitle:'注文を送信しました', okMsg:'ご注文を承りました。',
       queuedTitle:'保留しました（オフライン）', queuedMsg:'今は接続がありません。オンライン復帰時に自動送信します。',
-      errTitle:'エラー', ok:'OK', table:'卓', counter:'カウンター', noTable:'QRリンクに卓番号がありません。',
+      errTitle:'エラー', ok:'OK', table:'卓', counter:'カウンター', noTable:'席に設置された署名付きQRコードを読み取ってください。',
       offline:'オフライン — 復帰時に自動送信します', lang:'EN',
       svc:'サービス料', tax:'税', ranking:'🏆 ランキング',
-      tblTitle:'テーブルを選択', tblMsg:'QRを読み取るか、テーブル番号を選んでください。', tblGo:'開始',
+      tblTitle:'席を選択', tblMsg:'スタッフはここで席を選べます。お客様は席の署名付きQRコードを読み取ってください。', tblGo:'開始',
       partyTitle:'ご来店人数は？', partyLabel:'人数', partyMsg:'入場料・延長料の請求に使用します。', partyMsgEntry:'入場料の請求に使用します。', partyMsgExtension:'延長料の請求に使用します。', partyGo:'OK',
-      payTitle:'お支払い方法', payLater:'👤 店員に支払う（後会計）', payCard:'💳 カード', payProcessing:'準備中…', payScan:'QRを読み取ってお支払い', payNotYet:'まだ支払いが確認できません。', payNoKey:'オンライン決済は未設定です。', payTimeout:'決済確認がタイムアウトしました。お支払い済みの場合は店員にお伝えください。', paidTitle:'支払い完了・注文しました', paidMsg:'お支払いを受け付けました。注文を送信しました。', cancel:'キャンセル',
       memberTitle:'会員（ポイント）', memberSub:'電話番号を入力するとポイントが貯まります。残高確認・利用は個人情報保護のためスタッフへお申し付けください。', check:'登録', usePoints:'ポイントを使う', points:'pt', discountLbl:'ポイント割引', earned:'pt 獲得',
       couponTitle:'クーポン／バウチャー', couponSub:'コードを入力すると割引されます。', apply:'適用', remove:'クーポンを外す', close:'閉じる', couponLbl:'クーポン',
       cpApplied:'適用しました', cpEmpty:'コードを入力してください', cpNotfound:'コードが見つかりません', cpInactive:'利用できません', cpExpired:'期限切れ', cpLimit:'利用上限に達しています', cpMin:'最低注文額に達していません', cpInvalid:'無効なコード',
@@ -45,11 +43,11 @@
       callConfirm:'スタッフを呼びますか？', billConfirm:'お会計を依頼しますか？',
       fbTitle:'ご感想は？', fbSub:'評価は今後の改善に役立ちます。', fbComment:'コメント', fbSend:'送信', fbPick:'星をタップして評価してください。', fbCommentRequired:'コメントを入力してください。', fbThanks:'ありがとうございます！', fbThanksMsg:'ご意見ありがとうございました。',
       bdayLbl:'🎂 お誕生日を登録すると特典があります', bdaySave:'登録', bdaySaved:'登録しました！🎉', bdayBad:'MM-DD 形式で入力（例: 08-15）',
-      stTitle:'注文状況', stSubLbl:'小計', stSvcInclLbl:'うちサービス料（内税）', stSvcExclLbl:'サービス料', stTaxInclLbl:'うちVAT（内税）', stTaxExclLbl:'VAT', stTotalLbl:'未会計 合計', stRefresh:'更新', stEmpty:'この卓の注文はまだありません。', stPending:'準備中', stServed:'提供済み',
-      taxInclText:'表示価格はVAT{v}%込みです。', taxExclText:'お会計時に別途VAT{v}%を頂戴いたします。',
+      stTitle:'注文状況', stSubLbl:'小計', stSvcInclLbl:'うちサービス料（内税）', stSvcExclLbl:'サービス料', stTaxInclLbl:'うち{tax}（内税）', stTaxExclLbl:'{tax}', stTotalLbl:'未会計 合計', stRefresh:'更新', stEmpty:'この卓の注文はまだありません。', stPending:'準備中', stServed:'提供済み',
+      taxInclText:'表示価格は{tax}{v}%込みです。', taxExclText:'お会計時に別途{tax}{v}%を頂戴いたします。',
       svcInclText:'表示価格はサービス料{v}%込みです。', svcExclText:'別途サービス料{v}%を頂戴いたします。',
       btnMember:'特典', btnCoupon:'クーポン', btnCall:'呼出', btnBill:'会計', btnStatus:'状況', btnFeedback:'評価',
-      doneTitle:'ご利用ありがとうございました', doneMsg:'お会計が完了しました。追加でご注文の際は、テーブルのQRコードを再度読み取ってください。',
+      doneTitle:'ご利用ありがとうございました', doneMsg:'お会計が完了しました。追加でご注文の際は、席のQRコードを再度読み取ってください。',
       mgmtBack:'← 管理' }
   };
 
@@ -74,8 +72,12 @@
 
   function money(v) {
     var sym = state.settings.currencySymbol || '₱';
-    return sym + (Number(v) || 0).toLocaleString();
+    var locale = state.settings.locale || undefined;
+    var digits = Object.prototype.hasOwnProperty.call(state.settings,'currencyDecimalDigits') ? Math.max(0,Math.min(3,Number(state.settings.currencyDecimalDigits)||0)) : 0;
+    return sym + (Number(v) || 0).toLocaleString(locale,{minimumFractionDigits:digits,maximumFractionDigits:digits});
   }
+  function taxName(){ return String(state.settings.taxDisplayName || 'VAT'); }
+  function roundCharge(v){ var d=Object.prototype.hasOwnProperty.call(state.settings,'currencyDecimalDigits')?Math.max(0,Math.min(3,Number(state.settings.currencyDecimalDigits)||0)):0,f=Math.pow(10,d),n=(Number(v)||0)*f,m=state.settings.taxRoundingMode||'nearest'; return (m==='floor'?Math.floor(n+Number.EPSILON):m==='ceil'?Math.ceil(n-Number.EPSILON):Math.round(n+Number.EPSILON))/f; }
 
   // ---- オプション ----
   // メニュー行の「オプション」JSONを配列で返す（[{name,type,required,choices:[{label,price}]}]）
@@ -107,10 +109,10 @@
     // サービス料は最終会計（レジ）でまとめて加算するため、注文画面の合計・送信額には加算しない（二重加算防止）。
     // 内税の場合は表示価格に含まれる分の参考値として算出（合計への影響なし＝従来通り）。
     var service, afterService, tax, base;
-    service = svcIncl ? Math.round(sub - sub / (1 + svcRate / 100)) : 0;
+    service = svcIncl ? roundCharge(sub - sub / (1 + svcRate / 100)) : 0;
     afterService = sub;
-    if (taxIncl) { tax = Math.round(sub - sub / (1 + taxRate / 100)); base = afterService; }
-    else { tax = Math.round(afterService * (taxRate / 100)); base = afterService + tax; }
+    if (taxIncl) { tax = roundCharge(sub - sub / (1 + taxRate / 100)); base = afterService; }
+    else { tax = roundCharge(afterService * (taxRate / 100)); base = afterService + tax; }
     // クーポン割引（先に適用）
     var couponDiscount = 0;
     if (state.coupon && state.coupon.discount > 0) {
@@ -137,11 +139,13 @@
     var taxRate = Number(state.settings.taxRate) || 0;
     var svcIncl = String(state.settings.serviceInclusive) === 'true';
     var taxIncl = String(state.settings.taxInclusive) === 'true';
+    var digits=Object.prototype.hasOwnProperty.call(state.settings,'currencyDecimalDigits')?Math.max(0,Math.min(3,Number(state.settings.currencyDecimalDigits)||0)):0, factor=Math.pow(10,digits), mode=state.settings.taxRoundingMode||'nearest';
+    function rounded(v){var n=v*factor;return (mode==='floor'?Math.floor(n+Number.EPSILON):mode==='ceil'?Math.ceil(n-Number.EPSILON):Math.round(n+Number.EPSILON))/factor;}
     var svc, afterSvc, tax, total;
-    if (svcIncl) { svc = Math.round(sub - sub / (1 + svcRate / 100)); afterSvc = sub; }
-    else { svc = Math.round(sub * (svcRate / 100)); afterSvc = sub + svc; }
-    if (taxIncl) { tax = Math.round(sub - sub / (1 + taxRate / 100)); total = afterSvc; }
-    else { tax = Math.round(afterSvc * (taxRate / 100)); total = afterSvc + tax; }
+    if (svcIncl) { svc = rounded(sub - sub / (1 + svcRate / 100)); afterSvc = sub; }
+    else { svc = rounded(sub * (svcRate / 100)); afterSvc = rounded(sub + svc); }
+    if (taxIncl) { tax = rounded(sub - sub / (1 + taxRate / 100)); total = rounded(afterSvc); }
+    else { tax = rounded(afterSvc * (taxRate / 100)); total = rounded(afterSvc + tax); }
     return { sub: sub, service: svc, tax: tax, total: total };
   }
 
@@ -161,13 +165,13 @@
     // 卓番号：QR経由（URLに?table=あり）で確定した客のセッションでは変更不可にする。
     // QR無し（店員が口頭注文を入力する運用）のときだけ従来通りタップで選び直せる。
     if (state.tableLocked) {
-      $('tableChip').textContent = state.table ? seatLabel(state.table) : (x.table + ' —');
+      $('tableChip').textContent = state.table ? seatLabel(state.table) : (seatGroupLabel() + ' —');
       $('tableChip').style.cursor = 'default';
       $('tableChip').title = '';
     } else {
-      $('tableChip').textContent = (state.table ? seatLabel(state.table) : (x.table + ' —')) + ' ▾';
+      $('tableChip').textContent = (state.table ? seatLabel(state.table) : (seatGroupLabel() + ' —')) + ' ▾';
       $('tableChip').style.cursor = 'pointer';
-      $('tableChip').title = (state.lang === 'en') ? 'Tap to change table' : '卓を選び直す';
+      $('tableChip').title = (state.lang === 'en') ? 'Tap to change location' : '席を選び直す';
     }
     // langBtnの表示テキストは共通部品I18n（data-tlang）が管理するため、ここでは触らない（他画面と統一）。
     if ($('mgmtBackBtn')) $('mgmtBackBtn').textContent = x.mgmtBack;
@@ -221,7 +225,7 @@
     var svcIncl = String(state.settings.serviceInclusive) === 'true';
     if (vat <= 0 && svc <= 0) { el.style.display = 'none'; el.textContent = ''; return; }
     var parts = [];
-    if (vat > 0) parts.push((vatIncl ? x.taxInclText : x.taxExclText).replace('{v}', vat));
+    if (vat > 0) parts.push((vatIncl ? x.taxInclText : x.taxExclText).replace('{tax}',taxName()).replace('{v}', vat));
     if (svc > 0) parts.push((svcIncl ? x.svcInclText : x.svcExclText).replace('{v}', svc));
     el.textContent = parts.join(' ');
     el.style.display = 'block';
@@ -445,7 +449,7 @@
     $('stTitle').textContent = x.stTitle;
     $('stSubLbl').textContent = x.stSubLbl;
     $('stSvcLbl').textContent = String(state.settings.serviceInclusive) === 'true' ? x.stSvcInclLbl : x.stSvcExclLbl;
-    $('stTaxLbl').textContent = String(state.settings.taxInclusive) === 'true' ? x.stTaxInclLbl : x.stTaxExclLbl;
+    $('stTaxLbl').textContent = (String(state.settings.taxInclusive) === 'true' ? x.stTaxInclLbl : x.stTaxExclLbl).replace('{tax}',taxName());
     $('stTotalLbl').textContent = x.stTotalLbl;
     $('stRefresh').textContent = x.stRefresh;
     $('stClose').textContent = x.close;
@@ -633,11 +637,14 @@
   // テーブル未指定（QR無しアクセス）時に手動選択を促す
   // 席ラベルを言語に合わせて表示（値自体は「テーブルN/カウンターM」のまま保存）
   function seatLabel(v) {
-    var x = t(), s = String(v);
-    var m = s.match(/^テーブル(\d+)$/); if (m) return x.table + ' ' + m[1];
-    var c = s.match(/^カウンター(\d+)$/); if (c) return (x.counter || 'Counter') + ' ' + c[1];
+    var x = t(), s = String(v), cfg = state.settings || {}, en = state.lang === 'en';
+    var tableTerm = (en ? cfg.tableLabelEn : cfg.tableLabelJa) || x.table || (en ? 'Table' : 'テーブル');
+    var counterTerm = (en ? cfg.counterLabelEn : cfg.counterLabelJa) || x.counter || (en ? 'Counter' : 'カウンター');
+    var m = s.match(/^テーブル(\d+)$/) || s.match(/^(\d+)$/); if (m) return tableTerm + ' ' + m[1];
+    var c = s.match(/^カウンター(\d+)$/); if (c) return counterTerm + ' ' + c[1];
     return s;
   }
+  function seatGroupLabel(){ var cfg=state.settings||{},en=state.lang==='en'; return (en?cfg.seatGroupLabelEn:cfg.seatGroupLabelJa)||(en?'Seating':'席'); }
   function _feeSettingEnabled(enabledKey, amountKey) {
     var s = state.settings || {};
     if (Object.prototype.hasOwnProperty.call(s, enabledKey)) return s[enabledKey] === true || s[enabledKey] === 1 || s[enabledKey] === '1' || s[enabledKey] === 'on' || s[enabledKey] === 'true';
@@ -842,7 +849,8 @@
     if (_bid) { var _b = $('shopBanner'); _b.src = API.imageUrl(_bid); _b.style.display = 'block'; }
     state.tables = r.tables || [];   // 卓一覧を保持（卓チップから選び直せるように）
     renderTexts(); renderCats(); renderMenu(); updateTotal();
-    if (!state.table) showTableAndPartyPicker(state.tables); // QR無し（店員のオーダー入力）時はテーブル選択（＋必要なら人数）を促す
+    if (!state.table && state.staffMode) showTableAndPartyPicker(state.tables); // 認証済みスタッフだけが卓を手動選択できる
+    else if (!state.table) showErr(t().noTable);
     else showTableAndPartyPicker(); // QR固定客：卓は確定済みなので、必要なら人数入力のみ表示
     loadRanking();
   }
@@ -858,11 +866,15 @@
   // ---- 起動 ----
   function boot() {
     state.table = qs('table');
+    var tableToken = qs('t');
+    var hasStaffSession = false;
+    try { hasStaffSession = !!localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken'); } catch (e) {}
     // QR経由（URLに?table=あり）で来た客のセッションは卓番号を固定。
     // QR無し（管理メニュー「オーダー入力」から店員がその場で口頭注文を入力する運用）は
     // staffModeとして扱い、卓の選び直しを許可し、会計後ロック（ありがとうございました画面）も対象外にする。
-    state.tableLocked = !!state.table;
-    state.staffMode = !state.table;
+    state.tableLocked = !!(state.table && tableToken);
+    state.staffMode = hasStaffSession && !state.tableLocked;
+    if (state.table && !state.tableLocked && !state.staffMode) state.table = '';
     // 言語の初期化・切替・永続化は共通部品I18nに一本化（他画面と同じ仕組み）。
     I18n.init(i18n, onLangChange);
     // 管理メニューからログイン中の端末でだけ「← 管理へ」を表示（客のQRスキャンでは非表示）
@@ -890,7 +902,7 @@
     $('stClose').addEventListener('click', function () { $('statusModal').classList.remove('show'); });
     $('fbBtn').addEventListener('click', openFeedback);
     // 卓チップをタップで卓を選び直す（店員が口頭注文を別卓に入力する用・QR経由の客セッションでは無効）
-    $('tableChip').addEventListener('click', function () { if (!state.tableLocked && state.tables && state.tables.length) showTableAndPartyPicker(state.tables); });
+    $('tableChip').addEventListener('click', function () { if (state.staffMode && !state.tableLocked && state.tables && state.tables.length) showTableAndPartyPicker(state.tables); });
     $('fbSend').addEventListener('click', sendFeedback);
     $('fbClose').addEventListener('click', function () { $('fbModal').classList.remove('show'); });
     Array.prototype.forEach.call($('fbStars').querySelectorAll('span'), function (s) {

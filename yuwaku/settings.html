@@ -44,7 +44,7 @@
       <div class="card-title" data-t="shopTitle">🏪 店舗設定</div>
       <div class="fg"><label class="form-label" data-t="shopName">店舗名</label><input id="shopName" class="fc"></div>
       <div class="fg"><label class="form-label" data-t="shopAddress">住所（レシート表示）</label><input id="shopAddress" class="fc"></div>
-      <div class="fg"><label class="form-label" data-t="shopTin">TIN番号（レシート表示）</label><input id="shopTin" class="fc"></div>
+      <div class="fg"><label id="shopTinLabel" class="form-label" data-t="shopTin">税務登録番号（レシート表示）</label><input id="shopTin" class="fc"></div>
       <div class="fg">
         <label class="form-label" data-t="shopLogo">レシートのロゴ（先頭に中央印字）</label>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
@@ -63,14 +63,24 @@
         <div class="fg"><label class="form-label" data-t="tableCount">テーブル数</label><input id="tableCount" type="number" min="0" class="fc"></div>
         <div class="fg"><label class="form-label" data-t="counterCount">カウンター数</label><input id="counterCount" type="number" min="0" class="fc"></div>
       </div>
+      <div class="fg"><label class="form-label" data-t="businessProfileLbl">業態プロファイル</label><select id="businessProfile" class="fc"><option value="restaurant" data-t="profileRestaurant">レストラン</option><option value="bar" data-t="profileBar">バー・居酒屋</option><option value="cafe" data-t="profileCafe">カフェ</option><option value="counter_service" data-t="profileCounterService">カウンターサービス</option><option value="service" data-t="profileService">サービス・施設</option></select></div>
+      <button class="btn sec" type="button" onclick="applyBusinessProfile()" data-t="applyBusinessProfile" style="margin-bottom:10px;">業態の呼称初期値を適用</button>
+      <div class="grid2">
+        <div class="fg"><label class="form-label" data-t="tableLabelJaLbl">第1席種の呼称（日本語）</label><input id="tableLabelJa" class="fc" maxlength="30" placeholder="テーブル"></div>
+        <div class="fg"><label class="form-label" data-t="tableLabelEnLbl">第1席種の呼称（英語）</label><input id="tableLabelEn" class="fc" maxlength="30" placeholder="Table"></div>
+        <div class="fg"><label class="form-label" data-t="counterLabelJaLbl">副席種名（日本語）</label><input id="counterLabelJa" class="fc" maxlength="30" placeholder="カウンター"></div>
+        <div class="fg"><label class="form-label" data-t="counterLabelEnLbl">副席種名（英語）</label><input id="counterLabelEn" class="fc" maxlength="30" placeholder="Counter"></div>
+        <div class="fg"><label class="form-label" data-t="seatGroupLabelJaLbl">席全体の呼称（日本語）</label><input id="seatGroupLabelJa" class="fc" maxlength="30" placeholder="席"></div>
+        <div class="fg"><label class="form-label" data-t="seatGroupLabelEnLbl">席全体の呼称（英語）</label><input id="seatGroupLabelEn" class="fc" maxlength="30" placeholder="Seating"></div>
+      </div>
       <div class="hint" data-t="seatHint">注文画面で「テーブル1〜」「カウンター1〜」から席を選べます。0にするとその種別は非表示。</div>
       <button class="btn" onclick="saveShop()" data-t="save">💾 保存</button>
       <div class="st" id="st-shop"></div>
     </div>
 
     <div class="card">
-      <div class="card-title" data-t="qrCardTitle">📱 テーブルQRコード</div>
-      <p class="hint" data-t="qrCardDesc" style="margin-bottom:14px;line-height:1.7;">各テーブルのQRコードを印刷してテーブルに設置してください。お客様がスキャンするとそのテーブル専用の注文画面が開きます。</p>
+      <div class="card-title" data-t="qrCardTitle">📱 席QRコード</div>
+      <p class="hint" data-t="qrCardDesc" style="margin-bottom:14px;line-height:1.7;">各席のQRコードを印刷して設置してください。お客様がスキャンするとその席専用の注文画面が開きます。</p>
       <button class="btn" onclick="showQrModal()" data-t="qrShowBtn">📱 QRコードを表示</button>
       <div class="st" id="st-qr"></div>
     </div>
@@ -86,8 +96,11 @@
     <div class="card">
       <div class="card-title" data-t="localeTitle">🌐 表示・地域</div>
       <div class="grid2">
+        <div class="fg"><label class="form-label" data-t="countryCode">国・地域コード</label><input id="countryCode" class="fc" list="countryOptions" maxlength="2" placeholder="PH"><datalist id="countryOptions"><option value="PH">Philippines</option><option value="JP">Japan</option><option value="SG">Singapore</option><option value="US">United States</option><option value="GB">United Kingdom</option><option value="AU">Australia</option></datalist></div>
+        <div class="fg"><label class="form-label" data-t="localeCode">地域形式（ロケール）</label><input id="locale" class="fc" placeholder="en-PH"></div>
         <div class="fg"><label class="form-label" data-t="curCode">通貨コード</label><input id="currencyCode" class="fc" placeholder="PHP"></div>
         <div class="fg"><label class="form-label" data-t="curSym">通貨記号</label><input id="currencySymbol" class="fc" placeholder="₱"></div>
+        <div class="fg"><label class="form-label" data-t="curDigits">通貨の小数桁</label><select id="currencyDecimalDigits" class="fc"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></div>
         <div class="fg">
           <label class="form-label" data-t="svcRate">サービス料 (%)</label><input id="serviceRate" type="number" min="0" step="any" class="fc">
           <label class="chk" style="margin-top:6px;"><input type="checkbox" id="serviceInclusive"><span data-t="svcInclLabel">内税（価格に含む）</span></label>
@@ -96,6 +109,12 @@
           <label class="form-label" data-t="taxRate">税率 (%)</label><input id="taxRate" type="number" min="0" step="any" class="fc">
           <label class="chk" style="margin-top:6px;"><input type="checkbox" id="taxInclusive"><span data-t="taxInclLabel">内税（価格に含む）</span></label>
         </div>
+        <div class="fg"><label class="form-label" data-t="taxName">税の表示名</label><input id="taxDisplayName" class="fc" maxlength="30" placeholder="VAT / GST / 消費税"></div>
+        <div class="fg"><label class="form-label" data-t="taxIdName">税務登録番号の表示名</label><input id="taxIdLabel" class="fc" maxlength="60" placeholder="TIN / VAT No. / 適格請求書番号"></div>
+        <div class="fg"><label class="form-label" data-t="receiptPrefix">レシート番号の接頭辞</label><input id="receiptNumberPrefix" class="fc" maxlength="8" pattern="[A-Za-z0-9]{1,8}" placeholder="OR"></div>
+        <div class="fg"><label class="form-label" data-t="receiptTitleJa">帳票名（日本語）</label><input id="receiptDocumentTitleJa" class="fc" maxlength="60" placeholder="レシート / 領収書"></div>
+        <div class="fg"><label class="form-label" data-t="receiptTitleEn">帳票名（英語）</label><input id="receiptDocumentTitleEn" class="fc" maxlength="60" placeholder="Receipt / Tax Invoice"></div>
+        <div class="fg"><label class="form-label" data-t="taxRound">税・料金の端数処理</label><select id="taxRoundingMode" class="fc"><option value="nearest" data-t="roundNearest">四捨五入</option><option value="floor" data-t="roundFloor">切り捨て</option><option value="ceil" data-t="roundCeil">切り上げ</option></select></div>
         <div class="fg"><label class="form-label" data-t="timezoneLbl">標準時間（タイムゾーン）</label><input id="timezone" class="fc" list="timezoneOptions" placeholder="Asia/Manila" autocomplete="off"><datalist id="timezoneOptions">
           <option value="Asia/Manila">Philippines</option><option value="Asia/Tokyo">Japan</option>
           <option value="Asia/Singapore">Singapore</option><option value="Asia/Seoul">South Korea</option>
@@ -111,6 +130,8 @@
         <div class="fg"><label class="form-label" data-t="accent">アクセント色</label><input id="accentColor" type="color" class="fc" style="height:44px;"></div>
         <div class="fg"><label class="form-label" data-t="bizCutoff">営業日切替時刻</label><input id="bizDayCutoff" type="time" class="fc" step="60"></div>
       </div>
+      <button class="btn sec" type="button" onclick="applyCountryProfile()" data-t="applyCountry" style="margin-bottom:10px;">国別初期値を適用</button>
+      <div class="form-hint" data-t="countryHint" style="margin:0 0 10px;">国別初期値は通貨・標準時間・税名称を入力欄へ反映します。保存するまでは確定されません。</div>
       <div class="form-hint" data-t="chargesHint" style="margin:6px 0 10px;">チェックなし＝外税（表示価格に加算）。チェックあり＝内税（表示価格に含む）。一般的には税＝内税、サービス料＝外税です。</div>
       <div class="form-hint" data-t="timezoneHint" style="margin:0 0 10px;">店舗所在地のIANAタイムゾーンを選択または入力してください。営業日、売上集計、勤怠、提供時間、定期レポートの時刻へ共通反映されます。</div>
       <div class="form-hint" data-t="bizCutoffHint" style="margin:0 0 10px;">深夜営業の場合に設定してください。例：2:30を設定すると、午前2時30分までの売上は前日の営業日として日報・週報・月報・売上集計に計上されます。0:00＝通常どおり午前0時で区切り。指定できるのは0:00〜11:59の範囲です（それ以外は0:00として扱われます）。</div>
@@ -140,28 +161,57 @@
         <div class="fg"><label class="form-label" data-t="extensionFeeAmount">延長料（1人・1単位あたり）</label><input id="extensionFeeAmount" type="number" min="0" step="any" class="fc"></div>
         <div class="fg"><label class="form-label" data-t="extensionUnitMinutes">延長時間の単位（分）</label><input id="extensionUnitMinutes" type="number" min="1" step="1" class="fc"></div>
       </div>
-      <div class="form-hint" data-t="entryHint" style="margin:6px 0 10px;">チェックを入れた料金だけが会計時に請求されます。チェックを外しても入力金額は保持されます。延長料は、卓/カウンター選択時に入力した人数と入店時刻を基準に、基本利用時間を超えた分を延長時間の単位で切り上げて自動計算します。両方とも無効の場合、注文画面では人数入力を表示しません。</div>
+      <div class="form-hint" data-t="entryHint" style="margin:6px 0 10px;">チェックを入れた料金だけが会計時に請求されます。チェックを外しても入力金額は保持されます。延長料は、席選択時に入力した人数と入店時刻を基準に、基本利用時間を超えた分を延長時間の単位で切り上げて自動計算します。両方とも無効の場合、注文画面では人数入力を表示しません。</div>
       <button class="btn" onclick="saveEntryFee()" data-t="save">💾 保存</button>
       <div class="st" id="st-entry"></div>
     </div>
 
     <div class="card">
-      <div class="card-title" data-t="seniorTitle">🧓 シニア/PWD割引</div>
-      <label class="chk" style="margin-bottom:10px;"><input type="checkbox" id="seniorDiscountEnabled"><span data-t="seniorEnable">有効にする（無効の場合、会計画面から選択肢自体が消えます）</span></label>
-      <div class="form-hint" data-t="seniorHint" style="margin:0 0 10px;">有効にした場合でも、実際に割引を適用するには会計時に責任者（マネージャー以上）のログイン承認が必要です。従業員が無断で割引を適用することを防ぐための仕組みです。</div>
-      <button class="btn" onclick="saveSeniorDiscount()" data-t="save">💾 保存</button>
-      <div class="st" id="st-senior"></div>
+      <div class="card-title">🏷️ 割引マスタ / Discount rules</div>
+      <div class="form-hint" style="margin:0 0 12px;">店舗・国・業態に合わせて割引を登録します。率／固定額、税免除、ID提示、責任者承認を割引ごとに設定できます。</div>
+      <input type="hidden" id="discountRuleId">
+      <div class="grid2">
+        <div class="fg"><label class="form-label">表示名 / Name</label><input class="fc" id="discountName" maxlength="80" placeholder="例: 会員割引"></div>
+        <div class="fg"><label class="form-label">英語名 / English name</label><input class="fc" id="discountNameEn" maxlength="80" placeholder="Member discount"></div>
+        <div class="fg"><label class="form-label">管理コード / Code</label><input class="fc" id="discountCode" maxlength="40" placeholder="MEMBER"></div>
+        <div class="fg"><label class="form-label">計算方法 / Calculation</label><select class="fc" id="discountCalculationType"><option value="percent">率（%）/ Percent</option><option value="fixed">固定額 / Fixed amount</option></select></div>
+        <div class="fg"><label class="form-label">割引値 / Value</label><input class="fc" id="discountValue" type="number" min="0.01" step="any"></div>
+        <div class="fg"><label class="form-label">表示順 / Sort order</label><input class="fc" id="discountSortOrder" type="number" step="1" value="0"></div>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin:4px 0 12px;">
+        <label class="chk"><input type="checkbox" id="discountTaxExempt"><span>税免除 / Tax exempt</span></label>
+        <label class="chk"><input type="checkbox" id="discountIdRequired"><span>ID必須 / ID required</span></label>
+        <label class="chk"><input type="checkbox" id="discountManagerApproval" checked><span>責任者承認 / Manager approval</span></label>
+        <label class="chk"><input type="checkbox" id="discountEnabled" checked><span>有効 / Enabled</span></label>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" onclick="saveDiscountRule()">💾 割引を保存</button>
+        <button class="btn sec" onclick="newDiscountRule()">＋ 新規</button>
+        <button class="btn sec" onclick="applyDiscountPreset('senior')">シニア20%プリセット</button>
+        <button class="btn sec" onclick="applyDiscountPreset('pwd')">PWD 20%プリセット</button>
+      </div>
+      <div class="st" id="st-discount"></div>
+      <div id="discountRuleList" style="margin-top:12px;"></div>
+      <details style="margin-top:12px;"><summary style="cursor:pointer;font-weight:800;">旧シニア／PWD互換設定</summary>
+        <label class="chk" style="margin:10px 0;"><input type="checkbox" id="seniorDiscountEnabled"><span>旧画面・旧端末向けのシニア／PWD割引を有効にする</span></label>
+        <button class="btn sec" onclick="saveSeniorDiscount()">💾 互換設定を保存</button><div class="st" id="st-senior"></div>
+      </details>
     </div>
 
     <div class="card">
-      <div class="card-title" data-t="payTitle">💳 決済方法（クレジット / GCash）</div>
-      <div class="hint" data-t="payHint" style="margin-bottom:12px;">クレジットカードは通常、別のカード決済端末で処理します。ここではお会計画面にボタンを表示するかどうかだけを設定します。</div>
-      <label class="chk" style="margin-bottom:10px;"><input type="checkbox" id="creditCardEnabled"><span data-t="ccEnable">クレジットカード決済ボタンを表示する</span></label>
-      <div class="hint" style="font-size:13px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;padding:10px 12px;margin-bottom:10px;" data-t="ccWarn">⚠️ このボタンはオンライン決済（カード情報の入力・実際の請求処理）は行いません。押すと「別のカード決済端末で処理済み」として記録されるだけです。表示をONにしても、決済自体はこれまでどおり別のカード決済端末で行ってください。</div>
-      <button class="btn" onclick="saveCreditCard()" data-t="save">💾 保存</button>
+      <div class="card-title" data-t="payTitle">💳 決済方法</div>
+      <div class="hint" data-t="payHint" style="margin-bottom:12px;">会計画面に表示する決済方法と、画面・レシートに印字する名称を設定します。</div>
+      <div class="grid2">
+        <div class="fg"><label class="chk"><input type="checkbox" id="cashPaymentEnabled"><span data-t="cashEnable">現金を表示する</span></label><label class="form-label" data-t="screenLabel">画面表示名</label><input class="fc" id="cashPaymentLabel" maxlength="40" placeholder="現金"><label class="form-label" data-t="receiptLabel">レシート表記</label><input class="fc" id="cashReceiptLabel" maxlength="40" placeholder="Cash"></div>
+        <div class="fg"><label class="chk"><input type="checkbox" id="creditCardEnabled"><span data-t="ccEnable">カードを表示する</span></label><label class="form-label" data-t="screenLabel">画面表示名</label><input class="fc" id="cardPaymentLabel" maxlength="40" placeholder="カード"><label class="form-label" data-t="receiptLabel">レシート表記</label><input class="fc" id="cardReceiptLabel" maxlength="40" placeholder="Card"><label class="form-label" data-t="cardInstructionLbl">カード決済の案内文（任意）</label><textarea class="fc" id="cardPaymentInstruction" maxlength="240" rows="3"></textarea></div>
+        <div class="fg"><label class="chk"><input type="checkbox" id="qrPaymentEnabled"><span data-t="qrEnable">QR決済を表示する</span></label><label class="form-label" data-t="screenLabel">画面表示名</label><input class="fc" id="qrPaymentLabel" maxlength="40" placeholder="QR決済"><label class="form-label" data-t="receiptLabel">レシート表記</label><input class="fc" id="qrReceiptLabel" maxlength="40" placeholder="QR Payment"></div>
+        <div class="fg"><label class="form-label" data-t="qrInstructionLbl">QR決済の案内文（任意）</label><textarea class="fc" id="qrPaymentInstruction" maxlength="240" rows="5" placeholder="QRコードを読み取り、入金確認後にボタンを押してください。"></textarea></div>
+      </div>
+      <div class="hint" style="font-size:13px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;padding:10px 12px;margin-bottom:10px;" data-t="ccWarn">⚠️ カード・QRとも、この画面自体は請求処理を行いません。外部端末・決済サービスで入金を確認してから会計を確定してください。</div>
+      <button class="btn" onclick="savePaymentMethods()" data-t="save">💾 保存</button>
       <div class="st" id="st-cc"></div>
       <hr style="border:0;border-top:1px solid var(--border);margin:16px 0;">
-      <div class="fg"><label class="form-label" data-t="gcashQrLbl">GCash QRコード（画像）</label><input id="gcashQrFile" type="file" accept="image/*" class="fc" onchange="onGcashQrPick(event)"><div class="hint" data-t="gcashQrHint" style="margin-top:6px;">お店のGCash用QRコード画像を登録すると、お会計画面でそのまま表示されます。お客様がスキャンして送金する簡易的な仕組みで、入金確認は従来どおりスタッフが目視で行ってください。</div><img id="gcashQrPrev" class="prev" style="display:none;"></div>
+      <div class="fg"><label class="form-label" data-t="gcashQrLbl">QR決済コード（画像）</label><input id="gcashQrFile" type="file" accept="image/*" class="fc" onchange="onGcashQrPick(event)"><div class="hint" data-t="gcashQrHint" style="margin-top:6px;">利用するQR決済サービスのコード画像を登録します。入金確認はスタッフが決済サービス側で行ってください。</div><img id="gcashQrPrev" class="prev" style="display:none;"></div>
       <button class="btn sec" onclick="clearGcashQr()" data-t="remove">🗑️ 削除</button>
       <div class="st" id="st-gcash"></div>
     </div>
@@ -254,9 +304,9 @@
       <button class="btn" onclick="saveBridgePoll()" data-t="save">💾 保存</button>
       <div class="st" id="st-bridge"></div>
       <hr style="border:0;border-top:1px solid var(--border);margin:16px 0;">
-      <div class="fg"><label class="form-label" data-t="bridgeKeyLbl">BRIDGE_KEY（任意・共有シークレット）</label><input id="bridgeKey" type="text" class="fc" autocomplete="off" placeholder="例: yuwaku-2026"></div>
-      <div class="hint" data-t="bridgeKeyHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">設定すると、この文字列を知っているブリッジ端末（bridge.html）だけが印刷キューを読み書きできるようになります。空欄のまま保存すると誰でも読み書きできる状態（従来どおり）に戻ります。bridge.html側の「キー」欄にも同じ文字列を入力してください。</div>
-      <button class="btn" onclick="saveBridgeKey()" data-t="save">💾 保存</button>
+      <div class="fg"><label class="form-label" data-t="bridgeKeyLbl">印刷ステーション接続キー（自動生成）</label><input id="bridgeKey" type="text" class="fc" readonly autocomplete="off"></div>
+      <div class="hint" data-t="bridgeKeyHint" style="font-size:12px;color:var(--text-3);margin:2px 0 10px;">印刷ステーションを接続するときだけ、このキーをbridge.htmlの「キー」欄へコピーしてください。未設定の印刷ステーションは接続できません。</div>
+      <button class="btn" onclick="copyBridgeKey()" data-t="bridgeKeyCopy">📋 キーをコピー</button>
       <div class="st" id="st-bridgeKey"></div>
     </div>
 
@@ -282,7 +332,7 @@
       <div style="padding:16px 18px;border-bottom:1px solid var(--border);">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
           <div>
-            <div style="font-weight:900;font-size:16px;" data-t="qrModalTitle">テーブル QRコード</div>
+            <div style="font-weight:900;font-size:16px;" data-t="qrModalTitle">席 QRコード</div>
             <div style="font-size:12px;color:var(--text-3);" data-t="qrModalSub">スキャンで注文画面を開く</div>
           </div>
           <div style="display:flex;gap:8px;">
@@ -314,20 +364,21 @@
     // ---- テーブルQRコード ----
     window.showQrModal = function(){
       st('st-qr', I18n.t('sending'), true); $('st-qr').style.display='none';
-      rpc('getTableMaster',[]).then(function(list){
+      rpc('getTableQrLinks',[]).then(function(list){
         list = list || [];
         if (!list.length){ st('st-qr', I18n.t('qrNoTables'), false); return; }
         var shopName = ($('shopName') && $('shopName').value ? $('shopName').value.trim() : '');
         var base = location.href.replace(/settings\.html.*$/, 'index.html');
         var grid = $('qrGrid'); var html = '';
-        list.forEach(function(tableNum){
-          var url = base + '?table=' + encodeURIComponent(tableNum);
+        list.forEach(function(entry){
+          var tableNum = entry.table;
+          var url = base + '?table=' + encodeURIComponent(tableNum) + '&t=' + encodeURIComponent(entry.token);
           var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=10&data=' + encodeURIComponent(url);
           html += '<div style="text-align:center;background:#f8fafc;border-radius:14px;padding:14px 10px;border:1px solid var(--border);">' +
             '<img src="' + qrSrc + '" width="120" height="120" style="display:block;margin:0 auto 8px;border-radius:6px;" loading="lazy">' +
-            '<div style="font-weight:900;font-size:13px;color:var(--navy);">' + esc(tableNum) + '</div>' +
-            (shopName ? '<div style="font-size:10px;color:var(--text-3);font-weight:600;">' + esc(shopName) + '</div>' : '') +
-            '<button type="button" class="btn sec" style="margin-top:8px;padding:5px 8px;font-size:11px;" onclick="enqueueOneQr(\'' + esc(tableNum).replace(/'/g, "\\'") + '\')" data-t="qrEnqueueOneBtn">🖶 印刷キューへ</button>' +
+            '<div style="font-weight:900;font-size:13px;color:var(--navy);">' + esc(_seatLabel(tableNum)) + '</div>' +
+            (shopName ? '<div style="font-size:12px;color:var(--text-3);font-weight:600;">' + esc(shopName) + '</div>' : '') +
+            '<button type="button" class="btn sec" style="margin-top:8px;padding:5px 8px;font-size:12px;" onclick="enqueueOneQr(\'' + esc(tableNum).replace(/'/g, "\\'") + '\')" data-t="qrEnqueueOneBtn">🖶 印刷キューへ</button>' +
           '</div>';
         });
         grid.innerHTML = html;
@@ -346,13 +397,16 @@
         sel.innerHTML = ps.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'; }).join('');
       }).catch(function(){ sel.innerHTML = '<option value="">'+I18n.t('qrNoPrinters')+'</option>'; sel.disabled = true; });
     }
-    function _qrUrlFor(tableNum){ return location.href.replace(/settings\.html.*$/, 'index.html') + '?table=' + encodeURIComponent(tableNum); }
+    function _qrUrlFor(tableNum){
+      var entry = tableListForQr.find(function(x){ return x.table === tableNum; });
+      return location.href.replace(/settings\.html.*$/, 'index.html') + '?table=' + encodeURIComponent(tableNum) + '&t=' + encodeURIComponent(entry ? entry.token : '');
+    }
     window.enqueueAllQr = function(){
       var sel = $('qrPrinterSel'); var pid = sel && sel.value;
       if (!pid){ st('st-qr-bridge', I18n.t('qrNoPrinters'), false); return; }
       if (!tableListForQr.length) return;
       st('st-qr-bridge', I18n.t('sending'), true);
-      var items = tableListForQr.map(function(t){ return { table: t, url: _qrUrlFor(t) }; });
+      var items = tableListForQr.map(function(t){ return { table: t.table, url: _qrUrlFor(t.table) }; });
       rpc('enqueueQrPrintJobs',[pid, items]).then(function(r){
         if (r && r.success) st('st-qr-bridge', I18n.t('qrQueued').replace('{n}', r.count), true);
         else st('st-qr-bridge', I18n.t('errPrefix')+((r&&r.error)||''), false);
@@ -372,17 +426,18 @@
       var shopName = ($('shopName') && $('shopName').value ? $('shopName').value.trim() : '');
       var base = location.href.replace(/settings\.html.*$/, 'index.html');
       var rows = '';
-      tableListForQr.forEach(function(tableNum){
-        var url = base + '?table=' + encodeURIComponent(tableNum);
+      tableListForQr.forEach(function(entry){
+        var tableNum = entry.table;
+        var url = base + '?table=' + encodeURIComponent(tableNum) + '&t=' + encodeURIComponent(entry.token);
         var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data=' + encodeURIComponent(url);
         rows += '<div class="qr-card">' +
           '<img src="' + qrSrc + '" width="180" height="180">' +
-          '<div class="qr-table">' + esc(tableNum) + '</div>' +
+          '<div class="qr-table">' + esc(_seatLabel(tableNum)) + '</div>' +
           (shopName ? '<div class="qr-shop">' + esc(shopName) + '</div>' : '') +
         '</div>';
       });
       var win = window.open('', '_blank');
-      win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Table QR Codes</title>' +
+      win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Location QR Codes</title>' +
         '<style>body{font-family:sans-serif;margin:0;padding:16px;background:#fff;}' +
         '.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}' +
         '.qr-card{text-align:center;border:1px solid #ccc;border-radius:12px;padding:16px;}' +
@@ -395,6 +450,7 @@
     };
     var tableListForQr = [];
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+    function _seatLabel(v){var s=String(v==null?'':v),en=window.I18n&&I18n.lang&&I18n.lang()==='en';var tableTerm=(en?$('tableLabelEn').value:$('tableLabelJa').value)||(en?'Table':'テーブル');var counterTerm=(en?$('counterLabelEn').value:$('counterLabelJa').value)||(en?'Counter':'カウンター');var m=s.match(/^テーブル(\d+)$/)||s.match(/^(\d+)$/);if(m)return tableTerm+' '+m[1];var c=s.match(/^カウンター(\d+)$/);if(c)return counterTerm+' '+c[1];return s;}
 
     window.prev = function(inp, img){ var f=$(inp).files[0]; if(!f) return; var el=$(img); el.src=URL.createObjectURL(f); el.style.display='block'; };
     window.upImg = function(inp, fn, stId){
@@ -404,7 +460,9 @@
       reader.readAsDataURL(f);
     };
 
-    window.saveShop = function(){ Promise.all([ rpc('saveSettings',[{shopName:$('shopName').value, shopAddress:$('shopAddress').value, shopTin:$('shopTin').value}]), rpc('saveSeatCounts',[Number($('tableCount').value)||0, Number($('counterCount').value)||0]) ]).then(function(){ st('st-shop',I18n.t('saved'), true); }).catch(function(e){ st('st-shop',I18n.t('errPrefix')+(e.message||e), false); }); };
+    var BUSINESS_PROFILES={restaurant:{tableLabelJa:'テーブル',tableLabelEn:'Table',counterLabelJa:'カウンター',counterLabelEn:'Counter',seatGroupLabelJa:'席',seatGroupLabelEn:'Seating'},bar:{tableLabelJa:'卓',tableLabelEn:'Table',counterLabelJa:'カウンター',counterLabelEn:'Bar seat',seatGroupLabelJa:'席',seatGroupLabelEn:'Seating'},cafe:{tableLabelJa:'テーブル',tableLabelEn:'Table',counterLabelJa:'カウンター',counterLabelEn:'Counter',seatGroupLabelJa:'席',seatGroupLabelEn:'Seating'},counter_service:{tableLabelJa:'受取番号',tableLabelEn:'Order no.',counterLabelJa:'受取口',counterLabelEn:'Pickup',seatGroupLabelJa:'注文',seatGroupLabelEn:'Order'},service:{tableLabelJa:'受付',tableLabelEn:'Station',counterLabelJa:'ブース',counterLabelEn:'Booth',seatGroupLabelJa:'利用枠',seatGroupLabelEn:'Station'}};
+    window.applyBusinessProfile=function(){var code=$('businessProfile').value,p=BUSINESS_PROFILES[code];if(!p)return;Object.keys(p).forEach(function(k){$(k).value=p[k];});st('st-shop',I18n.t('businessProfileApplied'),true);};
+    window.saveShop = function(){ var profile={shopName:$('shopName').value,shopAddress:$('shopAddress').value,shopTin:$('shopTin').value,businessProfile:$('businessProfile').value,tableLabelJa:$('tableLabelJa').value,tableLabelEn:$('tableLabelEn').value,counterLabelJa:$('counterLabelJa').value,counterLabelEn:$('counterLabelEn').value,seatGroupLabelJa:$('seatGroupLabelJa').value,seatGroupLabelEn:$('seatGroupLabelEn').value}; Promise.all([ rpc('saveSettings',[profile]), rpc('saveSeatCounts',[Number($('tableCount').value)||0, Number($('counterCount').value)||0]) ]).then(function(){ st('st-shop',I18n.t('saved'), true); }).catch(function(e){ st('st-shop',I18n.t('errPrefix')+(e.message||e), false); }); };
     window.onLogoPick = function(ev){
       var f = ev.target.files && ev.target.files[0]; if(!f) return;
       var rd = new FileReader();
@@ -437,11 +495,13 @@
     function _splitTime(v){ var m=/^(\d{1,2}):(\d{2})$/.exec(v||''); return m? [Number(m[1]), Number(m[2])] : [0,0]; }
     // 時・分（数値）からtime input用の"HH:MM"文字列を作る。
     function _fmtTime(h,m){ h=parseInt(h,10)||0; m=parseInt(m,10)||0; return (h<10?'0':'')+h+':'+(m<10?'0':'')+m; }
+    var COUNTRY_PROFILES={PH:{locale:'en-PH',currencyCode:'PHP',currencySymbol:'₱',currencyDecimalDigits:2,timezone:'Asia/Manila',taxDisplayName:'VAT',taxIdLabel:'TIN',receiptNumberPrefix:'OR',receiptDocumentTitleJa:'レシート',receiptDocumentTitleEn:'Receipt'},JP:{locale:'ja-JP',currencyCode:'JPY',currencySymbol:'¥',currencyDecimalDigits:0,timezone:'Asia/Tokyo',taxDisplayName:'消費税',taxIdLabel:'適格請求書発行事業者登録番号',receiptNumberPrefix:'R',receiptDocumentTitleJa:'領収書',receiptDocumentTitleEn:'Receipt'},SG:{locale:'en-SG',currencyCode:'SGD',currencySymbol:'S$',currencyDecimalDigits:2,timezone:'Asia/Singapore',taxDisplayName:'GST',taxIdLabel:'UEN / GST Reg. No.',receiptNumberPrefix:'R',receiptDocumentTitleJa:'レシート',receiptDocumentTitleEn:'Receipt'},US:{locale:'en-US',currencyCode:'USD',currencySymbol:'$',currencyDecimalDigits:2,timezone:'America/New_York',taxDisplayName:'Sales Tax',taxIdLabel:'Tax ID',receiptNumberPrefix:'R',receiptDocumentTitleJa:'レシート',receiptDocumentTitleEn:'Receipt'},GB:{locale:'en-GB',currencyCode:'GBP',currencySymbol:'£',currencyDecimalDigits:2,timezone:'Europe/London',taxDisplayName:'VAT',taxIdLabel:'VAT Registration No.',receiptNumberPrefix:'R',receiptDocumentTitleJa:'レシート',receiptDocumentTitleEn:'Receipt'},AU:{locale:'en-AU',currencyCode:'AUD',currencySymbol:'A$',currencyDecimalDigits:2,timezone:'Australia/Sydney',taxDisplayName:'GST',taxIdLabel:'ABN',receiptNumberPrefix:'R',receiptDocumentTitleJa:'レシート',receiptDocumentTitleEn:'Receipt'}};
+    window.applyCountryProfile=function(){var code=String($('countryCode').value||'').trim().toUpperCase(),p=COUNTRY_PROFILES[code];if(!p){st('st-locale',I18n.t('unknownCountry'),false);return;}Object.keys(p).forEach(function(k){if($(k))$(k).value=String(p[k]);});st('st-locale',I18n.t('countryApplied'),true);};
     window.saveLocale = function(){
       var bc=_splitTime($('bizDayCutoff').value), tz=String($('timezone').value||'').trim();
       try { if(!tz) throw new Error('blank'); new Intl.DateTimeFormat('en-US',{timeZone:tz}).format(); }
       catch(e){ st('st-locale',I18n.t('invalidTimezone'), false); return; }
-      rpc('saveSettings',[{ timezone:tz, currencyCode:$('currencyCode').value, currencySymbol:$('currencySymbol').value, serviceRate:$('serviceRate').value, taxRate:$('taxRate').value, serviceInclusive:$('serviceInclusive').checked?'true':'false', taxInclusive:$('taxInclusive').checked?'true':'false', defaultLang:$('defaultLang').value, accentColor:$('accentColor').value, bizDayCutoffHour:bc[0], bizDayCutoffMin:bc[1] }]).then(function(d){
+      rpc('saveSettings',[{ countryCode:$('countryCode').value, locale:$('locale').value, timezone:tz, currencyCode:$('currencyCode').value, currencySymbol:$('currencySymbol').value, currencyDecimalDigits:$('currencyDecimalDigits').value, serviceRate:$('serviceRate').value, taxRate:$('taxRate').value, taxDisplayName:$('taxDisplayName').value, taxIdLabel:$('taxIdLabel').value, receiptNumberPrefix:$('receiptNumberPrefix').value, receiptDocumentTitleJa:$('receiptDocumentTitleJa').value, receiptDocumentTitleEn:$('receiptDocumentTitleEn').value, taxRoundingMode:$('taxRoundingMode').value, serviceInclusive:$('serviceInclusive').checked?'true':'false', taxInclusive:$('taxInclusive').checked?'true':'false', defaultLang:$('defaultLang').value, accentColor:$('accentColor').value, bizDayCutoffHour:bc[0], bizDayCutoffMin:bc[1] }]).then(function(d){
         if(!d || d.success===false){ st('st-locale',I18n.t('errPrefix')+((d&&d.error)||'save_failed'), false); return; }
         $('timezone').value=d.timezone||tz; st('st-locale',I18n.t('saved'), true);
       }).catch(function(e){ st('st-locale',I18n.t('errPrefix')+(e.message||e), false); });
@@ -492,12 +552,45 @@
       rpc('saveSettings',[{ seniorDiscountEnabled:$('seniorDiscountEnabled').checked?'on':'' }])
         .then(function(){ st('st-senior',I18n.t('saved'), true); }).catch(function(e){ st('st-senior',I18n.t('errPrefix')+(e.message||e), false); });
     };
+    var DISCOUNT_RULES=[];
+    function renderDiscountRules(){
+      var host=$('discountRuleList'); if(!host) return;
+      host.innerHTML=DISCOUNT_RULES.length?DISCOUNT_RULES.map(function(r){
+        var value=r.calculationType==='fixed'?String(r.value):String(r.value)+'%';
+        return '<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-top:1px solid var(--border);">'+
+          '<div style="flex:1;"><b>'+esc(r.name)+'</b> <span class="badge '+(r.enabled?'on':'offb')+'">'+(r.enabled?'ON':'OFF')+'</span><div class="hint">'+esc(r.code)+' · '+esc(value)+(r.taxExempt?' · Tax exempt':'')+(r.idRequired?' · ID required':'')+(r.managerApprovalRequired?' · Approval':'')+'</div></div>'+
+          '<button class="btn sec" style="width:auto;" onclick="editDiscountRule(\''+esc(r.id).replace(/'/g,"\\'")+'\')">編集</button>'+
+          '<button class="btn sec" style="width:auto;color:#b91c1c;" onclick="deleteDiscountRule(\''+esc(r.id).replace(/'/g,"\\'")+'\')">削除</button></div>';
+      }).join(''):'<div class="hint">登録済みの割引はありません。</div>';
+    }
+    window.newDiscountRule=function(){
+      $('discountRuleId').value=''; $('discountName').value=''; $('discountNameEn').value=''; $('discountCode').value='';
+      $('discountCalculationType').value='percent'; $('discountValue').value=''; $('discountSortOrder').value='0';
+      $('discountTaxExempt').checked=false; $('discountIdRequired').checked=false; $('discountManagerApproval').checked=true; $('discountEnabled').checked=true;
+    };
+    window.applyDiscountPreset=function(kind){
+      newDiscountRule(); var pwd=kind==='pwd'; $('discountName').value=pwd?'PWD':'シニア'; $('discountNameEn').value=pwd?'PWD':'Senior';
+      $('discountCode').value=pwd?'PWD':'SENIOR'; $('discountValue').value='20'; $('discountTaxExempt').checked=true; $('discountIdRequired').checked=true;
+    };
+    window.editDiscountRule=function(id){ var r=DISCOUNT_RULES.find(function(x){return x.id===id;}); if(!r)return;
+      $('discountRuleId').value=r.id; $('discountName').value=r.name; $('discountNameEn').value=r.nameEn||''; $('discountCode').value=r.code;
+      $('discountCalculationType').value=r.calculationType; $('discountValue').value=r.value; $('discountSortOrder').value=r.sortOrder||0;
+      $('discountTaxExempt').checked=!!r.taxExempt; $('discountIdRequired').checked=!!r.idRequired; $('discountManagerApproval').checked=!!r.managerApprovalRequired; $('discountEnabled').checked=!!r.enabled;
+      $('discountName').focus();
+    };
+    window.saveDiscountRule=function(){ var rule={id:$('discountRuleId').value,name:$('discountName').value,nameEn:$('discountNameEn').value,code:$('discountCode').value,
+      calculationType:$('discountCalculationType').value,value:$('discountValue').value,sortOrder:$('discountSortOrder').value,taxExempt:$('discountTaxExempt').checked,
+      idRequired:$('discountIdRequired').checked,managerApprovalRequired:$('discountManagerApproval').checked,enabled:$('discountEnabled').checked};
+      rpc('saveDiscountRule',[rule]).then(function(r){if(!r||!r.success){st('st-discount','Error: '+((r&&r.error)||'save_failed'),false);return;}return rpc('getDiscountRules',[]).then(function(list){DISCOUNT_RULES=list||[];renderDiscountRules();newDiscountRule();st('st-discount',I18n.t('saved'),true);});}).catch(function(e){st('st-discount',I18n.t('errPrefix')+(e.message||e),false);});
+    };
+    window.deleteDiscountRule=function(id){rpc('deleteDiscountRule',[id]).then(function(r){if(!r||!r.success){st('st-discount','Error: '+((r&&r.error)||'delete_failed'),false);return;}DISCOUNT_RULES=DISCOUNT_RULES.filter(function(x){return x.id!==id;});renderDiscountRules();newDiscountRule();st('st-discount',I18n.t('saved'),true);}).catch(function(e){st('st-discount',I18n.t('errPrefix')+(e.message||e),false);});};
     // 2026-08-23: クレジットカードは別のカード決済端末で処理する運用のため、アプリ側は
     // 「会計画面にボタンを出すかどうか」だけを持てばよい（オンライン決済ゲートウェイとの
     // 連携は行わない）。GCashも同様に、実際の送金確認・API連携は行わず、店舗のGCash用
     // QRコード画像を登録して会計画面に表示するだけの簡易な仕組みにしている。
-    window.saveCreditCard = function(){
-      rpc('saveSettings',[{ creditCardEnabled:$('creditCardEnabled').checked?'on':'' }])
+    window.savePaymentMethods = function(){
+      if(!$('cashPaymentEnabled').checked && !$('creditCardEnabled').checked && !$('qrPaymentEnabled').checked){ st('st-cc',I18n.t('paymentRequired'),false); return; }
+      rpc('saveSettings',[{ cashPaymentEnabled:$('cashPaymentEnabled').checked?'on':'', creditCardEnabled:$('creditCardEnabled').checked?'on':'', qrPaymentEnabled:$('qrPaymentEnabled').checked?'on':'', cashPaymentLabel:$('cashPaymentLabel').value.trim(), cashReceiptLabel:$('cashReceiptLabel').value.trim(), cardPaymentLabel:$('cardPaymentLabel').value.trim(), cardReceiptLabel:$('cardReceiptLabel').value.trim(), cardPaymentInstruction:$('cardPaymentInstruction').value.trim(), qrPaymentLabel:$('qrPaymentLabel').value.trim(), qrReceiptLabel:$('qrReceiptLabel').value.trim(), qrPaymentInstruction:$('qrPaymentInstruction').value.trim() }])
         .then(function(){ st('st-cc',I18n.t('saved'), true); }).catch(function(e){ st('st-cc',I18n.t('errPrefix')+(e.message||e), false); });
     };
     window.onGcashQrPick = function(ev){
@@ -569,9 +662,10 @@
       $('bridgePollSec').value = sec;
       rpc('saveSettings',[{ bridgePollMs: Math.round(sec * 1000) }]).then(function(){ st('st-bridge',I18n.t('saved'), true); }).catch(function(e){ st('st-bridge',I18n.t('errPrefix')+(e.message||e), false); });
     };
-    window.saveBridgeKey = function(){
-      var v = $('bridgeKey').value.trim();
-      rpc('saveSettings',[{ bridgeKey: v }]).then(function(){ st('st-bridgeKey',I18n.t('saved'), true); }).catch(function(e){ st('st-bridgeKey',I18n.t('errPrefix')+(e.message||e), false); });
+    window.copyBridgeKey = function(){
+      var v = $('bridgeKey').value;
+      if(!v) return;
+      navigator.clipboard.writeText(v).then(function(){ st('st-bridgeKey',I18n.t('copied'), true); }).catch(function(e){ st('st-bridgeKey',I18n.t('errPrefix')+(e.message||e), false); });
     };
     // 2026-08-24: 監査ログ/操作ログの「記録キュー」カード自体を画面から撤去した
     // （Cloudflare D1版では既に即時反映されており、GAS時代のキュー＋時間主導トリガー方式の
@@ -588,8 +682,13 @@
     rpc('getSettingsBundle',[]).then(function(bundle){
       bundle = bundle || {};
       var d = bundle.settings || {};
+      DISCOUNT_RULES = bundle.discountRules || [];
+      renderDiscountRules();
       if(bundle.receiptLogo){ $('logoPrev').src=bundle.receiptLogo; $('logoPrev').style.display='inline-block'; }
       $('creditCardEnabled').checked = (d.creditCardEnabled==='on'||d.creditCardEnabled===true||d.creditCardEnabled==='true');
+      $('cashPaymentEnabled').checked = !(d.cashPaymentEnabled===''||d.cashPaymentEnabled==='off'||d.cashPaymentEnabled==='false'||d.cashPaymentEnabled===false);
+      $('qrPaymentEnabled').checked = d.qrPaymentEnabled!==undefined ? (d.qrPaymentEnabled==='on'||d.qrPaymentEnabled===true||d.qrPaymentEnabled==='true') : !!d.gcashQr;
+      $('cashPaymentLabel').value=d.cashPaymentLabel||''; $('cashReceiptLabel').value=d.cashReceiptLabel||''; $('cardPaymentLabel').value=d.cardPaymentLabel||''; $('cardReceiptLabel').value=d.cardReceiptLabel||''; $('cardPaymentInstruction').value=d.cardPaymentInstruction||''; $('qrPaymentLabel').value=d.qrPaymentLabel||''; $('qrReceiptLabel').value=d.qrReceiptLabel||''; $('qrPaymentInstruction').value=d.qrPaymentInstruction||'';
       if(d.gcashQr){ $('gcashQrPrev').src=d.gcashQr; $('gcashQrPrev').style.display='inline-block'; }
       if(bundle.gemini){ gemConfigured = !!bundle.gemini.configured; setBadge('gemBadge', gemConfigured); }
       if(bundle.pexels){ cseConfigured = !!bundle.pexels.configured; setBadge('cseBadge', cseConfigured); }
@@ -600,13 +699,26 @@
       if($('logoScale')) $('logoScale').value = Number(d.logoScalePct)||100;
       $('tableCount').value = (d.tableCount!==undefined && d.tableCount!=='') ? d.tableCount : 20;
       $('counterCount').value = (d.counterCount!==undefined && d.counterCount!=='') ? d.counterCount : 0;
+      $('businessProfile').value = d.businessProfile || 'restaurant';
+      $('tableLabelJa').value = d.tableLabelJa || 'テーブル'; $('tableLabelEn').value = d.tableLabelEn || 'Table';
+      $('counterLabelJa').value = d.counterLabelJa || 'カウンター'; $('counterLabelEn').value = d.counterLabelEn || 'Counter';
+      $('seatGroupLabelJa').value = d.seatGroupLabelJa || '席'; $('seatGroupLabelEn').value = d.seatGroupLabelEn || 'Seating';
       if (d.menuTopImageId){ var e1=$('prevOrder'); e1.src=API.imageUrl(d.menuTopImageId); e1.style.display='block'; }
       if (d.systemTopImageId){ var e2=$('prevLogin'); e2.src=API.imageUrl(d.systemTopImageId); e2.style.display='block'; }
+      $('countryCode').value = d.countryCode || (d.currencyCode==='JPY'?'JP':d.currencyCode==='SGD'?'SG':'PH');
+      $('locale').value = d.locale || (d.defaultLang==='ja'?'ja-JP':'en-PH');
       $('currencyCode').value = d.currencyCode || 'PHP';
       $('timezone').value = d.timezone || 'Asia/Tokyo';
       $('currencySymbol').value = (d.currencySymbol!==undefined && d.currencySymbol!=='') ? d.currencySymbol : '₱';
+      $('currencyDecimalDigits').value = (d.currencyDecimalDigits!==undefined&&d.currencyDecimalDigits!=='')?String(d.currencyDecimalDigits):'0';
       $('serviceRate').value = d.serviceRate || '';
       $('taxRate').value = d.taxRate || '';
+      $('taxDisplayName').value = d.taxDisplayName || 'VAT';
+      $('taxIdLabel').value = d.taxIdLabel || 'TIN';
+      $('receiptNumberPrefix').value = d.receiptNumberPrefix || 'OR';
+      $('receiptDocumentTitleJa').value = d.receiptDocumentTitleJa || 'レシート';
+      $('receiptDocumentTitleEn').value = d.receiptDocumentTitleEn || 'Receipt';
+      $('taxRoundingMode').value = d.taxRoundingMode || 'nearest';
       $('serviceInclusive').checked = String(d.serviceInclusive) === 'true';
       $('taxInclusive').checked = String(d.taxInclusive) === 'true';
       $('defaultLang').value = d.defaultLang || 'en';
@@ -635,24 +747,24 @@
       $('reportMonthlyTime').value = _fmtTime(d.reportMonthlyHour!==undefined&&d.reportMonthlyHour!==''?d.reportMonthlyHour:d.reportHour, d.reportMonthlyMin!==undefined&&d.reportMonthlyMin!==''?d.reportMonthlyMin:d.reportMin);
       $('reportLang').value = (d.reportLang==='en'||d.reportLang==='both')?d.reportLang:'ja';
       $('bridgePollSec').value = (d.bridgePollMs!==undefined && d.bridgePollMs!=='') ? (Number(d.bridgePollMs)/1000) : 1.2;
-      $('bridgeKey').value = d.bridgeKey || '';
-    }).catch(function(){});
+      return rpc('getOrCreateBridgeKey',[]);
+    }).then(function(k){ $('bridgeKey').value = (k && k.key) || ''; }).catch(function(){});
 
     I18n.init({
       ja:{ title:'⚙️ 設定', back:'← 管理へ', save:'💾 保存', status:'状態:', unset:'未設定', set:'設定済', phPaste:'貼り付けて保存', close:'閉じる',
-        qrCardTitle:'📱 テーブルQRコード', qrCardDesc:'各テーブルのQRコードを印刷してテーブルに設置してください。お客様がスキャンするとそのテーブル専用の注文画面が開きます。', qrShowBtn:'📱 QRコードを表示', qrModalTitle:'テーブル QRコード', qrModalSub:'スキャンで注文画面を開く', qrPrintBtn:'🖨️ 印刷', qrNoTables:'テーブルが設定されていません。先にテーブル数を保存してください。',
+        qrCardTitle:'📱 席QRコード', qrCardDesc:'各席のQRコードを印刷して設置してください。お客様がスキャンするとその席専用の注文画面が開きます。表示名は保存した業態・呼称設定に従います。', qrShowBtn:'📱 QRコードを表示', qrModalTitle:'席 QRコード', qrModalSub:'スキャンで注文画面を開く', qrPrintBtn:'🖨️ 印刷', qrNoTables:'席が設定されていません。先に席数を保存してください。',
         qrBridgeLabel:'🖶 プリンタへ送信', qrEnqueueAllBtn:'全卓をキューへ', qrEnqueueOneBtn:'🖶 印刷キューへ', qrNoPrinters:'有効なプリンタがありません（プリンタ設定を確認してください）', qrQueued:'✅ {n}件を印刷キューへ送信しました',
-        shopTitle:'🏪 店舗設定', shopName:'店舗名', shopAddress:'住所（レシート表示）', shopTin:'TIN番号（レシート表示）', shopLogo:'レシートのロゴ（先頭に中央印字）', logoClear:'クリア', logoSize:'印字サイズ（%）', logoHint:'白黒の感熱印刷用に自動で縮小・変換します。58mm幅を100%として、下の値で印字サイズを調整できます。', tableCount:'テーブル数', counterCount:'カウンター数', seatHint:'注文画面で「テーブル1〜」「カウンター1〜」から席を選べます。0にするとその種別は非表示。', tableHint:'注文画面のテーブル番号の上限。',
+        shopTitle:'🏪 店舗設定', shopName:'店舗名', shopAddress:'住所（レシート表示）', shopTin:'税務登録番号（レシート表示）', shopLogo:'レシートのロゴ（先頭に中央印字）', logoClear:'クリア', logoSize:'印字サイズ（%）', logoHint:'白黒の感熱印刷用に自動で縮小・変換します。58mm幅を100%として、下の値で印字サイズを調整できます。', tableCount:'第1席種の数', counterCount:'第2席種の数', businessProfileLbl:'業態プロファイル', profileRestaurant:'レストラン', profileBar:'バー・居酒屋', profileCafe:'カフェ', profileCounterService:'カウンターサービス', profileService:'サービス・施設', applyBusinessProfile:'業態の呼称初期値を適用', businessProfileApplied:'業態の呼称初期値を入力しました。内容を確認して保存してください。', tableLabelJaLbl:'第1席種の呼称（日本語）', tableLabelEnLbl:'第1席種の呼称（英語）', counterLabelJaLbl:'第2席種の呼称（日本語）', counterLabelEnLbl:'第2席種の呼称（英語）', seatGroupLabelJaLbl:'席全体の呼称（日本語）', seatGroupLabelEnLbl:'席全体の呼称（英語）', seatHint:'業態プロファイルは呼称の初期値を入力します。保存後、注文・注文管理・厨房・会計履歴・レシートで共通表示されます。0にした席種は非表示です。', tableHint:'注文画面の第1席種番号の上限。',
         imgTitle:'🖼️ トップ画像', orderImg:'オーダートップ画像（注文画面）', loginImg:'ログイン画面の画像（管理ログイン画面に表示）', upload:'⬆️ アップロード',
-        localeTitle:'🌐 表示・地域', curCode:'通貨コード', curSym:'通貨記号', svcRate:'サービス料 (%)', taxRate:'税率 (%)', timezoneLbl:'標準時間（タイムゾーン）', timezoneHint:'店舗所在地のIANAタイムゾーンを選択または入力してください。営業日、売上集計、勤怠、提供時間、定期レポートの時刻へ共通反映されます。', invalidTimezone:'有効なタイムゾーンを選択または入力してください（例：Asia/Manila）。', defLang:'既定言語', accent:'アクセント色',
+        localeTitle:'🌐 表示・地域', countryCode:'国・地域コード', localeCode:'地域形式（ロケール）', curCode:'通貨コード', curSym:'通貨記号', curDigits:'通貨の小数桁', svcRate:'サービス料 (%)', taxRate:'税率 (%)', taxName:'税の表示名', taxIdName:'税務登録番号の表示名', receiptPrefix:'レシート番号の接頭辞', receiptTitleJa:'帳票名（日本語）', receiptTitleEn:'帳票名（英語）', taxRound:'税・料金の端数処理', roundNearest:'四捨五入', roundFloor:'切り捨て', roundCeil:'切り上げ', applyCountry:'国別初期値を適用', countryHint:'国別初期値は通貨・標準時間・税名称・帳票名を入力欄へ反映します。保存するまでは確定されません。法定帳票名は店舗所在地の専門家へ確認してください。', unknownCountry:'対応する国別初期値がありません。各項目を直接入力してください。', countryApplied:'国別初期値を入力欄へ反映しました。内容を確認して保存してください。', timezoneLbl:'標準時間（タイムゾーン）', timezoneHint:'店舗所在地のIANAタイムゾーンを選択または入力してください。営業日、売上集計、勤怠、提供時間、定期レポートの時刻へ共通反映されます。', invalidTimezone:'有効なタイムゾーンを選択または入力してください（例：Asia/Manila）。', defLang:'既定言語', accent:'アクセント色',
         svcInclLabel:'内税（価格に含む）', taxInclLabel:'内税（価格に含む）', chargesHint:'チェックなし＝外税（表示価格に加算）。チェックあり＝内税（表示価格に含む）。一般的には税＝内税、サービス料＝外税です。',
         bizCutoff:'営業日切替時刻', bizCutoffHint:'深夜営業の場合に設定してください。例：2:30を設定すると、午前2時30分までの売上は前日の営業日として日報・週報・月報・売上集計に計上されます。0:00＝通常どおり午前0時で区切り。指定できるのは0:00〜11:59の範囲です（それ以外は0:00として扱われます）。',
         securityTitle:'🔐 セキュリティ', sessionTimeout:'ログイン保持時間（時間）', sessionTimeoutHint:'スタッフの管理画面ログインが自動的に切れるまでの時間です。未設定の場合は8時間。ログイン中に管理画面を操作していれば、その都度この時間だけ自動延長されます（ログインしたまま何も操作しない状態がこの時間続くと自動的にログアウトされます）。最大720時間（30日）まで設定できます。',
         entryTitle:'🎫 入場料・延長料', entryFeeEnable:'入場料を有効にする', extensionFeeEnable:'延長料を有効にする', entryFeeAmount:'入場料（1人あたり）', baseUsageMinutes:'基本利用時間（分）', extensionFeeAmount:'延長料（1人・1単位あたり）', extensionUnitMinutes:'延長時間の単位（分）',
-        entryHint:'チェックを入れた料金だけが会計時に請求されます。チェックを外しても入力金額は保持されます。延長料は、卓/カウンター選択時に入力した人数と入店時刻を基準に、基本利用時間を超えた分を延長時間の単位で切り上げて自動計算します。両方とも無効の場合、注文画面では人数入力を表示しません。', entryAmountRequired:'入場料を有効にする場合は、1以上の金額を入力してください。', extensionAmountRequired:'延長料を有効にする場合は、1以上の金額を入力してください。', extensionUnitRequired:'延長料を有効にする場合は、延長時間の単位を1分以上で入力してください。',
+        entryHint:'チェックを入れた料金だけが会計時に請求されます。チェックを外しても入力金額は保持されます。延長料は、席選択時に入力した人数と入店時刻を基準に、基本利用時間を超えた分を延長時間の単位で切り上げて自動計算します。両方とも無効の場合、注文画面では人数入力を表示しません。', entryAmountRequired:'入場料を有効にする場合は、1以上の金額を入力してください。', extensionAmountRequired:'延長料を有効にする場合は、1以上の金額を入力してください。', extensionUnitRequired:'延長料を有効にする場合は、延長時間の単位を1分以上で入力してください。',
         seniorTitle:'🧓 シニア/PWD割引', seniorEnable:'有効にする（無効の場合、会計画面から選択肢自体が消えます）',
         seniorHint:'有効にした場合でも、実際に割引を適用するには会計時に責任者（マネージャー以上）のログイン承認が必要です。従業員が無断で割引を適用することを防ぐための仕組みです。',
-        payTitle:'💳 決済方法（クレジット / GCash）', payHint:'クレジットカードは通常、別のカード決済端末で処理します。ここではお会計画面にボタンを表示するかどうかだけを設定します。', ccEnable:'クレジットカード決済ボタンを表示する', ccWarn:'⚠️ このボタンはオンライン決済（カード情報の入力・実際の請求処理）は行いません。押すと「別のカード決済端末で処理済み」として記録されるだけです。表示をONにしても、決済自体はこれまでどおり別のカード決済端末で行ってください。', gcashQrLbl:'GCash QRコード（画像）', gcashQrHint:'お店のGCash用QRコード画像を登録すると、お会計画面でそのまま表示されます。お客様がスキャンして送金する簡易的な仕組みで、入金確認は従来どおりスタッフが目視で行ってください。', remove:'🗑️ 削除',
+        payTitle:'💳 決済方法', payHint:'会計画面に表示する決済方法と、画面・レシートに印字する名称を設定します。', cashEnable:'現金を表示する', ccEnable:'カードを表示する', qrEnable:'QR決済を表示する', screenLabel:'画面表示名', receiptLabel:'レシート表記', cardInstructionLbl:'カード決済の案内文（任意）', qrInstructionLbl:'QR決済の案内文（任意）', paymentRequired:'決済方法を1つ以上有効にしてください。', ccWarn:'⚠️ カード・QRとも、この画面自体は請求処理を行いません。外部端末・決済サービスで入金を確認してから会計を確定してください。', gcashQrLbl:'QR決済コード（画像）', gcashQrHint:'利用するQR決済サービスのコード画像を登録します。入金確認はスタッフが決済サービス側で行ってください。', remove:'🗑️ 削除',
         gemTitle:'🤖 Gemini APIキー（画像検索・在庫AIスキャン用・任意）', apiKey:'APIキー',
         cseTitle:'🔍 Pexels画像検索（メニュー画像・任意）', cseApiKey:'APIキー', cseHint:'メニュー編集画面の商品画像を、無料ストック写真サイトPexelsから検索して選べるようにします。pexels.com/api にアクセスし、無料アカウントでログイン後「Your API Key」ページに表示されるキーを貼り付けてください（即時発行・審査なし）。無料枠は1時間200件・1か月20,000件です。',
         geoTitle:'📍 勤怠・店舗位置', lat:'緯度', lng:'経度', radius:'許容半径 (m)', getLoc:'📡 現在地を取得',
@@ -661,24 +773,24 @@
         repLang:'出力言語', repLangJa:'日本語', repLangEn:'英語', repLangBoth:'日本語＋英語（両方）',
         emailCfgTitle:'📧 メール送信設定（Resend）', emailCfgHint:'2026-08-23、定期レポート機能のメール送信の仕組みを実装しました（Resendという外部メール送信サービス経由）。ご利用には以下の準備が必要です。<br>① <a href="https://resend.com" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:underline;">resend.com</a>で無料アカウントを作成<br>② 送信元ドメインを追加し、案内されるDNSレコードを設定して検証を完了<br>③ APIキーを発行し、下に貼り付けて保存<br>④ 送信元アドレス（検証したドメイン配下、例: report@mail.izakanpai.com）も保存<br><br>⚠️ この環境では実際のAPIキーでの送信確認はできていません。設定後、下の定期レポートカードの「テスト送信」で必ず実機確認をお願いします。', emailApiKeyLbl:'Resend APIキー', emailFromLbl:'送信元アドレス',
         bridgeTitle:'🖶 印刷ブリッジ（プリンタ連携）', bridgeInterval:'キュー確認間隔（秒）', bridgeHint:'印刷キュー（bridge.html）がサーバーへ確認しにいく頻度です。短いほど印刷が早く始まりますが、サーバー負荷は増えます。既定値は1.2秒です。',
-        bridgeKeyLbl:'BRIDGE_KEY（任意・共有シークレット）', bridgeKeyHint:'設定すると、この文字列を知っているブリッジ端末（bridge.html）だけが印刷キューを読み書きできるようになります。空欄のまま保存すると誰でも読み書きできる状態（従来どおり）に戻ります。bridge.html側の「キー」欄にも同じ文字列を入力してください。',
+        bridgeKeyLbl:'印刷ステーション接続キー（自動生成）', bridgeKeyHint:'印刷ステーションを接続するときだけ、このキーをbridge.htmlの「キー」欄へコピーしてください。未設定の印刷ステーションは接続できません。', bridgeKeyCopy:'📋 キーをコピー', copied:'✅ コピーしました',
         emailOutboxTitle:'📧 eレシート機能', emailOutboxHint:'2026-08-24より、会計確定時にeレシートをメールで送信できるようになりました。上の「メール送信設定（Resend）」でAPIキー・送信元アドレスの設定が完了している必要があります。<br>有効にすると、会計画面（<code>#payEmail</code>欄）でお客様が入力したメール、および下の「固定送付先」に登録したメールへ、会計確定のたびにeレシートが自動送信されます。', emailOutboxBtn:'eレシートを有効にする',
         ereceiptSaveBtn:'💾 保存', ereceiptEmailsLbl:'送付先メール（固定・複数可・カンマか改行区切り）', ereceiptHint:'ここに登録したメールアドレスには、お会計完了ごとに毎回eレシートのコピーが自動送信されます（会計画面でお客様が任意入力するeレシート送信先とは別に、常に送られます）。経理・オーナー控え等にご利用ください。空欄なら送信しません。上の「eレシートを有効にする」がオフの間は、ここに登録しても送信されません。',
         saved:'✅ 保存しました', savedSched:'✅ 保存＆スケジュール設定しました', uploaded:'✅ アップロードしました', pickImg:'画像を選択してください', needKey:'キーを入力してください', noGeoDev:'この端末は位置情報に対応していません', gotLoc:'現在地を取得しました。「保存」を押してください。', noLoc:'位置情報を取得できませんでした。手動入力してください。', sending:'送信中…', testSent:'✅ テスト送信しました。受信箱をご確認ください', sendFail:'送信できませんでした', scopeReauth:'認証(スコープ)の再承認が必要かもしれません', errPrefix:'エラー: ' },
       en:{ title:'⚙️ Settings', back:'← Manage', save:'💾 Save', status:'Status:', unset:'Not set', set:'Set', phPaste:'Paste and save', close:'Close',
-        qrCardTitle:'📱 Table QR Codes', qrCardDesc:'Print and place these QR codes on each table. Customers scan to open the order screen locked to their table.', qrShowBtn:'📱 Show QR Codes', qrModalTitle:'Table QR Codes', qrModalSub:'Scan to open the order screen', qrPrintBtn:'🖨️ Print', qrNoTables:'No tables are set up yet. Please save the table count first.',
+        qrCardTitle:'📱 Location QR Codes', qrCardDesc:'Print and place a QR code at each configured location. Scanning opens the order screen locked to that location. Display names follow the saved business terminology.', qrShowBtn:'📱 Show QR Codes', qrModalTitle:'Location QR Codes', qrModalSub:'Scan to open the order screen', qrPrintBtn:'🖨️ Print', qrNoTables:'No locations are set up yet. Save the location counts first.',
         qrBridgeLabel:'🖶 Send to printer', qrEnqueueAllBtn:'Queue all tables', qrEnqueueOneBtn:'🖶 Queue print', qrNoPrinters:'No enabled printer found (check printer settings)', qrQueued:'✅ Sent {n} to the print queue',
-        shopTitle:'🏪 Store settings', shopName:'Store name', shopAddress:'Address (on receipt)', shopTin:'TIN (on receipt)', shopLogo:'Receipt logo (centered on top)', logoClear:'Clear', logoSize:'Print size (%)', logoHint:'Auto-resized & converted for B/W thermal printing. 58mm width = 100%; adjust the print size below.', tableCount:'Tables', counterCount:'Counter seats', seatHint:'On the order screen guests pick from “Table 1…” / “Counter 1…”. Set 0 to hide that type.', tableHint:'Max table number on the order screen.',
+        shopTitle:'🏪 Store settings', shopName:'Store name', shopAddress:'Address (on receipt)', shopTin:'Tax registration number (on receipt)', shopLogo:'Receipt logo (centered on top)', logoClear:'Clear', logoSize:'Print size (%)', logoHint:'Auto-resized & converted for B/W thermal printing. 58mm width = 100%; adjust the print size below.', tableCount:'Primary location count', counterCount:'Secondary location count', businessProfileLbl:'Business profile', profileRestaurant:'Restaurant', profileBar:'Bar / izakaya', profileCafe:'Cafe', profileCounterService:'Counter service', profileService:'Service / facility', applyBusinessProfile:'Apply profile terminology', businessProfileApplied:'Profile terminology filled in. Review it, then save.', tableLabelJaLbl:'Primary label (Japanese)', tableLabelEnLbl:'Primary label (English)', counterLabelJaLbl:'Secondary label (Japanese)', counterLabelEnLbl:'Secondary label (English)', seatGroupLabelJaLbl:'Group label (Japanese)', seatGroupLabelEnLbl:'Group label (English)', seatHint:'A business profile fills terminology defaults. After saving, the same terms appear in ordering, operations, kitchen, receipt history and receipts. Set a location count to 0 to hide it.', tableHint:'Maximum primary-location number on the order screen.',
         imgTitle:'🖼️ Top images', orderImg:'Order top image (order screen)', loginImg:'Login screen image (shown on admin login)', upload:'⬆️ Upload',
-        localeTitle:'🌐 Display & region', curCode:'Currency code', curSym:'Currency symbol', svcRate:'Service charge (%)', taxRate:'Tax (%)', timezoneLbl:'Standard time (time zone)', timezoneHint:'Choose or enter the store location’s IANA time zone. It is applied consistently to business dates, sales totals, attendance, service hours, and scheduled reports.', invalidTimezone:'Choose or enter a valid time zone (for example, Asia/Manila).', defLang:'Default language', accent:'Accent color',
+        localeTitle:'🌐 Display & region', countryCode:'Country/region code', localeCode:'Number/date locale', curCode:'Currency code', curSym:'Currency symbol', curDigits:'Currency decimal digits', svcRate:'Service charge (%)', taxRate:'Tax (%)', taxName:'Tax display name', taxIdName:'Tax registration label', receiptPrefix:'Receipt number prefix', receiptTitleJa:'Document title (Japanese)', receiptTitleEn:'Document title (English)', taxRound:'Tax/charge rounding', roundNearest:'Round to nearest', roundFloor:'Round down', roundCeil:'Round up', applyCountry:'Apply country defaults', countryHint:'Country defaults fill currency, time zone, tax labels and receipt titles. Nothing is final until you save. Confirm legally required document wording with a local professional.', unknownCountry:'No preset is available for that country. Enter each value directly.', countryApplied:'Country defaults filled in. Review them, then save.', timezoneLbl:'Standard time (time zone)', timezoneHint:'Choose or enter the store location’s IANA time zone. It is applied consistently to business dates, sales totals, attendance, service hours, and scheduled reports.', invalidTimezone:'Choose or enter a valid time zone (for example, Asia/Manila).', defLang:'Default language', accent:'Accent color',
         svcInclLabel:'Tax-inclusive (included in price)', taxInclLabel:'Tax-inclusive (included in price)', chargesHint:'Unchecked = exclusive (added on top of the listed price). Checked = inclusive (already included in the listed price). Typically tax is inclusive and the service charge is exclusive.',
         bizCutoff:'Business day cutoff time', bizCutoffHint:'Set this if you stay open past midnight. E.g. setting 2:30 means sales up to 2:30am count toward the previous day’s business day in the daily/weekly/monthly reports and sales totals. 0:00 = normal midnight cutoff. Valid range is 0:00–11:59 (anything else is treated as 0:00).',
         securityTitle:'🔐 Security', sessionTimeout:'Login session length (hours)', sessionTimeoutHint:'How long a staff management login stays valid before it automatically expires. Defaults to 8 hours if unset. Each action taken while logged in extends the session by this amount (staying logged in with no activity for this long logs you out automatically). Max 720 hours (30 days).',
         entryTitle:'🎫 Entry & extension fee', entryFeeEnable:'Enable entry fee', extensionFeeEnable:'Enable extension fee', entryFeeAmount:'Entry fee (per person)', baseUsageMinutes:'Base usage time (minutes)', extensionFeeAmount:'Extension fee (per person, per unit)', extensionUnitMinutes:'Extension unit (minutes)',
-        entryHint:'Only checked fees are charged at checkout. Amounts remain saved while unchecked. Extension fees are calculated from the party size and entry time entered when selecting the table/counter, with time past the base duration rounded up by extension units. When both fees are off, the order screen does not ask for party size.', entryAmountRequired:'Enter an entry fee amount of 1 or more when entry fee is enabled.', extensionAmountRequired:'Enter an extension fee amount of 1 or more when extension fee is enabled.', extensionUnitRequired:'Enter an extension unit of at least 1 minute when extension fee is enabled.',
+        entryHint:'Only checked fees are charged at checkout. Amounts remain saved while unchecked. Extension fees are calculated from the party size and entry time entered when selecting the location, with time past the base duration rounded up by extension units. When both fees are off, the order screen does not ask for party size.', entryAmountRequired:'Enter an entry fee amount of 1 or more when entry fee is enabled.', extensionAmountRequired:'Enter an extension fee amount of 1 or more when extension fee is enabled.', extensionUnitRequired:'Enter an extension unit of at least 1 minute when extension fee is enabled.',
         seniorTitle:'🧓 Senior/PWD discount', seniorEnable:'Enable (when off, the option disappears entirely from checkout)',
         seniorHint:'Even when enabled, actually applying the discount at checkout requires a manager-or-above login approval. This prevents staff from applying it without authorization.',
-        payTitle:'💳 Payment methods (Credit card / GCash)', payHint:'Credit cards are normally processed on a separate card terminal. This only controls whether the button is shown on the checkout screen.', ccEnable:'Show the credit card button at checkout', ccWarn:'⚠️ This button does not process online payments (no card entry, no real charge). Pressing it just records the sale as "paid on a separate card terminal." Even with this shown, keep processing card payments on your separate card terminal as before.', gcashQrLbl:'GCash QR code (image)', gcashQrHint:'Register your store’s GCash QR code image and it will be shown as-is on the checkout screen. Customers scan it and pay directly; please continue to confirm payment visually as staff, as before.', remove:'🗑️ Remove',
+        payTitle:'💳 Payment methods', payHint:'Choose the methods shown at checkout and customize their screen and receipt labels.', cashEnable:'Show cash', ccEnable:'Show card', qrEnable:'Show QR payment', screenLabel:'Screen label', receiptLabel:'Receipt label', cardInstructionLbl:'Card payment instructions (optional)', qrInstructionLbl:'QR payment instructions (optional)', paymentRequired:'Enable at least one payment method.', ccWarn:'⚠️ Card and QR buttons do not charge the customer. Confirm payment on the external terminal or service before finalizing checkout.', gcashQrLbl:'QR payment code (image)', gcashQrHint:'Upload the code image for the QR payment service you use. Staff must confirm receipt in that payment service.', remove:'🗑️ Remove',
         gemTitle:'🤖 Gemini API key (image search & inventory AI scan, optional)', apiKey:'API key',
         cseTitle:'🔍 Pexels Image Search (menu images, optional)', cseApiKey:'API key', cseHint:'Lets you search free stock photos (Pexels) for product images right from the menu editor. Go to pexels.com/api, log in with a free account, and paste the key shown on the "Your API Key" page (issued instantly, no approval needed). Free tier is 200 requests/hour, 20,000/month.',
         geoTitle:'📍 Attendance / store location', lat:'Latitude', lng:'Longitude', radius:'Allowed radius (m)', getLoc:'📡 Get current location',
@@ -687,7 +799,7 @@
         repLang:'Output language', repLangJa:'Japanese', repLangEn:'English', repLangBoth:'Japanese + English (both)',
         emailCfgTitle:'📧 Email settings (Resend)', emailCfgHint:'On 2026-08-23 we implemented email sending for scheduled reports, via an external email service called Resend. Setup steps required:<br>① Create a free account at <a href="https://resend.com" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:underline;">resend.com</a><br>② Add your sending domain and complete DNS verification<br>③ Issue an API key and paste/save it below<br>④ Also save a from-address under your verified domain (e.g. report@mail.izakanpai.com)<br><br>⚠️ Sending has not been verified with a real API key in this environment — after setup, please confirm with the "test send" buttons on the report card below.', emailApiKeyLbl:'Resend API key', emailFromLbl:'From address',
         bridgeTitle:'🖶 Print bridge (printer connection)', bridgeInterval:'Queue check interval (sec)', bridgeHint:'How often the print bridge (bridge.html) checks the server for print jobs. Shorter = faster printing but more server load. Default is 1.2 seconds.',
-        bridgeKeyLbl:'BRIDGE_KEY (optional shared secret)', bridgeKeyHint:'When set, only a bridge device (bridge.html) that knows this string can read/write the print queue. Leaving it blank and saving returns to the open (no-key) behavior. Enter the same string in the "Key" field on bridge.html.',
+        bridgeKeyLbl:'Print station connection key (automatic)', bridgeKeyHint:'Copy this key into the Key field on bridge.html only when connecting a print station. A station without a key cannot connect.', bridgeKeyCopy:'📋 Copy key', copied:'✅ Copied',
         emailOutboxTitle:'📧 e-Receipt', emailOutboxHint:'As of 2026-08-24, e-receipts can be sent by email when a bill is finalized. This requires the API key and from-address in the "Email sending (Resend)" section above to be configured.<br>When enabled, an e-receipt is sent automatically every time a bill is finalized — to whatever the customer entered at checkout (the <code>#payEmail</code> field), and to the fixed recipients registered below.', emailOutboxBtn:'Enable e-receipts',
         ereceiptSaveBtn:'💾 Save', ereceiptEmailsLbl:'Recipient email(s) — fixed, multiple allowed, comma or newline separated', ereceiptHint:'Every time a bill is finalized, a copy of the e-receipt is automatically sent to the addresses registered here — separate from, and in addition to, whatever the customer optionally enters at checkout. Useful for accounting/owner copies. Leave blank to send nothing. Nothing is sent while "Enable e-receipts" above is off.',
         saved:'✅ Saved', savedSched:'✅ Saved & scheduled', uploaded:'✅ Uploaded', pickImg:'Please select an image', needKey:'Please enter a key', noGeoDev:'This device does not support location', gotLoc:'Location acquired. Please press Save.', noLoc:'Could not get location. Please enter manually.', sending:'Sending…', testSent:'✅ Test sent. Please check your inbox', sendFail:'Could not send', scopeReauth:'You may need to re-authorize (scopes)', errPrefix:'Error: ' }
@@ -700,10 +812,10 @@
       title: '店舗設定',
       titleEn: 'Store settings',
       items: [
-        { ja: '① 「🏪 店舗設定」で店名・住所・TIN番号（レシート表示用）、レシート先頭のロゴ画像と印字サイズ、テーブル数・カウンター数（注文画面で選べる席の数、0で非表示）を設定できます。', en: '① "Store settings" lets you set the store name, address, TIN (shown on receipts), the receipt logo image and its print size, and the number of tables/counters selectable on the order screen (0 hides that type).' },
-        { ja: '② 「📱 テーブルQRコード」の「QRコードを表示」ボタンで各テーブル専用の注文画面QRコードを一覧表示し、印刷したり、対応プリンタへ印刷キューとして送信できます。', en: '② "Table QR Codes" → "Show QR Codes" displays a QR code per table that opens that table\'s order screen; you can print them or send them to a connected printer\'s print queue.' },
+        { ja: '① 「🏪 店舗設定」で業態プロファイルを選ぶと席の呼称初期値が入ります。日本語・英語の第1席種、第2席種、全体呼称は個別編集でき、席数0でその席種を非表示にできます。', en: '① In "Store settings", choose a business profile to fill terminology defaults. You can edit the Japanese and English primary, secondary and group labels, and set a location count to 0 to hide that type.' },
+        { ja: '② 「📱 席QRコード」の「QRコードを表示」ボタンで各席専用の注文画面QRコードを一覧表示し、印刷したり、対応プリンタへ印刷キューとして送信できます。', en: '② "Location QR Codes" → "Show QR Codes" displays one order-screen QR code per configured location; you can print them or send them to a connected printer queue.' },
         { ja: '③ 「🌐 表示・地域」で店舗所在地の標準時間（IANAタイムゾーン）、通貨、税・サービス料、言語、色、営業日切替時刻を設定できます。標準時間は売上集計・勤怠・提供時間・定期レポートへ共通反映されます。', en: '③ "Display & region" sets the store’s standard time (IANA time zone), currency, tax/service charge, language, color, and business-day cutoff. The time zone is shared by sales totals, attendance, service hours, and scheduled reports.' },
-        { ja: '④ 「🎫 入場料・延長料」「🧓 シニア/PWD割引」「💳 決済方法」「🎁 ロイヤリティ」など、各カードのチェックボックスと金額欄で会計画面に表示する機能をON/OFF・数値設定し、それぞれの「💾 保存」ボタンで保存します。', en: '④ Cards like "Entry & extension fee", "Senior/PWD discount", "Payment methods" and "Loyalty" let you turn checkout-screen features on/off and set amounts, each with its own "Save" button.' },
+        { ja: '④ 「🏷️ 割引マスタ」では、割引名・率または固定額・税免除・ID提示・責任者承認の要否を割引ごとに登録できます。シニア／PWDはプリセットから作成でき、旧端末向け互換設定も残しています。', en: '④ "Discount rules" lets you configure each discount name, percentage or fixed amount, tax exemption, ID requirement, and manager approval. Senior/PWD presets and a legacy-client compatibility switch are also available.' },
         { ja: '⑤ 「🤖 Gemini APIキー」「🔍 Pexels画像検索」「📧 メール送信設定（Resend）」のAPIキー欄は、貼り付けて保存すると即座に入力欄がクリアされ、以後は上の「設定済/未設定」バッジのみで状態を確認します（安全のため、保存後にキーの値がこの画面に表示され続けることはありません）。', en: '⑤ For the Gemini API key, Pexels API key and Resend email API key fields: after you paste and save, the field is cleared immediately — from then on only the "Set / Not set" badge above shows the status (for safety, the saved key value is never redisplayed on this screen).' },
         { ja: '⑥ 「📧 定期レポート」では送信先メール・日次/週次/月次の送信タイミングと出力言語を設定し、「保存＆スケジュール」で反映、「日次/週次/月次テスト」ボタンで実際にテストメールを送信して確認できます（メール送信設定でAPIキー・送信元アドレスの登録が必要）。', en: '⑥ "Scheduled reports" sets recipient emails, daily/weekly/monthly send times, and output language; "Save & schedule" applies it, and the "Daily/Weekly/Monthly test" buttons send an actual test email to verify (requires the API key and from-address to be configured above).' },
         { ja: '⑦ 「🖶 印刷ブリッジ」でプリンタ連携の確認間隔とBRIDGE_KEY（共有シークレット）を、「📧 eレシート機能」で会計確定時の自動メール送付を設定できます。', en: '⑦ "Print bridge" sets the printer-polling interval and an optional shared-secret BRIDGE_KEY; "e-Receipt" sets automatic email delivery on bill finalization.' }

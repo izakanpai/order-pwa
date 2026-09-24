@@ -45,7 +45,7 @@
   <script src="./config.js?v=auth2"></script>
   <script src="./api.js?v=auth2"></script>
   <script>
-    var lang = (localStorage.getItem('lang')||'').match(/^(ja|en)$/) ? localStorage.getItem('lang') : 'en';
+    var lang = (localStorage.getItem('lang')||'').match(/^(ja|en)$/) ? localStorage.getItem('lang') : 'en', SETTINGS={};
     var T = {
       en:{ shop:'Reservation', intro:'Request a table. We will contact you to confirm.', lWhen:'Date & time', lPeople:'Party size', lName:'Name', lPhone:'Phone', lSeat:'Seating preference', lNotes:'Notes (optional)', table:'Table', counter:'Counter', submit:'Request reservation', lang:'JP', needWhen:'Please choose a date & time.', needName:'Please enter your name.', doneT:'Reservation requested', doneM:'Thank you! We will contact you to confirm.', err:'Something went wrong. Please try again.', bad_datetime:'Please choose a valid future time within one year.', past_datetime:'Please choose a time at least 5 minutes from now.', datetime_too_far:'Reservations can be requested up to one year ahead.', rate_limited:'Too many requests. Please wait and try again.' },
       ja:{ shop:'ご予約', intro:'ご予約リクエストを送信します。確認のため店舗からご連絡します。', lWhen:'日時', lPeople:'人数', lName:'お名前', lPhone:'電話番号', lSeat:'席の希望', lNotes:'備考（任意）', table:'テーブル', counter:'カウンター', submit:'予約をリクエスト', lang:'EN', needWhen:'日時を選択してください。', needName:'お名前を入力してください。', doneT:'予約をリクエストしました', doneM:'ありがとうございます！確認のためご連絡します。', err:'エラーが発生しました。もう一度お試しください。', bad_datetime:'現在から1年以内の正しい日時を選択してください。', past_datetime:'現在から5分以上先の日時を選択してください。', datetime_too_far:'予約リクエストは1年先までです。', rate_limited:'送信回数が多すぎます。しばらく待ってからお試しください。' }
@@ -58,7 +58,7 @@
       document.getElementById('lWhen').innerText=x.lWhen; document.getElementById('lPeople').innerText=x.lPeople;
       document.getElementById('lName').innerText=x.lName; document.getElementById('lPhone').innerText=x.lPhone;
       document.getElementById('lSeat').innerText=x.lSeat; document.getElementById('lNotes').innerText=x.lNotes;
-      document.getElementById('oTable').innerText=x.table; document.getElementById('oCounter').innerText=x.counter;
+      document.getElementById('oTable').innerText=(lang==='en'?SETTINGS.tableLabelEn:SETTINGS.tableLabelJa)||x.table; document.getElementById('oCounter').innerText=(lang==='en'?SETTINGS.counterLabelEn:SETTINGS.counterLabelJa)||x.counter;
       document.getElementById('submitBtn').innerText=x.submit; document.getElementById('langBtn').innerText=x.lang;
       document.getElementById('doneT').innerText=x.doneT;
     }
@@ -79,6 +79,7 @@
       }).catch(function(){ b.disabled=false; alertBox(x.err); });
     };
     (function(){ var now=new Date(Date.now()+5*60000), max=new Date(Date.now()+366*86400000); function localValue(d){ var z=new Date(d.getTime()-d.getTimezoneOffset()*60000); return z.toISOString().slice(0,16); } var input=document.getElementById('rWhen'); input.min=localValue(now); input.max=localValue(max); })();
+    API.post('getSettings',{}).then(function(r){SETTINGS=(r&&r.data)||{};apply();}).catch(function(){});
     apply();
   </script>
   <script src="./help.js?v=auth2"></script>

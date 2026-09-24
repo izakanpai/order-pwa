@@ -203,7 +203,7 @@
         errEl.style.display='block';
       });
     };
-    window.logout = function(){ ++authAttempt; localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken'); localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtName'); localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtRole'); TOKEN=''; NAME=''; ROLE=''; showLogin(); };
+    window.logout = async function(){ ++authAttempt; await API.logoutSession(); localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtName'); localStorage.removeItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtRole'); TOKEN=''; NAME=''; ROLE=''; showLogin(); };
 
     // ログイン画面からのパスワード変更（ログインID＋現在のパスワードで本人確認）
     window.toggleChgPw = function(show){

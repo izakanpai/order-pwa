@@ -36,14 +36,18 @@
   function storedToken() {
     try { return localStorage.getItem(AUTH_PREFIX + 'mgmtToken') || ''; } catch (e) { return ''; }
   }
+  function storedRefreshToken() {
+    try { return localStorage.getItem(AUTH_PREFIX + 'mgmtRefreshToken') || ''; } catch (e) { return ''; }
+  }
   // Structural validation only; authenticity/authorization always remains server-side.
-  function tokenInfo(token) {
+  function tokenInfo(token, allowExpired) {
     if (typeof token !== 'string') return null;
     var dot = token.lastIndexOf('.'), parts = token.slice(0, dot).split('~');
-    if (dot < 0 || !/^[a-f0-9]{64}$/.test(token.slice(dot + 1)) || parts.length !== 6 ||
-        parts[0] !== 'v2' || !Number.isFinite(Number(parts[1])) || Number(parts[1]) <= Date.now() ||
+    if (dot < 0 || !/^[a-f0-9]{64}$/.test(token.slice(dot + 1)) ||
+        !((parts.length === 6 && parts[0] === 'v2') || (parts.length === 7 && parts[0] === 'v3')) ||
+        !Number.isFinite(Number(parts[1])) || (!allowExpired && Number(parts[1]) <= Date.now()) ||
         !parts[2] || !parts[3] || !parts[4] || parts[5] !== (CFG.TEST_ENV ? 'test' : 'production')) return null;
-    return { role: parts[2], store: parts[3], uid: parts[4], audience: parts[5] };
+    return { version:parts[0], exp:Number(parts[1]), role:parts[2], store:parts[3], uid:parts[4], audience:parts[5], sessionId:parts[6]||'' };
   }
   API.acceptLogin = function (r) {
     if (!API.authReady()) throw new Error('environment_mismatch');
@@ -52,10 +56,17 @@
     // Token is written last: partially failed persistence must not announce login success.
     localStorage.setItem(AUTH_PREFIX + 'mgmtName', r.name || '');
     localStorage.setItem(AUTH_PREFIX + 'mgmtRole', r.role);
+    if (info.version === 'v3') {
+      if (!/^r1\.[0-9a-f-]{36}\.[0-9a-f]{64}$/i.test(String(r.refreshToken || ''))) throw new Error('invalid_login_response');
+      localStorage.setItem(AUTH_PREFIX + 'mgmtRefreshToken', r.refreshToken);
+    } else localStorage.removeItem(AUTH_PREFIX + 'mgmtRefreshToken');
     localStorage.setItem(AUTH_PREFIX + 'mgmtToken', r.token);
     if (storedToken() !== r.token) throw new Error('auth_storage_unavailable');
   };
   API.isCurrentToken = function (token) { return !!token && storedToken() === token; };
+  API.clearSession = function () {
+    try { localStorage.removeItem(AUTH_PREFIX + 'mgmtToken'); localStorage.removeItem(AUTH_PREFIX + 'mgmtRefreshToken'); } catch (e) {}
+  };
   API.imageUrl = function (value) {
     var v = String(value || '');
     return /^https:\/\//i.test(v) ? v : '';
@@ -99,6 +110,7 @@
 
   // 定期ポーリング等、待機表示を出さない（点滅防止）アクション
   const BG_ACTIONS = { checkToken: 1, getOrders: 1, getOperationsDelta: 1, checkoutStatus: 1, bootstrap: 1, getSettings: 1, getStaffCalls: 1, getTableCheckoutStamp: 1 };
+  const TABLE_SESSION_ACTIONS = { submitOrder:1, getOrdersByTable:1, getTableCheckoutStamp:1, setTablePartySize:1, getTablePartySize:1, callStaff:1, submitFeedback:1 };
   const BG_RPC = { getPrintQueue: 1, getPrintQueueCounts: 1, getSettings: 1 };
 
   // ---- タイムアウト設定（全画面共通・唯一の定義元）----
@@ -171,6 +183,37 @@
     }).finally(function () { clearTimeout(t); });
   }
 
+  var refreshPending = null;
+  API.refreshSession = function () {
+    if (refreshPending) return refreshPending;
+    var beforeToken = storedToken(), before = tokenInfo(beforeToken, true), refreshToken = storedRefreshToken();
+    if (!before || before.version !== 'v3' || !refreshToken) return Promise.reject(new Error('invalid_refresh_session'));
+    refreshPending = _fetchOnce(JSON.stringify({ action:'refreshSession', refreshToken:refreshToken }), TIMEOUT_MS.fast)
+      .then(function (json) {
+        var after = tokenInfo(json && json.token), nextRefresh = String(json && json.refreshToken || '');
+        if (!json || !json.ok || !after || !/^r1\.[0-9a-f-]{36}\.[0-9a-f]{64}$/i.test(nextRefresh) ||
+            before.role !== after.role || before.store !== after.store || before.uid !== after.uid ||
+            before.audience !== after.audience || before.sessionId !== after.sessionId || storedToken() !== beforeToken) {
+          throw new Error((json && json.error) || 'invalid_refresh_session');
+        }
+        localStorage.setItem(AUTH_PREFIX + 'mgmtRefreshToken', nextRefresh);
+        localStorage.setItem(AUTH_PREFIX + 'mgmtToken', json.token);
+        return json.token;
+      }).catch(function (error) {
+        API.clearSession();
+        throw error;
+      }).finally(function () { refreshPending = null; });
+    return refreshPending;
+  };
+  API.logoutSession = async function () {
+    var token = storedToken(), refreshToken = storedRefreshToken();
+    try {
+      if (token || refreshToken) await _fetchOnce(JSON.stringify({ action:'logoutSession', token:token, refreshToken:refreshToken }), TIMEOUT_MS.fast);
+    } catch (e) {
+      // Local logout must complete even while offline; server expiry remains the fallback.
+    } finally { API.clearSession(); }
+  };
+
   // ---- 低レベル POST ----
   // [GPT第22回レポート対応/G22-1] 重い集計RPC（getSalesAnalytics等）は、呼び出し元（各画面）が
   // 独自のbusy/timeout再試行ロジック（rpcBusyRetry）を持つ。API.post自身の内部再送（下記canRetry）と
@@ -188,6 +231,9 @@
     const timeoutMs = (typeof payload.__timeoutMs === 'number') ? payload.__timeoutMs : _FETCH_TIMEOUT_MS;
     const noInternalRetry = !!payload.__noInternalRetry;
     const send = Object.assign({}, payload); delete send.__silent; delete send.__msg; delete send.__timeoutMs; delete send.__noInternalRetry;
+    if (TABLE_SESSION_ACTIONS[action] && !send.token && !send.tableToken && typeof location !== 'undefined') {
+      send.tableToken = new URLSearchParams(location.search).get('t') || '';
+    }
     // 2026-08-25追加: 各画面はログイン時に取得したTOKENをページ内変数として持ち続けており、
     // サーバー側がスライディング・エクスパイア（下記newToken参照）でトークンを再発行しても
     // ページ内変数までは自動更新されない。送信直前にlocalStorageのmgmtToken（＝直前のレスポンスの
@@ -197,6 +243,11 @@
     if (send.token) {
       const latest = storedToken();
       if (latest) send.token = latest;
+      const access = tokenInfo(send.token, true);
+      if (access && access.version === 'v3' && access.exp <= Date.now() + 60000) {
+        try { send.token = await API.refreshSession(); }
+        catch (e) { location.href = './manage.html'; throw new Error('unauthorized'); }
+      }
     }
     const body = JSON.stringify(Object.assign({ action: action }, send));
     const canRetry = !noInternalRetry && _isReadOnly(action, payload.fn);
@@ -219,7 +270,7 @@
       if (!json.ok) {
         // ログイントークン失効（unauthorized）は生のエラーを見せず、管理画面（ログイン）へ自動的に戻す
         if (json.error === 'unauthorized' && API.isCurrentToken(send.token)) {
-          try { localStorage.removeItem(AUTH_PREFIX + 'mgmtToken'); localStorage.removeItem(AUTH_PREFIX + 'mgmtName'); localStorage.removeItem(AUTH_PREFIX + 'mgmtRole'); } catch (e) {}
+          try { API.clearSession(); localStorage.removeItem(AUTH_PREFIX + 'mgmtName'); localStorage.removeItem(AUTH_PREFIX + 'mgmtRole'); } catch (e) {}
           location.href = './manage.html';
         }
         // Legacy page catch handlers redirect on the literal "unauthorized".

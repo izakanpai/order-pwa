@@ -26,7 +26,7 @@
 
   function pagePolicy(pathname, loggedIn) {
     var page = pageName(pathname);
-    var customerOrder = page === 'index.html' || page === 'takeout.html';
+    var customerOrder = page === 'index.html' || page === 'takeout.html' || page === 'reserve.html';
     var loginPage = page === 'manage.html' && !loggedIn;
     return {
       page: page,
@@ -195,7 +195,7 @@
       '#izHeaderExtra{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex:0 1 auto;min-width:0;flex-wrap:nowrap;padding:0;background:transparent;border:0}' +
       '#izHeaderExtra[hidden]{display:none}' +
       '#izHeaderExtra a,#izHeaderExtra button{margin:0!important}' +
-      '@media(max-width:720px){#izCommonHeader .iz-header-main{gap:5px;padding:6px 8px;min-height:44px}#izHeaderTitle{flex:1 1 55px;min-width:0;font-size:14px}#izHeaderExtra{gap:4px}.iz-header-clock{font-size:10px;padding:6px}.iz-header-user{max-width:88px;padding:6px}.iz-header-btn{width:32px;min-height:32px;padding:6px;font-size:13px}#izHeaderLang{width:auto;min-width:38px}}' +
+      '@media(max-width:720px){#izCommonHeader .iz-header-main{gap:5px;padding:6px 8px;min-height:44px}#izHeaderTitle{flex:1 1 55px;min-width:0;font-size:14px}#izHeaderExtra{gap:4px}.iz-header-clock{font-size:12px;padding:6px}.iz-header-user{max-width:88px;padding:6px}.iz-header-btn{width:32px;min-height:32px;padding:6px;font-size:13px}#izHeaderLang{width:auto;min-width:38px}}' +
       '@media(max-width:480px){.iz-header-clock{display:none}#tagTakeout{display:none!important}}' +
       '@media(max-width:430px){#izHeaderActions{gap:4px}}';
     document.head.appendChild(s);

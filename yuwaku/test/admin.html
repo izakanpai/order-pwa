@@ -92,12 +92,9 @@
         <div style="font-size:17px;font-weight:900;margin-bottom:12px;" id="ps1t">お会計</div>
         <div class="sum" id="paySum"></div>
         <div id="payDisc" style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px;">
-          <label style="display:flex;gap:8px;align-items:center;font-weight:800;cursor:pointer;"><input type="checkbox" id="dcOn" onchange="recompPay()"><span id="dcLbl">シニア/PWD割引</span></label>
+          <label style="display:flex;gap:8px;align-items:center;font-weight:800;cursor:pointer;"><input type="checkbox" id="dcOn" onchange="recompPay()"><span id="dcLbl">割引</span></label>
           <div id="dcBody" style="display:none;margin-top:8px;">
-            <div style="display:flex;gap:14px;margin-bottom:6px;">
-              <label style="cursor:pointer;"><input type="radio" name="dcType" value="senior" checked onchange="recompPay()"><span id="dcSenior"> シニア</span></label>
-              <label style="cursor:pointer;"><input type="radio" name="dcType" value="pwd" onchange="recompPay()"> PWD</label>
-            </div>
+            <div style="margin-bottom:8px;"><select id="dcRule" onchange="recompPay()" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;"></select></div>
             <div style="display:flex;gap:8px;margin-bottom:6px;">
               <input id="dcName" placeholder="対象者氏名" style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;">
               <input id="dcId" placeholder="ID番号" style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;">
@@ -122,13 +119,13 @@
           <span id="splitRes" style="font-weight:800;"></span>
         </div>
         <div style="margin-bottom:10px;"><input id="payEmail" type="email" placeholder="e-receipt email (任意)" autocomplete="off" style="width:100%;padding:9px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;box-sizing:border-box;"></div>
-        <button class="pbtn" id="payBtnGcash" style="background:linear-gradient(135deg,#0f4c81,#1565c0);" onclick="gcashPay()">📱 GCash</button>
-        <button class="pbtn" id="payBtnCard" style="background:linear-gradient(135deg,#2e7d32,#43a047);" onclick="cardPay()">💳 Card</button>
-        <button class="pbtn" style="background:#334155;" onclick="cashPay()">💴 <span id="cashLbl">現金</span></button>
+        <button class="pbtn" id="payBtnGcash" style="background:linear-gradient(135deg,#0f4c81,#1565c0);" onclick="gcashPay()">📱 <span id="qrPayLbl">QR決済</span></button>
+        <button class="pbtn" id="payBtnCard" style="background:linear-gradient(135deg,#2e7d32,#43a047);" onclick="cardPay()">💳 <span id="cardPayLbl">カード</span></button>
+        <button class="pbtn" id="payBtnCash" style="background:#334155;" onclick="cashPay()">💴 <span id="cashLbl">現金</span></button>
         <button class="cancel" onclick="closePay()" id="cxl1">キャンセル</button>
       </div>
       <div id="ps2" style="display:none;text-align:center;">
-        <div style="font-size:17px;font-weight:900;margin-bottom:4px;" id="ps2t">GCash</div>
+        <div style="font-size:17px;font-weight:900;margin-bottom:4px;" id="ps2t">QR決済</div>
         <div style="display:inline-block;padding:8px;border:2px solid #e0e8f5;border-radius:12px;margin-bottom:12px;">
           <img id="payQr" src="" alt="QR" style="width:200px;height:200px;display:none;border-radius:6px;">
         </div>
@@ -182,7 +179,7 @@
     // [P0-2] 会計・注文操作はスタッフ操作のため、事前ログイン（1回のみ）を必須にする。
     var TOKEN = localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
     if (!TOKEN) location.href = './manage.html';
-    var SETTINGS = {}, PAYMONGO = false, orders = [], calls = [], voidId = '', MENU_MAP = {}, PARTY_SIZES = {};
+    var SETTINGS = {}, PAYMONGO = false, orders = [], calls = [], voidId = '', MENU_MAP = {}, PARTY_SIZES = {}, BASE_DISCOUNT_RULES = [], DISCOUNT_RULES = [];
     var autoOn = (function(){ try{ var v=localStorage.getItem('adminAuto'); return v===null?true:(v==='1'); }catch(e){ return true; } })();
     var refreshSec = (function(){ try{ var v=parseInt(localStorage.getItem('adminRefreshSec'),10); return (v===10||v===30||v===60)?v:30; }catch(e){ return 30; } })();
     var refreshTimer = null;
@@ -195,19 +192,19 @@
 
     var i18n = {
       ja: { title:'注文管理', served:'✓ 提供済', servedBtn:'提供済にする', pay:'💳 会計する', noOrder:'未会計の注文はありません',
-            cash:'現金', card:'Card', cancel:'キャンセル', pTitle:'お会計', sub:'小計', svc:'サービス料', tax:'税',
+            cash:'現金', card:'カード', qrPayment:'QR決済', cancel:'キャンセル', pTitle:'お会計', sub:'小計', svc:'サービス料', tax:'税',
             openPay:'支払いページを開く', checkBtn:'支払い確認', checking:'確認中…', notYet:'まだ支払いが確認できません。',
             noKey:'オンライン決済は未設定です。', cashRecv:'現金を受け取りましたか？', cardRecv:'💳 決済端末でクレジットカード決済をしてください。決済を確認したら、下のボタンを押して会計を完了してください。', gcashHint:'お客様にQRコードをスキャンして送金していただき、入金を確認したら下のボタンを押してください。', gcashConfirm:'入金を確認した', confirmed:'支払い完了', done:'完了（会計済にする）', processing:'処理中…', lang:'EN',
-            disc:'シニア/PWD割引', senior:'シニア', idPh:'ID番号', eligPh:'対象額', discLine:'割引', vatNote:'うちVAT', orLbl:'レシート番号', printBtn:'🖨️ レシート印刷', close:'閉じる', tableW:'卓', totalW:'合計',
+            disc:'割引', senior:'シニア', idPh:'ID番号', eligPh:'対象額', discLine:'割引', vatNote:'うちVAT', orLbl:'レシート番号', printBtn:'🖨️ レシート印刷', close:'閉じる', tableW:'卓', totalW:'合計',
             partial:'🧾 一部会計', partTitle:'一部会計 — 明細を選択', selected:'選択', selPay:'選択分を会計', splitLbl:'割り勘 ÷', each:'/人',
             callHdr:'🔔 呼び出し', callLbl:'スタッフ呼出', billLbl:'お会計希望', resolve:'対応済', agoMin:'分前', stay:'滞在', voidBtn:'取消', voidT:'注文の取消', reason:'取消理由', approver:'承認者（責任者ログイン）', loginPh:'ログインID', passPh:'パスワード', voidGo:'取消を承認', needReason:'取消理由を入力してください', authFail:'ログインIDまたはパスワードが違います', voided:'取消しました', alreadySettled:'会計済のため取消できません', eReceipt:'eレシート送信先メール（任意）',
             entryFeeLbl:'入場料', extFeeLbl:'延長料',
             discApprover:'承認者（マネージャー以上のログイン）', discNeedAppr:'承認者のログインID・パスワードを入力してください', discNotManager:'マネージャー以上の権限が必要です', discDisabled:'シニア/PWD割引は現在無効化されています', discVerifying:'承認確認中…', unservedBill:'未提供の注文が含まれています。先に対象明細を「提供済」にしてから会計してください。' },
       en: { title:'Orders', served:'✓ Served', servedBtn:'Mark served', pay:'💳 Checkout', noOrder:'No open orders',
-            cash:'Cash', card:'Card', cancel:'Cancel', pTitle:'Payment', sub:'Subtotal', svc:'Service', tax:'Tax',
+            cash:'Cash', card:'Card', qrPayment:'QR Payment', cancel:'Cancel', pTitle:'Payment', sub:'Subtotal', svc:'Service', tax:'Tax',
             openPay:'Open payment page', checkBtn:'Check status', checking:'Checking…', notYet:'Payment not confirmed yet.',
             noKey:'Online payment is not set up.', cashRecv:'Cash received?', cardRecv:'💳 Please process the credit card payment on the card terminal. Once confirmed, press the button below to complete checkout.', gcashHint:'Ask the customer to scan the QR code and pay, then press the button below once you\'ve confirmed the payment.', gcashConfirm:'Payment confirmed', confirmed:'Paid', done:'Done (settle)', processing:'Processing…', lang:'JP',
-            disc:'Senior/PWD discount', senior:'Senior', idPh:'ID no.', eligPh:'Eligible amt', discLine:'Discount', vatNote:'incl. VAT', orLbl:'Receipt no.', printBtn:'🖨️ Print receipt', close:'Close', tableW:'Table', totalW:'TOTAL',
+            disc:'Discount', senior:'Senior', idPh:'ID no.', eligPh:'Eligible amt', discLine:'Discount', vatNote:'incl. VAT', orLbl:'Receipt no.', printBtn:'🖨️ Print receipt', close:'Close', tableW:'Table', totalW:'TOTAL',
             partial:'🧾 Partial', partTitle:'Partial checkout — select items', selected:'Selected', selPay:'Checkout selected', splitLbl:'Split ÷', each:'/person',
             callHdr:'🔔 Requests', callLbl:'Call staff', billLbl:'Bill please', resolve:'Done', agoMin:'m ago', stay:'Seated', voidBtn:'Void', voidT:'Void order', reason:'Reason', approver:'Approver (manager login)', loginPh:'Login ID', passPh:'Password', voidGo:'Approve void', needReason:'Please enter a reason', authFail:'Wrong login ID or password', voided:'Order voided', alreadySettled:'Cannot void a settled order', eReceipt:'e-receipt email (optional)',
             entryFeeLbl:'Entry fee', extFeeLbl:'Extension fee',
@@ -215,7 +212,9 @@
     };
     function t(){ return I18n.d(); }
     function sym(){ return SETTINGS.currencySymbol || '₱'; }
-    function money(v){ return sym() + (Number(v)||0).toLocaleString(); }
+    function money(v){ var d=Object.prototype.hasOwnProperty.call(SETTINGS,'currencyDecimalDigits')?Math.max(0,Math.min(3,Number(SETTINGS.currencyDecimalDigits)||0)):0; return sym() + (Number(v)||0).toLocaleString(SETTINGS.locale||undefined,{minimumFractionDigits:d,maximumFractionDigits:d}); }
+    function taxName(){ return String(SETTINGS.taxDisplayName||'VAT'); }
+    function roundCharge(v){ var d=Object.prototype.hasOwnProperty.call(SETTINGS,'currencyDecimalDigits')?Math.max(0,Math.min(3,Number(SETTINGS.currencyDecimalDigits)||0)):0,f=Math.pow(10,d),n=(Number(v)||0)*f,m=SETTINGS.taxRoundingMode||'nearest'; return (m==='floor'?Math.floor(n+Number.EPSILON):m==='ceil'?Math.ceil(n-Number.EPSILON):Math.round(n+Number.EPSILON))/f; }
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     // 2026-08-24修正: バックエンドが返す注文日時はSQLiteのdatetime('now')によるUTC時刻
     // （末尾にZ無し）。そのままnew Date()に渡すとローカル時刻として誤解釈され、表示が
@@ -227,16 +226,16 @@
     }
     function fmtTime(d){ try{ return toUtcDate(d).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
     // 席ラベルをEN/JP表示（保存値は変更しない・表示のみ）
-    function seatLabel(v){ var s=String(v==null?'':v); var m=s.match(/^テーブル(\d+)$/); if(m) return (lang==='en'?'Table ':'テーブル')+m[1]; var c=s.match(/^カウンター(\d+)$/); if(c) return (lang==='en'?'Counter ':'カウンター')+c[1]; return s; }
+    function seatLabel(v){ var s=String(v==null?'':v),en=lang==='en'; var tableTerm=(en?SETTINGS.tableLabelEn:SETTINGS.tableLabelJa)||(en?'Table':'テーブル'); var counterTerm=(en?SETTINGS.counterLabelEn:SETTINGS.counterLabelJa)||(en?'Counter':'カウンター'); var m=s.match(/^テーブル(\d+)$/)||s.match(/^(\d+)$/); if(m) return tableTerm+' '+m[1]; var c=s.match(/^カウンター(\d+)$/); if(c) return counterTerm+' '+c[1]; return s; }
     function breakdown(subtotal){
       var s = Number(subtotal)||0;
       var svcRate = Number(SETTINGS.serviceRate)||0, taxRate = Number(SETTINGS.taxRate)||0;
       var svcIncl = String(SETTINGS.serviceInclusive)==='true', taxIncl = String(SETTINGS.taxInclusive)==='true';
       var svc, afterSvc, tax, total;
-      if (svcIncl) { svc = Math.round(s - s/(1+svcRate/100)); afterSvc = s; }
-      else { svc = Math.round(s * (svcRate/100)); afterSvc = s + svc; }
-      if (taxIncl) { tax = Math.round(s - s/(1+taxRate/100)); total = afterSvc; }
-      else { tax = Math.round(afterSvc * (taxRate/100)); total = afterSvc + tax; }
+      if (svcIncl) { svc = roundCharge(s - s/(1+svcRate/100)); afterSvc = s; }
+      else { svc = roundCharge(s * (svcRate/100)); afterSvc = roundCharge(s + svc); }
+      if (taxIncl) { tax = roundCharge(s - s/(1+taxRate/100)); total = roundCharge(afterSvc); }
+      else { tax = roundCharge(afterSvc * (taxRate/100)); total = roundCharge(afterSvc + tax); }
       return { sub:s, service:svc, afterSvc:afterSvc, tax:tax, total:total };
     }
     // [C1修正] Senior/PWD割引の計算式。src/billing.js の seniorPwdCalc と必ず同じ式にすること
@@ -246,19 +245,39 @@
       var taxRate = Number(SETTINGS.taxRate)||0, taxIncl = String(SETTINGS.taxInclusive)==='true';
       var r = taxRate/100;
       var netEligible = taxIncl ? (eligible/(1+r)) : eligible;
-      var discount20 = Math.round(netEligible*0.20);
+      var discount20 = roundCharge(netEligible*0.20);
       var vatExempt;
-      if (taxIncl){ vatExempt = Math.round(eligible - netEligible); }
+      if (taxIncl){ vatExempt = roundCharge(eligible - netEligible); }
       else {
         var nonEligibleAfterSvc = Math.max(0, b.afterSvc - eligible);
-        var vatCorrect = Math.round(nonEligibleAfterSvc*r);
+        var vatCorrect = roundCharge(nonEligibleAfterSvc*r);
         vatExempt = Math.max(0, b.tax - vatCorrect);
       }
       var totalDiscount = discount20 + vatExempt;
       var nonEligibleSub = Math.max(0, subtotal - eligible);
-      var vatDisplay = taxIncl ? Math.round(nonEligibleSub - nonEligibleSub/(1+r)) : Math.round(nonEligibleSub*r);
+      var vatDisplay = taxIncl ? roundCharge(nonEligibleSub - nonEligibleSub/(1+r)) : roundCharge(nonEligibleSub*r);
       var total = Math.max(0, b.total - totalDiscount);
       return { discountAmount: totalDiscount, vat: vatDisplay, total: total };
+    }
+    function selectedDiscountRule(){ var id=document.getElementById('dcRule').value; return DISCOUNT_RULES.find(function(r){return String(r.id)===String(id);})||null; }
+    function genericDiscountCalc(subtotal, eligible, b, rule){
+      if(rule.legacyType) return seniorPwdCalc(subtotal,eligible,b);
+      var taxRate=Math.max(0,Number(SETTINGS.taxRate)||0)/100,taxIncl=String(SETTINGS.taxInclusive)==='true';
+      var netEligible=(rule.taxExempt&&taxIncl&&taxRate>0)?eligible/(1+taxRate):eligible;
+      var base=rule.taxExempt?netEligible:eligible;
+      var ordinary=rule.calculationType==='fixed'?roundCharge(Math.min(Number(rule.value)||0,base)):roundCharge(base*(Number(rule.value)||0)/100);
+      var taxExemption=0,vat=b.tax;
+      if(rule.taxExempt){if(taxIncl)taxExemption=roundCharge(eligible-netEligible);else{var correct=roundCharge(Math.max(0,b.afterSvc-eligible)*taxRate);taxExemption=Math.max(0,b.tax-correct);}var nonEligible=Math.max(0,subtotal-eligible);vat=taxIncl?roundCharge(nonEligible-nonEligible/(1+taxRate)):roundCharge(nonEligible*taxRate);}
+      var amount=roundCharge(ordinary+taxExemption);return {discountAmount:amount,vat:vat,total:Math.max(0,roundCharge(b.total-amount))};
+    }
+    function populateDiscountRules(){
+      var list=BASE_DISCOUNT_RULES.slice();
+      if(SETTINGS.seniorDiscountEnabled==='on') list=list.concat([
+        {id:'legacy:senior',code:'SENIOR',name:'シニア',nameEn:'Senior',calculationType:'percent',value:20,taxExempt:true,idRequired:true,managerApprovalRequired:true,legacyType:'senior'},
+        {id:'legacy:pwd',code:'PWD',name:'PWD',nameEn:'PWD',calculationType:'percent',value:20,taxExempt:true,idRequired:true,managerApprovalRequired:true,legacyType:'pwd'}]);
+      DISCOUNT_RULES=list;
+      document.getElementById('dcRule').innerHTML=list.map(function(r){return '<option value="'+esc(r.id)+'">'+esc(lang==='en'?(r.nameEn||r.name):r.name)+'</option>';}).join('');
+      document.getElementById('payDisc').style.display=list.length?'':'none';
     }
 
     // I18n.init()のonChangeコールバックから呼ばれる（手動切替時・店舗既定言語の反映時の両方）。
@@ -493,18 +512,21 @@
       var _da=document.getElementById('dcApprAlert'); _da.style.display='none';
       // [要望対応] シニア/PWD割引は設定で無効化されている場合、選択肢自体を非表示にする
       // （従業員が不正に操作することを防ぐため、UI上に触れる余地を残さない）。
-      document.getElementById('payDisc').style.display = (SETTINGS.seniorDiscountEnabled==='on') ? '' : 'none';
+      populateDiscountRules();
       // 2026-08-23: クレジットカードは設定で許可されている場合のみボタンを表示（否の場合は別端末で
       // 処理する運用のためボタン自体を出さない）。GCashは店舗QRコードが登録されている場合のみ表示。
-      document.getElementById('payBtnCard').style.display = (SETTINGS.creditCardEnabled==='on') ? '' : 'none';
-      document.getElementById('payBtnGcash').style.display = SETTINGS.gcashQr ? '' : 'none';
+      var settingOn=function(v,def){ return v===undefined?!!def:(v===true||v===1||v==='1'||v==='on'||v==='true'); };
+      document.getElementById('payBtnCash').style.display = settingOn(SETTINGS.cashPaymentEnabled,true) ? '' : 'none';
+      document.getElementById('payBtnCard').style.display = settingOn(SETTINGS.creditCardEnabled,false) ? '' : 'none';
+      document.getElementById('payBtnGcash').style.display = (settingOn(SETTINGS.qrPaymentEnabled,!!SETTINGS.gcashQr) && !!SETTINGS.gcashQr) ? '' : 'none';
       var _pe=document.getElementById('payEmail'); if(_pe){ _pe.value=''; _pe.placeholder=t().eReceipt; }
       document.getElementById('splitN').value = 1; document.getElementById('splitLbl').innerText = t().splitLbl;
       document.getElementById('ps1t').innerText = t().pTitle;
-      document.getElementById('cashLbl').innerText = t().cash;
+      document.getElementById('cashLbl').innerText = SETTINGS.cashPaymentLabel || t().cash;
+      document.getElementById('cardPayLbl').innerText = SETTINGS.cardPaymentLabel || t().card;
+      document.getElementById('qrPayLbl').innerText = SETTINGS.qrPaymentLabel || t().qrPayment;
       document.getElementById('cxl1').innerText = t().cancel;
       document.getElementById('dcLbl').innerText = t().disc;
-      document.getElementById('dcSenior').innerText = ' '+t().senior;
       document.getElementById('dcId').placeholder = t().idPh;
       document.getElementById('dcElig').placeholder = t().eligPh;
       document.getElementById('dcApprL').innerText = t().discApprover;
@@ -527,33 +549,35 @@
       if (!payBase) return;
       var on = document.getElementById('dcOn').checked;
       document.getElementById('dcBody').style.display = on ? 'block' : 'none';
-      var sub = paySub, b = payBase, disc = 0, eligible = 0, dtype = '';
+      var sub = paySub, b = payBase, disc = 0, eligible = 0, dtype = '', rule=null;
       if (on){
-        var sel = document.querySelector('input[name=dcType]:checked'); dtype = sel ? sel.value : 'senior';
+        rule=selectedDiscountRule(); if(!rule){document.getElementById('dcOn').checked=false;on=false;} else dtype=rule.legacyType||('rule:'+rule.code);
         var ei = Number(document.getElementById('dcElig').value);
         eligible = (ei>0) ? Math.min(ei, sub) : sub;
       }
       var vat;
-      var spc = on ? seniorPwdCalc(sub, eligible, b) : null;
+      var spc = on ? genericDiscountCalc(sub, eligible, b, rule) : null;
       if (on) { disc = spc.discountAmount; vat = spc.vat; }
       else { vat = b.tax; }
       var total = (on ? spc.total : Math.max(0, (b.total||0))) + payEntryFee + payExtensionFee;
       payTotal = total;
       // 表示用のプレビュー計算（実際の会計金額はサーバー側finalizeBillが対象注文の登録価格・卓の人数/入店時刻
       // から再計算する。クライアントのこの値は画面表示のみに使い、送信するのは種別・対象額・氏名・ID番号のみ）。
-      window._bill = { subtotal: sub, vat: vat, service: b.service, discountType: on?dtype:'', discountId: on?document.getElementById('dcId').value:'',
+      document.getElementById('dcId').style.display=on&&rule&&rule.idRequired?'':'none';
+      document.getElementById('dcApprBox').style.display=on&&rule&&rule.managerApprovalRequired?'':'none';
+      window._bill = { subtotal: sub, vat: vat, service: b.service, discountType: on?(rule.legacyType||''):'', discountRuleId:on&&!rule.legacyType?rule.id:'', discountId: on?document.getElementById('dcId').value:'',
         discountName: on?document.getElementById('dcName').value:'', discountEligible: on?eligible:0, discountAmount: disc, total: total,
         entryFee: payEntryFee, extensionFee: payExtensionFee };
       var html = '<div style="font-weight:900;font-size:15px;margin-bottom:8px;">🪑 '+esc(seatLabel(payTable))+'</div>';
       html += '<div class="sr"><span>'+t().sub+'</span><span>'+money(sub)+'</span></div>';
       if (b.service>0) html += '<div class="sr"><span>'+t().svc+'</span><span>'+money(b.service)+'</span></div>';
-      if (b.tax>0) html += '<div class="sr"><span>'+t().tax+'</span><span>'+money(b.tax)+'</span></div>';
-      if (disc>0) html += '<div class="sr" style="color:#b91c1c;"><span>'+t().discLine+' ('+(dtype==='pwd'?'PWD':t().senior)+')</span><span>− '+money(disc)+'</span></div>';
+      if (b.tax>0) html += '<div class="sr"><span>'+esc(taxName())+'</span><span>'+money(b.tax)+'</span></div>';
+      if (disc>0) html += '<div class="sr" style="color:#b91c1c;"><span>'+t().discLine+' ('+esc(lang==='en'?(rule.nameEn||rule.name):rule.name)+')</span><span>− '+money(disc)+'</span></div>';
       if (payEntryFee>0) html += '<div class="sr"><span>'+t().entryFeeLbl+' × '+payPartySize+'</span><span>'+money(payEntryFee)+'</span></div>';
       if (payExtensionFee>0) html += '<div class="sr"><span>'+t().extFeeLbl+'</span><span>'+money(payExtensionFee)+'</span></div>';
       html += '<div class="big">'+money(total)+'</div>';
       document.getElementById('paySum').innerHTML = html;
-      document.getElementById('dcNote').innerText = on ? (t().vatNote+' '+money(vat)) : '';
+      document.getElementById('dcNote').innerText = on ? ((lang==='en'?'incl. ':'うち')+taxName()+' '+money(vat)) : '';
       updSplit();
     };
     window.updSplit = function(){
@@ -594,17 +618,19 @@
     window.printReceipt = function(orNo){
       var b = (window._lastBill&&window._lastBill.bill) || window._bill || {};
       var shop = SETTINGS.shopName || 'Shop'; var now = new Date().toLocaleString();
+      var documentTitle = I18n.lang()==='en' ? (SETTINGS.receiptDocumentTitleEn||'Receipt') : (SETTINGS.receiptDocumentTitleJa||'レシート');
       var lines = '<div>'+t().sub+': '+money(b.subtotal)+'</div>';
       if (b.service>0) lines += '<div>'+t().svc+': '+money(b.service)+'</div>';
       if (b.discountAmount>0) lines += '<div>'+t().discLine+': -'+money(b.discountAmount)+(b.discountId?(' (ID '+esc(b.discountId)+')'):'')+'</div>';
-      lines += '<div>'+t().vatNote+': '+money(b.vat)+'</div>';
+      lines += '<div>'+esc(taxName())+': '+money(b.vat)+'</div>';
       var w = window.open('', '_blank', 'width=320,height=520'); if(!w) return;
       w.document.write('<html><head><meta charset="utf-8"><title>'+esc(orNo)+'</title></head><body style="font-family:monospace;padding:10px;width:280px;">'
         + '<div style="text-align:center;font-weight:bold;font-size:16px;">'+esc(shop)+'</div>'
-        + '<div style="text-align:center;font-size:12px;margin-bottom:8px;">'+esc(orNo)+'<br>'+esc(now)+'<br>'+t().tableW+' '+esc(b.table||'')+'</div>'
+        + '<div style="text-align:center;font-weight:bold;font-size:14px;margin-bottom:4px;">'+esc(documentTitle)+'</div>'
+        + '<div style="text-align:center;font-size:12px;margin-bottom:8px;">'+esc(orNo)+'<br>'+esc(now)+'<br>'+esc(seatLabel(b.table||''))+'</div>'
         + '<hr>'+lines+'<hr>'
         + '<div style="font-weight:bold;font-size:15px;display:flex;justify-content:space-between;"><span>'+t().totalW+'</span><span>'+money(b.total)+'</span></div>'
-        + '<div style="font-size:11px;margin-top:6px;">'+esc(b.method||'')+'</div>'
+        + '<div style="font-size:11px;margin-top:6px;">'+esc(b.receiptPaymentLabel||b.paymentLabel||b.method||'')+'</div>'
         + '<scr'+'ipt>window.print();<\/scr'+'ipt></body></html>');
       w.document.close();
     };
@@ -627,6 +653,10 @@
     function _dcVerifyThenGo(proceedFn){
       var on = document.getElementById('dcOn').checked;
       if (!on) { proceedFn(); return; }
+      var rule=selectedDiscountRule();
+      if(!rule){_dcAlert('Discount rule is required');return;}
+      if(rule.idRequired && !document.getElementById('dcId').value.trim()){_dcAlert(lang==='en'?'ID is required':'ID番号を入力してください');return;}
+      if(!rule.managerApprovalRequired){proceedFn();return;}
       var login = document.getElementById('dcApprLogin').value.trim();
       var pass = document.getElementById('dcApprPass').value;
       if (!login || !pass) { _dcAlert(t().discNeedAppr); return; }
@@ -654,7 +684,7 @@
     window.cardPay = function(){
       _dcVerifyThenGo(function(){
         payMethod = 'card';
-        document.getElementById('ps3lbl').innerText = t().cardRecv;
+        document.getElementById('ps3lbl').innerText = SETTINGS.cardPaymentInstruction || t().cardRecv;
         document.getElementById('ps3amt').innerText = money(payTotal)+' — '+seatLabel(payTable);
         document.getElementById('doneBtn').innerText = t().done;
         step(3);
@@ -666,11 +696,11 @@
     window.gcashPay = function(){
       _dcVerifyThenGo(function(){
         payMethod = 'gcash';
-        document.getElementById('ps2t').innerText = 'GCash';
+        document.getElementById('ps2t').innerText = SETTINGS.qrPaymentLabel || t().qrPayment;
         var qr = SETTINGS.gcashQr || '';
         var img = document.getElementById('payQr');
         if (qr){ img.src = qr; img.style.display='block'; } else { img.style.display='none'; }
-        document.getElementById('ps2hint').innerText = t().gcashHint;
+        document.getElementById('ps2hint').innerText = SETTINGS.qrPaymentInstruction || t().gcashHint;
         document.getElementById('checkBtn').innerText = t().gcashConfirm;
         document.getElementById('payAlert').style.display='none';
         step(2);
@@ -692,7 +722,7 @@
       // ため、発行済みのcheckoutIdも一緒に送る。
       var discOn = document.getElementById('dcOn').checked;
       var req = { table: payTable, method: payMethod, orderIds: payOrderIds, email: email, token: TOKEN, checkoutId: payCheckoutId,
-        discountType: pv.discountType||'', discountId: pv.discountId||'', discountName: pv.discountName||'', discountEligible: pv.discountEligible||0,
+        discountType: pv.discountType||'', discountRuleId:pv.discountRuleId||'', discountId: pv.discountId||'', discountName: pv.discountName||'', discountEligible: pv.discountEligible||0,
         discountApproverLogin: discOn?document.getElementById('dcApprLogin').value.trim():'', discountApproverPass: discOn?document.getElementById('dcApprPass').value:'',
         __timeoutMs: API.TIMEOUT_MS.write }; // [タイムアウト共通化] 会計確定は複数注文まとめての場合もあり時間がかかり得るため専用枠を使う
       API.post('finalizeBill', req).then(function(r){
@@ -700,11 +730,13 @@
         if (d.error==='discount_auth'){ UIAlert(t().authFail); return; }
         if (d.error==='discount_not_manager'){ UIAlert(t().discNotManager); return; }
         if (d.error==='senior_discount_disabled'){ UIAlert(t().discDisabled); return; }
+        if (d.error==='discount_rule_not_found'){ UIAlert(lang==='en'?'The discount is disabled or no longer exists.':'割引が無効化または削除されています。'); return; }
+        if (d.error==='discount_id_required'){ UIAlert(lang==='en'?'ID is required.':'ID番号を入力してください。'); return; }
         if (d.error==='unserved_orders'){ UIAlert(t().unservedBill); step(1); return; }
         if (d.error){ UIAlert('Error: '+d.error); return; }
         // 表示・印刷・eレシートは全てサーバーが再計算した金額を正とする。
-        var bill = { table: payTable, method: payMethod, subtotal: d.subtotal, vat: d.vat, service: d.service,
-          discountType: pv.discountType||'', discountId: pv.discountId||'', discountAmount: d.discountAmount, total: d.total };
+        var bill = { table: payTable, method: payMethod, paymentLabel:d.paymentLabel||'', receiptPaymentLabel:d.receiptPaymentLabel||'', subtotal: d.subtotal, vat: d.vat, service: d.service,
+          discountType: d.discountType||pv.discountType||'', discountId: pv.discountId||'', discountAmount: d.discountAmount, total: d.total };
         showReceipt(d.orNo||'', bill);
       }).catch(function(e){ btn.disabled=false; btn.innerText=t().done; UIAlert('Error: '+(e.message||e)); });
     };
@@ -723,7 +755,7 @@
       updateHeadClock();
       setInterval(updateHeadClock, 15000);
       API.post('bootstrap', {}).then(function(r){
-        SETTINGS = r.settings || {}; PAYMONGO = !!r.paymongo;
+        SETTINGS = r.settings || {}; PAYMONGO = !!r.paymongo; BASE_DISCOUNT_RULES = r.discountRules || [];
         (r.menu||[]).forEach(function(m){ var jp=m['商品名'], en=m['商品名_EN']; if(jp && en) MENU_MAP[String(jp)]=String(en); });
         load();
       }).catch(function(){ load(); });
@@ -748,7 +780,7 @@
       titleEn: 'How to use Orders',
       items: [
         { ja: '① 未会計の注文が卓ごとにグループ表示されます。各明細の「提供済にする」ボタンで提供済みに、「取消」ボタンで注文取消（理由入力・責任者承認が必要）ができます。', en: '① Unpaid orders are grouped by table. Use "Mark served" on each line, or "Void" to cancel an order (requires a reason and manager approval).' },
-        { ja: '② 「💳会計する」ボタンでその卓の合計金額のお会計を開始し、現金／GCash／カードから支払い方法を選べます。「カード」を選ぶと「決済端末でクレジットカード決済をしてください」という案内が表示されるので、決済端末での処理を確認してから「完了」ボタンを押すと会計が済みになります。シニア/PWD割引はチェックボックスで適用でき、責任者ログインでの承認が必要です。', en: '② Tap "💳 Checkout" to settle a table\'s total and choose Cash, GCash, or Card. Choosing "Card" shows a prompt to process the payment on the card terminal — confirm it there, then tap "Done" to complete the checkout. Senior/PWD discount can be applied via checkbox but requires manager login approval.' },
+        { ja: '② 「💳会計する」ボタンで会計を開始し、設定画面で有効にした決済方法と割引から選べます。割引ごとに、ID提示・責任者承認・税免除の条件が自動適用されます。カード・QR決済は外部端末または決済サービスで入金を確認してから完了してください。', en: '② Tap "💳 Checkout" and choose an enabled payment method and discount. Each discount automatically applies its configured ID, manager-approval, and tax-exemption rules. Confirm card or QR payment externally before completing checkout.' },
         { ja: '③ 「🧾一部会計」ボタンで卓の中の特定の明細だけを選んで先に会計できます（割り勘の入力欄もあります）。', en: '③ Tap "🧾 Partial" to select specific items on a table and check them out separately (a bill-splitting field is also available).' },
         { ja: '④ 会計完了後は「🖨️レシート印刷」ボタンで領収書を印刷できます。会計時にeレシート送付先メールも入力できます。', en: '④ After checkout, tap "🖨️ Print receipt" to print a receipt. You can also enter an e-receipt email during checkout.' },
         { ja: '⑤ 画面上部の🔔呼び出し欄に、お客様の「スタッフ呼出」「お会計希望」がリアルタイムで表示され、「対応済」ボタンで消せます。', en: '⑤ Customer "Call staff" and "Bill please" requests appear at the top in real time — tap "Done" to clear them.' },

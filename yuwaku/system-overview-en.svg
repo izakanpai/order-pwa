@@ -55,7 +55,7 @@
     <text x="60" y="150">📱 Scan the table QR to order</text>
     <text x="60" y="174">🍽️ Order from menu (photo, options, qty)</text>
     <text x="60" y="198">🎟️ Coupons / 🎁 Member points</text>
-    <text x="60" y="222">💳 Self-checkout: GCash / Card (optional)</text>
+    <text x="60" y="222">💳 Self-checkout: QR / Card (optional)</text>
     <text x="60" y="246">🔔 Call staff / 🧾 Bill / 📋 Order status</text>
     <text x="60" y="270">⭐ Feedback / 🎂 Birthday sign-up</text>
     <text x="60" y="294">🥡 Takeout orders / 🗓️ Reservations</text>
@@ -92,7 +92,7 @@
     <text x="60" y="550">    (Admin → pick table/counter → enter)</text>
     <text x="60" y="574">② 🧾 Track orders per table (seated timer)</text>
     <text x="60" y="598">③ 🔔 Respond to staff-call &amp; bill requests</text>
-    <text x="60" y="622" font-size="11">④ 💴 Checkout: cash, card, GCash (split/partial/discount)</text>
+    <text x="60" y="622" font-size="11">④ 💴 Checkout: cash, card, QR payment (split/partial/discount)</text>
     <text x="60" y="646">⑤ 🖨️ Print receipt / ✉️ e-receipt</text>
     <text x="60" y="670" font-size="11">🚫 Void (reason + approval) / ⏰ Photo+GPS clock-in</text>
     <text x="60" y="694">📇 Table QR codes print from here too</text>
@@ -143,7 +143,7 @@
 
     <rect x="392" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
     <text x="517" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">💳 PayMongo</text>
-    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">GCash · card payments</text>
+    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">QR · card payments</text>
 
     <rect x="664" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
     <text x="789" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ Email</text>
