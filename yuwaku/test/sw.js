@@ -44,8 +44,8 @@
 // 統合し、管理メニューの導線も一本化したためキャッシュを更新する。
 // v155: 本番SW側のtest除外と環境不一致fail-closedを配布するため更新。
 const CACHE_PREFIX = 'yuwaku-test-';
-// v164: 短期アクセストークンと更新セッション対応のapi.jsを確実に配布する。
-const CACHE = CACHE_PREFIX + 'v164';
+// v165: ログイン障害の原因別表示と認証スキーマ事前検査対応のmanage.htmlを確実に配布する。
+const CACHE = CACHE_PREFIX + 'v165';
 const SHELL = [
   './',
   './index.html',
