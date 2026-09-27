@@ -12,6 +12,7 @@
     .rcard{ background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:18px; }
     .rlabel{ font-size:13px; font-weight:800; display:block; margin:10px 0 4px; }
     .rfc{ width:100%; padding:12px; border:1px solid #e5e7eb; border-radius:10px; font-size:16px; font-family:inherit; box-sizing:border-box; background:#fff; }
+    .rwhen-grid{ display:grid; grid-template-columns:minmax(0,1fr) 118px; gap:8px; }
     .rbtn{ width:100%; border:0; border-radius:12px; padding:14px; font-size:16px; font-weight:900; cursor:pointer; margin-top:16px; background:#0f172a; color:#fff; }
     .rhead{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
     .rhead h1{ font-size:20px; margin:0; }
@@ -25,10 +26,11 @@
     <div class="rhead"><h1 id="shopName">Reservation</h1><button class="lang-btn" id="langBtn" onclick="toggleLang()">JP</button></div>
     <div class="rcard" id="form">
       <p id="intro" style="color:#64748b;font-size:14px;margin:0 0 6px;"></p>
-      <label class="rlabel" id="lWhen">Date & time</label><input class="rfc" type="datetime-local" id="rWhen">
+      <label class="rlabel" id="lWhen">Date & time</label><div class="rwhen-grid"><input class="rfc" type="date" id="rDate"><select class="rfc" id="rTime"></select></div>
       <label class="rlabel" id="lPeople">Party size</label><input class="rfc" type="number" min="1" max="100" id="rPeople" value="2">
       <label class="rlabel" id="lName">Name</label><input class="rfc" id="rName">
       <label class="rlabel" id="lPhone">Phone</label><input class="rfc" type="tel" id="rPhone">
+      <label class="rlabel" id="lEmail">Email (optional)</label><input class="rfc" type="email" autocomplete="email" maxlength="254" id="rEmail">
       <label class="rlabel" id="lSeat">Seating preference</label>
       <select class="rfc" id="rSeat"><option value="">—</option><option value="table" id="oTable">Table</option><option value="counter" id="oCounter">Counter</option></select>
       <label class="rlabel" id="lNotes">Notes (optional)</label><input class="rfc" id="rNotes">
@@ -48,16 +50,17 @@
     var lang = (localStorage.getItem('lang')||'').match(/^(ja|en)$/) ? localStorage.getItem('lang') : 'en';
     var STORE_ID=String(new URLSearchParams(location.search).get('store')||'').trim().toLowerCase(), FORM_CONFIG={}, FORM_READY=false;
     var T = {
-      en:{ shop:'Reservation', intro:'Request a table. We will contact you to confirm.', lWhen:'Date & time', lPeople:'Party size', lName:'Name', lPhone:'Phone', lSeat:'Seating preference', lNotes:'Notes (optional)', table:'Table', counter:'Counter', submit:'Request reservation', lang:'JP', needWhen:'Please choose a date & time.', needName:'Please enter your name.', doneT:'Reservation requested', doneM:'Thank you! We will contact you to confirm.', err:'Something went wrong. Please try again.', bad_datetime:'Please choose a valid future time within one year.', past_datetime:'Please choose a time at least 5 minutes from now.', datetime_too_far:'Reservations can be requested up to one year ahead.', rate_limited:'Too many requests. Please wait and try again.', invalid_reservation_link:'This reservation link is invalid.', store_not_found:'This reservation page is no longer available.', reservation_unavailable:'Online reservations are not available for this store.' },
-      ja:{ shop:'ご予約', intro:'ご予約リクエストを送信します。確認のため店舗からご連絡します。', lWhen:'日時', lPeople:'人数', lName:'お名前', lPhone:'電話番号', lSeat:'席の希望', lNotes:'備考（任意）', table:'テーブル', counter:'カウンター', submit:'予約をリクエスト', lang:'EN', needWhen:'日時を選択してください。', needName:'お名前を入力してください。', doneT:'予約をリクエストしました', doneM:'ありがとうございます！確認のためご連絡します。', err:'エラーが発生しました。もう一度お試しください。', bad_datetime:'現在から1年以内の正しい日時を選択してください。', past_datetime:'現在から5分以上先の日時を選択してください。', datetime_too_far:'予約リクエストは1年先までです。', rate_limited:'送信回数が多すぎます。しばらく待ってからお試しください。', invalid_reservation_link:'予約リンクが正しくありません。', store_not_found:'この予約ページは現在ご利用いただけません。', reservation_unavailable:'この店舗ではオンライン予約を受け付けていません。' }
+      en:{ shop:'Reservation Form', intro:'Request a table. We will contact you to confirm.', lWhen:'Date & time', lPeople:'Party size', lName:'Name', lPhone:'Phone', lEmail:'Email (optional)', lSeat:'Seating preference', lNotes:'Notes (optional)', table:'Table', counter:'Counter', submit:'Request reservation', lang:'JP', needWhen:'Please choose a date & time.', needName:'Please enter your name.', badEmail:'Please enter a valid email address.', doneT:'Reservation requested', doneM:'Thank you! We will contact you to confirm.', err:'Something went wrong. Please try again.', bad_datetime:'Please choose a valid future time within one year.', invalid_time_interval:'Please choose a time in 30-minute intervals.', bad_email:'Please enter a valid email address.', past_datetime:'Please choose a time at least 5 minutes from now.', datetime_too_far:'Reservations can be requested up to one year ahead.', rate_limited:'Too many requests. Please wait and try again.', invalid_reservation_link:'This reservation link is invalid.', store_not_found:'This reservation page is no longer available.', reservation_unavailable:'Online reservations are not available for this store.' },
+      ja:{ shop:'予約フォーム', intro:'ご予約リクエストを送信します。確認のため店舗からご連絡します。', lWhen:'日時', lPeople:'人数', lName:'お名前', lPhone:'電話番号', lEmail:'メールアドレス（任意）', lSeat:'席の希望', lNotes:'備考（任意）', table:'テーブル', counter:'カウンター', submit:'予約をリクエスト', lang:'EN', needWhen:'日時を選択してください。', needName:'お名前を入力してください。', badEmail:'正しいメールアドレスを入力してください。', doneT:'予約をリクエストしました', doneM:'ありがとうございます！確認のためご連絡します。', err:'エラーが発生しました。もう一度お試しください。', bad_datetime:'現在から1年以内の正しい日時を選択してください。', invalid_time_interval:'時刻は30分単位で選択してください。', bad_email:'正しいメールアドレスを入力してください。', past_datetime:'現在から5分以上先の日時を選択してください。', datetime_too_far:'予約リクエストは1年先までです。', rate_limited:'送信回数が多すぎます。しばらく待ってからお試しください。', invalid_reservation_link:'予約リンクが正しくありません。', store_not_found:'この予約ページは現在ご利用いただけません。', reservation_unavailable:'この店舗ではオンライン予約を受け付けていません。' }
     };
     function t(){ return T[lang]; }
     function apply(){
       var x=t();
-      document.getElementById('shopName').innerText = FORM_CONFIG.storeName || x.shop;
+      var pageTitle=x.shop + (STORE_ID ? (lang==='ja'?'（'+STORE_ID+'）':' ('+STORE_ID+')') : '');
+      document.getElementById('shopName').innerText=pageTitle; document.title=pageTitle;
       document.getElementById('intro').innerText = x.intro;
       document.getElementById('lWhen').innerText=x.lWhen; document.getElementById('lPeople').innerText=x.lPeople;
-      document.getElementById('lName').innerText=x.lName; document.getElementById('lPhone').innerText=x.lPhone;
+      document.getElementById('lName').innerText=x.lName; document.getElementById('lPhone').innerText=x.lPhone; document.getElementById('lEmail').innerText=x.lEmail;
       document.getElementById('lSeat').innerText=x.lSeat; document.getElementById('lNotes').innerText=x.lNotes;
       document.getElementById('oTable').innerText=(lang==='en'?FORM_CONFIG.tableLabelEn:FORM_CONFIG.tableLabelJa)||x.table; document.getElementById('oCounter').innerText=(lang==='en'?FORM_CONFIG.counterLabelEn:FORM_CONFIG.counterLabelJa)||x.counter;
       document.getElementById('submitBtn').innerText=x.submit; document.getElementById('langBtn').innerText=x.lang;
@@ -68,11 +71,14 @@
     window.submitRes=function(){
       var x=t();
       if(!FORM_READY){ alertBox(x.invalid_reservation_link); return; }
-      var when=document.getElementById('rWhen').value;
+      var date=document.getElementById('rDate').value, time=document.getElementById('rTime').value;
+      var when=date&&time ? date+'T'+time : '';
       if(!when){ alertBox(x.needWhen); return; }
       var name=document.getElementById('rName').value.trim();
       if(!name){ alertBox(x.needName); return; }
-      var res={ datetime:when, people:document.getElementById('rPeople').value, name:name, phone:document.getElementById('rPhone').value.trim(), seat:document.getElementById('rSeat').value, notes:document.getElementById('rNotes').value.trim() };
+      var email=document.getElementById('rEmail').value.trim();
+      if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alertBox(x.badEmail); return; }
+      var res={ datetime:when, people:document.getElementById('rPeople').value, name:name, phone:document.getElementById('rPhone').value.trim(), email:email, seat:document.getElementById('rSeat').value, notes:document.getElementById('rNotes').value.trim() };
       var b=document.getElementById('submitBtn'); b.disabled=true;
       API.post('submitReservation', { storeId:STORE_ID, reservation:res }).then(function(r){ b.disabled=false;
         if(!r||r.ok===false){ alertBox(x[(r&&r.error)]||x.err); return; }
@@ -82,7 +88,14 @@
         document.getElementById('doneM').innerText=x.doneM;
       }).catch(function(){ b.disabled=false; alertBox(x.err); });
     };
-    (function(){ var now=new Date(Date.now()+5*60000), max=new Date(Date.now()+366*86400000); function localValue(d){ var z=new Date(d.getTime()-d.getTimezoneOffset()*60000); return z.toISOString().slice(0,16); } var input=document.getElementById('rWhen'); input.min=localValue(now); input.max=localValue(max); })();
+    function initWhenPicker(){
+      var sel=document.getElementById('rTime'); if(!sel.options.length){ for(var h=0;h<24;h++){ [0,30].forEach(function(m){ var v=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); var o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); }); } }
+      var tz=FORM_CONFIG.timezone||'UTC', parts={};
+      try{ new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).forEach(function(p){if(p.type!=='literal')parts[p.type]=p.value;}); }catch(e){ new Intl.DateTimeFormat('en-CA',{timeZone:'UTC',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).forEach(function(p){if(p.type!=='literal')parts[p.type]=p.value;}); }
+      var naive=Date.UTC(+parts.year,+parts.month-1,+parts.day,+parts.hour,+parts.minute)+5*60000, rounded=Math.ceil(naive/(30*60000))*(30*60000), d=new Date(rounded);
+      var y=d.getUTCFullYear(), mo=String(d.getUTCMonth()+1).padStart(2,'0'), da=String(d.getUTCDate()).padStart(2,'0'), hh=String(d.getUTCHours()).padStart(2,'0'), mm=String(d.getUTCMinutes()).padStart(2,'0');
+      var dateInput=document.getElementById('rDate'); dateInput.min=parts.year+'-'+parts.month+'-'+parts.day; dateInput.max=new Date(rounded+366*86400000).toISOString().slice(0,10); dateInput.value=y+'-'+mo+'-'+da; sel.value=hh+':'+mm;
+    }
     apply();
     (function(){
       var b=document.getElementById('submitBtn');
@@ -93,7 +106,7 @@
         var d=(r&&r.data)||{};
         if(d.error){ alertBox(t()[d.error]||t().err); return; }
         if(d.storeId!==STORE_ID){ alertBox(t().invalid_reservation_link); return; }
-        FORM_CONFIG=d; FORM_READY=true; b.disabled=false; apply();
+        FORM_CONFIG=d; FORM_READY=true; b.disabled=false; initWhenPicker(); apply();
       }).catch(function(){ alertBox(t().err); });
     })();
   </script>

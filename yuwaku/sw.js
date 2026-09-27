@@ -76,7 +76,8 @@ const CACHE_PREFIX = 'yuwaku-production-';
 // v202: yuwaku専用WebはSTORE_IDを明示送信し、CloudPRNT URLも店舗ID付きへ変更。
 // v203: 卓QRとテイクアウト共有URLを店舗共通HTTPS公開ページへ統一。
 // v204: 月日初期値を端末時刻ではなく店舗IANAタイムゾーンへ統一。
-const CACHE = CACHE_PREFIX + 'v204';
+// v205: 予約フォームを30分刻み＋メール対応にし、予約管理へメール列を追加。
+const CACHE = CACHE_PREFIX + 'v205';
 const SHELL = [
   './',
   './index.html',
