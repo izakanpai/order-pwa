@@ -21,6 +21,12 @@
     .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
     .card-title{ font-weight:900; font-size:15px; margin-bottom:12px; }
     .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .service-time-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; align-items:start; width:100%; }
+    .service-time-grid .fg{ min-width:0; overflow:hidden; }
+    .service-time-grid input[type="time"]{ display:block; inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; min-inline-size:0!important; min-width:0!important; max-inline-size:180px!important; max-width:180px!important; height:38px; padding:0 8px; margin:0 auto; box-sizing:border-box; overflow:hidden; text-align:center; line-height:1; }
+    .service-time-grid input[type="time"]::-webkit-date-and-time-value{ min-width:0!important; height:100%; padding:0!important; text-align:center!important; line-height:36px; }
+    .service-time-grid input[type="time"]::-webkit-datetime-edit{ display:flex; align-items:center; justify-content:center; height:100%; min-height:0; padding:0!important; }
+    .service-time-grid input[type="time"]::-webkit-datetime-edit-fields-wrapper{ display:flex; align-items:center; justify-content:center; }
     .fg{ margin-bottom:8px; }
     .form-label{ font-size:12px; font-weight:700; display:block; margin-bottom:4px; }
     .fc{ width:100%; padding:10px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); }
@@ -40,12 +46,16 @@
     .off{ opacity:.5; }
     .alert{ margin-top:10px; display:none; padding:11px; border-radius:9px; font-size:14px; font-weight:700; }
     .muted{ color:var(--text-3); font-size:12px; }
+    @media (max-width:520px), (max-width:900px) and (orientation:landscape){
+      .service-time-grid{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
+      .service-time-grid input[type="time"]{ inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; max-inline-size:148px!important; max-width:148px!important; height:38px; padding:0 6px; font-size:16px; }
+    }
   </style>
 </head>
 <body>
   <div class="head"><h1 data-t="title">🍽️ メニュー編集</h1><div style="display:flex;gap:8px;"><button class="hbtn" data-tlang onclick="I18n.toggle()">EN</button><a class="hbtn" href="./manage.html" data-t="back">← 管理へ</a></div></div>
   <div class="wrap">
-    <div class="card">
+    <div class="card" id="guide-menu-form" data-guide-anchor>
       <div class="card-title" data-t="formTitle">➕ 商品の追加 / 編集</div>
       <input type="hidden" id="oldName">
       <div class="grid2">
@@ -77,13 +87,13 @@
       </div>
       <div class="form-label" style="margin-top:6px;" data-t="availTitle">⏰ 提供時間帯・タグ</div>
       <div class="muted" style="margin:2px 0 6px;" data-t="availHint">提供時間は空欄なら常時提供。深夜跨ぎ（例 22:00〜02:00）も可。</div>
-      <div style="display:flex;gap:8px;">
-        <div class="fg" style="flex:1;"><label class="form-label" data-t="lblSvcStart">提供開始</label><input id="mSvcStart" type="time" class="fc"></div>
-        <div class="fg" style="flex:1;"><label class="form-label" data-t="lblSvcEnd">提供終了</label><input id="mSvcEnd" type="time" class="fc"></div>
+      <div class="service-time-grid">
+        <div class="fg"><label class="form-label" data-t="lblSvcStart">提供開始</label><input id="mSvcStart" type="time" class="fc"></div>
+        <div class="fg"><label class="form-label" data-t="lblSvcEnd">提供終了</label><input id="mSvcEnd" type="time" class="fc"></div>
       </div>
       <div class="fg"><label class="form-label" data-t="lblAllerg">アレルゲン（任意・カンマ区切り）</label><input id="mAllergens" class="fc" data-tph="phAllerg" placeholder="例: 卵, 小麦, えび"></div>
       <div class="fg"><label class="form-label" data-t="lblSpicy">辛さ</label><select id="mSpicy" class="fc"><option value="0" data-t="spicy0">なし</option><option value="1">🌶×1</option><option value="2">🌶×2</option><option value="3">🌶×3</option><option value="4">🌶×4</option><option value="5">🌶×5</option></select></div>
-      <label style="display:flex;gap:8px;align-items:center;font-size:14px;font-weight:700;margin:10px 0 4px;cursor:pointer;"><input type="checkbox" id="mKitchen" checked><span data-t="lblKitchen">🍳 キッチン画面に表示する（ドリンク等、調理不要な商品はオフ）</span></label>
+      <label id="guide-kitchen-setting" data-guide-anchor style="display:flex;gap:8px;align-items:center;font-size:14px;font-weight:700;margin:10px 0 4px;cursor:pointer;"><input type="checkbox" id="mKitchen" checked><span data-t="lblKitchen">🍳 キッチン画面に表示する（ドリンク等、調理不要な商品はオフ）</span></label>
       <div class="fg" style="margin-top:6px;">
         <label class="form-label" data-t="lblLinkInv">🔗 在庫紐づけ（任意）</label>
         <select id="mLinkInv" class="fc"></select>

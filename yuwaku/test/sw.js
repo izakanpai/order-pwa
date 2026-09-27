@@ -45,7 +45,31 @@
 // v155: 本番SW側のtest除外と環境不一致fail-closedを配布するため更新。
 const CACHE_PREFIX = 'yuwaku-test-';
 // v165: ログイン障害の原因別表示と認証スキーマ事前検査対応のmanage.htmlを確実に配布する。
-const CACHE = CACHE_PREFIX + 'v165';
+// v169: 地域設定の国・ロケール・通貨・タイムゾーンを選択式へ統一。
+// v170: 全体利用ガイドを店舗利用者の日常フロー中心へ刷新。
+// v171: 全体利用ガイドをスマホ縦読みカード化し、必須/任意の利用ケースを明示。
+// v172: メニュー提供開始/終了の時刻入力をiPhone幅で縦1列へ変更。
+// v173: 全体利用ガイドからの遷移先で戻る先をoverviewへ固定する。
+// v174: 全管理画面の内部リンクへ安全なback遷移元を自動付与する。
+// v175: 全体利用ガイドの各ボタンを対象設定へ直接スクロールする。
+// v176: guide hash付きfrom=overviewへのback重複付与を防止する。
+// v177: 他画面の機能ショートカットも目的セクションへ直行し、from=manageのback重複を防止する。
+// v178: month/date入力と隣接アクションボタンの高さを46pxで統一する。
+// v179: month/date入力を専用shellへ隔離し、Native固有幅による隣接ボタンへの侵入を防止する。
+// v180: month/dateのNative文字を透明化し、アプリ描画の中央表示へ統一する。
+// v181: 人気度スコア表を4列へ再編し、スマホで横スクロール不要にする。
+// v182: 経費一覧をスマホカード化し、レシート画像保存失敗を正しく扱う。
+// v183: 画像系設定でもAPI success:falseを成功表示せず、削除UIは保存成功後に反映する。
+// v184: iPhone横向きでも経費フォーム/一覧をスマホ配置に保ち折返しを防止する。
+// v185: month/date文字の絶対中央配置を反映する。
+// v186: critical JSのversion付きcache fallbackを全auth世代へ許可する。
+// v187: 共通年月オーバーレイを撤去し、安定headerへ戻す。
+// v194: 売上・月間粗利・勤怠の対象月を会計履歴と同じNative monthレイアウトへ統一。
+// v195: Native monthの固有幅を自然高さのまま親要素で制約し、隣接ボタンへの食い込みを防止。
+// v196: iOS time入力をコンパクト化し、提供時間・設定時刻の縦横中央揃えと幅超過を修正。
+// v197: month入力の右端に8pxの安全余白とpaint containmentを追加し、iOS Native描画が隣接ボタンへ滲むのを防止。
+// v198: month/time/dateの入力本体を親幅より8px内側へ収め、iOSで右端の枠が欠ける問題を横展開修正。
+const CACHE = CACHE_PREFIX + 'v198';
 const SHELL = [
   './',
   './index.html',
@@ -88,7 +112,7 @@ const SHELL = [
   './system-overview-en.svg',
   './styles.css',
   './config.js?v=auth2',
-  './header.js?v=auth4',
+  './header.js?v=auth13',
   './api.js?v=auth2',
   './i18n.js?v=auth2',
   './confirm.js?v=auth2',
@@ -158,12 +182,12 @@ self.addEventListener('fetch', (event) => {
       const res = await fetch(req, critical ? { cache: 'no-store' } : undefined);
       if (!res.ok) throw new Error('http_' + res.status);
       // Unversioned auth resources must never become a fallback for versioned HTML.
-      if (!critical || url.searchParams.get('v') === 'auth2') {
+      if (!critical || /^auth\d+$/.test(url.searchParams.get('v') || '')) {
         event.waitUntil(cache.put(req, res.clone()).catch(() => {}));
       }
       return res;
     } catch (error) {
-      if (hit && (!critical || url.searchParams.get('v') === 'auth2')) return hit;
+      if (hit && (!critical || /^auth\d+$/.test(url.searchParams.get('v') || ''))) return hit;
       // Do not substitute index.html for an unrelated management page.
       return Response.error();
     }

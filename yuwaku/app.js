@@ -7,10 +7,10 @@
       confirm:'Send this order?', okTitle:'Order sent', okMsg:'Your order was received.',
       queuedTitle:'Saved (offline)', queuedMsg:'No connection now. It will be sent automatically when back online.',
       errTitle:'Error', ok:'OK', table:'Table', counter:'Counter', noTable:'Please scan the signed QR code at your location.',
-      offline:'Offline — orders will be sent automatically when back online', lang:'JP',
+      offline:'Offline — orders will be sent automatically when back online', invalidTableSession:'This table session is invalid. Staff should reselect the table; guests should rescan the table QR code.', lang:'JP',
       svc:'Service', tax:'Tax', ranking:'🏆 Ranking',
       tblTitle:'Select a location', tblMsg:'Staff may select a location here. Guests must scan the signed QR code at their location.', tblGo:'Start',
-      partyTitle:'How many guests?', partyLabel:'Guests', partyMsg:'Used for entry and extension fee billing.', partyMsgEntry:'Used for entry fee billing.', partyMsgExtension:'Used for extension fee billing.', partyGo:'OK',
+      partyTitle:'How many guests?', partyLabel:'Guests', partyChoose:'Select party size', partyMsg:'Used for entry and extension fee billing.', partyMsgEntry:'Used for entry fee billing.', partyMsgExtension:'Used for extension fee billing.', partyGo:'OK',
       memberTitle:'Member (points)', memberSub:'Enter your phone to earn points. For privacy, balance checks and point use are handled by staff.', check:'Register', usePoints:'Use points', points:'pts', discountLbl:'Points', earned:'pts earned',
       couponTitle:'Coupon / Voucher', couponSub:'Enter a code to get a discount.', apply:'Apply', remove:'Remove coupon', close:'Close', couponLbl:'Coupon',
       cpApplied:'Applied', cpEmpty:'Enter a code', cpNotfound:'Code not found', cpInactive:'Not available', cpExpired:'Expired', cpLimit:'Usage limit reached', cpMin:'Minimum order not met', cpInvalid:'Invalid code',
@@ -30,10 +30,10 @@
       confirm:'この内容で注文しますか？', okTitle:'注文を送信しました', okMsg:'ご注文を承りました。',
       queuedTitle:'保留しました（オフライン）', queuedMsg:'今は接続がありません。オンライン復帰時に自動送信します。',
       errTitle:'エラー', ok:'OK', table:'卓', counter:'カウンター', noTable:'席に設置された署名付きQRコードを読み取ってください。',
-      offline:'オフライン — 復帰時に自動送信します', lang:'EN',
+      offline:'オフライン — 復帰時に自動送信します', invalidTableSession:'席のセッションが無効です。スタッフは席を選び直し、お客様は席のQRコードを再読み取りしてください。', lang:'EN',
       svc:'サービス料', tax:'税', ranking:'🏆 ランキング',
       tblTitle:'席を選択', tblMsg:'スタッフはここで席を選べます。お客様は席の署名付きQRコードを読み取ってください。', tblGo:'開始',
-      partyTitle:'ご来店人数は？', partyLabel:'人数', partyMsg:'入場料・延長料の請求に使用します。', partyMsgEntry:'入場料の請求に使用します。', partyMsgExtension:'延長料の請求に使用します。', partyGo:'OK',
+      partyTitle:'ご来店人数は？', partyLabel:'人数', partyChoose:'人数を選択', partyMsg:'入場料・延長料の請求に使用します。', partyMsgEntry:'入場料の請求に使用します。', partyMsgExtension:'延長料の請求に使用します。', partyGo:'OK',
       memberTitle:'会員（ポイント）', memberSub:'電話番号を入力するとポイントが貯まります。残高確認・利用は個人情報保護のためスタッフへお申し付けください。', check:'登録', usePoints:'ポイントを使う', points:'pt', discountLbl:'ポイント割引', earned:'pt 獲得',
       couponTitle:'クーポン／バウチャー', couponSub:'コードを入力すると割引されます。', apply:'適用', remove:'クーポンを外す', close:'閉じる', couponLbl:'クーポン',
       cpApplied:'適用しました', cpEmpty:'コードを入力してください', cpNotfound:'コードが見つかりません', cpInactive:'利用できません', cpExpired:'期限切れ', cpLimit:'利用上限に達しています', cpMin:'最低注文額に達していません', cpInvalid:'無効なコード',
@@ -75,6 +75,20 @@
     var locale = state.settings.locale || undefined;
     var digits = Object.prototype.hasOwnProperty.call(state.settings,'currencyDecimalDigits') ? Math.max(0,Math.min(3,Number(state.settings.currencyDecimalDigits)||0)) : 0;
     return sym + (Number(v) || 0).toLocaleString(locale,{minimumFractionDigits:digits,maximumFractionDigits:digits});
+  }
+  function tablePayload(payload) {
+    var p = Object.assign({}, payload || {});
+    if (state.staffMode) {
+      try {
+        var tok = window.NativeAuth && window.NativeAuth.getToken ? window.NativeAuth.getToken() : '';
+        if (tok) p.token = tok;
+      } catch (e) {}
+    }
+    return p;
+  }
+  function apiErrorText(err) {
+    var msg = String(err && err.message || err || '');
+    return msg === 'invalid_table_session' ? t().invalidTableSession : msg;
   }
   function taxName(){ return String(state.settings.taxDisplayName || 'VAT'); }
   function roundCharge(v){ var d=Object.prototype.hasOwnProperty.call(state.settings,'currencyDecimalDigits')?Math.max(0,Math.min(3,Number(state.settings.currencyDecimalDigits)||0)):0,f=Math.pow(10,d),n=(Number(v)||0)*f,m=state.settings.taxRoundingMode||'nearest'; return (m==='floor'?Math.floor(n+Number.EPSILON):m==='ceil'?Math.ceil(n-Number.EPSILON):Math.round(n+Number.EPSILON))/f; }
@@ -466,7 +480,7 @@
     if (!state.table) { $('stBody').innerHTML = '<div style="text-align:center;color:var(--text-2);padding:14px;">' + escHtml(x.noTable) + '</div>'; return; }
     // 注文状況は集計画面ではないため、画面操作開始から5秒以内で必ず完了させる。
     // 共通APIの既定25秒・内部再送は使わず、4.5秒で成功または明確な通信エラーへ遷移する。
-    API.post('getOrdersByTable', { table: state.table, __timeoutMs: 4500, __noInternalRetry: true, __silent: true }).then(function (r) {
+    API.post('getOrdersByTable', tablePayload({ table: state.table, __timeoutMs: 4500, __noInternalRetry: true, __silent: true })).then(function (r) {
       var list = (r && r.data) || [];
       if (!list.length) {
         $('stBody').innerHTML = '<div style="text-align:center;color:var(--text-2);padding:14px;">' + escHtml(x.stEmpty) + '</div>';
@@ -493,7 +507,7 @@
       if (b.tax > 0) { $('stTaxRow').style.display = 'flex'; $('stTaxVal').textContent = money(b.tax); }
       else { $('stTaxRow').style.display = 'none'; }
       $('stTotalVal').textContent = money(b.total);
-    }).catch(function (e) { $('stBody').innerHTML = '<div style="text-align:center;color:var(--red);padding:14px;">' + escHtml(String(e && e.message || e)) + '</div>'; });
+    }).catch(function (e) { $('stBody').innerHTML = '<div style="text-align:center;color:var(--red);padding:14px;">' + escHtml(apiErrorText(e)) + '</div>'; });
   }
 
   // ---- 接客（スタッフ呼び出し / お会計） ----
@@ -502,9 +516,9 @@
     if (!state.table) { showErr(x.noTable); return; }
     UIConfirm(type === 'bill' ? x.billConfirm : x.callConfirm).then(function (ok) {
       if (!ok) return;
-      API.post('callStaff', { table: state.table, type: type }).then(function () {
+      API.post('callStaff', tablePayload({ table: state.table, type: type })).then(function () {
         showOk(type === 'bill' ? x.billTitle : x.callTitle, type === 'bill' ? x.billMsg : x.callMsg, type === 'bill' ? '🧾' : '🔔');
-      }).catch(function (e) { showErr(String(e && e.message || e)); });
+      }).catch(function (e) { showErr(apiErrorText(e)); });
     });
   }
 
@@ -534,12 +548,12 @@
     var _comment = $('fbComment').value.trim();
     if (!_comment) { showErr(x.fbCommentRequired); return; }
     var btn = $('fbSend'); btn.disabled = true;
-    API.post('submitFeedback', { table: state.table, rating: fbRating, comment: _comment }).then(function (r) {
+    API.post('submitFeedback', tablePayload({ table: state.table, rating: fbRating, comment: _comment })).then(function (r) {
       var d = (r && r.data) || {};
       if (d && d.error === 'comment_required') { showErr(x.fbCommentRequired); return; }
       $('fbModal').classList.remove('show');
       showOk(x.fbThanks, x.fbThanksMsg, '⭐');
-    }).catch(function (e) { showErr(String(e && e.message || e)); })
+    }).catch(function (e) { showErr(apiErrorText(e)); })
       .then(function () { btn.disabled = false; });
   }
 
@@ -607,14 +621,14 @@
   var _sessionWatchStarted = false;
   function startSessionWatch() {
     if (!state.table || state.staffMode) return;   // 店員のオーダー入力モードは会計後ロックの対象外
-    API.post('getTableCheckoutStamp', { table: state.table }).then(function (r) {
+    API.post('getTableCheckoutStamp', tablePayload({ table: state.table })).then(function (r) {
       state.checkoutStamp = Number(r.data) || 0;
     }).catch(function () {});
     if (!_sessionWatchStarted) { _sessionWatchStarted = true; setInterval(checkSessionLock, 15000); }
   }
   function checkSessionLock() {
     if (!state.table || state.staffMode || state.sessionEnded) return;
-    API.post('getTableCheckoutStamp', { table: state.table }).then(function (r) {
+    API.post('getTableCheckoutStamp', tablePayload({ table: state.table })).then(function (r) {
       var v = Number(r.data) || 0;
       if (v > state.checkoutStamp) lockSession();
     }).catch(function () {});
@@ -643,6 +657,26 @@
     var m = s.match(/^テーブル(\d+)$/) || s.match(/^(\d+)$/); if (m) return tableTerm + ' ' + m[1];
     var c = s.match(/^カウンター(\d+)$/); if (c) return counterTerm + ' ' + c[1];
     return s;
+  }
+  function seatSortKey(v) {
+    var s = String(v == null ? '' : v);
+    var c = s.match(/^カウンター(\d+)$/);
+    if (c) return { group:0, num:Number(c[1]) || 0, text:s };
+    var t1 = s.match(/^テーブル(\d+)$/), t2 = s.match(/^(\d+)$/), t = t1 || t2;
+    if (t) return { group:1, num:Number(t[1]) || 0, text:s };
+    return { group:2, num:0, text:s };
+  }
+  function sortSeats(list) {
+    return (list || []).slice().sort(function (a, b) {
+      var ka = seatSortKey(a), kb = seatSortKey(b);
+      if (ka.group !== kb.group) return ka.group - kb.group;
+      if (ka.num !== kb.num) return ka.num - kb.num;
+      return ka.text.localeCompare(kb.text, state.lang === 'ja' ? 'ja' : 'en', { numeric:true });
+    });
+  }
+  function partySizeMax() {
+    var n = parseInt((state.settings || {}).partySizeMax, 10);
+    return Number.isFinite(n) && n >= 1 ? Math.min(100, n) : 20;
   }
   function seatGroupLabel(){ var cfg=state.settings||{},en=state.lang==='en'; return (en?cfg.seatGroupLabelEn:cfg.seatGroupLabelJa)||(en?'Seating':'席'); }
   function _feeSettingEnabled(enabledKey, amountKey) {
@@ -675,14 +709,27 @@
     if (needTable) {
       var sel = $('tableSelect');
       sel.innerHTML = '';
-      (tables || []).forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = seatLabel(n); sel.appendChild(o); });
+      sortSeats(tables).forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = seatLabel(n); sel.appendChild(o); });
     }
     var partyFeeMsg = feeUsage.entry && feeUsage.extension ? x.partyMsg : (feeUsage.entry ? x.partyMsgEntry : x.partyMsgExtension);
     $('tblTitle').textContent = needTable ? x.tblTitle : x.partyTitle;
     $('tblMsg').textContent = needTable ? x.tblMsg : partyFeeMsg;
     $('partyLabel').textContent = x.partyLabel;
     $('partyMsg').textContent = needTable && needParty ? partyFeeMsg : '';
-    $('partyCount').value = '';
+    var partySel = $('partyCount');
+    partySel.innerHTML = '';
+    if (needParty) {
+      var ph = document.createElement('option');
+      ph.value = ''; ph.disabled = true; ph.selected = true; ph.textContent = x.partyChoose;
+      partySel.appendChild(ph);
+      var maxParty = partySizeMax();
+      for (var i = 1; i <= maxParty; i++) {
+        var po = document.createElement('option');
+        po.value = String(i);
+        po.textContent = state.lang === 'ja' ? (i + '人') : (i + (i === 1 ? ' guest' : ' guests'));
+        partySel.appendChild(po);
+      }
+    }
     $('tblGo').textContent = x.tblGo;
     $('tableOverlay').classList.add('show');
     $('tblGo').onclick = function () {
@@ -706,7 +753,7 @@
       }
       if (needParty) {
         state.partySize = n;
-        API.post('setTablePartySize', { table: state.table, count: n }).catch(function () {});
+        API.post('setTablePartySize', tablePayload({ table: state.table, count: n })).catch(function () {});
       }
       $('tableOverlay').classList.remove('show');
       renderTexts();

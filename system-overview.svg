@@ -4,9 +4,9 @@
 
   <!-- Header -->
   <rect x="0" y="0" width="1300" height="66" fill="#0f172a"/>
-  <text x="36" y="42" fill="#ffffff" font-size="26" font-weight="800">🍶 オーダー管理システム 利用イメージ</text>
-  <text x="1264" y="28" fill="#93c5fd" font-size="13" text-anchor="end">クリークサイドの憩いの場 誘惑Bar</text>
-  <text x="1264" y="48" fill="#cbd5e1" font-size="12" text-anchor="end">PWA + Cloudflare Workers + D1</text>
+  <text x="36" y="42" fill="#ffffff" font-size="26" font-weight="800">🍶 izakanpai POS システム利用イメージ</text>
+  <text x="1264" y="28" fill="#93c5fd" font-size="13" text-anchor="end">飲食店運営オールインワン POS</text>
+  <text x="1264" y="48" fill="#cbd5e1" font-size="12" text-anchor="end">iOS・Android・Web / Cloudflare</text>
 
   <!-- Arrows (背面に描画) -->
   <defs>
@@ -37,16 +37,16 @@
 
   <!-- 中央: システム hub -->
   <rect x="486" y="212" width="328" height="140" rx="14" fill="#0f172a" stroke="#0ea5e9" stroke-width="2.5"/>
-  <text x="650" y="250" fill="#ffffff" font-size="18" font-weight="800" text-anchor="middle">🖥️ オーダー管理システム</text>
-  <text x="650" y="280" fill="#e2e8f0" font-size="12.5" text-anchor="middle">スマホ／タブレットのPWA（GitHub Pages）</text>
-  <text x="650" y="302" fill="#e2e8f0" font-size="12.5" text-anchor="middle">権限で画面を出し分け・EN/JP切替対応</text>
-  <text x="650" y="330" fill="#7dd3fc" font-size="12.5" text-anchor="middle">本番: izakanpai.com/yuwaku/</text>
+  <text x="650" y="250" fill="#ffffff" font-size="18" font-weight="800" text-anchor="middle">🖥️ izakanpai POS</text>
+  <text x="650" y="280" fill="#e2e8f0" font-size="12.5" text-anchor="middle">iOS / Androidアプリ + Web/PWA</text>
+  <text x="650" y="302" fill="#e2e8f0" font-size="12.5" text-anchor="middle">役割別権限・JP/EN・安全なログイン</text>
+  <text x="650" y="330" fill="#7dd3fc" font-size="12.5" text-anchor="middle">注文・会計・在庫・スタッフ・顧客管理</text>
 
   <!-- データ基盤 -->
   <rect x="486" y="432" width="328" height="96" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="1.6"/>
-  <text x="650" y="462" fill="#0f172a" font-size="15" font-weight="800" text-anchor="middle">🗄️ データ基盤</text>
-  <text x="650" y="486" fill="#334155" font-size="12.5" text-anchor="middle">Cloudflare D1（全データ）</text>
-  <text x="650" y="508" fill="#334155" font-size="12.5" text-anchor="middle">Cloudflare Workers（API・自動処理）</text>
+  <text x="650" y="462" fill="#0f172a" font-size="15" font-weight="800" text-anchor="middle">🗄️ クラウド基盤</text>
+  <text x="650" y="486" fill="#334155" font-size="12.5" text-anchor="middle">Cloudflare D1（業務データ）</text>
+  <text x="650" y="508" fill="#334155" font-size="12.5" text-anchor="middle">Workers API / Scheduler + R2（画像・証跡）</text>
 
   <!-- ================= 客 ================= -->
   <rect x="40" y="88" width="360" height="250" rx="14" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
@@ -55,8 +55,8 @@
     <text x="60" y="150">📱 QRコードから注文画面にアクセス</text>
     <text x="60" y="174">🍽️ メニュー注文（写真・オプション・数量）</text>
     <text x="60" y="198">🎟️ クーポン／🎁 会員ポイント利用</text>
-    <text x="60" y="222">💳 会計は現金／別のカード決済端末／GCash QR（アプリ外）</text>
-    <text x="60" y="246">🔔 スタッフ呼出／🧾 お会計／📋 注文状況</text>
+    <text x="60" y="222">💳 QR・カード決済／🧾 eレシート（任意）</text>
+    <text x="60" y="246">🔔 スタッフ呼出／お会計依頼／📋 注文状況</text>
     <text x="60" y="270">⭐ フィードバック／🎂 誕生日登録</text>
     <text x="60" y="294">🥡 テイクアウト注文／🗓️ 予約</text>
     <text x="60" y="320" fill="#64748b" font-size="11.5">※ ログイン不要・卓ごとにQR</text>
@@ -92,12 +92,12 @@
     <text x="60" y="550">　 （管理画面→テーブル/カウンターを選択して入力）</text>
     <text x="60" y="574">② 🧾 注文一覧で状況を確認（卓別・滞在タイマー）</text>
     <text x="60" y="598">③ 🔔 客からの呼出・お会計依頼に対応</text>
-    <text x="60" y="622">④ 💴 会計：現金／カード／GCash（割勘・一部・シニア/PWD割引）</text>
+    <text x="60" y="622">④ 💴 会計：現金／カード／QR（割勘・一部会計・各種割引）</text>
     <text x="60" y="646">⑤ 🖨️ レシート印刷／✉️ eレシート</text>
     <text x="60" y="670">🚫 注文取消（理由＋責任者の承認制）／⏰ 写真＋GPS打刻</text>
     <text x="60" y="694">📇 卓QRコードもこの端末から印刷</text>
-    <text x="60" y="726" fill="#64748b" font-size="11.5">※ 注文入力・管理はログイン不要（店舗端末運用）</text>
-    <text x="60" y="762" fill="#047857" font-size="12" font-weight="700">🖨️ 印刷ステーション（要ログイン・Bluetooth PT-210）／💳 会計はカード決済端末・GCash QR表示（別体・アプリ外）</text>
+    <text x="60" y="726" fill="#64748b" font-size="11.5">※ スタッフは権限に応じてログインして操作</text>
+    <text x="60" y="762" fill="#047857" font-size="12" font-weight="700">🖨️ 印刷待受（Bluetooth PT-210）・💳 決済端末と連携</text>
   </g>
   <g transform="translate(400,470)">
     <circle r="30" fill="#ffffff" stroke="#10b981" stroke-width="3"/>
@@ -110,19 +110,18 @@
   <text x="920" y="462" fill="#7e22ce" font-size="17" font-weight="800">🧑‍💼 管理者・オーナー</text>
   <text x="920" y="482" fill="#64748b" font-size="11.5">管理コンソール（ログイン・多数タブ・権限別）</text>
   <g font-size="12.8" fill="#1e293b">
-    <text x="920" y="508">📊 ダッシュボード・売上・月間粗利</text>
-    <text x="920" y="530">🧾 会計履歴（月別・再印刷）／💵 レジ締め</text>
-    <text x="920" y="552">📦 在庫・棚卸（🤖AIカメラで自動カウント）</text>
-    <text x="920" y="574">🚚 仕入・新規発注／✉️ 発注メール送信（多言語）</text>
-    <text x="920" y="596">🍽️ メニュー編集（在庫紐づけ・厨房表示ON/OFF）</text>
-    <text x="920" y="618">🎁 会員・🎂 誕生日クーポン・🗓️ 予約</text>
-    <text x="920" y="640">✅ Todo共有・📮 申し入れ管理</text>
-    <text x="920" y="662">🕐 勤怠・給与概算／👥 ユーザー・権限</text>
-    <text x="920" y="684">🛡️ 監査・操作ログ／⚙️ 設定</text>
-    <text x="920" y="706">💾 バックアップ・CSV書出</text>
-    <text x="920" y="728">✉️ 日次・週次・月次レポートを自動メール（EN/JP）</text>
-    <text x="920" y="750">📐 営業利益シミュレーション（要ログイン）</text>
-    <text x="920" y="786" fill="#7e22ce" font-size="12" font-weight="700">🧪 テスト環境で検証 → 本番へ反映</text>
+    <text x="920" y="508" font-size="11.8">📊 ダッシュボード・売上・経費・粗利／営業利益シミュレーション</text>
+    <text x="920" y="530" font-size="11.8">🧾 会計履歴・再印刷／💵 レジ締め</text>
+    <text x="920" y="552" font-size="11.8">📦 在庫・棚卸／🚚 仕入・発注・発注アイテム</text>
+    <text x="920" y="574" font-size="11.8">🍽️ メニュー編集・レシピ原価・提供時間・KDS設定</text>
+    <text x="920" y="596" font-size="11.8">💰 歩合・SC分配・スタッフ報酬</text>
+    <text x="920" y="618" font-size="11.8">🎁 会員（誕生日・アレルギー・備考）・🎟️ クーポン・🗓️ 予約</text>
+    <text x="920" y="640" font-size="11.8">✅ Todo・📮 店舗内申し入れ／💬 サポート（不具合・要望）</text>
+    <text x="920" y="662" font-size="11.8">🕐 勤怠・給与概算／👥 ユーザー・権限マトリクス</text>
+    <text x="920" y="684" font-size="11.8">🖨️ プリンタ・印刷待受／🛡️ 監査ログ／⚙️ 設定</text>
+    <text x="920" y="706" font-size="11.8">💾 バックアップ・CSV書出／✉️ 定期レポート</text>
+    <text x="920" y="728" font-size="11.8">💳 Proプラン・購入復元／🔐 安全な端末認証</text>
+    <text x="920" y="764" fill="#7e22ce" font-size="12" font-weight="700">🧪 TEST環境で検証 → 本番へ反映</text>
   </g>
   <g transform="translate(1260,430)">
     <circle r="30" fill="#ffffff" stroke="#a855f7" stroke-width="3"/>
@@ -139,19 +138,19 @@
     <rect x="290" y="944" width="22" height="12" rx="2" fill="#0f172a"/>
     <rect x="294" y="938" width="14" height="8" fill="#475569"/>
     <rect x="294" y="954" width="14" height="6" fill="#e2e8f0"/>
-    <text x="245" y="970" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">🖨️ プリンタ（Bluetooth PT-210）</text>
-    <text x="245" y="988" font-size="10.8" fill="#64748b" text-anchor="middle">印刷ステーション（bridge.html）経由で自動印字</text>
+    <text x="245" y="970" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">🖨️ Bluetoothプリンタ（PT-210）</text>
+    <text x="245" y="988" font-size="10.8" fill="#64748b" text-anchor="middle">専用の印刷待受画面から自動印字</text>
 
     <rect x="392" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="517" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">🤖 Gemini API</text>
-    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">在庫AIカウント・画像検索</text>
+    <text x="517" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">💳 QR・カード決済</text>
+    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">PayMongo等の外部決済</text>
 
     <rect x="664" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="789" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ メール</text>
-    <text x="789" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">eレシート・レポート・発注メール</text>
+    <text x="789" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ Resend メール</text>
+    <text x="789" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">eレシート・レポート・サポート通知</text>
 
     <rect x="936" y="924" width="244" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="1058" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">☁️ Google Drive</text>
-    <text x="1058" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">画像・バックアップ</text>
+    <text x="1058" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle"> App Store / ▶ Google Play</text>
+    <text x="1058" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">RevenueCatでPro課金・購入復元</text>
   </g>
 </svg>

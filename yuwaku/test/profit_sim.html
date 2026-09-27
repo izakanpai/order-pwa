@@ -49,6 +49,8 @@
     .btn-pri{ background:var(--navy); color:#fff; width:100%; }
     .btn-sec{ background:#eef2f7; color:var(--navy); }
     .btn-sm{ border:0; border-radius:8px; padding:9px 13px; font-size:13px; font-weight:800; cursor:pointer; background:#eff6ff; color:#2563eb; font-family:inherit; }
+    .compact-month-field{ flex:0 1 180px; min-width:0; max-width:180px; overflow:hidden; border-radius:9px; contain:layout paint; }
+    #pMonth{ display:block; inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; min-inline-size:0!important; min-width:0!important; max-inline-size:calc(100% - 8px)!important; max-width:calc(100% - 8px)!important; box-sizing:border-box; font-size:16px; }
     .result{ display:flex; justify-content:space-between; align-items:center; padding:9px 2px; font-size:14px; }
     .result .lb{ font-weight:700; } .result .amt{ font-variant-numeric:tabular-nums; font-weight:800; }
     .rev .amt{ color:var(--green); font-size:17px; }
@@ -101,8 +103,8 @@
       <div class="exprow" style="margin-top:10px;"><span class="lb" data-t="eVipFee">VIP基本料金</span><div class="amtwrap"><span class="sym" id="sym24">₱</span><input type="number" min="0" step="any" id="pVipFee" oninput="onRevenueConditionChanged()"></div></div>
       <div class="muted" id="nonCogsRevWarn" style="font-size:11.5px;margin-top:2px;color:#b91c1c;display:none;"></div>
       <div id="loadActualRow" style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <input id="pMonth" type="month" class="fc" style="width:auto;flex:0 0 auto;">
-        <button type="button" class="btn-sm" onclick="loadActual()" data-t="loadActual">📥 その月の実績を読み込む</button>
+        <div class="compact-month-field"><input id="pMonth" type="month" class="fc"></div>
+        <button type="button" class="btn-sm" style="height:46px;display:inline-flex;align-items:center;justify-content:center;" onclick="loadActual()" data-t="loadActual">📥 その月の実績を読み込む</button>
       </div>
       <div class="hint" id="loadActualLoginHint" data-t="loadActualLoginHint" style="display:none;">ログインすると、その月の実績を読み込めます。</div>
       <div class="hint" data-t="loadHint">売上・賃料・電気代・水道代・給与（勤怠概算）を、実際に記録されている数字で自動入力します（上書き確認あり）。</div>

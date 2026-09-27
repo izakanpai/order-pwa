@@ -39,6 +39,7 @@
 
   <div class="cats" id="cats"></div>
 
+  <div id="guide-order-start" data-guide-anchor></div>
   <div id="menuArea">
     <div class="loading"><span class="spinner"></span></div>
   </div>
@@ -102,7 +103,7 @@
       </div>
       <div id="partySection" style="display:none;">
         <label id="partyLabel" style="display:block;font-size:13px;font-weight:800;margin:10px 0 4px;text-align:left;">Guests</label>
-        <input type="number" id="partyCount" min="1" max="99" step="1" inputmode="numeric" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);font-size:16px;margin:0 0 6px;background:#fff;text-align:center;">
+        <select id="partyCount" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);font-size:16px;margin:0 0 6px;background:#fff;text-align:center;"></select>
         <p id="partyMsg" style="font-size:12px;margin:0 0 8px;"></p>
       </div>
       <button class="btn-send ok" id="tblGo" style="width:100%;">Start</button>
@@ -235,7 +236,7 @@
         { ja: '④ 🔔スタッフ呼出でスタッフを呼べます。お会計はスタッフへお申し付けください。', en: '④ Use 🔔 to call staff. Please ask a staff member when you are ready to pay.' },
         { ja: '⑤ 📋注文状況で注文内容・小計・サービス料・税・未払い合計を確認できます。内税は「うち○○（内税）」と表示され、合計へ重ねて加算されません。税の名称は店舗設定に従います。', en: '⑤ Use 📋 to see your orders, subtotal, service charge, tax, and unpaid total. Included tax is labeled as included and is not added to the total again. The tax name follows the store settings.' },
         { ja: '⑥ ⭐評価ボタンから星評価とコメントを送信できます。', en: '⑥ Use ⭐ to send a star rating and comment.' },
-        { ja: '⑦ 席を選ばずにアクセスした場合は、最初に店舗設定の呼称で表示された席番号を選びます。入場料または延長料が有効な店舗では、請求に必要な人数も入力します。', en: '⑦ If you open this without a location pre-selected, first choose the location shown with the store’s configured terminology. If entry or extension fees are enabled, also enter the party size used for billing.' }
+        { ja: '⑦ 席を選ばずにアクセスした場合は、最初に店舗設定の呼称で表示された席番号を選びます。席は1,2,3…10の数値順で並びます。入場料または延長料が有効な店舗では、設定した上限までの人数をドロップダウンから選択します。', en: '⑦ If you open this without a location pre-selected, first choose the location shown with the store’s configured terminology. Locations are ordered numerically (1, 2, 3 … 10). If entry or extension fees are enabled, choose the party size from the dropdown up to the configured maximum.' }
       ]
     });
   </script>

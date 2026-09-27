@@ -26,10 +26,7 @@
     .fc{ width:100%; padding:10px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); }
     .btn{ border:0; border-radius:11px; padding:12px 16px; font-size:15px; font-weight:900; cursor:pointer; font-family:inherit; background:var(--navy); color:#fff; }
     .btn-sm{ background:#fee2e2; color:#b91c1c; border:0; border-radius:8px; padding:7px 10px; font-weight:800; cursor:pointer; }
-    /* [iPhone表示対応] table{width:100%}のみだと、狭い画面幅に全列が無理に収まろうとして
-       文字が縮小・折り返しでズレて見える。min-widthで表全体の最小幅を確保し、外側の
-       overflow:autoラッパー（HTML側）で横スクロールさせる。th,tdはnowrapで折り返しによる
-       行内ズレを防ぐ（メモ列のみ長文を想定しrender()側で個別にwhite-space:normalを指定）。 */
+    /* Desktop keeps the full accounting table. Mobile uses cards so every field is readable without horizontal scroll. */
     table{ width:100%; min-width:760px; border-collapse:collapse; font-size:13px; }
     th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
     th{ font-size:11px; color:var(--text-3); white-space:nowrap; }
@@ -38,6 +35,45 @@
     .bar{ display:flex; gap:8px; align-items:flex-end; margin-bottom:12px; flex-wrap:wrap; }
     .alert{ margin-top:10px; display:none; padding:11px; border-radius:9px; font-size:14px; font-weight:700; }
     .muted{ color:var(--text-3); font-size:12px; }
+    .expense-date-shell{ position:relative; width:100%; min-width:0; height:44px; overflow:hidden; border-radius:9px; contain:layout paint; }
+    .expense-date-shell .fc{ position:absolute; inset:0; inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; min-inline-size:0!important; min-width:0!important; max-inline-size:calc(100% - 8px)!important; max-width:calc(100% - 8px)!important; height:100%!important; margin:0; }
+    .expense-table-wrap{ overflow:auto; }
+    #expenseCards{ display:none; }
+    .expense-card-row{ border:1px solid var(--border); border-radius:12px; padding:11px; background:#fff; }
+    .expense-card-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+    .expense-card-date{ font-size:12px; color:var(--text-3); }
+    .expense-card-amount{ font-size:17px; font-weight:900; white-space:nowrap; }
+    .expense-card-item{ margin-top:5px; font-size:15px; font-weight:800; overflow-wrap:anywhere; }
+    .expense-card-cat{ display:inline-block; margin-top:5px; padding:3px 7px; border-radius:999px; background:#f1f5f9; color:#475569; font-size:11px; font-weight:700; }
+    .expense-card-meta{ margin-top:8px; display:grid; gap:5px; font-size:12px; color:#475569; }
+    .expense-card-meta strong{ color:var(--navy); }
+    .expense-card-receipt{ display:flex; align-items:center; gap:8px; }
+    .expense-card-receipt img{ width:48px; height:48px; object-fit:cover; border-radius:7px; border:1px solid var(--border); }
+    .expense-card-actions{ display:flex; gap:8px; margin-top:10px; }
+    .expense-card-actions .btn-sm{ flex:1 1 0; }
+    .expense-empty{ padding:20px 8px; text-align:center; color:#94a3b8; font-size:13px; }
+    .filepick{ display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:9px; background:var(--surface); cursor:pointer; min-width:0; }
+    .filepick .btn-sm{ flex:0 0 auto; white-space:nowrap; }
+    .filepick span:last-child{ display:block; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; max-width:100%; }
+    @media (max-width:640px), (max-width:900px) and (orientation:landscape){
+      .wrap{ padding:12px; }
+      .card{ padding:14px; }
+      .expense-grid{ grid-template-columns:1fr 1fr; gap:8px 10px; }
+      .expense-grid .fg{ min-width:0; margin-bottom:6px; }
+      .expense-grid .field-item{ grid-column:1 / -1; }
+      .expense-grid .field-amount{ grid-column:1; }
+      .expense-grid .field-purchaser{ grid-column:2; }
+      .expense-grid .field-receipt{ grid-column:1 / -1; }
+      .expense-grid .field-date,.expense-grid .field-category{ min-width:0; }
+      .expense-grid .fc{ height:44px; }
+      .fc{ min-width:0; font-size:16px; padding:9px; }
+      .filepick{ width:100%; min-width:0; min-height:44px; padding:9px; gap:8px; }
+      .filepick span:last-child{ display:block; flex:1 1 auto; min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      #eMemo{ width:100%; }
+      .expense-table-wrap{ display:none; }
+      #expenseCards{ display:grid; gap:9px; }
+      .bar{ align-items:center; flex-wrap:nowrap; }
+    }
   </style>
 </head>
 <body>
@@ -45,9 +81,9 @@
   <div class="wrap">
     <div class="card">
       <div class="card-title" data-t="addTitle">➕ 経費を登録</div>
-      <div class="grid">
-        <div class="fg"><label class="form-label" data-t="lblDate">日付</label><input id="eDate" type="date" class="fc"></div>
-        <div class="fg"><label class="form-label" data-t="lblCat">カテゴリ</label>
+      <div class="grid expense-grid">
+        <div class="fg field-date"><label class="form-label" data-t="lblDate">日付</label><div class="expense-date-shell"><input id="eDate" type="date" class="fc"></div></div>
+        <div class="fg field-category"><label class="form-label" data-t="lblCat">カテゴリ</label>
           <select id="eCat" class="fc">
             <option value="賃料" data-t="c_rent">賃料</option>
             <option value="電気代" data-t="c_elec">電気代</option>
@@ -57,12 +93,10 @@
             <option value="その他" data-t="c_other">その他</option>
           </select>
         </div>
-        <div class="fg"><label class="form-label" data-t="lblItem">品目 / 内容</label><input id="eItem" class="fc" list="itemList" data-tph="phItem" placeholder="過去の品目から選択 or 入力"><datalist id="itemList"></datalist></div>
-        <div class="fg"><label class="form-label" data-t="lblAmount">金額</label><input id="eAmount" type="number" min="0" step="any" class="fc"></div>
-      </div>
-      <div class="grid" style="grid-template-columns:1fr 1fr;">
-        <div class="fg"><label class="form-label" data-t="lblPurchaser">購入者</label><input id="ePurchaser" class="fc"></div>
-        <div class="fg"><label class="form-label" data-t="lblReceipt">レシート画像</label><input id="eReceiptFile" type="file" accept="image/*" class="fc"></div>
+        <div class="fg field-item"><label class="form-label" data-t="lblItem">品目 / 内容</label><input id="eItem" class="fc" list="itemList" data-tph="phItem" placeholder="過去の品目から選択 or 入力"><datalist id="itemList"></datalist></div>
+        <div class="fg field-amount"><label class="form-label" data-t="lblAmount">金額</label><input id="eAmount" type="number" min="0" step="any" class="fc"></div>
+        <div class="fg field-purchaser"><label class="form-label" data-t="lblPurchaser">購入者</label><input id="ePurchaser" class="fc"></div>
+        <div class="fg field-receipt"><label class="form-label" data-t="lblReceipt">レシート画像</label><div class="filepick" onclick="document.getElementById('eReceiptFile').click()"><span class="btn-sm" data-t="chooseFile">ファイルを選択</span><span id="eReceiptFileName" class="muted" data-t="noFileChosen">選択されていません</span></div><input id="eReceiptFile" type="file" accept="image/*" style="display:none;"></div>
       </div>
       <div class="fg" id="receiptPreviewWrap" style="display:none;"><img id="receiptPreview" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--border);"></div>
       <div class="fg"><label class="form-label" data-t="lblMemo">メモ（任意）</label><input id="eMemo" class="fc"></div>
@@ -78,13 +112,14 @@
         <div style="flex:1;"></div>
         <div style="text-align:right;"><div class="muted" data-t="monthTotal">月合計</div><div class="tot" id="total">—</div></div>
       </div>
-      <div style="overflow:auto;">
+      <div class="expense-table-wrap">
         <table><thead><tr>
           <th data-t="thDate">日付</th><th data-t="thCat">カテゴリ</th><th data-t="thItem">品目</th>
           <th class="num" data-t="thAmount">金額</th><th data-t="thPurchaser">購入者</th><th data-t="thReceipt">レシート</th><th data-t="thMemo">メモ</th><th style="width:70px;"></th>
         </tr></thead>
         <tbody id="rows"><tr><td colspan="8" style="color:#aaa;padding:16px;text-align:center;" data-t="loading">読み込み中…</td></tr></tbody></table>
       </div>
+      <div id="expenseCards"><div class="expense-empty" data-t="loading">読み込み中…</div></div>
     </div>
   </div>
 
@@ -101,6 +136,22 @@
     var CATKEY = { '賃料':'c_rent','電気代':'c_elec','水道代':'c_water','商品仕入':'c_goods','備品購入':'c_supply','その他':'c_other' };
     function catLabel(c){ return I18n.t(CATKEY[c]||'c_other'); }
 
+    function receiptThumb(e){
+      if(!e.receiptImageUrl) return '';
+      var u=esc(e.receiptImageUrl);
+      return '<a href="'+u+'" target="_blank" rel="noopener" class="expense-card-receipt"><img src="'+u+'" alt=""><span>'+I18n.t('viewReceipt')+'</span></a>';
+    }
+    function renderCards(list){
+      var box=document.getElementById('expenseCards');
+      if(!list.length){ box.innerHTML='<div class="expense-empty">'+I18n.t('empty')+'</div>'; return; }
+      box.innerHTML=list.map(function(e){
+        var purchaser=e.purchaser ? '<div><strong>'+I18n.t('lblPurchaser')+':</strong> '+esc(e.purchaser)+'</div>' : '';
+        var memo=e.memo ? '<div><strong>'+I18n.t('lblMemoShort')+':</strong> '+esc(e.memo)+'</div>' : '';
+        var receipt=e.receiptImageUrl ? '<div>'+receiptThumb(e)+'</div>' : '<div><strong>'+I18n.t('thReceipt')+':</strong> '+I18n.t('noReceipt')+'</div>';
+        return '<div class="expense-card-row"><div class="expense-card-head"><div><div class="expense-card-date">'+esc(e.date)+'</div><div class="expense-card-item">'+esc(e.item||I18n.t('noItem'))+'</div><span class="expense-card-cat">'+esc(catLabel(e.category))+'</span></div><div class="expense-card-amount">'+SYM+(Number(e.amount)||0).toLocaleString()+'</div></div><div class="expense-card-meta">'+purchaser+receipt+memo+'</div><div class="expense-card-actions"><button class="btn-sm" onclick="edit(\''+e.id+'\')">'+I18n.t('edit')+'</button><button class="btn-sm" onclick="del(\''+e.id+'\')">'+I18n.t('del')+'</button></div></div>';
+      }).join('');
+    }
+
     function render(){
       // 品目候補（過去履歴）
       var items = []; ALL.forEach(function(e){ var it=(e.item||'').trim(); if(it && items.indexOf(it)<0) items.push(it); });
@@ -110,6 +161,7 @@
       var list = ALL.filter(function(e){ return e.month===mo; }).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
       var total = 0; list.forEach(function(e){ total += Number(e.amount)||0; });
       document.getElementById('total').innerText = SYM + total.toLocaleString();
+      renderCards(list);
       if(!list.length){ document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#aaa;padding:16px;text-align:center;">'+I18n.t('empty')+'</td></tr>'; return; }
       document.getElementById('rows').innerHTML = list.map(function(e){
         var receiptCell = e.receiptImageUrl ? ('<a href="'+esc(e.receiptImageUrl)+'" target="_blank" rel="noopener"><img src="'+esc(e.receiptImageUrl)+'" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"></a>') : '';
@@ -124,7 +176,7 @@
     function clearForm(){
       document.getElementById('eId').value=''; document.getElementById('eItem').value=''; document.getElementById('eAmount').value='';
       document.getElementById('eMemo').value=''; document.getElementById('ePurchaser').value='';
-      document.getElementById('eReceiptFile').value=''; document.getElementById('eReceiptImageId').value='';
+      document.getElementById('eReceiptFile').value=''; updateEReceiptFileName(); document.getElementById('eReceiptImageId').value='';
       document.getElementById('receiptPreviewWrap').style.display='none'; document.getElementById('receiptPreview').src='';
     }
 
@@ -135,7 +187,7 @@
       document.getElementById('eAmount').value=e.amount; document.getElementById('eMemo').value=e.memo||'';
       document.getElementById('ePurchaser').value=e.purchaser||'';
       document.getElementById('eReceiptImageId').value=e.receiptImageId||'';
-      document.getElementById('eReceiptFile').value='';
+      document.getElementById('eReceiptFile').value=''; updateEReceiptFileName();
       if(e.receiptImageUrl){ document.getElementById('receiptPreview').src=e.receiptImageUrl; document.getElementById('receiptPreviewWrap').style.display='block'; }
       else { document.getElementById('receiptPreviewWrap').style.display='none'; }
       window.scrollTo({top:0,behavior:'smooth'});
@@ -152,7 +204,7 @@
         }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
       });
     };
-    // 画像ファイルをbase64化してアップロードし、fileIdを返す（uploadTopImage等と同じパターン）
+    // Receipt images from iPhone can be HEIC or several MB. Convert to a compact JPEG when possible.
     function fileToBase64(file){
       return new Promise(function(resolve,reject){
         var reader = new FileReader();
@@ -161,7 +213,53 @@
         reader.readAsDataURL(file);
       });
     }
+    function receiptMime(file){
+      var type=String((file&&file.type)||'').toLowerCase();
+      if(type) return type;
+      var name=String((file&&file.name)||'').toLowerCase();
+      if(/\.hei[cf]$/.test(name)) return name.endsWith('.heif')?'image/heif':'image/heic';
+      if(/\.png$/.test(name)) return 'image/png';
+      if(/\.webp$/.test(name)) return 'image/webp';
+      if(/\.gif$/.test(name)) return 'image/gif';
+      return 'image/jpeg';
+    }
+    function jpegReceiptPayload(file){
+      return new Promise(function(resolve,reject){
+        var url=URL.createObjectURL(file), img=new Image();
+        img.onload=function(){
+          try{
+            URL.revokeObjectURL(url);
+            var maxSide=1600, scale=Math.min(1,maxSide/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));
+            var w=Math.max(1,Math.round((img.naturalWidth||img.width)*scale));
+            var h=Math.max(1,Math.round((img.naturalHeight||img.height)*scale));
+            var canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+            var ctx=canvas.getContext('2d'); if(!ctx) throw new Error('canvas_unavailable');
+            ctx.drawImage(img,0,0,w,h);
+            var dataUrl=canvas.toDataURL('image/jpeg',0.78);
+            var b64=String(dataUrl).split(',')[1]||''; if(!b64) throw new Error('image_encode_failed');
+            resolve({data:b64,type:'image/jpeg',name:'receipt.jpg'});
+          }catch(e){ reject(e); }
+        };
+        img.onerror=function(){ URL.revokeObjectURL(url); reject(new Error('image_decode_failed')); };
+        img.src=url;
+      });
+    }
+    function prepareReceiptPayload(file){
+      var type=receiptMime(file), shouldConvert=/image\/(?:heic|heif)/i.test(type) || Number(file.size||0)>2*1024*1024;
+      var direct=function(){ return fileToBase64(file).then(function(b64){ return {data:b64,type:type,name:file.name||'receipt'}; }); };
+      return shouldConvert ? jpegReceiptPayload(file).catch(function(){ return direct(); }) : direct();
+    }
+    function receiptUploadError(code){
+      var map={too_large:'receiptTooLarge',not_supported_image:'receiptUnsupported',not_image:'receiptUnsupported',invalid_image_data:'receiptInvalid',image_storage_not_configured:'receiptStorageError'};
+      return I18n.t(map[String(code||'')]||'receiptUploadFailed') + (code && !map[String(code)] ? ' ('+code+')' : '');
+    }
+    function updateEReceiptFileName(){
+      var el=document.getElementById('eReceiptFileName'), f=document.getElementById('eReceiptFile').files[0];
+      if(f){ el.removeAttribute('data-t'); el.textContent=f.name; }
+      else{ el.setAttribute('data-t','noFileChosen'); el.textContent=I18n.t('noFileChosen'); }
+    }
     document.getElementById('eReceiptFile').addEventListener('change', function(){
+      updateEReceiptFileName();
       var f = this.files && this.files[0]; if(!f) return;
       var url = URL.createObjectURL(f);
       document.getElementById('receiptPreview').src = url;
@@ -178,21 +276,18 @@
       if(!(exp.amount>0)){ msg(I18n.t('needAmount'), false); return; }
       var btn=document.getElementById('saveBtn'); btn.disabled=true;
       var uploadStep = file
-        ? fileToBase64(file).then(function(b64){ return rpc('uploadExpenseReceipt',[{ data:b64, type:file.type, name:file.name }]); })
-            .then(function(r){ if(r && r.success && r.fileId){ exp.receiptImageId = r.fileId; } })
+        ? prepareReceiptPayload(file).then(function(payload){ return rpc('uploadExpenseReceipt',[payload]); })
+            .then(function(r){ if(!(r && r.success && r.fileId)) throw new Error(receiptUploadError(r&&r.error)); exp.receiptImageId = r.fileId; })
         : Promise.resolve();
       // [応答速度対応] saveExpenseが保存済み行を返すので、全件再取得(getExpenses)せず
       // ローカル配列を新規追加/置換するだけで一覧に反映する。
-      uploadStep.then(function(){ return rpc('saveExpense',[exp]); }).then(function(r){ btn.disabled=false; msg(I18n.t('saved'), true); clearForm();
-        // 登録した月に合わせる
-        if(exp.date){ document.getElementById('month').value = exp.date.slice(0,7); }
-        if (r && r.row) {
-          var idx = ALL.findIndex(function(e){ return e.id===r.row.id; });
-          if (idx>=0) ALL[idx]=r.row; else ALL.push(r.row);
-          render();
-        } else {
-          return rpc('getExpenses',[]).then(function(l){ ALL=l||[]; render(); }); // 想定外形状のフォールバックのみ再取得
-        }
+      uploadStep.then(function(){ return rpc('saveExpense',[exp]); }).then(function(r){
+        if(!(r && r.success)) throw new Error((r&&r.error)||'save_failed');
+        if(exp.date){ document.getElementById('month').value=exp.date.slice(0,7); }
+        var refresh;
+        if(r.row){ var idx=ALL.findIndex(function(e){return e.id===r.row.id;}); if(idx>=0) ALL[idx]=r.row; else ALL.push(r.row); refresh=Promise.resolve(); }
+        else{ refresh=rpc('getExpenses',[]).then(function(l){ALL=l||[];}); }
+        return refresh.then(function(){ render(); msg(I18n.t('saved'), true); clearForm(); btn.disabled=false; });
       }).catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
     };
 
@@ -212,8 +307,8 @@
       .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
 
     I18n.init({
-      ja:{ title:'💰 経費一覧', back:'← 管理へ', addTitle:'➕ 経費を登録', lblDate:'日付', lblCat:'カテゴリ', lblItem:'品目 / 内容', phItem:'過去の品目から選択 or 入力', lblAmount:'金額', lblPurchaser:'購入者', lblReceipt:'レシート画像', lblMemo:'メモ（任意）', add:'💾 登録', month:'対象月', monthTotal:'月合計', thDate:'日付', thCat:'カテゴリ', thItem:'品目', thAmount:'金額', thPurchaser:'購入者', thReceipt:'レシート', thMemo:'メモ', loading:'読み込み中…', empty:'この月の経費はありません', edit:'編集', del:'削除', delConfirm:'この経費を削除しますか？', saved:'✅ 登録しました', needDate:'日付を入力してください', needAmount:'金額を入力してください', errPrefix:'エラー: ', loadErr:'読み込みエラー: ', c_rent:'賃料', c_elec:'電気代', c_water:'水道代', c_goods:'商品仕入', c_supply:'備品購入', c_other:'その他' },
-      en:{ title:'💰 Expenses', back:'← Manage', addTitle:'➕ Add expense', lblDate:'Date', lblCat:'Category', lblItem:'Item / detail', phItem:'Pick from history or type', lblAmount:'Amount', lblPurchaser:'Purchaser', lblReceipt:'Receipt image', lblMemo:'Memo (optional)', add:'💾 Add', month:'Target month', monthTotal:'Month total', thDate:'Date', thCat:'Category', thItem:'Item', thAmount:'Amount', thPurchaser:'Purchaser', thReceipt:'Receipt', thMemo:'Memo', loading:'Loading…', empty:'No expenses this month', edit:'Edit', del:'Delete', delConfirm:'Delete this expense?', saved:'✅ Added', needDate:'Please enter a date', needAmount:'Please enter an amount', errPrefix:'Error: ', loadErr:'Load error: ', c_rent:'Rent', c_elec:'Electricity', c_water:'Water', c_goods:'Goods purchase', c_supply:'Supplies', c_other:'Other' }
+      ja:{ title:'💰 経費一覧', back:'← 管理へ', addTitle:'➕ 経費を登録', lblDate:'日付', lblCat:'カテゴリ', lblItem:'品目 / 内容', phItem:'過去の品目から選択 or 入力', lblAmount:'金額', lblPurchaser:'購入者', lblReceipt:'レシート画像', chooseFile:'ファイルを選択', noFileChosen:'選択されていません', lblMemo:'メモ（任意）', lblMemoShort:'メモ', add:'💾 登録', month:'対象月', monthTotal:'月合計', thDate:'日付', thCat:'カテゴリ', thItem:'品目', thAmount:'金額', thPurchaser:'購入者', thReceipt:'レシート', thMemo:'メモ', loading:'読み込み中…', empty:'この月の経費はありません', edit:'編集', del:'削除', delConfirm:'この経費を削除しますか？', saved:'✅ 登録しました', needDate:'日付を入力してください', needAmount:'金額を入力してください', viewReceipt:'レシートを見る', noReceipt:'なし', noItem:'（品目なし）', receiptTooLarge:'レシート画像が大きすぎます。別の写真を選んでください', receiptUnsupported:'この画像形式は保存できません', receiptInvalid:'レシート画像を読み取れませんでした', receiptStorageError:'画像保存先に接続できません', receiptUploadFailed:'レシート画像の保存に失敗しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ', c_rent:'賃料', c_elec:'電気代', c_water:'水道代', c_goods:'商品仕入', c_supply:'備品購入', c_other:'その他' },
+      en:{ title:'💰 Expenses', back:'← Manage', addTitle:'➕ Add expense', lblDate:'Date', lblCat:'Category', lblItem:'Item / detail', phItem:'Pick from history or type', lblAmount:'Amount', lblPurchaser:'Purchaser', lblReceipt:'Receipt image', chooseFile:'Choose file', noFileChosen:'No file chosen', lblMemo:'Memo (optional)', lblMemoShort:'Memo', add:'💾 Add', month:'Target month', monthTotal:'Month total', thDate:'Date', thCat:'Category', thItem:'Item', thAmount:'Amount', thPurchaser:'Purchaser', thReceipt:'Receipt', thMemo:'Memo', loading:'Loading…', empty:'No expenses this month', edit:'Edit', del:'Delete', delConfirm:'Delete this expense?', saved:'✅ Added', needDate:'Please enter a date', needAmount:'Please enter an amount', viewReceipt:'View receipt', noReceipt:'None', noItem:'(No item)', receiptTooLarge:'The receipt image is too large. Choose another photo.', receiptUnsupported:'This image format cannot be saved.', receiptInvalid:'The receipt image could not be read.', receiptStorageError:'Could not connect to image storage.', receiptUploadFailed:'Failed to save the receipt image.', errPrefix:'Error: ', loadErr:'Load error: ', c_rent:'Rent', c_elec:'Electricity', c_water:'Water', c_goods:'Goods purchase', c_supply:'Supplies', c_other:'Other' }
     }, function(){ if(__loaded) render(); });
   </script>
 

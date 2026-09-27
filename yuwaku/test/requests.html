@@ -40,10 +40,11 @@
     .item .content{ margin:8px 0; font-size:14px; line-height:1.6; white-space:pre-wrap; word-break:break-word; }
     .item .note{ font-size:12.5px; color:var(--text-3); background:#f8fafc; border-radius:9px; padding:8px 10px; margin-top:6px; }
     .mgmt{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
-    select.mini{ padding:6px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
-    input.noteInp{ flex:1; min-width:140px; padding:6px 8px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
-    input.dueInp{ padding:6px 8px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
-    .delbtn{ background:none; border:0; color:#b91c1c; font-size:16px; cursor:pointer; }
+    select.mini{ height:40px; padding:0 6px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
+    input.noteInp{ flex:1; min-width:140px; height:40px; padding:0 8px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
+    .due-shell{ position:relative; flex:0 1 170px; min-width:0; height:40px; overflow:hidden; border-radius:7px; contain:layout paint; }
+    .due-shell input.dueInp{ position:absolute; inset:0; display:block; inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; min-inline-size:0!important; min-width:0!important; max-inline-size:calc(100% - 8px)!important; max-width:calc(100% - 8px)!important; height:100%; margin:0; padding:0 8px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; box-sizing:border-box; }
+    .delbtn{ width:40px; height:40px; background:none; border:0; color:#b91c1c; font-size:16px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
     .empty{ text-align:center; color:var(--text-3); padding:24px 0; }
   </style>
 </head>
@@ -111,7 +112,7 @@
           mgmtHtml = '<div class="mgmt">' +
             '<select class="mini" onchange="setStatus(\''+r.id+'\',this.value,null,null)">'+opts+'</select>' +
             '<input class="noteInp" placeholder="'+esc(I18n.t('notePh'))+'" value="'+esc(r.note)+'" onchange="setStatus(\''+r.id+'\',null,this.value,null)">' +
-            '<input type="date" class="dueInp" title="'+esc(I18n.t('dueLabel'))+'" value="'+esc(r.due||'')+'" onchange="setStatus(\''+r.id+'\',null,null,this.value)">' +
+            '<span class="due-shell"><input type="date" class="dueInp" title="'+esc(I18n.t('dueLabel'))+'" value="'+esc(r.due||'')+'" onchange="setStatus(\''+r.id+'\',null,null,this.value)"></span>' +
             '<button class="delbtn" onclick="removeReq(\''+r.id+'\')" title="'+esc(I18n.t('delete'))+'">🗑️</button>' +
           '</div>';
         } else if (r.note) {

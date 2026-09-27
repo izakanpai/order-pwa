@@ -24,15 +24,20 @@
       !!parts[2] && !!parts[3] && !!parts[4] && parts[5] === audience;
   }
 
-  function pagePolicy(pathname, loggedIn) {
+  function pagePolicy(pathname, loggedIn, search) {
     var page = pageName(pathname);
     var customerOrder = page === 'index.html' || page === 'takeout.html' || page === 'reserve.html';
+    var fromOverview = /(?:^|[?&])from=overview(?:&|$)/i.test(String(search || ''));
+    var explicitBack = resolveBackTarget(search);
+    var contextualBack = explicitBack || (fromOverview ? './overview.html' : '');
     var loginPage = page === 'manage.html' && !loggedIn;
     return {
       page: page,
       customerOrder: customerOrder,
-      showBack: !customerOrder && !loginPage,
+      showBack: customerOrder ? (!!loggedIn && !!contextualBack) : !loginPage,
       showManage: !!loggedIn && page !== 'manage.html',
+      fromOverview: fromOverview,
+      backTarget: contextualBack,
       showUser: !!loggedIn,
       showClock: !loginPage,
       showRefresh: !loginPage,
@@ -98,6 +103,49 @@
   }
 
   function text(isJa, ja, en) { return isJa ? ja : en; }
+  function resolveBackTarget(search) {
+    var m = /(?:^|[?&])back=([a-z0-9_-]+\.html)(?:&|$)/i.exec(String(search || ''));
+    return m ? './' + m[1] : '';
+  }
+  function withBackHref(href, pathname) {
+    var raw = String(href || '');
+    if (!/^\.\/[a-z0-9_-]+\.html(?:[?#].*)?$/i.test(raw)) return raw;
+    if (/(?:[?&])(?:back=|from=(?:overview|manage)(?:[&#]|$))/i.test(raw)) return raw;
+    var current = pageName(pathname || '');
+    if (!/^[a-z0-9_-]+\.html$/i.test(current) || current === 'drink_inv.html' || current === 'backup.html') return raw;
+    var target = pageName(raw.split(/[?#]/)[0]);
+    if (!target || target === current || target === 'manage.html') return raw;
+    var hash = '';
+    var hashPos = raw.indexOf('#');
+    if (hashPos >= 0) { hash = raw.slice(hashPos); raw = raw.slice(0, hashPos); }
+    return raw + (raw.indexOf('?') >= 0 ? '&' : '?') + 'back=' + current + hash;
+  }
+  function installBackPropagation(loggedIn) {
+    if (!loggedIn || !document || !document.addEventListener) return;
+    document.addEventListener('click', function (ev) {
+      var el = ev.target && ev.target.closest ? ev.target.closest('a[href],#izProBtn') : null;
+      if (!el) return;
+      if (el.id === 'izProBtn') {
+        ev.preventDefault(); ev.stopImmediatePropagation();
+        location.href = withBackHref('./subscription.html', location.pathname); return;
+      }
+      if (el.hasAttribute('download')) return;
+      var href = el.getAttribute('href') || '';
+      var marked = withBackHref(href, location.pathname);
+      if (marked !== href) el.setAttribute('href', marked);
+    }, true);
+  }
+  function scrollGuideHashTarget() {
+    if (typeof document === 'undefined' || typeof location === 'undefined') return;
+    var hash = String(location.hash || '');
+    if (hash.length < 2) return;
+    var id = hash.slice(1);
+    try { id = decodeURIComponent(id); } catch (e) {}
+    var el = document.getElementById(id);
+    if (!el || !el.hasAttribute('data-guide-anchor')) return;
+    try { el.scrollIntoView({ block: 'start', inline: 'nearest' }); }
+    catch (e) { try { el.scrollIntoView(true); } catch (_) {} }
+  }
   function renderLanguage() {
     var isJa = currentLang() === 'ja';
     var compact = typeof matchMedia === 'function' && matchMedia('(max-width:720px)').matches;
@@ -111,7 +159,7 @@
     var back = document.getElementById('izHeaderBack');
     if (refresh) { refresh.textContent = compact ? '↻' : text(isJa, '↻ 更新', '↻ Refresh'); refresh.title = text(isJa, '画面を更新', 'Refresh page'); refresh.setAttribute('aria-label', refresh.title); }
     if (manage) { manage.textContent = compact ? '⌂' : text(isJa, '⌂ 管理', '⌂ Manage'); manage.title = text(isJa, '管理メニューに戻る', 'Return to management menu'); manage.setAttribute('aria-label', manage.title); }
-    if (back) { back.textContent = compact ? '←' : text(isJa, '← 戻る', '← Back'); back.title = text(isJa, '前の画面に戻る', 'Go back'); back.setAttribute('aria-label', back.title); }
+    if (back) { var target = resolveBackTarget(location.search) || (/(?:^|[?&])from=overview(?:&|$)/i.test(String(location.search || '')) ? './overview.html' : ''); back.textContent = compact ? '←' : text(isJa, '← 戻る', '← Back'); back.title = target ? text(isJa, '前の画面へ戻る', 'Back to previous screen') : text(isJa, '前の画面に戻る', 'Go back'); back.setAttribute('aria-label', back.title); }
   }
 
   function switchLanguage() {
@@ -125,6 +173,8 @@
   }
 
   function goBack(policy) {
+    if (policy && policy.backTarget) { location.replace(policy.backTarget); return; }
+    if (policy && policy.fromOverview) { location.replace('./overview.html'); return; }
     try {
       if (document.referrer && new URL(document.referrer).origin === location.origin) { history.back(); return; }
     } catch (e) {}
@@ -192,6 +242,7 @@
       '.iz-header-user{max-width:180px;overflow:hidden;text-overflow:ellipsis}' +
       '.iz-header-btn{border:0;border-radius:8px;background:rgba(255,255,255,.15);color:#fff;padding:8px 10px;min-height:34px;font:800 12px/1.2 inherit;cursor:pointer;white-space:nowrap}' +
       '.iz-header-btn:hover{background:rgba(255,255,255,.25)}' +
+      'input[type="month"],input[type="date"],input[type="time"]{display:block!important;inline-size:100%!important;width:100%!important;min-inline-size:0!important;min-width:0!important;max-inline-size:100%!important;max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important}input[type="month"]::-webkit-date-and-time-value,input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date-and-time-value{min-width:0!important;text-align:left!important}[data-guide-anchor]{scroll-margin-top:64px}' +
       '#izHeaderExtra{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex:0 1 auto;min-width:0;flex-wrap:nowrap;padding:0;background:transparent;border:0}' +
       '#izHeaderExtra[hidden]{display:none}' +
       '#izHeaderExtra a,#izHeaderExtra button{margin:0!important}' +
@@ -232,7 +283,8 @@
   function init() {
     if (!document.body || document.getElementById('izCommonHeader')) return;
     addStyles();
-    var session = readSession(), policy = pagePolicy(location.pathname, session.loggedIn);
+    var session = readSession(), policy = pagePolicy(location.pathname, session.loggedIn, location.search);
+    installBackPropagation(session.loggedIn);
     var legacy = findLegacyHeader(policy.page);
     var header = document.createElement('header'); header.id = 'izCommonHeader';
     var main = document.createElement('div'); main.className = 'iz-header-main';
@@ -252,6 +304,12 @@
     main.appendChild(title); main.appendChild(extra); main.appendChild(meta); main.appendChild(actions); header.appendChild(main);
     document.body.insertBefore(header, document.body.firstChild);
     takeLegacyExtras(legacy, extra);
+    requestAnimationFrame(scrollGuideHashTarget);
+    setTimeout(scrollGuideHashTarget, 80);
+    setTimeout(scrollGuideHashTarget, 250);
+    setTimeout(scrollGuideHashTarget, 600);
+    window.addEventListener('hashchange', scrollGuideHashTarget);
+    window.addEventListener('pageshow', scrollGuideHashTarget);
     state.timezone = cachedTimezone(); renderClock(); renderLanguage();
     state.timer = setInterval(renderClock, 1000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) renderClock(); });
@@ -261,7 +319,7 @@
     fetchTimezone(session, policy);
   }
 
-  window.IZHeader = { init: init, validSession: validSession, pagePolicy: pagePolicy, wallClockParts: wallClockParts, saveTimezone: saveTimezone };
+  window.IZHeader = { init: init, validSession: validSession, pagePolicy: pagePolicy, wallClockParts: wallClockParts, saveTimezone: saveTimezone, withBackHref: withBackHref, resolveBackTarget: resolveBackTarget, scrollGuideHashTarget: scrollGuideHashTarget };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
     else init();

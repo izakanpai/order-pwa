@@ -35,6 +35,20 @@
     .sup-h{ font-weight:900; margin-bottom:6px; }
     .alert{ margin-top:10px; display:none; padding:11px; border-radius:9px; font-size:14px; font-weight:700; }
     .low{ color:#b91c1c; font-weight:800; }
+    .po-table-wrap{ overflow:hidden; margin-top:6px; width:100%; }
+    .po-table{ width:100%; min-width:0; table-layout:fixed; }
+    .po-table th,.po-table td{ padding:8px 4px; }
+    .po-table .po-qty,.po-table .po-unit{ width:72px; }
+    .po-table .po-del{ width:44px; }
+    .po-table input{ display:block; width:100%; min-width:0; max-width:100%; padding:9px 7px; border:1px solid var(--border); border-radius:7px; font:inherit; background:var(--surface); }
+    .po-table .po-del .btn-sm{ width:36px; min-width:0; padding:7px 0; }
+    @media (max-width:520px){
+      .po-table th,.po-table td{ padding-left:3px; padding-right:3px; }
+      .po-table .po-qty,.po-table .po-unit{ width:58px; }
+      .po-table .po-del{ width:38px; }
+      .po-table input{ font-size:16px; padding:8px 5px; }
+      .po-table .po-del .btn-sm{ width:32px; padding-left:0; padding-right:0; }
+    }
   </style>
 </head>
 <body>
@@ -45,9 +59,9 @@
       <div class="muted" data-t="newOrderHint" style="margin-bottom:10px;">仕入先を選び、品目を追加してください。メニュー・発注アイテムマスタから選ぶか、直接入力できます。</div>
       <div class="fg"><label class="form-label" data-t="poSupplier">仕入先</label><select id="poSupplier" class="fc" onchange="onPoSupplierChange()"></select></div>
       <div class="alert" id="poSupplierWarn" style="background:#fef9c3;color:#854d0e;"></div>
-      <div style="overflow:auto;margin-top:6px;">
-        <table><thead><tr>
-          <th data-t="thItem">品目</th><th style="width:88px;" data-t="poThQty">数量</th><th style="width:88px;" data-t="poThUnit">単位</th><th style="width:40px;"></th>
+      <div class="po-table-wrap">
+        <table class="po-table"><thead><tr>
+          <th data-t="thItem">品目</th><th class="po-qty" data-t="poThQty">数量</th><th class="po-unit" data-t="poThUnit">単位</th><th class="po-del"></th>
         </tr></thead>
         <tbody id="poRows"></tbody></table>
       </div>
@@ -120,9 +134,9 @@
       var html = PO_ROWS.map(function(r,i){
         return '<tr>'+
           '<td><input value="'+esc(r.name)+'" oninput="PO_ROWS['+i+'].name=this.value;PO_ROWS['+i+'].nameEn=\'\'"></td>'+
-          '<td><input type="number" min="0" step="any" value="'+(r.qty||'')+'" oninput="PO_ROWS['+i+'].qty=Number(this.value)||0"></td>'+
-          '<td><input value="'+esc(r.unit||'')+'" oninput="PO_ROWS['+i+'].unit=this.value"></td>'+
-          '<td><button class="btn-sm" onclick="poDelRow('+i+')">🗑</button></td></tr>';
+          '<td class="po-qty"><input type="number" min="0" step="any" value="'+(r.qty||'')+'" oninput="PO_ROWS['+i+'].qty=Number(this.value)||0"></td>'+
+          '<td class="po-unit"><input value="'+esc(r.unit||'')+'" oninput="PO_ROWS['+i+'].unit=this.value"></td>'+
+          '<td class="po-del"><button class="btn-sm" onclick="poDelRow('+i+')">🗑</button></td></tr>';
       }).join('');
       if(!PO_ROWS.length) html = '<tr><td colspan="4" style="color:#aaa;padding:14px;text-align:center;">'+I18n.t('poEmpty')+'</td></tr>';
       document.getElementById('poRows').innerHTML = html;

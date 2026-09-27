@@ -1,156 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 1030" font-family="'Noto Sans JP','Segoe UI',Roboto,sans-serif">
-  <!-- ===== 更新方法: 各カードの<text>行を編集すれば内容を更新できます ===== -->
-  <rect x="0" y="0" width="1300" height="1030" fill="#f8fafc"/>
-
-  <!-- Header -->
-  <rect x="0" y="0" width="1300" height="66" fill="#0f172a"/>
-  <text x="36" y="42" fill="#ffffff" font-size="26" font-weight="800">🍶 オーダー管理システム 利用イメージ</text>
-  <text x="1264" y="28" fill="#93c5fd" font-size="13" text-anchor="end">クリークサイドの憩いの場 誘惑Bar</text>
-  <text x="1264" y="48" fill="#cbd5e1" font-size="12" text-anchor="end">PWA + Google Apps Script + スプレッドシート</text>
-
-  <!-- Arrows (背面に描画) -->
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L8,3 L0,6 Z" fill="#64748b"/>
-    </marker>
-    <symbol id="phoneIcon" viewBox="0 0 40 74">
-      <rect x="2" y="2" width="36" height="70" rx="8" fill="#0f172a"/>
-      <rect x="6" y="10" width="28" height="50" rx="2" fill="#e2e8f0"/>
-      <circle cx="20" cy="66" r="3" fill="#64748b"/>
-    </symbol>
-  </defs>
-  <g stroke="#64748b" stroke-width="2.5" fill="none" marker-end="url(#arrow)">
-    <line x1="400" y1="205" x2="486" y2="258"/>            <!-- 客→hub -->
-    <line x1="900" y1="205" x2="814" y2="258"/>            <!-- 厨房→hub -->
-    <line x1="230" y1="470" x2="560" y2="352"/>            <!-- ホール→hub -->
-    <line x1="1070" y1="430" x2="742" y2="352"/>           <!-- 管理→hub -->
-    <line x1="650" y1="352" x2="650" y2="432"/>            <!-- hub→データ -->
-    <line x1="650" y1="530" x2="650" y2="876"/>            <!-- データ→外部連携 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 1120" font-family="'Noto Sans JP','Segoe UI',Roboto,sans-serif">
+  <rect width="1300" height="1120" fill="#f8fafc"/>
+  <rect x="0" y="0" width="1300" height="70" fill="#0f172a"/>
+  <text x="36" y="44" fill="#ffffff" font-size="27" font-weight="800">🍶 izakanpai POS 店舗運営ガイド</text>
+  <text x="1264" y="30" fill="#93c5fd" font-size="13" text-anchor="end">はじめての設定から毎日の営業まで</text>
+  <text x="1264" y="51" fill="#cbd5e1" font-size="12" text-anchor="end">店舗スタッフ・管理者向け</text>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="#64748b"/></marker></defs>
+  <text x="50" y="112" fill="#0f172a" font-size="19" font-weight="800">まずはこの流れを覚えれば営業できます</text>
+  <g stroke="#94a3b8" stroke-width="3" fill="none" marker-end="url(#arrow)"><line x1="230" y1="160" x2="295" y2="160"/><line x1="480" y1="160" x2="545" y2="160"/><line x1="730" y1="160" x2="795" y2="160"/><line x1="980" y1="160" x2="1045" y2="160"/></g>
+  <g font-size="15" font-weight="800" text-anchor="middle">
+    <rect x="40" y="130" width="190" height="62" rx="14" fill="#dbeafe" stroke="#60a5fa"/><text x="135" y="156" fill="#1d4ed8">① 開店前</text><text x="135" y="178" fill="#334155" font-size="12">店舗・メニュー・スタッフ確認</text>
+    <rect x="295" y="130" width="190" height="62" rx="14" fill="#ecfdf5" stroke="#34d399"/><text x="390" y="156" fill="#047857">② 注文受付</text><text x="390" y="178" fill="#334155" font-size="12">QR注文／スタッフ入力</text>
+    <rect x="545" y="130" width="190" height="62" rx="14" fill="#fff7ed" stroke="#fb923c"/><text x="640" y="156" fill="#c2410c">③ 厨房・提供</text><text x="640" y="178" fill="#334155" font-size="12">調理 → 提供済</text>
+    <rect x="795" y="130" width="190" height="62" rx="14" fill="#fef3c7" stroke="#f59e0b"/><text x="890" y="156" fill="#92400e">④ 会計</text><text x="890" y="178" fill="#334155" font-size="12">割引・支払・レシート</text>
+    <rect x="1045" y="130" width="215" height="62" rx="14" fill="#f3e8ff" stroke="#c084fc"/><text x="1152" y="156" fill="#7e22ce">⑤ 閉店・振り返り</text><text x="1152" y="178" fill="#334155" font-size="12">売上・在庫・勤怠を確認</text>
   </g>
-  <g font-size="12.5" fill="#475569" font-weight="700">
-    <text x="415" y="238">① 注文</text>
-    <text x="836" y="238" text-anchor="end">② 連携</text>
-    <text x="392" y="410">注文入力・会計</text>
-    <text x="906" y="392" text-anchor="end">管理・集計</text>
-    <text x="662" y="400">保存</text>
-  </g>
-
-  <!-- 中央: システム hub -->
-  <rect x="486" y="212" width="328" height="140" rx="14" fill="#0f172a" stroke="#0ea5e9" stroke-width="2.5"/>
-  <text x="650" y="250" fill="#ffffff" font-size="18" font-weight="800" text-anchor="middle">🖥️ オーダー管理システム</text>
-  <text x="650" y="280" fill="#e2e8f0" font-size="12.5" text-anchor="middle">スマホ／タブレットのPWA（GitHub Pages）</text>
-  <text x="650" y="302" fill="#e2e8f0" font-size="12.5" text-anchor="middle">権限で画面を出し分け・EN/JP切替対応</text>
-  <text x="650" y="330" fill="#7dd3fc" font-size="12.5" text-anchor="middle">本番: izakanpai.com/yuwaku/</text>
-
-  <!-- データ基盤 -->
-  <rect x="486" y="432" width="328" height="96" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="1.6"/>
-  <text x="650" y="462" fill="#0f172a" font-size="15" font-weight="800" text-anchor="middle">🗄️ データ基盤</text>
-  <text x="650" y="486" fill="#334155" font-size="12.5" text-anchor="middle">Googleスプレッドシート（全データ）</text>
-  <text x="650" y="508" fill="#334155" font-size="12.5" text-anchor="middle">Google Apps Script（API・自動処理）</text>
-
-  <!-- ================= 客 ================= -->
-  <rect x="40" y="88" width="360" height="250" rx="14" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
-  <text x="60" y="120" fill="#1d4ed8" font-size="17" font-weight="800">👤 客（お客様のスマホ）</text>
-  <g font-size="12.8" fill="#1e293b">
-    <text x="60" y="150">📱 QRコードから注文画面にアクセス</text>
-    <text x="60" y="174">🍽️ メニュー注文（写真・オプション・数量）</text>
-    <text x="60" y="198">🎟️ クーポン／🎁 会員ポイント利用</text>
-    <text x="60" y="222">💳 セルフ決済 QR・カード（任意）</text>
-    <text x="60" y="246">🔔 スタッフ呼出／🧾 お会計／📋 注文状況</text>
-    <text x="60" y="270">⭐ フィードバック／🎂 誕生日登録</text>
-    <text x="60" y="294">🥡 テイクアウト注文／🗓️ 予約</text>
-    <text x="60" y="320" fill="#64748b" font-size="11.5">※ ログイン不要・卓ごとにQR</text>
-  </g>
-  <g transform="translate(400,105)">
-    <circle r="30" fill="#ffffff" stroke="#3b82f6" stroke-width="3"/>
-    <use href="#phoneIcon" x="-14" y="-26" width="28" height="52"/>
-  </g>
-  <text x="400" y="146" fill="#1d4ed8" font-size="10.5" font-weight="800" text-anchor="middle">客のスマホ</text>
-
-  <!-- ================= 厨房 ================= -->
-  <rect x="900" y="88" width="360" height="250" rx="14" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
-  <text x="920" y="120" fill="#c2410c" font-size="17" font-weight="800">🍳 厨房（キッチン端末）</text>
-  <g font-size="12.8" fill="#1e293b">
-    <text x="920" y="150">① 🖥️ KDSに客の注文が一覧表示（自動更新）</text>
-    <text x="920" y="174">② 🖨️ 注文をプリンタへ自動印刷（カテゴリ別）</text>
-    <text x="920" y="198">③ 🍳 表示・注文票を見てフードを調理</text>
-    <text x="920" y="222">④ ✅ できたら「提供済」に設定→一覧から消える</text>
-    <text x="920" y="246">📦 提供時に材料在庫を自動で減算</text>
-    <text x="920" y="272" fill="#64748b" font-size="11.5">※ 商品ごとに厨房表示ON/OFFを設定可能</text>
-  </g>
-  <g transform="translate(1260,105)">
-    <circle r="30" fill="#ffffff" stroke="#f97316" stroke-width="3"/>
-    <use href="#phoneIcon" x="-14" y="-26" width="28" height="52"/>
-  </g>
-  <text x="1260" y="146" fill="#c2410c" font-size="10.5" font-weight="800" text-anchor="middle">厨房用端末</text>
-
-  <!-- ================= ホール・店員 ================= -->
-  <rect x="40" y="470" width="360" height="340" rx="14" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
-  <text x="60" y="502" fill="#047857" font-size="17" font-weight="800">🙋 ホール・店員（店舗端末）</text>
-  <g font-size="12.8" fill="#1e293b">
-    <text x="60" y="528">① ✍️ 口頭注文をフロアスタッフが代理入力</text>
-    <text x="60" y="550">　 （管理画面→テーブル/カウンターを選択して入力）</text>
-    <text x="60" y="574">② 🧾 注文一覧で状況を確認（卓別・滞在タイマー）</text>
-    <text x="60" y="598">③ 🔔 客からの呼出・お会計依頼に対応</text>
-    <text x="60" y="622">④ 💴 会計：現金／カード／QR決済（割勘・一部・シニア/PWD割引）</text>
-    <text x="60" y="646">⑤ 🖨️ レシート印刷／✉️ eレシート</text>
-    <text x="60" y="670">🚫 注文取消（理由＋責任者の承認制）／⏰ 写真＋GPS打刻</text>
-    <text x="60" y="694">📇 卓QRコードもこの端末から印刷</text>
-    <text x="60" y="726" fill="#64748b" font-size="11.5">※ 注文入力・管理はログイン不要（店舗端末運用）</text>
-    <text x="60" y="762" fill="#047857" font-size="12" font-weight="700">🖨️ 印刷ステーション（Android専用・Bluetooth PT-210）・💳 決済端末と連携</text>
-  </g>
-  <g transform="translate(400,470)">
-    <circle r="30" fill="#ffffff" stroke="#10b981" stroke-width="3"/>
-    <use href="#phoneIcon" x="-14" y="-26" width="28" height="52"/>
-  </g>
-  <text x="400" y="511" fill="#047857" font-size="10.5" font-weight="800" text-anchor="middle">店舗用端末</text>
-
-  <!-- ================= 管理者・オーナー ================= -->
-  <rect x="900" y="430" width="360" height="380" rx="14" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
-  <text x="920" y="462" fill="#7e22ce" font-size="17" font-weight="800">🧑‍💼 管理者・オーナー</text>
-  <text x="920" y="482" fill="#64748b" font-size="11.5">管理コンソール（ログイン・多数タブ・権限別）</text>
-  <g font-size="12.8" fill="#1e293b">
-    <text x="920" y="508">📊 ダッシュボード・売上・月間粗利</text>
-    <text x="920" y="530">🧾 会計履歴（月別・再印刷）／💵 レジ締め</text>
-    <text x="920" y="552">📦 在庫・棚卸（🤖AIカメラで自動カウント）</text>
-    <text x="920" y="574">🚚 仕入・新規発注／✉️ 発注メール送信（多言語）</text>
-    <text x="920" y="596">🍽️ メニュー編集（在庫紐づけ・厨房表示ON/OFF）</text>
-    <text x="920" y="618">🎁 会員・🎂 誕生日クーポン・🗓️ 予約</text>
-    <text x="920" y="640">✅ Todo共有・📮 申し入れ管理</text>
-    <text x="920" y="662">🕐 勤怠・給与概算／👥 ユーザー・権限</text>
-    <text x="920" y="684">🛡️ 監査・操作ログ／⚙️ 設定</text>
-    <text x="920" y="706">💾 バックアップ・CSV書出</text>
-    <text x="920" y="728">✉️ 日次・週次・月次レポートを自動メール（EN/JP）</text>
-    <text x="920" y="764" fill="#7e22ce" font-size="12" font-weight="700">🧪 テスト環境で検証 → 本番へ反映</text>
-  </g>
-  <g transform="translate(1260,430)">
-    <circle r="30" fill="#ffffff" stroke="#a855f7" stroke-width="3"/>
-    <use href="#phoneIcon" x="-14" y="-26" width="28" height="52"/>
-  </g>
-  <text x="1260" y="471" fill="#7e22ce" font-size="10.5" font-weight="800" text-anchor="middle">管理者端末</text>
-
-  <!-- ================= 外部連携 ================= -->
-  <text x="650" y="902" fill="#0f172a" font-size="14" font-weight="800" text-anchor="middle">🔌 外部連携</text>
-  <g>
-    <rect x="120" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <use href="#phoneIcon" x="176" y="934" width="13" height="24"/>
-    <text x="219" y="951" font-size="14" fill="#94a3b8" text-anchor="middle">→</text>
-    <rect x="290" y="944" width="22" height="12" rx="2" fill="#0f172a"/>
-    <rect x="294" y="938" width="14" height="8" fill="#475569"/>
-    <rect x="294" y="954" width="14" height="6" fill="#e2e8f0"/>
-    <text x="245" y="970" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">🖨️ プリンタ（Bluetooth PT-210）</text>
-    <text x="245" y="988" font-size="10.8" fill="#64748b" text-anchor="middle">Android専用の印刷ステーション経由で自動印字</text>
-
-    <rect x="392" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="517" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">💳 PayMongo</text>
-    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">QR・カード決済</text>
-
-    <rect x="664" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="789" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ メール</text>
-    <text x="789" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">eレシート・レポート・発注メール</text>
-
-    <rect x="936" y="924" width="244" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="1058" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">🪣 Cloudflare R2</text>
-    <text x="1058" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">環境別の画像保存</text>
-  </g>
+  <rect x="40" y="225" width="590" height="260" rx="16" fill="#ffffff" stroke="#bfdbfe" stroke-width="2"/>
+  <text x="64" y="260" fill="#1d4ed8" font-size="19" font-weight="800">🏁 開店前に管理者が確認すること</text>
+  <g fill="#1e293b" font-size="14"><text x="66" y="298">• ⚙️ 設定：国・通貨・税率・サービス料・席数を確認</text><text x="66" y="330">• 🍽️ メニュー：商品、価格、提供時間、厨房表示を確認</text><text x="66" y="362">• 👥 スタッフ：利用者を登録し、必要な権限だけを付与</text><text x="66" y="394">• 📦 在庫を使う店舗は、初期在庫・最低在庫・レシピを登録</text><text x="66" y="426">• 🖨️ 必要ならプリンタ、レシート、決済方法を確認</text><text x="66" y="458" fill="#64748b" font-size="12.5">初回セットアップ後も、これらは「設定」「メニュー」「スタッフ」から変更できます。</text></g>
+  <rect x="670" y="225" width="590" height="260" rx="16" fill="#ffffff" stroke="#bbf7d0" stroke-width="2"/>
+  <text x="694" y="260" fill="#047857" font-size="19" font-weight="800">🧾 営業中：注文から会計まで</text>
+  <g fill="#1e293b" font-size="14"><text x="696" y="298">1. お客様は卓QRから注文、またはスタッフが「オーダー入力」で代理入力</text><text x="696" y="330">2. 厨房はKDS／注文票を確認し、調理後に「提供済」へ変更</text><text x="696" y="362">3. ホールは注文状況・呼出・会計依頼を確認して対応</text><text x="696" y="394">4. 会計時に人数・割引・支払方法・金額を必ず確認して確定</text><text x="696" y="426">5. 必要に応じて紙レシート／eレシートを渡す</text><text x="696" y="458" fill="#64748b" font-size="12.5">取消・返金・割引など重要操作は、店舗ルールに沿って責任者が確認してください。</text></g>
+  <rect x="40" y="520" width="590" height="245" rx="16" fill="#ffffff" stroke="#fed7aa" stroke-width="2"/>
+  <text x="64" y="555" fill="#c2410c" font-size="19" font-weight="800">🍳 役割別：スタッフがよく使う画面</text>
+  <g fill="#1e293b" font-size="14"><text x="66" y="594">🙋 ホール：注文管理／オーダー入力／会計／呼出対応</text><text x="66" y="626">🍳 厨房：KDS／注文票／提供済への更新</text><text x="66" y="658">⏰ スタッフ：出勤・休憩・退勤の打刻</text><text x="66" y="690">🧑‍💼 管理者：売上、在庫、スタッフ、顧客、設定の確認</text><text x="66" y="722" fill="#64748b" font-size="12.5">画面に表示される機能は、ユーザー権限やFree／Proプランによって異なります。</text></g>
+  <rect x="670" y="520" width="590" height="245" rx="16" fill="#ffffff" stroke="#ddd6fe" stroke-width="2"/>
+  <text x="694" y="555" fill="#7e22ce" font-size="19" font-weight="800">📊 閉店後・管理者の日常業務</text>
+  <g fill="#1e293b" font-size="14"><text x="696" y="594">• 💵 売上・会計履歴を確認し、必要ならレジ締め・再印刷</text><text x="696" y="626">• 📦 在庫・棚卸・仕入を確認し、不足品を補充</text><text x="696" y="658">• 🕐 勤怠・給与概算、スタッフの権限やTodoを確認</text><text x="696" y="690">• 🎁 会員・クーポン・予約、売上分析・利益を必要に応じて確認</text><text x="696" y="722" fill="#64748b" font-size="12.5">重要な売上・会計・勤怠データは定期的に確認し、必要に応じて書き出してください。</text></g>
+  <rect x="40" y="800" width="1220" height="270" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="64" y="838" fill="#0f172a" font-size="20" font-weight="800">🆘 困ったとき・安全に使うために</text>
+  <g fill="#1e293b" font-size="14"><text x="66" y="878">• 画面がおかしい場合：まず更新／画面を開き直す → 改善しなければ再ログイン</text><text x="66" y="910">• 注文・会計が合わない場合：注文状況と会計履歴を確認し、むやみに同じ操作を繰り返さない</text><text x="66" y="942">• 権限不足の場合：管理者が「スタッフ／ユーザー管理」で役割・権限を確認</text><text x="66" y="974">• 不具合や要望：「サポート」から内容を送信。店舗内の依頼は「申し入れ」「Todo」を利用</text><text x="66" y="1006">• 大切な操作：取消・返金・割引・税率・勤怠・給与概算などは店舗側で最終確認</text><text x="66" y="1038" fill="#64748b" font-size="12.5">このガイドは日々の使い方をまとめたものです。各画面の「？」ヘルプには、その画面だけの詳しい操作手順があります。</text></g>
+  <text x="650" y="1100" fill="#64748b" font-size="12" text-anchor="middle">izakanpai POS — 店舗運営の流れを、利用者目線でまとめたガイド</text>
 </svg>

@@ -27,6 +27,8 @@
     .muted{ color:var(--text-3); }
     .row{ display:flex; gap:8px; flex-wrap:wrap; }
     .row .fg{ flex:1; min-width:120px; }
+    .todo-date-shell{ position:relative; width:100%; min-width:0; height:44px; overflow:hidden; border-radius:9px; contain:layout paint; }
+    .todo-date-shell .fc{ position:absolute; inset:0; display:block; inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; min-inline-size:0!important; min-width:0!important; max-inline-size:calc(100% - 8px)!important; max-width:calc(100% - 8px)!important; height:100%!important; margin:0; }
     .item{ display:flex; align-items:flex-start; gap:10px; padding:12px 4px; border-bottom:1px solid var(--border); }
     .item:last-child{ border-bottom:0; }
     .item input[type=checkbox]{ width:22px; height:22px; margin-top:2px; flex:0 0 auto; cursor:pointer; }
@@ -58,7 +60,7 @@
         </div>
         <div class="fg" style="flex:1;">
           <label class="form-label" data-t="dueLabel">期限（任意）</label>
-          <input id="newDue" type="date" class="fc">
+          <div class="todo-date-shell"><input id="newDue" type="date" class="fc"></div>
         </div>
       </div>
       <button class="btn" id="addBtn" onclick="addTodo()" data-t="addBtn">➕ 追加</button>

@@ -1,156 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 1030" font-family="'Noto Sans JP','Segoe UI',Roboto,sans-serif">
-  <!-- ===== English translation of system-overview.svg. Edit the <text> lines to update content. ===== -->
-  <rect x="0" y="0" width="1300" height="1030" fill="#f8fafc"/>
-
-  <!-- Header -->
-  <rect x="0" y="0" width="1300" height="66" fill="#0f172a"/>
-  <text x="36" y="42" fill="#ffffff" font-size="26" font-weight="800">🍶 Order Management System — Overview</text>
-  <text x="1264" y="28" fill="#93c5fd" font-size="13" text-anchor="end">A relaxing spot by the creek — Yuwaku Bar</text>
-  <text x="1264" y="48" fill="#cbd5e1" font-size="12" text-anchor="end">PWA + Google Apps Script + Spreadsheet</text>
-
-  <!-- Arrows (背面に描画) -->
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L8,3 L0,6 Z" fill="#64748b"/>
-    </marker>
-    <symbol id="phoneIcon" viewBox="0 0 40 74">
-      <rect x="2" y="2" width="36" height="70" rx="8" fill="#0f172a"/>
-      <rect x="6" y="10" width="28" height="50" rx="2" fill="#e2e8f0"/>
-      <circle cx="20" cy="66" r="3" fill="#64748b"/>
-    </symbol>
-  </defs>
-  <g stroke="#64748b" stroke-width="2.5" fill="none" marker-end="url(#arrow)">
-    <line x1="400" y1="205" x2="486" y2="258"/>            <!-- 客→hub -->
-    <line x1="900" y1="205" x2="814" y2="258"/>            <!-- 厨房→hub -->
-    <line x1="230" y1="470" x2="560" y2="352"/>            <!-- ホール→hub -->
-    <line x1="1070" y1="430" x2="742" y2="352"/>           <!-- 管理→hub -->
-    <line x1="650" y1="352" x2="650" y2="432"/>            <!-- hub→データ -->
-    <line x1="650" y1="530" x2="650" y2="876"/>            <!-- データ→外部連携 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 1120" font-family="'Noto Sans JP','Segoe UI',Roboto,sans-serif">
+  <rect width="1300" height="1120" fill="#f8fafc"/>
+  <rect x="0" y="0" width="1300" height="70" fill="#0f172a"/>
+  <text x="36" y="44" fill="#ffffff" font-size="27" font-weight="800">🍶 izakanpai POS — Store Operations Guide</text>
+  <text x="1264" y="30" fill="#93c5fd" font-size="13" text-anchor="end">From first setup to daily operations</text>
+  <text x="1264" y="51" fill="#cbd5e1" font-size="12" text-anchor="end">For store staff and managers</text>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="#64748b"/></marker></defs>
+  <text x="50" y="112" fill="#0f172a" font-size="19" font-weight="800">Learn this flow first and you can run daily operations</text>
+  <g stroke="#94a3b8" stroke-width="3" fill="none" marker-end="url(#arrow)"><line x1="230" y1="160" x2="295" y2="160"/><line x1="480" y1="160" x2="545" y2="160"/><line x1="730" y1="160" x2="795" y2="160"/><line x1="980" y1="160" x2="1045" y2="160"/></g>
+  <g font-size="15" font-weight="800" text-anchor="middle">
+    <rect x="40" y="130" width="190" height="62" rx="14" fill="#dbeafe" stroke="#60a5fa"/><text x="135" y="156" fill="#1d4ed8">1. Before opening</text><text x="135" y="178" fill="#334155" font-size="12">Check store, menu, staff</text>
+    <rect x="295" y="130" width="190" height="62" rx="14" fill="#ecfdf5" stroke="#34d399"/><text x="390" y="156" fill="#047857">2. Take orders</text><text x="390" y="178" fill="#334155" font-size="12">QR or staff entry</text>
+    <rect x="545" y="130" width="190" height="62" rx="14" fill="#fff7ed" stroke="#fb923c"/><text x="640" y="156" fill="#c2410c">3. Kitchen</text><text x="640" y="178" fill="#334155" font-size="12">Cook → mark served</text>
+    <rect x="795" y="130" width="190" height="62" rx="14" fill="#fef3c7" stroke="#f59e0b"/><text x="890" y="156" fill="#92400e">4. Checkout</text><text x="890" y="178" fill="#334155" font-size="12">Discount, pay, receipt</text>
+    <rect x="1045" y="130" width="215" height="62" rx="14" fill="#f3e8ff" stroke="#c084fc"/><text x="1152" y="156" fill="#7e22ce">5. Close &amp; review</text><text x="1152" y="178" fill="#334155" font-size="12">Sales, stock, attendance</text>
   </g>
-  <g font-size="12.5" fill="#475569" font-weight="700">
-    <text x="415" y="238">① Order</text>
-    <text x="836" y="238" text-anchor="end">② Sync</text>
-    <text x="392" y="410">Order entry · checkout</text>
-    <text x="906" y="392" text-anchor="end">Admin · reporting</text>
-    <text x="662" y="400">Save</text>
-  </g>
-
-  <!-- 中央: システム hub -->
-  <rect x="486" y="212" width="328" height="140" rx="14" fill="#0f172a" stroke="#0ea5e9" stroke-width="2.5"/>
-  <text x="650" y="250" fill="#ffffff" font-size="18" font-weight="800" text-anchor="middle">🖥️ Order Management System</text>
-  <text x="650" y="280" fill="#e2e8f0" font-size="12.5" text-anchor="middle">Phone/tablet PWA (GitHub Pages)</text>
-  <text x="650" y="302" fill="#e2e8f0" font-size="12.5" text-anchor="middle">Role-based screens · EN/JP toggle</text>
-  <text x="650" y="330" fill="#7dd3fc" font-size="12.5" text-anchor="middle">Live: izakanpai.com/yuwaku/</text>
-
-  <!-- データ基盤 -->
-  <rect x="486" y="432" width="328" height="96" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="1.6"/>
-  <text x="650" y="462" fill="#0f172a" font-size="15" font-weight="800" text-anchor="middle">🗄️ Data Layer</text>
-  <text x="650" y="486" fill="#334155" font-size="12.5" text-anchor="middle">Google Sheets (all data)</text>
-  <text x="650" y="508" fill="#334155" font-size="12" text-anchor="middle">Google Apps Script (API, automation)</text>
-
-  <!-- ================= 客 ================= -->
-  <rect x="40" y="88" width="360" height="250" rx="14" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
-  <text x="60" y="120" fill="#1d4ed8" font-size="17" font-weight="800">👤 Customer (guest's phone)</text>
-  <g font-size="12.8" fill="#1e293b">
-    <text x="60" y="150">📱 Scan the table QR to order</text>
-    <text x="60" y="174">🍽️ Order from menu (photo, options, qty)</text>
-    <text x="60" y="198">🎟️ Coupons / 🎁 Member points</text>
-    <text x="60" y="222">💳 Self-checkout: QR / Card (optional)</text>
-    <text x="60" y="246">🔔 Call staff / 🧾 Bill / 📋 Order status</text>
-    <text x="60" y="270">⭐ Feedback / 🎂 Birthday sign-up</text>
-    <text x="60" y="294">🥡 Takeout orders / 🗓️ Reservations</text>
-    <text x="60" y="320" fill="#64748b" font-size="11.5">※ No login needed · one QR per table</text>
-  </g>
-  <g transform="translate(400,105)">
-    <circle r="30" fill="#ffffff" stroke="#3b82f6" stroke-width="3"/>
-    <use href="#phoneIcon" x="-14" y="-26" width="28" height="52"/>
-  </g>
-  <text x="400" y="146" fill="#1d4ed8" font-size="10" font-weight="800" text-anchor="middle">Guest's phone</text>
-
-  <!-- ================= 厨房 ================= -->
-  <rect x="900" y="88" width="360" height="250" rx="14" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
-  <text x="920" y="120" fill="#c2410c" font-size="17" font-weight="800">🍳 Kitchen (kitchen device)</text>
-  <g font-size="12.8" fill="#1e293b">
-    <text x="920" y="150">① 🖥️ Orders list on KDS (auto-refresh)</text>
-    <text x="920" y="174">② 🖨️ Auto-prints ticket (by category)</text>
-    <text x="920" y="198">③ 🍳 Cook using the KDS / ticket</text>
-    <text x="920" y="222">④ ✅ Mark "Served" — leaves the list</text>
-    <text x="920" y="246">📦 Stock auto-deducted when served</text>
-    <text x="920" y="272" fill="#64748b" font-size="11.5">※ Per-item kitchen display can be toggled off</text>
-  </g>
-  <g transform="translate(1260,105)">
-    <circle r="30" fill="#ffffff" stroke="#f97316" stroke-width="3"/>
-    <use href="#phoneIcon" x="-14" y="-26" width="28" height="52"/>
-  </g>
-  <text x="1260" y="146" fill="#c2410c" font-size="10" font-weight="800" text-anchor="middle">Kitchen device</text>
-
-  <!-- ================= ホール・店員 ================= -->
-  <rect x="40" y="470" width="360" height="340" rx="14" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
-  <text x="60" y="502" fill="#047857" font-size="17" font-weight="800">🙋 Floor staff (store device)</text>
-  <g font-size="12.8" fill="#1e293b">
-    <text x="60" y="528">① ✍️ Staff enter verbal orders for guests</text>
-    <text x="60" y="550">    (Admin → pick table/counter → enter)</text>
-    <text x="60" y="574">② 🧾 Track orders per table (seated timer)</text>
-    <text x="60" y="598">③ 🔔 Respond to staff-call &amp; bill requests</text>
-    <text x="60" y="622" font-size="11">④ 💴 Checkout: cash, card, QR payment (split/partial/discount)</text>
-    <text x="60" y="646">⑤ 🖨️ Print receipt / ✉️ e-receipt</text>
-    <text x="60" y="670" font-size="11">🚫 Void (reason + approval) / ⏰ Photo+GPS clock-in</text>
-    <text x="60" y="694">📇 Table QR codes print from here too</text>
-    <text x="60" y="726" fill="#64748b" font-size="11.5">※ No login for entry/admin (shared device)</text>
-    <text x="60" y="762" fill="#047857" font-size="11" font-weight="700">🖨️ Print station (Android only, Bluetooth PT-210) &amp; 💳 payment terminal</text>
-  </g>
-  <g transform="translate(400,470)">
-    <circle r="30" fill="#ffffff" stroke="#10b981" stroke-width="3"/>
-    <use href="#phoneIcon" x="-14" y="-26" width="28" height="52"/>
-  </g>
-  <text x="400" y="511" fill="#047857" font-size="10" font-weight="800" text-anchor="middle">Store device</text>
-
-  <!-- ================= 管理者・オーナー ================= -->
-  <rect x="900" y="430" width="360" height="380" rx="14" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
-  <text x="920" y="462" fill="#7e22ce" font-size="17" font-weight="800">🧑‍💼 Admin / Owner</text>
-  <text x="920" y="482" fill="#64748b" font-size="11.5">Management console (login, many tabs, roles)</text>
-  <g font-size="12.8" fill="#1e293b">
-    <text x="920" y="508">📊 Dashboard · Sales · Monthly profit</text>
-    <text x="920" y="530" font-size="11.8">🧾 Receipts (by month, reprint) / 💵 Register</text>
-    <text x="920" y="552">📦 Inventory · Stocktake (🤖 AI camera scan)</text>
-    <text x="920" y="574" font-size="11.8">🚚 Purchasing / ✉️ Order emails (multilingual)</text>
-    <text x="920" y="596" font-size="11.8">🍽️ Menu editor (stock link, kitchen show/hide)</text>
-    <text x="920" y="618" font-size="11.8">🎁 Members · 🎂 Birthday coupons · 🗓️ Bookings</text>
-    <text x="920" y="640">✅ Todo board · 📮 Staff requests</text>
-    <text x="920" y="662">🕐 Attendance · Payroll est. / 👥 Users</text>
-    <text x="920" y="684">🛡️ Audit log / ⚙️ Settings</text>
-    <text x="920" y="706">💾 Backup · CSV export</text>
-    <text x="920" y="728" font-size="11.8">✉️ Daily/weekly/monthly reports (EN/JP)</text>
-    <text x="920" y="764" fill="#7e22ce" font-size="12" font-weight="700">🧪 Verify in test → deploy to prod</text>
-  </g>
-  <g transform="translate(1260,430)">
-    <circle r="30" fill="#ffffff" stroke="#a855f7" stroke-width="3"/>
-    <use href="#phoneIcon" x="-14" y="-26" width="28" height="52"/>
-  </g>
-  <text x="1260" y="471" fill="#7e22ce" font-size="10" font-weight="800" text-anchor="middle">Admin device</text>
-
-  <!-- ================= 外部連携 ================= -->
-  <text x="650" y="902" fill="#0f172a" font-size="14" font-weight="800" text-anchor="middle">🔌 External Integrations</text>
-  <g>
-    <rect x="120" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <use href="#phoneIcon" x="176" y="934" width="13" height="24"/>
-    <text x="219" y="951" font-size="14" fill="#94a3b8" text-anchor="middle">→</text>
-    <rect x="290" y="944" width="22" height="12" rx="2" fill="#0f172a"/>
-    <rect x="294" y="938" width="14" height="8" fill="#475569"/>
-    <rect x="294" y="954" width="14" height="6" fill="#e2e8f0"/>
-    <text x="245" y="970" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="middle">🖨️ Printer (Bluetooth PT-210)</text>
-    <text x="245" y="988" font-size="10" fill="#64748b" text-anchor="middle">Prints via a dedicated Android print station</text>
-
-    <rect x="392" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="517" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">💳 PayMongo</text>
-    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">QR · card payments</text>
-
-    <rect x="664" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="789" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ Email</text>
-    <text x="789" y="980" font-size="11" fill="#64748b" text-anchor="middle">e-receipts · reports · order emails</text>
-
-    <rect x="936" y="924" width="244" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="1058" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">🪣 Cloudflare R2</text>
-    <text x="1058" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">Environment-separated images</text>
-  </g>
+  <rect x="40" y="225" width="590" height="260" rx="16" fill="#ffffff" stroke="#bfdbfe" stroke-width="2"/>
+  <text x="64" y="260" fill="#1d4ed8" font-size="19" font-weight="800">🏁 What managers check before opening</text>
+  <g fill="#1e293b" font-size="14"><text x="66" y="298">• ⚙️ Settings: country, currency, tax, service charge and seating</text><text x="66" y="330">• 🍽️ Menu: items, prices, service hours and kitchen display</text><text x="66" y="362">• 👥 Staff: add users and give only the permissions they need</text><text x="66" y="394">• 📦 If using stock: enter starting stock, minimums and recipes</text><text x="66" y="426">• 🖨️ If needed: check printer, receipts and payment methods</text><text x="66" y="458" fill="#64748b" font-size="12.5">You can change these later from Settings, Menu and Staff.</text></g>
+  <rect x="670" y="225" width="590" height="260" rx="16" fill="#ffffff" stroke="#bbf7d0" stroke-width="2"/>
+  <text x="694" y="260" fill="#047857" font-size="19" font-weight="800">🧾 During service: from order to checkout</text>
+  <g fill="#1e293b" font-size="14"><text x="696" y="298">1. Guests order by table QR, or staff use Order Entry</text><text x="696" y="330">2. Kitchen checks KDS/tickets, cooks, then marks items Served</text><text x="696" y="362">3. Floor staff watch order status, calls and bill requests</text><text x="696" y="394">4. At checkout, confirm guests, discounts, payment and total</text><text x="696" y="426">5. Give a printed or e-receipt when needed</text><text x="696" y="458" fill="#64748b" font-size="12.5">Voids, refunds and discounts should follow your store's approval rules.</text></g>
+  <rect x="40" y="520" width="590" height="245" rx="16" fill="#ffffff" stroke="#fed7aa" stroke-width="2"/>
+  <text x="64" y="555" fill="#c2410c" font-size="19" font-weight="800">🍳 Common screens by role</text>
+  <g fill="#1e293b" font-size="14"><text x="66" y="594">🙋 Floor: Orders / Order Entry / Checkout / Guest calls</text><text x="66" y="626">🍳 Kitchen: KDS / tickets / mark orders Served</text><text x="66" y="658">⏰ Staff: clock in, break, clock out</text><text x="66" y="690">🧑‍💼 Manager: sales, stock, staff, customers and settings</text><text x="66" y="722" fill="#64748b" font-size="12.5">Visible functions depend on user permissions and the Free/Pro plan.</text></g>
+  <rect x="670" y="520" width="590" height="245" rx="16" fill="#ffffff" stroke="#ddd6fe" stroke-width="2"/>
+  <text x="694" y="555" fill="#7e22ce" font-size="19" font-weight="800">📊 After closing &amp; manager routines</text>
+  <g fill="#1e293b" font-size="14"><text x="696" y="594">• 💵 Review sales and receipts; close register or reprint if needed</text><text x="696" y="626">• 📦 Review stock, stocktake and purchasing; replenish shortages</text><text x="696" y="658">• 🕐 Review attendance/payroll estimates, permissions and to-dos</text><text x="696" y="690">• 🎁 Review members, coupons, reservations and business reports</text><text x="696" y="722" fill="#64748b" font-size="12.5">Review important sales, checkout and attendance data regularly and export when needed.</text></g>
+  <rect x="40" y="800" width="1220" height="270" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="64" y="838" fill="#0f172a" font-size="20" font-weight="800">🆘 When something goes wrong &amp; safe operation</text>
+  <g fill="#1e293b" font-size="14"><text x="66" y="878">• Strange screen: refresh or reopen the screen first; if needed, sign in again</text><text x="66" y="910">• Order/checkout mismatch: check order status and receipt history before repeating an action</text><text x="66" y="942">• Permission issue: a manager reviews the user's role and permissions</text><text x="66" y="974">• Bug or request: send it from Support; use Staff Requests / To-dos for internal work</text><text x="66" y="1006">• Critical actions: the store must finally verify voids, refunds, tax, attendance and payroll estimates</text><text x="66" y="1038" fill="#64748b" font-size="12.5">This page is the big-picture guide. Use each screen's “?” help for detailed steps.</text></g>
+  <text x="650" y="1100" fill="#64748b" font-size="12" text-anchor="middle">izakanpai POS — a user-focused guide to daily store operations</text>
 </svg>

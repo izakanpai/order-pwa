@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="utf-8">
@@ -117,7 +117,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="guide-printer-setup" data-guide-anchor>
       <div class="card-title">➕ <span id="t-prform">Add / Edit Printer</span></div>
       <div class="form-hint" id="t-prform-hint" style="margin:-6px 0 12px;"></div>
       <input type="hidden" id="prId">
@@ -167,7 +167,7 @@
         url:'CloudPRNT サーバーURL', copy:'コピー', copied:'✅ コピーしました',
         urlHelp:'Starプリンタの CloudPRNT 設定画面で、下記URLを「Server URL」に登録してください（各プリンタ共通）。ポーリング間隔は5〜10秒推奨。',
         cpUnavail:'ℹ️ このURLは「CloudPRNT」対応プリンター専用です（Star社の公開仕様書どおりにサーバー側は実装済みですが、実機での動作確認はまだ行っていません）。下の「プリンタの追加/編集」で登録するMACアドレス・カテゴリも、このCloudPRNTプリンター向けの設定です。CloudPRNT対応プリンター（Star Micronics製など）を導入する場合は、そのMACアドレスを登録し、プリンター側の設定画面で上記URLを「Server URL」に登録してください。導入時は必ず1台でテスト印字を試してからご利用ください。',
-        btExplain:'🔵 Bluetoothプリンタ（現在お使いのPT-210など）はCloudPRNTには対応していません。上の登録フォームは使わず、代わりにプリンタ本体とレジ横の端末（PC/スマホ）をBluetoothで直接ペアリングし、<a href="./bridge.html" style="color:#7c2d12;text-decoration:underline;font-weight:800;">🖨️ 印刷ステーション（bridge.html）</a>をその端末のChromeで開いたままにしてください。会計確定などで発生した印刷ジョブはこの画面が自動でポーリングして受け取り、Bluetooth経由でプリンタへ送信します。',
+        btExplain:'🔵 Bluetoothプリンタ（現在お使いのPT-210など）はCloudPRNTには対応していません。上の登録フォームは使わず、代わりにプリンタ本体とレジ横の端末（PC/スマホ）をBluetoothで直接ペアリングし、<a href="./bridge.html#guide-bridge-connect" style="color:#7c2d12;text-decoration:underline;font-weight:800;">🖨️ 印刷ステーション（bridge.html）</a>をその端末のChromeで開いたままにしてください。会計確定などで発生した印刷ジョブはこの画面が自動でポーリングして受け取り、Bluetooth経由でプリンタへ送信します。',
         queue:'印刷キュー', pend:'未印刷', prog:'印刷中', done:'印刷済', fail:'失敗', reall:'失敗を再印刷', clear:'印刷済を削除',
         prform:'プリンタの追加 / 編集', prformHint:'⚠️ CloudPRNT対応プリンタ専用です。Bluetoothプリンタ（PT-210等）はここに登録する必要はありません（上の説明を参照）。', prname:'プリンタ名', prmac:'MACアドレス', hintMac:'CloudPRNTプリンタのMAC。設定画面や本体ラベルで確認できます。',
         prcat:'対応カテゴリ', hintCat:'選択したカテゴリの商品のみ印刷。未選択の場合は全カテゴリを印刷します。', prenabled:'有効', save:'保存', clear2:'クリア', prlist:'登録プリンタ',
@@ -177,7 +177,7 @@
         url:'CloudPRNT Server URL', copy:'Copy', copied:'✅ Copied',
         urlHelp:'In each Star printer\u2019s CloudPRNT settings, set the URL below as the "Server URL" (same for all printers). Polling interval 5\u201310s recommended.',
         cpUnavail:'\u2139\ufe0f This URL is only for \u201cCloudPRNT\u201d-capable printers (server-side support is built to Star\u2019s published protocol spec, but hasn\u2019t been tested against a real CloudPRNT printer yet). The MAC address and categories you register in \u201cAdd / Edit Printer\u201d below are also for this kind of CloudPRNT printer. If you get a CloudPRNT-capable printer (e.g. Star Micronics), register its MAC address and set the URL above as its \u201cServer URL\u201d in the printer\u2019s own settings screen. Always test-print on one unit before relying on it.',
-        btExplain:'\ud83d\udd35 Bluetooth printers (like the PT-210 currently in use) don\u2019t support CloudPRNT. Don\u2019t use the form above for them \u2014 instead, pair the printer directly over Bluetooth with the device sitting at the register (PC/phone), and keep the <a href="./bridge.html" style="color:#7c2d12;text-decoration:underline;font-weight:800;">\ud83d\udda8\ufe0f Print Station (bridge.html)</a> open in that device\u2019s Chrome. It automatically polls for print jobs (e.g. from finalized bills) and sends them to the printer over Bluetooth.',
+        btExplain:'\ud83d\udd35 Bluetooth printers (like the PT-210 currently in use) don\u2019t support CloudPRNT. Don\u2019t use the form above for them \u2014 instead, pair the printer directly over Bluetooth with the device sitting at the register (PC/phone), and keep the <a href="./bridge.html#guide-bridge-connect" style="color:#7c2d12;text-decoration:underline;font-weight:800;">\ud83d\udda8\ufe0f Print Station (bridge.html)</a> open in that device\u2019s Chrome. It automatically polls for print jobs (e.g. from finalized bills) and sends them to the printer over Bluetooth.',
         queue:'Print Queue', pend:'Pending', prog:'Printing', done:'Done', fail:'Failed', reall:'Reprint failed', clear:'Clear done',
         prform:'Add / Edit Printer', prformHint:'\u26a0\ufe0f For CloudPRNT-capable printers only. Bluetooth printers (e.g. PT-210) do not need to be registered here \u2014 see the note above.', prname:'Printer Name', prmac:'MAC Address', hintMac:'The CloudPRNT printer\u2019s MAC (see its settings screen or device label).',
         prcat:'Categories', hintCat:'Prints only the selected categories. If none selected, prints all categories.', prenabled:'Enabled', save:'Save', clear2:'Clear', prlist:'Registered Printers',

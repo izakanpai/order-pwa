@@ -4,9 +4,9 @@
 
   <!-- Header -->
   <rect x="0" y="0" width="1300" height="66" fill="#0f172a"/>
-  <text x="36" y="42" fill="#ffffff" font-size="26" font-weight="800">🍶 Order Management System — Overview</text>
-  <text x="1264" y="28" fill="#93c5fd" font-size="13" text-anchor="end">Izakaya Yuuwaku (誘惑)</text>
-  <text x="1264" y="48" fill="#cbd5e1" font-size="12" text-anchor="end">PWA + Cloudflare Workers + D1</text>
+  <text x="36" y="42" fill="#ffffff" font-size="26" font-weight="800">🍶 izakanpai POS — System Overview</text>
+  <text x="1264" y="28" fill="#93c5fd" font-size="13" text-anchor="end">All-in-one POS for food-service operations</text>
+  <text x="1264" y="48" fill="#cbd5e1" font-size="12" text-anchor="end">iOS · Android · Web / Cloudflare</text>
 
   <!-- Arrows (背面に描画) -->
   <defs>
@@ -37,16 +37,16 @@
 
   <!-- 中央: システム hub -->
   <rect x="486" y="212" width="328" height="140" rx="14" fill="#0f172a" stroke="#0ea5e9" stroke-width="2.5"/>
-  <text x="650" y="250" fill="#ffffff" font-size="18" font-weight="800" text-anchor="middle">🖥️ Order Management System</text>
-  <text x="650" y="280" fill="#e2e8f0" font-size="12.5" text-anchor="middle">Phone/tablet PWA (GitHub Pages)</text>
-  <text x="650" y="302" fill="#e2e8f0" font-size="12.5" text-anchor="middle">Role-based screens · EN/JP toggle</text>
-  <text x="650" y="330" fill="#7dd3fc" font-size="12.5" text-anchor="middle">Live: izakanpai.com/yuwaku/</text>
+  <text x="650" y="250" fill="#ffffff" font-size="18" font-weight="800" text-anchor="middle">🖥️ izakanpai POS</text>
+  <text x="650" y="280" fill="#e2e8f0" font-size="12.5" text-anchor="middle">iOS / Android apps + Web/PWA</text>
+  <text x="650" y="302" fill="#e2e8f0" font-size="12.5" text-anchor="middle">Role permissions · JP/EN · secure sign-in</text>
+  <text x="650" y="330" fill="#7dd3fc" font-size="12.5" text-anchor="middle">Orders · checkout · stock · staff · CRM</text>
 
   <!-- データ基盤 -->
   <rect x="486" y="432" width="328" height="96" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="1.6"/>
-  <text x="650" y="462" fill="#0f172a" font-size="15" font-weight="800" text-anchor="middle">🗄️ Data Layer</text>
-  <text x="650" y="486" fill="#334155" font-size="12.5" text-anchor="middle">Cloudflare D1 (all data)</text>
-  <text x="650" y="508" fill="#334155" font-size="12" text-anchor="middle">Cloudflare Workers (API, automation)</text>
+  <text x="650" y="462" fill="#0f172a" font-size="15" font-weight="800" text-anchor="middle">🗄️ Cloud Data Layer</text>
+  <text x="650" y="486" fill="#334155" font-size="12.5" text-anchor="middle">Cloudflare D1 (operational data)</text>
+  <text x="650" y="508" fill="#334155" font-size="12" text-anchor="middle">Workers API / Scheduler + R2 (images &amp; evidence)</text>
 
   <!-- ================= 客 ================= -->
   <rect x="40" y="88" width="360" height="250" rx="14" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
@@ -55,8 +55,8 @@
     <text x="60" y="150">📱 Scan the table QR to order</text>
     <text x="60" y="174">🍽️ Order from menu (photo, options, qty)</text>
     <text x="60" y="198">🎟️ Coupons / 🎁 Member points</text>
-    <text x="60" y="222">💳 Pays by cash / a separate card terminal / GCash QR (off-app)</text>
-    <text x="60" y="246">🔔 Call staff / 🧾 Bill / 📋 Order status</text>
+    <text x="60" y="222">💳 QR / card payment / 🧾 e-receipt (optional)</text>
+    <text x="60" y="246">🔔 Call staff / request bill / 📋 Order status</text>
     <text x="60" y="270">⭐ Feedback / 🎂 Birthday sign-up</text>
     <text x="60" y="294">🥡 Takeout orders / 🗓️ Reservations</text>
     <text x="60" y="320" fill="#64748b" font-size="11.5">※ No login needed · one QR per table</text>
@@ -92,12 +92,12 @@
     <text x="60" y="550">    (Admin → pick table/counter → enter)</text>
     <text x="60" y="574">② 🧾 Track orders per table (seated timer)</text>
     <text x="60" y="598">③ 🔔 Respond to staff-call &amp; bill requests</text>
-    <text x="60" y="622" font-size="11">④ 💴 Checkout: cash, card, GCash (split/partial/discount)</text>
+    <text x="60" y="622" font-size="11">④ 💴 Checkout: cash/card/QR (split, partial, discounts)</text>
     <text x="60" y="646">⑤ 🖨️ Print receipt / ✉️ e-receipt</text>
     <text x="60" y="670" font-size="11">🚫 Void (reason + approval) / ⏰ Photo+GPS clock-in</text>
     <text x="60" y="694">📇 Table QR codes print from here too</text>
-    <text x="60" y="726" fill="#64748b" font-size="11.5">※ No login for entry/admin (shared device)</text>
-    <text x="60" y="762" fill="#047857" font-size="11" font-weight="700">🖨️ Print station (login required, Bluetooth PT-210) / 💳 card terminal &amp; GCash QR (off-app)</text>
+    <text x="60" y="726" fill="#64748b" font-size="11.5">※ Staff sign in according to their assigned role</text>
+    <text x="60" y="762" fill="#047857" font-size="11" font-weight="700">🖨️ Print standby (Bluetooth PT-210) &amp; 💳 payment terminal</text>
   </g>
   <g transform="translate(400,470)">
     <circle r="30" fill="#ffffff" stroke="#10b981" stroke-width="3"/>
@@ -110,19 +110,18 @@
   <text x="920" y="462" fill="#7e22ce" font-size="17" font-weight="800">🧑‍💼 Admin / Owner</text>
   <text x="920" y="482" fill="#64748b" font-size="11.5">Management console (login, many tabs, roles)</text>
   <g font-size="12.8" fill="#1e293b">
-    <text x="920" y="508">📊 Dashboard · Sales · Monthly profit</text>
-    <text x="920" y="530" font-size="11.8">🧾 Receipts (by month, reprint) / 💵 Register</text>
-    <text x="920" y="552">📦 Inventory · Stocktake (🤖 AI camera scan)</text>
-    <text x="920" y="574" font-size="11.8">🚚 Purchasing / ✉️ Order emails (multilingual)</text>
-    <text x="920" y="596" font-size="11.8">🍽️ Menu editor (stock link, kitchen show/hide)</text>
-    <text x="920" y="618" font-size="11.8">🎁 Members · 🎂 Birthday coupons · 🗓️ Bookings</text>
-    <text x="920" y="640">✅ Todo board · 📮 Staff requests</text>
-    <text x="920" y="662">🕐 Attendance · Payroll est. / 👥 Users</text>
-    <text x="920" y="684">🛡️ Audit log / ⚙️ Settings</text>
-    <text x="920" y="706">💾 Backup · CSV export</text>
-    <text x="920" y="728" font-size="11.8">✉️ Daily/weekly/monthly reports (EN/JP)</text>
-    <text x="920" y="748" font-size="11.8">📐 Operating profit simulator (login required)</text>
-    <text x="920" y="786" fill="#7e22ce" font-size="12" font-weight="700">🧪 Verify in test → deploy to prod</text>
+    <text x="920" y="508" font-size="11.4">📊 Dashboard · Sales · Expenses · Profit / Operating-profit simulation</text>
+    <text x="920" y="530" font-size="11.8">🧾 Receipts &amp; reprint / 💵 Register close</text>
+    <text x="920" y="552" font-size="11.8">📦 Inventory &amp; stocktake / 🚚 Purchasing &amp; order items</text>
+    <text x="920" y="574" font-size="11.8">🍽️ Menu · recipe cost · service hours · KDS settings</text>
+    <text x="920" y="596" font-size="11.8">💰 Commission · service-charge allocation · staff rewards</text>
+    <text x="920" y="618" font-size="11.2">🎁 Members (birthday/allergies/notes) · 🎟️ Coupons · 🗓️ Reservations</text>
+    <text x="920" y="640" font-size="11.5">✅ To-dos · 📮 Store requests / 💬 Product support</text>
+    <text x="920" y="662" font-size="11.5">🕐 Attendance &amp; payroll est. / 👥 Users &amp; permissions</text>
+    <text x="920" y="684" font-size="11.5">🖨️ Printers &amp; print standby / 🛡️ Audit / ⚙️ Settings</text>
+    <text x="920" y="706" font-size="11.5">💾 Backup &amp; CSV / ✉️ Scheduled reports</text>
+    <text x="920" y="728" font-size="11.5">💳 Pro plan &amp; restore purchases / 🔐 Secure device auth</text>
+    <text x="920" y="764" fill="#7e22ce" font-size="12" font-weight="700">🧪 Verify in TEST → deploy to production</text>
   </g>
   <g transform="translate(1260,430)">
     <circle r="30" fill="#ffffff" stroke="#a855f7" stroke-width="3"/>
@@ -139,19 +138,19 @@
     <rect x="290" y="944" width="22" height="12" rx="2" fill="#0f172a"/>
     <rect x="294" y="938" width="14" height="8" fill="#475569"/>
     <rect x="294" y="954" width="14" height="6" fill="#e2e8f0"/>
-    <text x="245" y="970" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="middle">🖨️ Printer (Bluetooth PT-210)</text>
-    <text x="245" y="988" font-size="10" fill="#64748b" text-anchor="middle">Prints via the print-station device (bridge.html)</text>
+    <text x="245" y="970" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="middle">🖨️ Bluetooth printer (PT-210)</text>
+    <text x="245" y="988" font-size="10" fill="#64748b" text-anchor="middle">Auto-prints through the print standby screen</text>
 
     <rect x="392" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="517" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">🤖 Gemini API</text>
-    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">AI stock count · image search</text>
+    <text x="517" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">💳 QR &amp; card payments</text>
+    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">PayMongo and external payment services</text>
 
     <rect x="664" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="789" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ Email</text>
-    <text x="789" y="980" font-size="11" fill="#64748b" text-anchor="middle">e-receipts · reports · order emails</text>
+    <text x="789" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ Resend email</text>
+    <text x="789" y="980" font-size="11" fill="#64748b" text-anchor="middle">e-receipts · reports · support alerts</text>
 
     <rect x="936" y="924" width="244" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-    <text x="1058" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">☁️ Google Drive</text>
-    <text x="1058" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">Images · backups</text>
+    <text x="1058" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle"> App Store / ▶ Google Play</text>
+    <text x="1058" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">RevenueCat Pro billing &amp; purchase restore</text>
   </g>
 </svg>

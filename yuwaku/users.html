@@ -38,10 +38,13 @@
     .chip{ font-size:11px; font-weight:800; padding:2px 9px; border-radius:999px; background:#eef2f7; color:#475569; }
     .muted{ color:var(--text-3); font-size:12px; }
     table{ width:100%; border-collapse:collapse; font-size:13px; }
+    table.pm{ min-width:0; table-layout:fixed; }
     .pm th,.pm td{ padding:8px 6px; text-align:center; border-bottom:1px solid var(--border); }
-    .pm th:first-child,.pm td:first-child{ text-align:left; font-weight:800; }
+    .pm th:first-child,.pm td:first-child{ text-align:left; font-weight:800; width:40%; }
+    .pm th:not(:first-child),.pm td:not(:first-child){ width:15%; overflow-wrap:anywhere; }
     .pm input{ width:20px; height:20px; }
     .alert{ margin-top:10px; display:none; padding:11px; border-radius:9px; font-size:14px; font-weight:700; }
+    @media (max-width:520px){ #pane-p .card{ padding:12px 10px; } .pm{ font-size:11px; } .pm th,.pm td{ padding:7px 2px; line-height:1.25; } .pm input{ width:18px; height:18px; margin:0; } }
   </style>
 </head>
 <body>
@@ -53,7 +56,7 @@
     </div>
 
     <div class="pane active" id="pane-u">
-      <div class="card">
+      <div class="card" id="guide-user-form" data-guide-anchor>
         <div class="card-title" data-t="formTitle">➕ ユーザーの追加 / 編集</div>
         <input type="hidden" id="uId">
         <div class="grid2">

@@ -134,7 +134,7 @@
       // 削除・全置換・復元は統合画面内とAPI側の両方でシステムロールだけに限定する。
       { grp:'system', key:'backup', ic:'💾', tt:'データバックアップ・管理', ds:'書出・削除・復元', ttEn:'Data backup & management', dsEn:'Export · delete · restore', url:'./data_admin.html', active:true },
       { grp:'system', key:'settings', ic:'⚙️', tt:'設定', ds:'店舗設定', ttEn:'Settings', dsEn:'Store settings', url:'./settings.html', active:true },
-      { grp:'system', key:null, ic:'📖', tt:'全体利用ガイド', ds:'システム全体の利用イメージ', ttEn:'Full user guide', dsEn:'System-wide overview', url:'./overview.html', active:true }
+      { grp:'system', key:null, ic:'📖', tt:'全体利用ガイド', ds:'店舗運営の使い方・流れ', ttEn:'Store operations guide', dsEn:'Daily workflow · how to use', url:'./overview.html', active:true }
     ];
     var curTab = (function(){ try { return localStorage.getItem('mgmtTab') || null; } catch(e){ return null; } })();
 
