@@ -13,6 +13,10 @@
 window.APP_CONFIG = {
   AUTH_SCHEMA_VERSION: 2,
   API_URL: 'https://izakanpai-api.izakanpai.workers.dev',
+  PUBLIC_ORDER_URL: 'https://izakanpai.com/order/',
+  PUBLIC_RESERVATION_URL: 'https://izakanpai.com/reserve.html',
+  PUBLIC_TAKEOUT_URL: 'https://izakanpai.com/takeout/',
+  STORE_ID: 'yuwaku',
   VERSION: 'v1.0.0',
   AUTH_STORAGE_PREFIX: 'izakanpai:production:',
   STORAGE_PREFIX: 'izakanpai:production:',

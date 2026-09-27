@@ -77,10 +77,17 @@
     window.setStatus = function(id, status){ rpc('updateReservationStatus',[id,status]).then(function(){ return reload(); }).catch(function(){}); };
     window.reload = function(){ return rpc('getReservations',[]).then(function(l){ ROWS=l||[]; render(); }); };
 
-    // 予約フォーム（reserve.html）の共有URL
-    document.getElementById('resUrl').value = location.href.replace(/reservations\.html.*$/, 'reserve.html');
+    // 予約フォームは店舗ID付きの外部公開URLを共有する。
+    function buildReservationUrl(){
+      var base=String((window.APP_CONFIG&&window.APP_CONFIG.PUBLIC_RESERVATION_URL)||'').trim();
+      var storeId=(API.currentStoreId&&API.currentStoreId())||'';
+      if(!/^https:\/\//i.test(base)||!storeId) return '';
+      try{ var u=new URL(base); u.searchParams.set('store',storeId); return u.toString(); }catch(e){ return ''; }
+    }
+    document.getElementById('resUrl').value = buildReservationUrl();
     window.copyResUrl = function(){
       var input = document.getElementById('resUrl');
+      if(!input.value){ return; }
       var done = function(){ var m=document.getElementById('urlMsg'); m.style.display='block'; setTimeout(function(){ m.style.display='none'; }, 2200); };
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(input.value).then(done).catch(function(){ input.select(); document.execCommand('copy'); done(); });

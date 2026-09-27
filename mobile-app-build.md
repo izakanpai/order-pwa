@@ -1,6 +1,6 @@
 # izakanpai mobile build
 
-The iOS/Android package uses Capacitor. Its editable frontend source is `mobile-app/web`; it is intentionally separate from the existing hosted Web application in `docs/yuwaku`. The public QR customer order screen stays on the hosted Web application.
+The iOS/Android package uses Capacitor. Its editable frontend source is `mobile-app/web`; it is intentionally separate from the existing Yuwaku-specific hosted Web application in `docs/yuwaku`. Customer-facing links must never use Capacitor internal URLs: public table-order QR codes use `https://izakanpai.com/order/?store=<storeId>&table=<location>&t=<signedToken>`, and public reservations use `https://izakanpai.com/reserve.html?store=<storeId>`.
 
 ## Prepare and synchronize
 
@@ -49,7 +49,7 @@ IZAKANPAI_ANDROID_VERSION_NAME=<public version, for example 1.0.0>
 
 Then run `npm run mobile:build:android:release`. The command fails before Gradle when any required value or keystore is missing, builds outside OneDrive, verifies the AAB signature with `jarsigner`, and only then copies `app-release.aab` back to the project. Never reuse a lower `versionCode`, commit the keystore, or record the four signing secrets in a handoff document or command log.
 
-`mobile-dist` is generated and must not be edited directly. `mobile-app/web/index.html` is the native staff login/management entry point. Do not copy application-only UI changes back into `docs/yuwaku`; shared API changes belong in `src`, while native UI changes belong in `mobile-app/web`. Production and test API credentials must never be bundled together.
+`mobile-dist` is generated and must not be edited directly. `mobile-app/web/index.html` is the native staff login/management entry point. Do not copy application-only UI changes back into `docs/yuwaku`; shared API changes belong in `src`, while native UI changes belong in `mobile-app/web`. The generic customer-order PWA is under `docs/order` (TEST: `docs/test/order`), while `docs/yuwaku` remains the existing Yuwaku-specific hosted Web application. Production and test API credentials must never be bundled together.
 
 ## iOS signed archive
 

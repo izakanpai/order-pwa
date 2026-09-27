@@ -24,7 +24,8 @@
     .fg{ margin-bottom:10px; min-width:0; }
     .form-label{ font-size:12px; font-weight:700; display:block; margin-bottom:4px; }
     .fc{ width:100%; padding:10px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); }
-    input.fc.time-control{ display:block; inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; min-inline-size:0!important; min-width:0!important; max-inline-size:180px!important; max-width:180px!important; height:38px; padding:0 8px; box-sizing:border-box; overflow:hidden; text-align:center; line-height:1; }
+    .time-field{ min-width:0; padding-right:8px; overflow:visible; box-sizing:border-box; }
+    input.fc.time-control{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:180px!important; max-width:180px!important; height:38px; padding:0 8px; box-sizing:border-box; overflow:visible; text-align:center; line-height:1; }
     input.fc.time-control::-webkit-date-and-time-value{ min-width:0!important; height:100%; padding:0!important; text-align:center!important; line-height:36px; }
     input.fc.time-control::-webkit-datetime-edit{ display:flex; align-items:center; justify-content:center; height:100%; min-height:0; padding:0!important; }
     input.fc.time-control::-webkit-datetime-edit-fields-wrapper{ display:flex; align-items:center; justify-content:center; }
@@ -89,6 +90,14 @@
       <div class="st" id="st-qr"></div>
     </div>
 
+    <div class="card" id="guide-takeout-share" data-guide-anchor>
+      <div class="card-title" data-t="takeoutShareTitle">🥡 テイクアウト共有URL</div>
+      <p class="hint" data-t="takeoutShareDesc" style="margin-bottom:10px;line-height:1.7;">お客様へ共有するテイクアウト注文ページです。この店舗専用URLをSNS・Webサイト・メッセージ等で共有できます。</p>
+      <input id="takeoutPublicUrl" class="fc" type="text" readonly>
+      <button class="btn sec" type="button" style="margin-top:8px;" onclick="copyTakeoutUrl()" data-t="takeoutShareCopy">📋 URLをコピー</button>
+      <div class="st" id="st-takeout-url"></div>
+    </div>
+
     <div class="card">
       <div class="card-title" data-t="imgTitle">🖼️ トップ画像</div>
       <div class="fg"><label class="form-label" data-t="orderImg">オーダートップ画像（注文画面）</label><input id="orderImg" type="file" accept="image/*" class="fc" onchange="prev('orderImg','prevOrder')"><img id="prevOrder" class="prev"><button class="btn sec" style="margin-top:8px;" onclick="upImg('orderImg','uploadTopImage','st-img')" data-t="upload">⬆️ アップロード</button></div>
@@ -132,7 +141,7 @@
         </select></div>
         <div class="fg"><label class="form-label" data-t="defLang">既定言語</label><select id="defaultLang" class="fc"><option value="en">English</option><option value="ja">日本語</option></select></div>
         <div class="fg"><label class="form-label" data-t="accent">アクセント色</label><input id="accentColor" type="color" class="fc" style="height:44px;"></div>
-        <div class="fg"><label class="form-label" data-t="bizCutoff">営業日切替時刻</label><input id="bizDayCutoff" type="time" class="fc time-control" step="60"></div>
+        <div class="fg time-field"><label class="form-label" data-t="bizCutoff">営業日切替時刻</label><input id="bizDayCutoff" type="time" class="fc time-control" step="60"></div>
       </div>
       <button class="btn sec" type="button" onclick="applyCountryProfile()" data-t="applyCountry" style="margin-bottom:10px;">国別初期値を適用</button>
       <div class="form-hint" data-t="countryHint" style="margin:0 0 10px;">国別初期値は通貨・標準時間・税名称を入力欄へ反映します。保存するまでは確定されません。</div>
@@ -192,12 +201,12 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn" onclick="saveDiscountRule()">💾 割引を保存</button>
         <button class="btn sec" onclick="newDiscountRule()">＋ 新規</button>
-        <button class="btn sec" onclick="applyDiscountPreset('senior')">シニア20%プリセット</button>
-        <button class="btn sec" onclick="applyDiscountPreset('pwd')">PWD 20%プリセット</button>
+        <button class="btn sec" onclick="applyDiscountPreset('senior')">フィリピン: シニア20%プリセット</button>
+        <button class="btn sec" onclick="applyDiscountPreset('pwd')">フィリピン: PWD 20%プリセット</button>
       </div>
       <div class="st" id="st-discount"></div>
       <div id="discountRuleList" style="margin-top:12px;"></div>
-      <details style="margin-top:12px;"><summary style="cursor:pointer;font-weight:800;">旧シニア／PWD互換設定</summary>
+      <details style="margin-top:12px;"><summary style="cursor:pointer;font-weight:800;">フィリピン向け旧シニア／PWD互換設定</summary>
         <label class="chk" style="margin:10px 0;"><input type="checkbox" id="seniorDiscountEnabled"><span>旧画面・旧端末向けのシニア／PWD割引を有効にする</span></label>
         <button class="btn sec" onclick="saveSeniorDiscount()">💾 互換設定を保存</button><div class="st" id="st-senior"></div>
       </details>
@@ -277,18 +286,18 @@
       <div class="fg"><label class="form-label" data-t="repEmail">送信先メール（複数可・カンマか改行区切り）</label><textarea id="reportEmail" class="fc" rows="2" placeholder="a@example.com, b@example.com"></textarea></div>
 
       <label class="chk" style="display:block;margin:10px 0 4px;"><input type="checkbox" id="reportEnabled"><span data-t="repDaily">日次日報（毎日）</span></label>
-      <div class="fg" style="max-width:200px;"><label class="form-label" data-t="repHour">送信時刻</label><input id="reportTime" type="time" class="fc time-control" step="60"></div>
+      <div class="fg time-field" style="max-width:200px;"><label class="form-label" data-t="repHour">送信時刻</label><input id="reportTime" type="time" class="fc time-control" step="60"></div>
 
       <label class="chk" style="display:block;margin:12px 0 4px;"><input type="checkbox" id="reportWeekly"><span data-t="repWeekly">週次レポート</span></label>
       <div class="grid2">
         <div class="fg"><label class="form-label" data-t="repWeekDay">送信曜日</label><select id="reportWeeklyDay" class="fc"><option value="0" data-t="dow0">日曜</option><option value="1" data-t="dow1">月曜</option><option value="2" data-t="dow2">火曜</option><option value="3" data-t="dow3">水曜</option><option value="4" data-t="dow4">木曜</option><option value="5" data-t="dow5">金曜</option><option value="6" data-t="dow6">土曜</option></select></div>
-        <div class="fg"><label class="form-label" data-t="repHour">送信時刻</label><input id="reportWeeklyTime" type="time" class="fc time-control" step="60"></div>
+        <div class="fg time-field"><label class="form-label" data-t="repHour">送信時刻</label><input id="reportWeeklyTime" type="time" class="fc time-control" step="60"></div>
       </div>
 
       <label class="chk" style="display:block;margin:12px 0 4px;"><input type="checkbox" id="reportMonthly"><span data-t="repMonthly">月次レポート</span></label>
       <div class="grid2">
         <div class="fg"><label class="form-label" data-t="repMonthDay">送信日（1〜28）</label><input id="reportMonthlyDay" type="number" min="1" max="28" class="fc"></div>
-        <div class="fg"><label class="form-label" data-t="repHour">送信時刻</label><input id="reportMonthlyTime" type="time" class="fc time-control" step="60"></div>
+        <div class="fg time-field"><label class="form-label" data-t="repHour">送信時刻</label><input id="reportMonthlyTime" type="time" class="fc time-control" step="60"></div>
       </div>
 
       <div class="fg" style="max-width:220px;margin-top:12px;"><label class="form-label" data-t="repLang">出力言語</label><select id="reportLang" class="fc"><option value="ja" data-t="repLangJa">日本語</option><option value="en" data-t="repLangEn">英語</option><option value="both" data-t="repLangBoth">日本語＋英語（両方）</option></select></div>
@@ -367,17 +376,47 @@
     function st(id, text, ok){ var e=$(id); e.style.display='block'; e.style.background=ok?'#dcfce7':'#fee2e2'; e.style.color=ok?'#15803d':'#b91c1c'; e.innerText=text; }
 
     // ---- テーブルQRコード ----
+    function _publicOrderUrl(tableNum, tableToken){
+      var base=String((window.APP_CONFIG&&window.APP_CONFIG.PUBLIC_ORDER_URL)||'').trim();
+      var storeId=(API.currentStoreId&&API.currentStoreId())||(window.APP_CONFIG&&window.APP_CONFIG.STORE_ID)||'';
+      if(!/^https:\/\//i.test(base)||!storeId) return '';
+      try{
+        var u=new URL(base);
+        u.searchParams.set('store',storeId);
+        u.searchParams.set('table',tableNum);
+        u.searchParams.set('t',tableToken||'');
+        return u.toString();
+      }catch(e){ return ''; }
+    }
+    function _publicTakeoutUrl(){
+      var base=String((window.APP_CONFIG&&window.APP_CONFIG.PUBLIC_TAKEOUT_URL)||'').trim();
+      var storeId=(API.currentStoreId&&API.currentStoreId())||(window.APP_CONFIG&&window.APP_CONFIG.STORE_ID)||'';
+      if(!/^https:\/\//i.test(base)||!storeId) return '';
+      try{ var u=new URL(base); u.searchParams.set('store',storeId); return u.toString(); }catch(e){ return ''; }
+    }
+    function _refreshPublicTakeoutUrl(){
+      var input=$('takeoutPublicUrl'); if(!input)return;
+      input.value=_publicTakeoutUrl();
+    }
+    window.copyTakeoutUrl=function(){
+      var value=_publicTakeoutUrl();
+      if(!value){ st('st-takeout-url',I18n.t('takeoutShareUnavailable'),false); return; }
+      var done=function(){ st('st-takeout-url',I18n.t('copied'),true); };
+      if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(value).then(done).catch(function(){});
+      else { var input=$('takeoutPublicUrl'); input.focus(); input.select(); try{document.execCommand('copy');done();}catch(e){} }
+    };
+    _refreshPublicTakeoutUrl();
     window.showQrModal = function(){
       st('st-qr', I18n.t('sending'), true); $('st-qr').style.display='none';
       rpc('getTableQrLinks',[]).then(function(list){
         list = list || [];
         if (!list.length){ st('st-qr', I18n.t('qrNoTables'), false); return; }
+        if(!_publicOrderUrl(list[0].table,list[0].token)){ st('st-qr',I18n.t('qrPublicUrlUnavailable'),false); return; }
         var shopName = ($('shopName') && $('shopName').value ? $('shopName').value.trim() : '');
-        var base = location.href.replace(/settings\.html.*$/, 'index.html');
         var grid = $('qrGrid'); var html = '';
         list.forEach(function(entry){
           var tableNum = entry.table;
-          var url = base + '?table=' + encodeURIComponent(tableNum) + '&t=' + encodeURIComponent(entry.token);
+          var url = _publicOrderUrl(tableNum,entry.token);
           var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=10&data=' + encodeURIComponent(url);
           html += '<div style="text-align:center;background:#f8fafc;border-radius:14px;padding:14px 10px;border:1px solid var(--border);">' +
             '<img src="' + qrSrc + '" width="120" height="120" style="display:block;margin:0 auto 8px;border-radius:6px;" loading="lazy">' +
@@ -404,7 +443,7 @@
     }
     function _qrUrlFor(tableNum){
       var entry = tableListForQr.find(function(x){ return x.table === tableNum; });
-      return location.href.replace(/settings\.html.*$/, 'index.html') + '?table=' + encodeURIComponent(tableNum) + '&t=' + encodeURIComponent(entry ? entry.token : '');
+      return _publicOrderUrl(tableNum,entry ? entry.token : '');
     }
     window.enqueueAllQr = function(){
       var sel = $('qrPrinterSel'); var pid = sel && sel.value;
@@ -429,11 +468,10 @@
     window.printQrCodes = function(){
       if (!tableListForQr.length) return;
       var shopName = ($('shopName') && $('shopName').value ? $('shopName').value.trim() : '');
-      var base = location.href.replace(/settings\.html.*$/, 'index.html');
       var rows = '';
       tableListForQr.forEach(function(entry){
         var tableNum = entry.table;
-        var url = base + '?table=' + encodeURIComponent(tableNum) + '&t=' + encodeURIComponent(entry.token);
+        var url = _publicOrderUrl(tableNum,entry.token);
         var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data=' + encodeURIComponent(url);
         rows += '<div class="qr-card">' +
           '<img src="' + qrSrc + '" width="180" height="180">' +
@@ -770,7 +808,8 @@
     I18n.init({
       ja:{ title:'⚙️ 設定', back:'← 管理へ', save:'💾 保存', status:'状態:', unset:'未設定', set:'設定済', phPaste:'貼り付けて保存', close:'閉じる',
         qrCardTitle:'📱 席QRコード', qrCardDesc:'各席のQRコードを印刷して設置してください。お客様がスキャンするとその席専用の注文画面が開きます。表示名は保存した業態・呼称設定に従います。', qrShowBtn:'📱 QRコードを表示', qrModalTitle:'席 QRコード', qrModalSub:'スキャンで注文画面を開く', qrPrintBtn:'🖨️ 印刷', qrNoTables:'席が設定されていません。先に席数を保存してください。',
-        qrBridgeLabel:'🖶 プリンタへ送信', qrEnqueueAllBtn:'全卓をキューへ', qrEnqueueOneBtn:'🖶 印刷キューへ', qrNoPrinters:'有効なプリンタがありません（プリンタ設定を確認してください）', qrQueued:'✅ {n}件を印刷キューへ送信しました',
+        qrBridgeLabel:'🖶 プリンタへ送信', qrEnqueueAllBtn:'全卓をキューへ', qrEnqueueOneBtn:'🖶 印刷キューへ', qrNoPrinters:'有効なプリンタがありません（プリンタ設定を確認してください）', qrQueued:'✅ {n}件を印刷キューへ送信しました', qrPublicUrlUnavailable:'公開注文URLまたは店舗IDを取得できません。ログインし直してから再度お試しください。',
+        takeoutShareTitle:'🥡 テイクアウト共有URL', takeoutShareDesc:'お客様へ共有するこの店舗専用のテイクアウト注文URLです。SNS・Webサイト・メッセージ等で共有できます。', takeoutShareCopy:'📋 URLをコピー', takeoutShareUnavailable:'公開テイクアウトURLまたは店舗IDを取得できません。ログインし直してから再度お試しください。',
         shopTitle:'🏪 店舗設定', shopName:'店舗名', shopAddress:'住所（レシート表示）', shopTin:'税務登録番号（レシート表示）', shopLogo:'レシートのロゴ（先頭に中央印字）', logoClear:'クリア', logoSize:'印字サイズ（%）', logoHint:'白黒の感熱印刷用に自動で縮小・変換します。58mm幅を100%として、下の値で印字サイズを調整できます。', tableCount:'第1席種の数', counterCount:'第2席種の数', businessProfileLbl:'業態プロファイル', profileRestaurant:'レストラン', profileBar:'バー・居酒屋', profileCafe:'カフェ', profileCounterService:'カウンターサービス', profileService:'サービス・施設', applyBusinessProfile:'業態の呼称初期値を適用', businessProfileApplied:'業態の呼称初期値を入力しました。内容を確認して保存してください。', tableLabelJaLbl:'第1席種の呼称（日本語）', tableLabelEnLbl:'第1席種の呼称（英語）', counterLabelJaLbl:'第2席種の呼称（日本語）', counterLabelEnLbl:'第2席種の呼称（英語）', seatGroupLabelJaLbl:'席全体の呼称（日本語）', seatGroupLabelEnLbl:'席全体の呼称（英語）', seatHint:'業態プロファイルは呼称の初期値を入力します。保存後、注文・注文管理・厨房・会計履歴・レシートで共通表示されます。0にした席種は非表示です。', tableHint:'注文画面の第1席種番号の上限。',
         imgTitle:'🖼️ トップ画像', orderImg:'オーダートップ画像（注文画面）', loginImg:'ログイン画面の画像（管理ログイン画面に表示）', upload:'⬆️ アップロード',
         localeTitle:'🌐 表示・地域', countryCode:'国・地域コード', localeCode:'地域形式（ロケール）', curCode:'通貨コード', curSym:'通貨記号', curDigits:'通貨の小数桁', svcRate:'サービス料 (%)', taxRate:'税率 (%)', taxName:'税の表示名', taxIdName:'税務登録番号の表示名', receiptPrefix:'レシート番号の接頭辞', receiptTitleJa:'帳票名（日本語）', receiptTitleEn:'帳票名（英語）', taxRound:'税・料金の端数処理', roundNearest:'四捨五入', roundFloor:'切り捨て', roundCeil:'切り上げ', applyCountry:'国別初期値を適用', countryHint:'国別初期値は通貨・標準時間・税名称・帳票名を選択・入力欄へ反映します。保存するまでは確定されません。法定帳票名は店舗所在地の専門家へ確認してください。', unknownCountry:'この国のプリセットはありません。現在の設定値を保持します。', countryApplied:'国別初期値を反映しました。内容を確認して保存してください。', timezoneLbl:'標準時間（タイムゾーン）', timezoneHint:'店舗所在地のIANAタイムゾーンを選択してください。営業日、売上集計、勤怠、提供時間、定期レポートの時刻へ共通反映されます。', invalidTimezone:'有効なタイムゾーンを選択してください（例：Asia/Manila）。', currentSetting:'現在の設定', defLang:'既定言語', accent:'アクセント色',
@@ -796,7 +835,8 @@
         saved:'✅ 保存しました', savedSched:'✅ 保存＆スケジュール設定しました', uploaded:'✅ アップロードしました', pickImg:'画像を選択してください', needKey:'キーを入力してください', noGeoDev:'この端末は位置情報に対応していません', gotLoc:'現在地を取得しました。「保存」を押してください。', noLoc:'位置情報を取得できませんでした。手動入力してください。', sending:'送信中…', testSent:'✅ テスト送信しました。受信箱をご確認ください', sendFail:'送信できませんでした', scopeReauth:'認証(スコープ)の再承認が必要かもしれません', errPrefix:'エラー: ' },
       en:{ title:'⚙️ Settings', back:'← Manage', save:'💾 Save', status:'Status:', unset:'Not set', set:'Set', phPaste:'Paste and save', close:'Close',
         qrCardTitle:'📱 Location QR Codes', qrCardDesc:'Print and place a QR code at each configured location. Scanning opens the order screen locked to that location. Display names follow the saved business terminology.', qrShowBtn:'📱 Show QR Codes', qrModalTitle:'Location QR Codes', qrModalSub:'Scan to open the order screen', qrPrintBtn:'🖨️ Print', qrNoTables:'No locations are set up yet. Save the location counts first.',
-        qrBridgeLabel:'🖶 Send to printer', qrEnqueueAllBtn:'Queue all tables', qrEnqueueOneBtn:'🖶 Queue print', qrNoPrinters:'No enabled printer found (check printer settings)', qrQueued:'✅ Sent {n} to the print queue',
+        qrBridgeLabel:'🖶 Send to printer', qrEnqueueAllBtn:'Queue all tables', qrEnqueueOneBtn:'🖶 Queue print', qrNoPrinters:'No enabled printer found (check printer settings)', qrQueued:'✅ Sent {n} to the print queue', qrPublicUrlUnavailable:'The public order URL or store ID is unavailable. Sign in again and retry.',
+        takeoutShareTitle:'🥡 Takeout share URL', takeoutShareDesc:'This is the public takeout-order URL for this store. Share it on social media, your website, or messages.', takeoutShareCopy:'📋 Copy URL', takeoutShareUnavailable:'The public takeout URL or store ID is unavailable. Sign in again and retry.',
         shopTitle:'🏪 Store settings', shopName:'Store name', shopAddress:'Address (on receipt)', shopTin:'Tax registration number (on receipt)', shopLogo:'Receipt logo (centered on top)', logoClear:'Clear', logoSize:'Print size (%)', logoHint:'Auto-resized & converted for B/W thermal printing. 58mm width = 100%; adjust the print size below.', tableCount:'Primary location count', counterCount:'Secondary location count', businessProfileLbl:'Business profile', profileRestaurant:'Restaurant', profileBar:'Bar / izakaya', profileCafe:'Cafe', profileCounterService:'Counter service', profileService:'Service / facility', applyBusinessProfile:'Apply profile terminology', businessProfileApplied:'Profile terminology filled in. Review it, then save.', tableLabelJaLbl:'Primary label (Japanese)', tableLabelEnLbl:'Primary label (English)', counterLabelJaLbl:'Secondary label (Japanese)', counterLabelEnLbl:'Secondary label (English)', seatGroupLabelJaLbl:'Group label (Japanese)', seatGroupLabelEnLbl:'Group label (English)', seatHint:'A business profile fills terminology defaults. After saving, the same terms appear in ordering, operations, kitchen, receipt history and receipts. Set a location count to 0 to hide it.', tableHint:'Maximum primary-location number on the order screen.',
         imgTitle:'🖼️ Top images', orderImg:'Order top image (order screen)', loginImg:'Login screen image (shown on admin login)', upload:'⬆️ Upload',
         localeTitle:'🌐 Display & region', countryCode:'Country/region code', localeCode:'Number/date locale', curCode:'Currency code', curSym:'Currency symbol', curDigits:'Currency decimal digits', svcRate:'Service charge (%)', taxRate:'Tax (%)', taxName:'Tax display name', taxIdName:'Tax registration label', receiptPrefix:'Receipt number prefix', receiptTitleJa:'Document title (Japanese)', receiptTitleEn:'Document title (English)', taxRound:'Tax/charge rounding', roundNearest:'Round to nearest', roundFloor:'Round down', roundCeil:'Round up', applyCountry:'Apply country defaults', countryHint:'Country defaults fill the available selections plus tax labels and receipt titles. Nothing is final until you save. Confirm legally required document wording with a local professional.', unknownCountry:'No preset is available for that country. The current saved values are kept.', countryApplied:'Country defaults applied. Review them, then save.', timezoneLbl:'Standard time (time zone)', timezoneHint:'Choose the store location’s IANA time zone. It is applied consistently to business dates, sales totals, attendance, service hours, and scheduled reports.', invalidTimezone:'Choose a valid time zone (for example, Asia/Manila).', currentSetting:'Current setting', defLang:'Default language', accent:'Accent color',
@@ -829,10 +869,11 @@
       title: '店舗設定',
       titleEn: 'Store settings',
       items: [
+        { ja: '「席QRコード」は店舗ID・席・署名トークンを含む公開HTTPS注文URLを生成します。「テイクアウト共有URL」はこの店舗専用の公開テイクアウトURLを表示し、コピーしてSNS・Webサイト・メッセージ等で共有できます。どちらもアプリ内部URLは使用しません。', en: '"Location QR Codes" generates public HTTPS order URLs containing the store ID, location and signed token. "Takeout share URL" shows this store’s public takeout URL for sharing on social media, websites or messages. Neither feature uses an app-internal URL.' },
         { ja: '① 「🏪 店舗設定」で業態プロファイルを選ぶと席の呼称初期値が入ります。日本語・英語の第1席種、第2席種、全体呼称は個別編集でき、席数0でその席種を非表示にできます。', en: '① In "Store settings", choose a business profile to fill terminology defaults. You can edit the Japanese and English primary, secondary and group labels, and set a location count to 0 to hide that type.' },
-        { ja: '② 「📱 席QRコード」の「QRコードを表示」ボタンで各席専用の注文画面QRコードを一覧表示し、印刷したり、対応プリンタへ印刷キューとして送信できます。', en: '② "Location QR Codes" → "Show QR Codes" displays one order-screen QR code per configured location; you can print them or send them to a connected printer queue.' },
+        { ja: '② 「📱 席QRコード」の「QRコードを表示」ボタンで、店舗ID・席・署名トークンを含む公開HTTPS注文URLのQRコードを一覧表示します。Native内部URLは使わず、印刷や対応プリンタへの送信もこの公開URLを使います。', en: '② "Location QR Codes" → "Show QR Codes" creates public HTTPS order URLs containing the store ID, location and signed table token. Native internal URLs are never used; printing and printer queues use the same public URLs.' },
         { ja: '③ 「🌐 表示・地域」で店舗所在地の標準時間（IANAタイムゾーン）、通貨、税・サービス料、言語、色、営業日切替時刻を設定できます。標準時間は売上集計・勤怠・提供時間・定期レポートへ共通反映されます。', en: '③ "Display & region" sets the store’s standard time (IANA time zone), currency, tax/service charge, language, color, and business-day cutoff. The time zone is shared by sales totals, attendance, service hours, and scheduled reports.' },
-        { ja: '④ 「🏷️ 割引マスタ」では、割引名・率または固定額・税免除・ID提示・責任者承認の要否を割引ごとに登録できます。シニア／PWDはプリセットから作成でき、旧端末向け互換設定も残しています。', en: '④ "Discount rules" lets you configure each discount name, percentage or fixed amount, tax exemption, ID requirement, and manager approval. Senior/PWD presets and a legacy-client compatibility switch are also available.' },
+        { ja: '④ 「🏷️ 割引マスタ」では、割引名・率または固定額・税免除・ID提示・責任者承認の要否を割引ごとに登録できます。この誘惑店Webではフィリピン向けSenior/PWDプリセットと旧端末互換設定も残しています。', en: '④ "Discount rules" lets you configure each discount name, percentage or fixed amount, tax exemption, ID requirement, and manager approval. This Yuwaku-specific Web app also retains Philippines Senior/PWD presets and its legacy-client compatibility switch.' },
         { ja: '⑤ 「🤖 Gemini APIキー」「🔍 Pexels画像検索」「📧 メール送信設定（Resend）」のAPIキー欄は、貼り付けて保存すると即座に入力欄がクリアされ、以後は上の「設定済/未設定」バッジのみで状態を確認します（安全のため、保存後にキーの値がこの画面に表示され続けることはありません）。', en: '⑤ For the Gemini API key, Pexels API key and Resend email API key fields: after you paste and save, the field is cleared immediately — from then on only the "Set / Not set" badge above shows the status (for safety, the saved key value is never redisplayed on this screen).' },
         { ja: '⑥ 「📧 定期レポート」では送信先メール・日次/週次/月次の送信タイミングと出力言語を設定し、「保存＆スケジュール」で反映、「日次/週次/月次テスト」ボタンで実際にテストメールを送信して確認できます（メール送信設定でAPIキー・送信元アドレスの登録が必要）。', en: '⑥ "Scheduled reports" sets recipient emails, daily/weekly/monthly send times, and output language; "Save & schedule" applies it, and the "Daily/Weekly/Monthly test" buttons send an actual test email to verify (requires the API key and from-address to be configured above).' },
         { ja: '⑦ 「🖶 印刷ブリッジ」でプリンタ連携の確認間隔とBRIDGE_KEY（共有シークレット）を、「📧 eレシート機能」で会計確定時の自動メール送付を設定できます。', en: '⑦ "Print bridge" sets the printer-polling interval and an optional shared-secret BRIDGE_KEY; "e-Receipt" sets automatic email delivery on bill finalization.' },

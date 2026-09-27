@@ -5,15 +5,29 @@
   const AUTH_PREFIX = CFG.AUTH_STORAGE_PREFIX;
   const API = {};
 
+  function publicStoreFromQuery() {
+    if (typeof location === 'undefined') return '';
+    var storeId = String(new URLSearchParams(location.search).get('store') || '').trim().toLowerCase();
+    return /^[a-z0-9][a-z0-9-]{2,31}$/.test(storeId) ? storeId : '';
+  }
+
   // 同一originの本番／テスト間で、古い親Service Workerが別環境のconfig.jsを返しても
   // データ取得前にfail closedする。認証情報は削除せず、誤環境での表示とAPI通信だけを止める。
   function environmentMismatch() {
     var pathIsTest = /\/test(?:\/|$)/i.test(location.pathname);
     var configIsTest = CFG.TEST_ENV === true || /^test$/i.test(String(CFG.VERSION || '')) || /api-test\./i.test(String(CFG.API_URL || ''));
     var env = pathIsTest ? 'test' : 'production';
+    var expectedPrefix = 'izakanpai:' + env + ':';
+    var expectedDb = 'izakanpai-pos-' + env;
+    if (CFG.PUBLIC_ORDER === true) {
+      var publicStoreId = publicStoreFromQuery();
+      if (!publicStoreId) return true;
+      expectedPrefix += 'public-order:' + publicStoreId + ':';
+      expectedDb += '-public-order-' + publicStoreId;
+    }
     return pathIsTest !== configIsTest || CFG.AUTH_SCHEMA_VERSION !== 2 ||
-      AUTH_PREFIX !== 'izakanpai:' + env + ':' ||
-      CFG.STORAGE_PREFIX !== AUTH_PREFIX || CFG.OFFLINE_DB_NAME !== 'izakanpai-pos-' + env ||
+      AUTH_PREFIX !== expectedPrefix ||
+      CFG.STORAGE_PREFIX !== expectedPrefix || CFG.OFFLINE_DB_NAME !== expectedDb ||
       !/^https:\/\//i.test(String(CFG.API_URL || '')) ||
       /api-test\./i.test(String(CFG.API_URL || '')) !== pathIsTest;
   }
@@ -64,6 +78,12 @@
     if (storedToken() !== r.token) throw new Error('auth_storage_unavailable');
   };
   API.isCurrentToken = function (token) { return !!token && storedToken() === token; };
+  API.currentStoreId = function () {
+    var info = tokenInfo(storedToken(), true);
+    if (info) return info.store;
+    if (CFG.STORE_ID) return String(CFG.STORE_ID);
+    return CFG.PUBLIC_ORDER === true ? publicStoreFromQuery() : '';
+  };
   API.clearSession = function () {
     try { localStorage.removeItem(AUTH_PREFIX + 'mgmtToken'); localStorage.removeItem(AUTH_PREFIX + 'mgmtRefreshToken'); } catch (e) {}
   };
@@ -231,6 +251,10 @@
     const timeoutMs = (typeof payload.__timeoutMs === 'number') ? payload.__timeoutMs : _FETCH_TIMEOUT_MS;
     const noInternalRetry = !!payload.__noInternalRetry;
     const send = Object.assign({}, payload); delete send.__silent; delete send.__msg; delete send.__timeoutMs; delete send.__noInternalRetry;
+    if (!send.storeId) {
+      if (CFG.STORE_ID) send.storeId = CFG.STORE_ID;
+      else if (CFG.PUBLIC_ORDER === true) send.storeId = publicStoreFromQuery();
+    }
     if (TABLE_SESSION_ACTIONS[action] && !send.token && !send.tableToken && typeof location !== 'undefined') {
       send.tableToken = new URLSearchParams(location.search).get('t') || '';
     }
@@ -299,6 +323,55 @@
     } finally {
       if (!silent) _load.hide();
     }
+  };
+
+  API.dateKeysInTimeZone = function (timeZone, at) {
+    var tz = String(timeZone || 'UTC').trim() || 'UTC';
+    var now = at instanceof Date ? at : new Date();
+    var parts;
+    try {
+      parts = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(now);
+    } catch (e) {
+      tz = 'UTC';
+      parts = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(now);
+    }
+    var map = {};
+    parts.forEach(function (p) { if (p.type !== 'literal') map[p.type] = p.value; });
+    var date = map.year + '-' + map.month + '-' + map.day;
+    return { timezone:tz, date:date, month:map.year + '-' + map.month };
+  };
+
+  API.getStoreDateKeys = function () {
+    return API.post('getSettings', { __silent:true }).then(function (r) {
+      var settings = (r && r.data) || {};
+      return API.dateKeysInTimeZone(settings.timezone || 'UTC');
+    }).catch(function () {
+      return API.dateKeysInTimeZone('UTC');
+    });
+  };
+
+  API.initStoreDateInputs = function (specs, onAdjusted) {
+    specs = Array.isArray(specs) ? specs : [];
+    var fallback = API.dateKeysInTimeZone('UTC'), initial = {};
+    specs.forEach(function (s) {
+      var el = document.getElementById(s.id);
+      if (!el || !fallback[s.kind]) return;
+      if (!el.value) el.value = fallback[s.kind];
+      initial[s.id] = el.value;
+    });
+    return API.getStoreDateKeys().then(function (keys) {
+      var adjusted = false;
+      specs.forEach(function (s) {
+        var el = document.getElementById(s.id);
+        if (!el || !keys[s.kind] || initial[s.id] === undefined) return;
+        if (el.value === initial[s.id] && el.value !== keys[s.kind]) {
+          el.value = keys[s.kind];
+          adjusted = true;
+        }
+      });
+      if (adjusted && typeof onAdjusted === 'function') onAdjusted(keys);
+      return keys;
+    });
   };
 
   // ---- IndexedDB（送信待ち注文の保管） ----

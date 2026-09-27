@@ -21,9 +21,9 @@
     .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
     .card-title{ font-weight:900; font-size:15px; margin-bottom:12px; }
     .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .service-time-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; align-items:start; width:100%; }
-    .service-time-grid .fg{ min-width:0; overflow:hidden; }
-    .service-time-grid input[type="time"]{ display:block; inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; min-inline-size:0!important; min-width:0!important; max-inline-size:180px!important; max-width:180px!important; height:38px; padding:0 8px; margin:0 auto; box-sizing:border-box; overflow:hidden; text-align:center; line-height:1; }
+    .service-time-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; align-items:start; width:100%; padding-right:8px; box-sizing:border-box; overflow:visible; }
+    .service-time-grid .fg{ min-width:0; overflow:visible; }
+    .service-time-grid input[type="time"]{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:180px!important; max-width:180px!important; height:38px; padding:0 8px; margin:0 auto; box-sizing:border-box; overflow:visible; text-align:center; line-height:1; }
     .service-time-grid input[type="time"]::-webkit-date-and-time-value{ min-width:0!important; height:100%; padding:0!important; text-align:center!important; line-height:36px; }
     .service-time-grid input[type="time"]::-webkit-datetime-edit{ display:flex; align-items:center; justify-content:center; height:100%; min-height:0; padding:0!important; }
     .service-time-grid input[type="time"]::-webkit-datetime-edit-fields-wrapper{ display:flex; align-items:center; justify-content:center; }
@@ -48,7 +48,7 @@
     .muted{ color:var(--text-3); font-size:12px; }
     @media (max-width:520px), (max-width:900px) and (orientation:landscape){
       .service-time-grid{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
-      .service-time-grid input[type="time"]{ inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; max-inline-size:148px!important; max-width:148px!important; height:38px; padding:0 6px; font-size:16px; }
+      .service-time-grid input[type="time"]{ inline-size:100%!important; width:100%!important; max-inline-size:148px!important; max-width:148px!important; height:38px; padding:0 6px; font-size:16px; }
     }
   </style>
 </head>

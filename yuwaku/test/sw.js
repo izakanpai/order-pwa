@@ -69,7 +69,13 @@ const CACHE_PREFIX = 'yuwaku-test-';
 // v196: iOS time入力をコンパクト化し、提供時間・設定時刻の縦横中央揃えと幅超過を修正。
 // v197: month入力の右端に8pxの安全余白とpaint containmentを追加し、iOS Native描画が隣接ボタンへ滲むのを防止。
 // v198: month/time/dateの入力本体を親幅より8px内側へ収め、iOSで右端の枠が欠ける問題を横展開修正。
-const CACHE = CACHE_PREFIX + 'v198';
+// v199: month入力の親clipを廃止し、180px本体+8px描画逃げ領域でiOS Native右端の枠切れを防止。
+// v200: time入力も親/inputのclipを廃止し、右8px描画余白でiOS Native右枠切れを防止。
+// v201: 予約共有URLを店舗ID付きHTTPS公開URLへ変更し、公開予約フォームをマルチ店舗対応。
+// v202: yuwaku専用WebはSTORE_IDを明示送信し、CloudPRNT URLも店舗ID付きへ変更。
+// v203: 卓QRとテイクアウト共有URLを店舗共通HTTPS公開ページへ統一。
+// v204: 月日初期値を端末時刻ではなく店舗IANAタイムゾーンへ統一。
+const CACHE = CACHE_PREFIX + 'v204';
 const SHELL = [
   './',
   './index.html',

@@ -97,7 +97,7 @@
     <text x="60" y="670" font-size="11">🚫 Void (reason + approval) / ⏰ Photo+GPS clock-in</text>
     <text x="60" y="694">📇 Table QR codes print from here too</text>
     <text x="60" y="726" fill="#64748b" font-size="11.5">※ Staff sign in according to their assigned role</text>
-    <text x="60" y="762" fill="#047857" font-size="11" font-weight="700">🖨️ Print standby (Bluetooth PT-210) &amp; 💳 payment terminal</text>
+    <text x="60" y="762" fill="#047857" font-size="11" font-weight="700">🖨️ Print standby (supported Bluetooth printer) &amp; 💳 external terminal</text>
   </g>
   <g transform="translate(400,470)">
     <circle r="30" fill="#ffffff" stroke="#10b981" stroke-width="3"/>
@@ -138,12 +138,12 @@
     <rect x="290" y="944" width="22" height="12" rx="2" fill="#0f172a"/>
     <rect x="294" y="938" width="14" height="8" fill="#475569"/>
     <rect x="294" y="954" width="14" height="6" fill="#e2e8f0"/>
-    <text x="245" y="970" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="middle">🖨️ Bluetooth printer (PT-210)</text>
+    <text x="245" y="970" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="middle">🖨️ Supported Bluetooth printer</text>
     <text x="245" y="988" font-size="10" fill="#64748b" text-anchor="middle">Auto-prints through the print standby screen</text>
 
     <rect x="392" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
     <text x="517" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">💳 QR &amp; card payments</text>
-    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">PayMongo and external payment services</text>
+    <text x="517" y="980" font-size="11.5" fill="#64748b" text-anchor="middle">Store-contracted external payment service</text>
 
     <rect x="664" y="924" width="250" height="76" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
     <text x="789" y="960" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">✉️ Resend email</text>

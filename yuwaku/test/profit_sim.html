@@ -49,8 +49,8 @@
     .btn-pri{ background:var(--navy); color:#fff; width:100%; }
     .btn-sec{ background:#eef2f7; color:var(--navy); }
     .btn-sm{ border:0; border-radius:8px; padding:9px 13px; font-size:13px; font-weight:800; cursor:pointer; background:#eff6ff; color:#2563eb; font-family:inherit; }
-    .compact-month-field{ flex:0 1 180px; min-width:0; max-width:180px; overflow:hidden; border-radius:9px; contain:layout paint; }
-    #pMonth{ display:block; inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; min-inline-size:0!important; min-width:0!important; max-inline-size:calc(100% - 8px)!important; max-width:calc(100% - 8px)!important; box-sizing:border-box; font-size:16px; }
+    .compact-month-field{ flex:0 0 188px; min-width:0; max-width:188px; padding-right:8px; overflow:visible; }
+    #pMonth{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:100%!important; max-width:100%!important; box-sizing:border-box; font-size:16px; }
     .result{ display:flex; justify-content:space-between; align-items:center; padding:9px 2px; font-size:14px; }
     .result .lb{ font-weight:700; } .result .amt{ font-variant-numeric:tabular-nums; font-weight:800; }
     .rev .amt{ color:var(--green); font-size:17px; }
@@ -211,7 +211,7 @@
           <div class="cogsfield"><input type="number" id="pMgrCount" min="0" step="1" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitPeople">名</span></div>
           <div class="cogsfield"><input type="number" id="pMgrDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
-        <div class="cogsinputs" style="margin-top:4px;">
+        <div class="cogsinputs ph-labor-only" style="margin-top:4px;">
           <div class="cogsfield"><input type="number" id="pMgrNightHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitNightHours">夜勤h/日・人</span></div>
           <div class="cogsfield"><input type="number" id="pMgrOtHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitOtHours">残業h/日・人</span></div>
           <div class="cogsfield"><input type="number" id="pMgrRestDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitRestDays">休日出勤(追加)日/月・人</span></div>
@@ -226,7 +226,7 @@
           <div class="cogsfield"><input type="number" id="pSrCount" min="0" step="1" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitPeople">名</span></div>
           <div class="cogsfield"><input type="number" id="pSrDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
-        <div class="cogsinputs" style="margin-top:4px;">
+        <div class="cogsinputs ph-labor-only" style="margin-top:4px;">
           <div class="cogsfield"><input type="number" id="pSrNightHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitNightHours">夜勤h/日・人</span></div>
           <div class="cogsfield"><input type="number" id="pSrOtHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitOtHours">残業h/日・人</span></div>
           <div class="cogsfield"><input type="number" id="pSrRestDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitRestDays">休日出勤(追加)日/月・人</span></div>
@@ -241,7 +241,7 @@
           <div class="cogsfield"><input type="number" id="pMidCount" min="0" step="1" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitPeople">名</span></div>
           <div class="cogsfield"><input type="number" id="pMidDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
-        <div class="cogsinputs" style="margin-top:4px;">
+        <div class="cogsinputs ph-labor-only" style="margin-top:4px;">
           <div class="cogsfield"><input type="number" id="pMidNightHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitNightHours">夜勤h/日・人</span></div>
           <div class="cogsfield"><input type="number" id="pMidOtHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitOtHours">残業h/日・人</span></div>
           <div class="cogsfield"><input type="number" id="pMidRestDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitRestDays">休日出勤(追加)日/月・人</span></div>
@@ -256,16 +256,16 @@
           <div class="cogsfield"><input type="number" id="pJrCount" min="0" step="1" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitPeople">名</span></div>
           <div class="cogsfield"><input type="number" id="pJrDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitDays">日/月</span></div>
         </div>
-        <div class="cogsinputs" style="margin-top:4px;">
+        <div class="cogsinputs ph-labor-only" style="margin-top:4px;">
           <div class="cogsfield"><input type="number" id="pJrNightHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitNightHours">夜勤h/日・人</span></div>
           <div class="cogsfield"><input type="number" id="pJrOtHours" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitOtHours">残業h/日・人</span></div>
           <div class="cogsfield"><input type="number" id="pJrRestDays" min="0" step="any" placeholder="0" oninput="onSalaryInputChanged()"><span class="sym" data-t="unitRestDays">休日出勤(追加)日/月・人</span></div>
         </div>
         <div class="muted" id="jrSubtotal" style="font-size:11.5px;margin-top:4px;"></div>
       </div>
-      <div class="hint" data-t="salaryHint">各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分は基本給ベースで別項目として自動計算し、経費合計に含めます）。</div>
-      <div class="hint" data-t="premiumHint">夜勤（22時〜翌6時）・残業（1日8時間超）・休日出勤の割増を、人数1人あたりの月間時間／日数で入力すると自動計算します（夜勤+10%、残業+25%、休日出勤+30%を仮定した概算です。実際の適用条件は労働法令・専門家にご確認ください）。</div>
-      <div class="exprow locked">
+      <div class="hint" data-t="salaryHint">各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します。</div>
+      <div class="hint ph-labor-only" data-t="premiumHint">フィリピン店舗では、夜勤・残業・休日出勤の概算割増と13か月給与の月割り積立を自動計算します。法定要件は個別条件で変わるため専門家にご確認ください。</div>
+      <div class="exprow locked ph-labor-only">
         <span class="lb" data-t="salaryTotalLabel">給与合計（12か月分・割増込み）</span>
         <div class="amtwrap"><span class="sym" id="symSalaryTotal">₱</span><input type="number" id="pSalaryTotalDisp" readonly tabindex="-1"></div>
       </div>
@@ -275,14 +275,14 @@
       </div>
       <div class="divider"></div>
       <div class="cogsblock">
-        <div class="lb" data-t="eSss">社会保険料（SSS/PhilHealth/Pag-IBIG）</div>
+        <div class="lb" data-t="eSss">社会保険・事業主負担等</div>
         <div class="cogsinputs">
-          <div class="cogsfield"><input type="number" id="pSssRate" min="0" max="100" step="any" placeholder="13" oninput="recalcSss()"><span class="sym">%</span></div>
+          <div class="cogsfield"><input type="number" id="pSssRate" min="0" max="100" step="any" placeholder="0" oninput="recalcSss()"><span class="sym">%</span></div>
           <span class="cogsarrow">→</span>
           <div class="cogsfield"><span class="sym" id="symSss">₱</span><input type="number" id="pSss" min="0" step="any" oninput="onAmtManualEdit('pSssRate')"></div>
         </div>
       </div>
-      <div class="hint" data-t="sssHint">給与合計に対する割合(%)を入力すると自動計算します（初期値13%）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。</div>
+      <div class="hint" data-t="sssHint">社会保険・事業主負担等を給与合計に対する割合(%)または金額で任意入力できます。国・地域ごとの法定率を自動仮定しません。</div>
       <button type="button" class="btn-sm" style="margin-top:8px;" onclick="recalcSss()" data-t="cogsRecalc">🔄 割合から再計算</button>
       <div class="divider"></div>
       <div class="exprow"><span class="lb" data-t="eOtherStaff">その他人件費（弁護士／経理など）</span><div class="amtwrap"><span class="sym" id="symOther">₱</span><input type="number" min="0" step="any" id="pOtherStaff" oninput="calc()"></div></div>
@@ -356,7 +356,7 @@
       var raw = String((e && e.message) || e || '');
       return raw === 'unauthorized' ? I18n.t('needLoginForAction') : (I18n.t('errPrefix') + raw);
     }
-    var SYM = '₱';
+    var SYM = '';
     function money(v){ return SYM+(Math.round(Number(v)||0)).toLocaleString(); }
     function num(id){ return Number(document.getElementById(id).value) || 0; }
 
@@ -396,6 +396,7 @@
       pC10Label:'profitSimC10Label', pC10Amt:'profitSimC10Amt'
     };
     var VAT_RATE = 0, SVC_RATE = 0, TAX_INCLUSIVE = false, SVC_INCLUSIVE = false;
+    var COUNTRY_CODE = '', PH_LABOR_MODEL = false;
     // getSettings取得に失敗した場合、税率等が反映されない不正確な結果を表示しないようにするフラグ。
     var SETTINGS_LOAD_FAILED = false;
     // 内税（価格に税込）の場合、売上には既に税額が含まれているため rate/(100+rate) で抽出する。
@@ -487,6 +488,7 @@
     function _rankBasicSubtotal(r){ return num(r.daily) * num(r.count) * num(r.days); }
     function _rankHourly(r){ var h = num(r.hpd); return h > 0 ? (num(r.daily) / h) : 0; }
     function _rankPremium(r){
+      if (!PH_LABOR_MODEL) return 0;
       var hourly = _rankHourly(r);
       var count = num(r.count);
       var workDays = num(r.days);
@@ -509,7 +511,12 @@
     // 13か月給与（フィリピンの法定給付）は「基本給」の1/12を月割りで積立てる想定
     // （夜勤・残業・休日出勤の割増分は基本給に含めないのが原則のため、基本給合計のみを基準にする）。
     // 項目は非表示のまま固定費に自動合算する。
-    function _thirteenthMonth(){ return _basicSalaryTotal() / 12; }
+    function _thirteenthMonth(){ return PH_LABOR_MODEL ? (_basicSalaryTotal() / 12) : 0; }
+    function _syncCountryLaborModel(settings){
+      COUNTRY_CODE = String(settings && settings.countryCode || '').trim().toUpperCase();
+      PH_LABOR_MODEL = COUNTRY_CODE === 'PH';
+      document.querySelectorAll('.ph-labor-only').forEach(function(el){ el.style.display = PH_LABOR_MODEL ? '' : 'none'; });
+    }
     function _updateSalaryDisplays(){
       var total = 0;
       RANKS.forEach(function(r){
@@ -860,6 +867,8 @@
     // サイレント扱い（BG_RPC）。このページでは初期表示の唯一の通信なので、ここだけ明示的に出す。
     // 取得に失敗した場合は「設定が0/空欄のまま正常であるかのように見える」ことを避けるため、
     // エラーバナー＋再読み込みボタンを表示し、計算結果は無効化する（SETTINGS_LOAD_FAILED）。
+    var __initialProfitMonth = API.dateKeysInTimeZone('UTC').month;
+    document.getElementById('pMonth').value = __initialProfitMonth;
     function loadSettingsAndInit(){
       var errEl = document.getElementById('settingsErrorMsg');
       errEl.style.display = 'none';
@@ -868,7 +877,11 @@
       rpc('getSettings',[]).then(function(s){
         s = s || {};
         SETTINGS_LOAD_FAILED = false;
+        var storeMonth = API.dateKeysInTimeZone(s.timezone || 'UTC').month;
+        var monthInput = document.getElementById('pMonth');
+        if (monthInput.value === __initialProfitMonth) monthInput.value = storeMonth;
         if (s.currencySymbol) SYM = s.currencySymbol;
+        _syncCountryLaborModel(s);
         VAT_RATE = Number(s.taxRate) || 0;
         SVC_RATE = Number(s.serviceRate) || 0;
         TAX_INCLUSIVE = (s.taxInclusive === true || String(s.taxInclusive).toLowerCase() === 'true');
@@ -903,12 +916,6 @@
     }
     loadSettingsAndInit();
 
-    // 現在月の初期値はローカル時間（店舗のタイムゾーン）で決定する。toISOString()はUTC基準のため、
-    // フィリピン時間で月初の午前0〜8時頃に開くと前月が選択されてしまう不具合があった。
-    (function(){
-      var now = new Date();
-      document.getElementById('pMonth').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-    })();
     applySyms();
     calc();
 
@@ -938,20 +945,20 @@
         salaryTitle:'👥 給与（月額・ランク別）', rankManager:'マネージャー', rankSenior:'一般上級', rankMid:'一般中級', rankJunior:'一般初級',
         unitPeople:'名', unitDailyWage:'₱/日', unitHoursPerDay:'h/日', unitDays:'日/月', hourlyPrefix:'時給換算',
         unitNightHours:'夜勤h/日・人', unitOtHours:'残業h/日・人', unitRestDays:'休日出勤(追加)日/月・人',
-        salaryHint:'各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します（13か月給与の月割り積立分は基本給ベースで別項目として自動計算し、経費合計に含めます）。',
-        premiumHint:'夜勤（22時〜翌6時）・残業（1日8時間超）は、上の「日数/月」に既に含まれる1日あたりの時間を入力してください（例：シフトのうち4時間が夜勤帯なら「4」。出勤日数を別途増やす必要はありません＝内数）。休日出勤（追加）は、通常の「日数/月」とは別に追加で出勤した日数を入力してください（＝外数、日給の130%で計算）。夜勤+10%、残業+25%、休日出勤+30%を仮定した概算です。実際の適用条件は労働法令・専門家にご確認ください。',
+        salaryHint:'各ランクの日給・1日の勤務時間・人数・月間出勤日数を入力すると、時給換算と給与総額を自動計算します。',
+        premiumHint:'フィリピン店舗のみ、夜勤（22時〜翌6時）+10%、残業（1日8時間超）+25%、休日出勤+30%を概算し、基本給の1/12を13か月給与の月割り積立として加算します。実際の適用条件・料率は労働法令・専門家にご確認ください。',
         salaryTotalLabel:'給与合計（12か月分・割増込み）',
         salary13thLabel:'13か月給与積立金（月割り・概算）',
-        eSss:'社会保険料（SSS/PhilHealth/Pag-IBIG）', sssHint:'給与合計（割増賃金込み）に対する割合(%)を入力すると自動計算します（初期値13%）。計算後の金額は自由に上書き編集できます（割合または「割合から再計算」を押すと再計算されます）。',
+        eSss:'社会保険・事業主負担等', sssHint:'給与合計に対する割合(%)または金額で任意入力できます。国・地域ごとの法定率は自動仮定しません。',
         eOtherStaff:'その他人件費（弁護士／経理など）', eKaraoke:'カラオケレンタル',
         ePayFee:'決済手数料', unitCashlessPct:'キャッシュレス率%',
         payFeeHint:'「売上のうちキャッシュレス決済の割合(%)」×「決済手数料率(%)」を月間売上に掛けて自動計算します。決済手数料率を空欄にすると固定金額として扱います。',
         ePermits:'許認可・行政手数料', eInsurance:'保険料',
         phCustom1:'その他１', phCustom2:'その他２', phCustom3:'その他３', phCustom4:'その他４', phCustom5:'その他５',
         phCustom6:'その他６', phCustom7:'その他７', phCustom8:'その他８', phCustom9:'その他９', phCustom10:'その他１０',
-        phHint:'ガス代・通信費・社会保険料は、フィリピンの飲食店運営で発生しやすい代表的な項目として追加しています。不要であれば0のままで構いません。',
+        phHint:'固定費・人件費は店舗ごとの実額を入力してください。国・地域固有の法定費用は、必要に応じて社会保険・事業主負担等またはその他項目へ入力してください。',
         resultTitle:'📊 計算結果', revenue2:'売上', expTotal:'経費合計', profit:'営業利益', rateLabel:'営業利益率',
-        beLabel:'参考：営業利益0円になる売上目安', beHint:'現在入力中の固定費（給与・割増賃金・13か月給与・社会保険料を含む）・VAT率・決済手数料率をもとにした目安です（フード原価・ドリンク原価・ドリンクバックは割合(%)を入力している場合のみ原価対象売上（入場料等を除く）に対する変動費として計算し、未入力なら固定額として扱います。サービス代は含みません）。', beNA:'達成不可（変動費率が100%以上）',
+        beLabel:'参考：営業利益0円になる売上目安', beHint:'現在入力中の固定費（給与・社会保険・事業主負担等を含む）・税率・決済手数料率をもとにした目安です。フィリピン店舗では設定済み給与から概算割増賃金・13か月給与も加算します。フード原価・ドリンク原価・ドリンクバックは割合(%)入力時のみ原価対象売上に対する変動費として計算します。', beNA:'達成不可（変動費率が100%以上）',
         beDetailPrefix:'固定費合計', beDetailRate:'／変動費率',
         wantProfitLabel:'欲しい営業利益から売上を計算', wantProfitBtn:'→ 売上に反映',
         wantProfitHint:'現在の固定費・VAT率・決済手数料率・フード原価率・ドリンク原価率・ドリンクバック率（%指定時）・入場料等（原価対象外売上）をもとに、指定した営業利益を達成するために必要な売上を計算し、上の「月間売上」欄に反映します。',
@@ -996,20 +1003,20 @@
         salaryTitle:'👥 Salary (monthly, by rank)', rankManager:'Manager', rankSenior:'General - Senior', rankMid:'General - Mid', rankJunior:'General - Junior',
         unitPeople:'people', unitDailyWage:'₱/day', unitHoursPerDay:'h/day', unitDays:'days/mo', hourlyPrefix:'≈ hourly',
         unitNightHours:'night h/day/person', unitOtHours:'OT h/day/person', unitRestDays:'extra rest-day-worked days/mo/person',
-        salaryHint:'Enter the daily wage, hours worked per day, headcount, and workdays per month for each rank to auto-calculate the equivalent hourly wage and total salary (the 13th-month pay accrual is based on basic pay and calculated as a separate line item, included in total expenses).',
-        premiumHint:'For night shift (10pm–6am) and overtime (beyond 8h/day), enter the hours per day already included within the "days/mo" you entered above (e.g. if 4 hours of each shift fall in the night differential window, enter "4" — no extra workdays needed, since these hours are a subset of days already paid). For extra rest-day-worked, enter the number of ADDITIONAL days worked beyond the normal "days/mo" (paid at 130% of the daily rate). Assumes +10% night differential, +25% overtime, +30% rest-day premium — approximations only; confirm actual applicable rates with labor law / a professional.',
+        salaryHint:'Enter the daily wage, hours worked per day, headcount, and workdays per month for each rank to calculate the equivalent hourly wage and total salary.',
+        premiumHint:'For stores configured for the Philippines only, estimates use +10% night differential (10pm–6am), +25% overtime beyond 8h/day, +30% rest-day premium, plus a monthly 13th-month-pay accrual of 1/12 of basic pay. Confirm the applicable rules and rates with a professional.',
         salaryTotalLabel:'Total salary (12 months, incl. premiums)',
         salary13thLabel:'13th-month pay accrual (monthly, estimate)',
-        eSss:'Social contributions (SSS/PhilHealth/Pag-IBIG)', sssHint:'Enter a percentage (%) of total salary (including premiums) to auto-calculate (default 13%). The resulting amount can be freely overwritten afterward (changing the % or pressing "Recalculate from %" recalculates it).',
+        eSss:'Social insurance / employer contributions', sssHint:'Enter an optional percentage of total salary or a fixed amount. The app does not assume a statutory rate for your country or region.',
         eOtherStaff:'Other personnel costs (lawyer/accounting, etc.)', eKaraoke:'Karaoke rental',
         ePayFee:'Payment processing fees', unitCashlessPct:'cashless share %',
         payFeeHint:'Auto-calculated as "share of revenue that is cashless (%)" × "payment processing fee rate (%)" × monthly revenue. Leave the fee rate blank to treat it as a fixed amount.',
         ePermits:'Permits & government fees', eInsurance:'Insurance',
         phCustom1:'Other 1', phCustom2:'Other 2', phCustom3:'Other 3', phCustom4:'Other 4', phCustom5:'Other 5',
         phCustom6:'Other 6', phCustom7:'Other 7', phCustom8:'Other 8', phCustom9:'Other 9', phCustom10:'Other 10',
-        phHint:'Gas, internet, and social contributions were added as common costs for a Philippines-based restaurant/bar. Leave at 0 if not applicable.',
+        phHint:'Enter the actual fixed and personnel costs for your store. Country-specific statutory costs can be entered under social insurance / employer contributions or the custom cost fields.',
         resultTitle:'📊 Result', revenue2:'Revenue', expTotal:'Total expenses', profit:'Operating profit', rateLabel:'Operating margin',
-        beLabel:'Reference: break-even revenue (operating profit = 0)', beHint:'Estimated from the fixed costs (including salary, shift premiums, 13th-month pay, and social contributions), VAT rate, and payment fee rate currently entered (food COGS, drink COGS, and drink back are treated as a variable cost against COGS-bearing revenue — excluding entrance fee etc. — only if a percentage is entered; otherwise as a fixed amount. Service charge is not included).', beNA:'Not achievable (variable cost rate is 100% or more)',
+        beLabel:'Reference: break-even revenue (operating profit = 0)', beHint:'Estimated from the fixed costs (including salary and social insurance / employer contributions), tax rate, and payment fee rate currently entered. For stores configured for the Philippines, estimated shift premiums and 13th-month pay are also included. Percentage-based COGS and drink commissions are treated as variable costs.', beNA:'Not achievable (variable cost rate is 100% or more)',
         beDetailPrefix:'Total fixed costs', beDetailRate:'/ variable cost rate',
         wantProfitLabel:'Calculate revenue from a target operating profit', wantProfitBtn:'→ Apply to revenue',
         wantProfitHint:'Using the current fixed costs, VAT rate, payment fee rate, food COGS rate, drink COGS rate, drink back rate (if % is set), and entrance fee etc. (non-COGS revenue), calculates the revenue needed to reach the target operating profit and fills it into "Monthly revenue" above.',
@@ -1041,7 +1048,7 @@
         { ja: '① 「月間売上」に想定の月商を入力すると、下の経費合計と営業利益がリアルタイムで自動計算されます。', en: '① Enter your projected monthly revenue at the top — total expenses and operating profit below update automatically in real time.' },
         { ja: '② 入場料・延長料金・VIP基本料金は、商品原価がかからない売上として別枠入力できます（人数×単価で自動計算）。', en: '② Entrance fee, extension fee, and VIP base charge can be entered separately as revenue with no product cost (auto-calculated as headcount × unit price).' },
         { ja: '③ フード原価・ドリンク原価・ドリンクバック（レディースドリンク／ボトル／紹介料含む）は、割合(%)を入力すると金額が自動計算されます。金額欄を直接書き換えると固定金額として扱われます。', en: '③ Food COGS, drink COGS, and drink back (including ladies-drink, bottle, and referral commission) auto-calculate from a percentage you enter. Editing the amount field directly switches it to a fixed amount instead.' },
-        { ja: '④ 賃料・電気代・水道代などの固定費や、マネージャー〜一般初級までランク別の給与（日給・人数・出勤日数・夜勤／残業／休日出勤の割増）を入力できます。', en: '④ Enter fixed costs like rent, electricity, and water, plus salary by rank (Manager to Junior) — daily wage, headcount, workdays, and night/overtime/rest-day premiums.' },
+        { ja: '④ 賃料・電気代・水道代などの固定費や、ランク別の給与（日給・人数・出勤日数）を入力できます。フィリピン店舗では夜勤／残業／休日出勤の概算割増と13か月給与の月割り積立欄も表示されます。', en: '④ Enter fixed costs such as rent, electricity and water, plus salary by rank (daily wage, headcount and workdays). Philippines stores also show estimated night/overtime/rest-day premiums and a monthly 13th-month-pay accrual.' },
         { ja: '⑤ 「📥 その月の実績を読み込む」ボタンで、指定した月の実際の売上・経費データを自動入力できます（要ログイン）。', en: '⑤ Use "📥 Load actuals for that month" to auto-fill actual recorded revenue and expenses for a chosen month (requires login).' },
         { ja: '⑥ 下部の「欲しい営業利益から売上を計算」で目標の営業利益額を入力し「→ 売上に反映」を押すと、必要な売上高が「月間売上」欄に自動反映されます。', en: '⑥ Under "Calculate revenue from a target operating profit," enter a target profit and press "→ Apply to revenue" to fill in the required revenue automatically.' },
         { ja: '⑦ 「💾 現在の値を既定値として保存」を押すと、次回この画面を開いたときに同じ数字が自動入力されます。', en: '⑦ Press "💾 Save current values as defaults" so the same figures are pre-filled the next time you open this screen.' }

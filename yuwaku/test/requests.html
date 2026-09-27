@@ -99,7 +99,9 @@
     function catLabel(c){ var k={'不具合':'catBug','運営':'catOps','その他':'catOther'}[c]; return k?I18n.t(k):c; }
     function stLabel(s){ var k={'未対応':'stOpen','対応中':'stProg','解決済み':'stDone'}[s]; return k?I18n.t(k):s; }
 
-    function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+    var STORE_TODAY = API.dateKeysInTimeZone('UTC').date;
+    function todayStr(){ return STORE_TODAY; }
+    API.getStoreDateKeys().then(function(k){ STORE_TODAY=k.date; if(__loaded) render(); });
 
     function render(){
       if (!ROWS.length){ $('list').innerHTML = '<div class="empty">'+I18n.t('empty')+'</div>'; return; }
