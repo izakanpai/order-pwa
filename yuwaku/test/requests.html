@@ -42,8 +42,8 @@
     .mgmt{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
     select.mini{ height:40px; padding:0 6px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
     input.noteInp{ flex:1; min-width:140px; height:40px; padding:0 8px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
-    .due-shell{ position:relative; flex:0 1 170px; min-width:0; height:40px; overflow:hidden; border-radius:7px; contain:layout paint; }
-    .due-shell input.dueInp{ position:absolute; inset:0; display:block; inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; min-inline-size:0!important; min-width:0!important; max-inline-size:calc(100% - 8px)!important; max-width:calc(100% - 8px)!important; height:100%; margin:0; padding:0 8px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; box-sizing:border-box; }
+    .due-shell{ position:relative; flex:0 1 178px; min-width:0; height:40px; padding-right:8px; overflow:visible; border-radius:7px; box-sizing:border-box; }
+    .due-shell input.dueInp{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:100%!important; max-width:100%!important; height:100%; margin:0; padding:0 8px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; box-sizing:border-box; overflow:visible; }
     .delbtn{ width:40px; height:40px; background:none; border:0; color:#b91c1c; font-size:16px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
     .empty{ text-align:center; color:var(--text-3); padding:24px 0; }
   </style>

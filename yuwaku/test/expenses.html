@@ -35,8 +35,8 @@
     .bar{ display:flex; gap:8px; align-items:flex-end; margin-bottom:12px; flex-wrap:wrap; }
     .alert{ margin-top:10px; display:none; padding:11px; border-radius:9px; font-size:14px; font-weight:700; }
     .muted{ color:var(--text-3); font-size:12px; }
-    .expense-date-shell{ position:relative; width:100%; min-width:0; height:44px; overflow:hidden; border-radius:9px; contain:layout paint; }
-    .expense-date-shell .fc{ position:absolute; inset:0; inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; min-inline-size:0!important; min-width:0!important; max-inline-size:calc(100% - 8px)!important; max-width:calc(100% - 8px)!important; height:100%!important; margin:0; }
+    .expense-date-shell{ position:relative; width:100%; min-width:0; height:44px; padding-right:8px; overflow:visible; border-radius:9px; box-sizing:border-box; }
+    .expense-date-shell .fc{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:100%!important; max-width:100%!important; height:100%!important; margin:0; overflow:visible; }
     .expense-table-wrap{ overflow:auto; }
     #expenseCards{ display:none; }
     .expense-card-row{ border:1px solid var(--border); border-radius:12px; padding:11px; background:#fff; }

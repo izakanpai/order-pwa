@@ -77,7 +77,10 @@ const CACHE_PREFIX = 'yuwaku-production-';
 // v203: 卓QRとテイクアウト共有URLを店舗共通HTTPS公開ページへ統一。
 // v204: 月日初期値を端末時刻ではなく店舗IANAタイムゾーンへ統一。
 // v205: 予約フォームを30分刻み＋メール対応にし、予約管理へメール列を追加。
-const CACHE = CACHE_PREFIX + 'v205';
+// v206: iOS date inputの右枠切れ・隣接列への描画超過を全date入力へ横展開修正。
+// v207: 予約フォームの日時をスマホでは縦積みにし、iOS date描画と時刻欄の重なりを構造的に解消。
+// v208: 予約フォームのメールアドレスを必須化。
+const CACHE = CACHE_PREFIX + 'v208';
 const SHELL = [
   './',
   './index.html',

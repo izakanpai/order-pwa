@@ -23,8 +23,8 @@
     .fc{ width:100%; padding:10px; border:1px solid var(--border); border-radius:9px; font-size:15px; font-family:inherit; background:var(--surface); }
     .month-field{ flex:0 0 188px; min-width:0; max-width:188px; padding-right:8px; overflow:visible; }
     .month-field .fc{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:100%!important; max-width:100%!important; box-sizing:border-box; }
-    .filter-control-shell{ position:relative; min-width:0; width:100%; height:var(--filter-control-h); overflow:hidden; border-radius:10px; contain:layout paint; }
-    .filter-control-shell .fc{ position:absolute; inset:0; display:block; inline-size:calc(100% - 8px)!important; width:calc(100% - 8px)!important; min-inline-size:0!important; min-width:0!important; max-inline-size:calc(100% - 8px)!important; max-width:calc(100% - 8px)!important; height:100%!important; margin:0; }
+    .filter-control-shell{ position:relative; min-width:0; width:100%; height:var(--filter-control-h); padding-right:8px; overflow:visible; border-radius:10px; box-sizing:border-box; }
+    .filter-control-shell .fc{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:100%!important; max-width:100%!important; height:100%!important; margin:0; overflow:visible; }
     .form-label{ font-size:12px; font-weight:700; display:block; margin-bottom:4px; }
     @media (max-width:520px){ .fc{ min-width:0; font-size:16px; } }
     .btn{ height:var(--filter-control-h); border:0; border-radius:10px; padding:0 16px; font-size:14px; font-weight:800; background:var(--navy); color:#fff; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; justify-content:center; }

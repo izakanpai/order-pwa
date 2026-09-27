@@ -242,7 +242,7 @@
       '.iz-header-user{max-width:180px;overflow:hidden;text-overflow:ellipsis}' +
       '.iz-header-btn{border:0;border-radius:8px;background:rgba(255,255,255,.15);color:#fff;padding:8px 10px;min-height:34px;font:800 12px/1.2 inherit;cursor:pointer;white-space:nowrap}' +
       '.iz-header-btn:hover{background:rgba(255,255,255,.25)}' +
-      'input[type="month"],input[type="date"],input[type="time"]{display:block!important;inline-size:100%!important;width:100%!important;min-inline-size:0!important;min-width:0!important;max-inline-size:100%!important;max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important}input[type="month"]::-webkit-date-and-time-value,input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date-and-time-value{min-width:0!important;text-align:left!important}[data-guide-anchor]{scroll-margin-top:64px}' +
+      'input[type="month"],input[type="date"],input[type="time"]{display:block!important;inline-size:100%!important;width:100%!important;min-inline-size:0!important;min-width:0!important;max-inline-size:100%!important;max-width:100%!important;box-sizing:border-box!important;overflow:visible!important}input[type="month"]::-webkit-date-and-time-value,input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date-and-time-value{min-width:0!important;text-align:left!important}[data-guide-anchor]{scroll-margin-top:64px}' +
       '#izHeaderExtra{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex:0 1 auto;min-width:0;flex-wrap:nowrap;padding:0;background:transparent;border:0}' +
       '#izHeaderExtra[hidden]{display:none}' +
       '#izHeaderExtra a,#izHeaderExtra button{margin:0!important}' +
