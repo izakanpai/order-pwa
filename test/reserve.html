@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#0f172a">
   <meta name="robots" content="noindex,nofollow">
   <title>Reservation</title>
+  <link rel="stylesheet" href="./date-controls.css?v=2">
   <style>
     body{ margin:0; background:#f6f7f9; color:#0f172a; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
     .rwrap{ max-width:460px; margin:0 auto; padding:18px; }
@@ -13,7 +14,7 @@
     .rlabel{ font-size:13px; font-weight:800; display:block; margin:10px 0 4px; }
     .rfc{ width:100%; padding:12px; border:1px solid #e5e7eb; border-radius:10px; font-size:16px; font-family:inherit; box-sizing:border-box; background:#fff; }
     .rwhen-grid{ display:grid; grid-template-columns:minmax(0,1fr) 118px; gap:8px; overflow:visible; }
-    .rwhen-grid input[type=date]{ width:calc(100% - 50px)!important; min-width:0; max-width:calc(100% - 50px)!important; padding-right:14px; overflow:visible; justify-self:start; }
+    .rwhen-grid input[type=date]{ width:calc(100% - 50px)!important; min-width:0; max-width:calc(100% - 50px)!important; padding-right:14px; overflow:visible; box-sizing:border-box; justify-self:start; }
     .rwhen-grid #rTime{ width:100%; min-width:0; max-width:100%; }
     .rbtn{ width:100%; border:0; border-radius:12px; padding:14px; font-size:16px; font-weight:900; cursor:pointer; margin-top:16px; background:#0f172a; color:#fff; }
     .rhead{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
@@ -63,7 +64,7 @@
     })();
   </script>
   <script>
-    var lang = (localStorage.getItem('lang')||'').match(/^(ja|en)$/) ? localStorage.getItem('lang') : 'en';
+    var lang = (function(){try{var s=localStorage.getItem('lang');if(s==='ja'||s==='en')return s;var first=(navigator.languages&&navigator.languages.length)?navigator.languages[0]:navigator.language;var d=String(first||'').toLowerCase().indexOf('ja')===0?'ja':'en';localStorage.setItem('lang',d);return d;}catch(e){return 'en';}})();
     var STORE_ID=String(new URLSearchParams(location.search).get('store')||'').trim().toLowerCase(), FORM_CONFIG={}, FORM_READY=false;
     var T = {
       en:{ shop:'Reservation Form', intro:'Request a table. We will contact you to confirm.', lWhen:'Date & time', lPeople:'Party size', lName:'Name', lPhone:'Phone', lEmail:'Email', lSeat:'Seating preference', lNotes:'Notes (optional)', table:'Table', counter:'Counter', submit:'Request reservation', lang:'JP', needWhen:'Please choose a date & time.', needName:'Please enter your name.', needEmail:'Please enter your email address.', badEmail:'Please enter a valid email address.', email_required:'Please enter your email address.', doneT:'Reservation requested', doneM:'Thank you! We will contact you to confirm.', err:'Something went wrong. Please try again.', bad_datetime:'Please choose a valid future time within one year.', invalid_time_interval:'Please choose a time in 30-minute intervals.', bad_email:'Please enter a valid email address.', past_datetime:'Please choose a time at least 5 minutes from now.', datetime_too_far:'Reservations can be requested up to one year ahead.', rate_limited:'Too many requests. Please wait and try again.', invalid_reservation_link:'This reservation link is invalid.', store_not_found:'This reservation page is no longer available.', reservation_unavailable:'Online reservations are not available for this store.' },
@@ -78,7 +79,7 @@
       document.getElementById('lWhen').innerText=x.lWhen; document.getElementById('lPeople').innerText=x.lPeople;
       document.getElementById('lName').innerText=x.lName; document.getElementById('lPhone').innerText=x.lPhone; document.getElementById('lEmail').innerText=x.lEmail;
       document.getElementById('lSeat').innerText=x.lSeat; document.getElementById('lNotes').innerText=x.lNotes;
-      document.getElementById('oTable').innerText=(lang==='en'?FORM_CONFIG.tableLabelEn:FORM_CONFIG.tableLabelJa)||x.table; document.getElementById('oCounter').innerText=(lang==='en'?FORM_CONFIG.counterLabelEn:FORM_CONFIG.counterLabelJa)||x.counter;
+      document.getElementById('oTable').innerText=(lang==='en'?(FORM_CONFIG.tableLabelEn||FORM_CONFIG.tableLabelJa):(FORM_CONFIG.tableLabelJa||FORM_CONFIG.tableLabelEn))||x.table; document.getElementById('oCounter').innerText=(lang==='en'?(FORM_CONFIG.counterLabelEn||FORM_CONFIG.counterLabelJa):(FORM_CONFIG.counterLabelJa||FORM_CONFIG.counterLabelEn))||x.counter;
       document.getElementById('submitBtn').innerText=x.submit; document.getElementById('langBtn').innerText=x.lang;
       document.getElementById('doneT').innerText=x.doneT;
     }

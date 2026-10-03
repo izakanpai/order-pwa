@@ -79,7 +79,19 @@ const CACHE_PREFIX = 'yuwaku-test-';
 // v206: iOS date inputの右枠切れ・隣接列への描画超過を全date入力へ横展開修正。
 // v207: 予約フォームの日時をスマホでは縦積みにし、iOS date描画と時刻欄の重なりを構造的に解消。
 // v208: 予約フォームのメールアドレスを必須化。
-const CACHE = CACHE_PREFIX + 'v208';
+// v209: 予約一覧のメールリンク化と状態列レイアウトを安定化。
+// v211: ファイル読込をarrayBuffer優先へ統一しProgressEvent直露出を防止。
+// v212: iOS経費日付欄のNative縦伸びを44px固定で抑止。
+// v214: レシピ・ユーザー管理・割引ルールの必須入力を送信前検証へ統一。
+// v215: ログイン用パスワードの新規設定要件を8文字以上へ統一。
+// v216: 初回言語を端末の第一優先言語からja/enへ自動設定し、共通/例外画面を統一。
+// v217: 店舗設定の席数表示を保存済み呼称へ連動し、「第1席種」表記を廃止。
+// v218: サンプルメニュー表示/デモ注文とスタッフ注文の認証付き再送を追加。
+// v219: Pexels画像検索を運営共通キー化し、店舗設定からAPIキー入力を撤去。
+// v220: 日英business fieldを対等化し、英語のみ/日本語のみ登録と相互fallbackを全機能へ横展開。
+// v221: 再監査対応。多言語メニューオプション、決済、注文管理/KDS、プリンタ表示を更新。
+// v228: オフライン注文再送のStore/token固定化を確実に配布する。
+const CACHE = CACHE_PREFIX + 'v228';
 const SHELL = [
   './',
   './index.html',
@@ -121,12 +133,14 @@ const SHELL = [
   './system-overview.svg',
   './system-overview-en.svg',
   './styles.css',
+  './date-controls.css?v=2',
   './config.js?v=auth2',
   './header.js?v=auth13',
   './api.js?v=auth2',
   './i18n.js?v=auth2',
   './confirm.js?v=auth2',
   './app.js?v=auth3',
+  './help.js?v=auth2',
   './manifest.webmanifest',
   './admin.webmanifest',
   './attendance.webmanifest',

@@ -64,7 +64,7 @@
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     // 言語切替の一元ヘルパー（新しい表示・候補リストを追加する際は必ずこれを通すこと）
     function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
-    function loc(ja, en){ ja = ja||''; en = (en||'').trim(); return isEN() ? (en || ja) : ja; }
+    function loc(ja, en){ ja=(ja||'').trim(); en=(en||'').trim(); return isEN() ? (en || ja) : (ja || en); }
     var ALL = [], SYM='₱', __loaded=false;
     var TYPEKEY = { '入荷':'tIn', '廃棄':'tWaste', '棚卸':'tCount' };
     var TYPECLS = { '入荷':'b-in', '廃棄':'b-waste', '棚卸':'b-count' };
@@ -108,7 +108,7 @@
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; render(); }).catch(function(){});
     rpc('getStockMoves',['']).then(function(l){ ALL=l||[]; __loaded=true; render(); })
-      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</td></tr>'; });
 
     I18n.init({
       ja:{ title:'📋 在庫変動履歴', back:'← 管理へ', inv:'📦 在庫', month:'対象月', thTime:'日時', thType:'種別', thName:'商品', thQty:'数量', thStock:'変動後', thCost:'原価概算', thReason:'理由', thActor:'記録者', loading:'読み込み中…', empty:'この月の記録はありません', loadErr:'読み込みエラー: ', tIn:'入荷', tWaste:'廃棄', tCount:'棚卸', kIn:'入荷合計', kWaste:'廃棄合計', kDiff:'棚卸差異' },

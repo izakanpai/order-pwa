@@ -22,6 +22,8 @@
     .lbl { font-size:13px; color:var(--t3); font-weight:700; margin:2px 0 10px; }
     .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
     .emp { background:#fff; border:1px solid var(--border); border-radius:16px; padding:16px 12px; text-align:center; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+    .emp.view-only { cursor:default; }
+    .view-note { margin-top:7px; font-size:11px; color:var(--t3); font-weight:700; }
     .emp .nm { font-size:16px; font-weight:800; margin-bottom:8px; }
     .stt { display:inline-block; font-size:12px; font-weight:700; padding:3px 12px; border-radius:999px; }
     .s-out{background:#f1f5f9;color:#64748b;} .s-work{background:#dcfce7;color:#15803d;} .s-break{background:#fef3c7;color:#b45309;} .s-done{background:#e0e7ff;color:#4338ca;}
@@ -82,7 +84,7 @@
     function p(n){ return (n<10?'0':'')+n; }
 
     async function apiPost(action, payload){
-      var body = JSON.stringify(Object.assign({ action: action, token: TOKEN }, payload||{}));
+      var body = JSON.stringify(Object.assign({ action: action, token: TOKEN, storeId: CFG.STORE_ID }, payload||{}));
       var r = await fetch(CFG.API_URL+'?api=1', { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body, redirect:'follow' });
       var j = await r.json();
       if(!j.ok) throw new Error(j.error||'api_error');
@@ -138,7 +140,8 @@
       var html = '<div class="grid">';
       employees.forEach(function(e, i){
         var sm = SMAP[e.status] || SMAP['未出勤'];
-        html += '<div class="emp" onclick="__open('+i+')"><div class="nm">'+esc(e.name)+'</div><span class="stt '+sm[0]+'">'+I18n.t(sm[1])+'</span></div>';
+        var action = e.canPunch === true ? ' onclick="__open('+i+')"' : '';
+        html += '<div class="emp'+(e.canPunch===true?'':' view-only')+'"'+action+'><div class="nm">'+esc(e.name)+'</div><span class="stt '+sm[0]+'">'+I18n.t(sm[1])+'</span>'+(e.canPunch===true?'':'<div class="view-note">'+I18n.t('viewOnly')+'</div>')+'</div>';
       });
       html += '</div>';
       area.innerHTML = html;
@@ -147,6 +150,7 @@
 
     window.__open = function(i){
       selected = employees[i];
+      if(!selected || selected.canPunch!==true){ selected=null; return; }
       $('mName').textContent = selected.name;
       var sm = SMAP[selected.status] || SMAP['未出勤'];
       $('mStatus').textContent = I18n.t(sm[1]);
@@ -162,10 +166,10 @@
     $('mClose').onclick = closeModal;
 
     function DONE(type){ return ({ '出勤':I18n.t('dIn'), '退勤':I18n.t('dOut'), '休憩開始':I18n.t('dBs'), '休憩終了':I18n.t('dBe') })[type]; }
-    function ERR(e){ return ({ too_far:I18n.t('eFar'), no_location:I18n.t('eLoc'), no_photo:I18n.t('ePhoto'), no_camera:I18n.t('eCam'), already_in:I18n.t('eIn'), not_in:I18n.t('eNotIn') })[e]; }
+    function ERR(e){ return ({ too_far:I18n.t('eFar'), no_location:I18n.t('eLoc'), no_photo:I18n.t('ePhoto'), no_camera:I18n.t('eCam'), already_in:I18n.t('eIn'), not_in:I18n.t('eNotIn'), forbidden_self_punch_only:I18n.t('eSelf') })[e]; }
 
     window.__punch = async function(type){
-      if(!selected) return;
+      if(!selected || selected.canPunch!==true) return;
       if(!camReady || !stream){ toast(I18n.t('camDeny'), true); return; }
       var btns = document.querySelectorAll('#mBtns .btn'); btns.forEach(function(b){ b.disabled=true; });
       try {
@@ -180,33 +184,33 @@
           toast(msg, true);
           btns.forEach(function(b){ b.disabled=false; });
         }
-      } catch(err){ toast(I18n.t('errPrefix')+(err.message||err), true); btns.forEach(function(b){ b.disabled=false; }); }
+      } catch(err){ toast(I18n.t('errPrefix')+API.userErrorText(err), true); btns.forEach(function(b){ b.disabled=false; }); }
     };
 
     var __loaded=false;
     function loadEmployees(){
       apiPost('getEmployeeStatuses', {}).then(function(d){ employees = d||[]; __loaded=true; render(); })
-        .catch(function(e){ $('area').innerHTML = '<div class="loading" style="color:var(--red)">'+I18n.t('errPrefix')+esc(e.message||e)+'</div>'; });
+        .catch(function(e){ $('area').innerHTML = '<div class="loading" style="color:var(--red)">'+I18n.t('errPrefix')+esc(API.userErrorText(e))+'</div>'; });
     }
 
     function tick(){ var d=new Date(); $('now').textContent = '🕐 '+p(d.getHours())+':'+p(d.getMinutes()); }
 
     I18n.init({
       ja:{ back:'← 管理', title:'打刻', cam:'📷 カメラ', sub:'自分の名前をタップして出勤・退勤（写真と位置が記録されます）', loading:'読み込み中...', memo:'メモ（任意）', close:'閉じる',
-        stOut:'未出勤', stWork:'勤務中', stBreak:'休憩中', stDone:'退勤済',
+        stOut:'未出勤', stWork:'勤務中', stBreak:'休憩中', stDone:'退勤済', viewOnly:'状態確認のみ',
         noEmp:'従業員が未登録です。管理→ユーザー管理/勤怠で登録してください。',
         pIn:'出勤', pOut:'退勤', pBs:'休憩開始', pBe:'休憩終了',
         dIn:'出勤しました', dOut:'お疲れさまでした', dBs:'休憩開始', dBe:'休憩終了', done:'完了',
         camDeny:'カメラを許可してください（打刻には写真が必要です）',
-        eFar:'⛔ 店舗から離れています', eLoc:'⛔ 位置情報を許可してください', ePhoto:'⛔ 写真が撮れませんでした', eCam:'⛔ カメラを許可してください', eIn:'すでに出勤中です', eNotIn:'出勤していません',
+        eFar:'⛔ 店舗から離れています', eLoc:'⛔ 位置情報を許可してください', ePhoto:'⛔ 写真が撮れませんでした', eCam:'⛔ カメラを許可してください', eIn:'すでに出勤中です', eNotIn:'出勤していません', eSelf:'⛔ 自分の勤怠だけ打刻できます',
         errG:'エラー', errPrefix:'エラー: ', approx:'約', allow:'許容' },
       en:{ back:'← Manage', title:'Time Clock', cam:'📷 Camera', sub:'Tap your name to clock in/out (photo & location recorded)', loading:'Loading...', memo:'Memo (optional)', close:'Close',
-        stOut:'Out', stWork:'Working', stBreak:'On break', stDone:'Clocked out',
+        stOut:'Out', stWork:'Working', stBreak:'On break', stDone:'Clocked out', viewOnly:'Status only',
         noEmp:'No employees registered. Add them in Manage → Users/Attendance.',
         pIn:'Clock in', pOut:'Clock out', pBs:'Start break', pBe:'End break',
         dIn:'Clocked in', dOut:'Thanks for your work', dBs:'Break started', dBe:'Break ended', done:'Done',
         camDeny:'Please allow the camera (a photo is required to clock in)',
-        eFar:'⛔ Too far from the store', eLoc:'⛔ Please allow location', ePhoto:'⛔ Could not take a photo', eCam:'⛔ Please allow the camera', eIn:'Already clocked in', eNotIn:'Not clocked in',
+        eFar:'⛔ Too far from the store', eLoc:'⛔ Please allow location', ePhoto:'⛔ Could not take a photo', eCam:'⛔ Please allow the camera', eIn:'Already clocked in', eNotIn:'Not clocked in', eSelf:'⛔ You can only punch your own attendance',
         errG:'Error', errPrefix:'Error: ', approx:'approx ', allow:'limit ' }
     }, function(){ if(__loaded) render(); });
 

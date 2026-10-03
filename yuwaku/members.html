@@ -62,7 +62,7 @@
 
     var __loaded=false;
     rpc('getMembers',[]).then(function(list){ MEMBERS=(list||[]).slice().sort(function(a,b){ return (Number(b.points)||0)-(Number(a.points)||0); }); __loaded=true; render(); })
-      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="6" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="6" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</td></tr>'; });
 
     I18n.init({
       ja:{ title:'🎁 会員管理', back:'← 管理へ', search:'🔎 電話番号・名前で検索', thPhone:'電話番号', thName:'名前', thPts:'ポイント', thVisits:'来店', thTotal:'累計額', thLast:'最終来店', loading:'読み込み中…', none:'該当なし', loadErr:'読み込みエラー: ' },

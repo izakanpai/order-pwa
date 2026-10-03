@@ -505,6 +505,18 @@
       if (!saved) saved = (navigator.language || '').toLowerCase().indexOf('ja') === 0 ? 'ja' : 'en';
       applyLang(saved === 'en' ? 'en' : 'ja');
     })();
+    (function(){
+      try {
+        fetch('https://izakanpai-api.izakanpai.workers.dev/analytics/pageview', {
+          method:'POST',
+          mode:'cors',
+          credentials:'omit',
+          keepalive:true,
+          headers:{'content-type':'application/json'},
+          body:JSON.stringify({host:location.hostname,path:location.pathname})
+        }).catch(function(){});
+      } catch(e){}
+    })();
   </script>
 </body>
 </html>

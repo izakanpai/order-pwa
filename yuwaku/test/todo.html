@@ -10,6 +10,7 @@
 
   <link rel="manifest" href="./todo.webmanifest">
   <title>To-dos</title>
+  <link rel="stylesheet" href="./date-controls.css?v=2">
   <style>
     :root{ --bg:#f6f7f9; --surface:#fff; --border:#e5e7eb; --navy:#0f172a; --text-3:#64748b; --green:#16a34a; }
     *{ box-sizing:border-box; }
@@ -28,7 +29,7 @@
     .row{ display:flex; gap:8px; flex-wrap:wrap; }
     .row .fg{ flex:1; min-width:120px; }
     .todo-date-shell{ position:relative; width:100%; min-width:0; height:44px; padding-right:8px; overflow:visible; border-radius:9px; box-sizing:border-box; }
-    .todo-date-shell .fc{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:100%!important; max-width:100%!important; height:100%!important; margin:0; overflow:visible; }
+    .todo-date-shell .fc{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:100%!important; max-width:100%!important; margin:0; overflow:visible; }
     .item{ display:flex; align-items:flex-start; gap:10px; padding:12px 4px; border-bottom:1px solid var(--border); }
     .item:last-child{ border-bottom:0; }
     .item input[type=checkbox]{ width:22px; height:22px; margin-top:2px; flex:0 0 auto; cursor:pointer; }
@@ -132,7 +133,7 @@
         if (r && r.row) { ROWS.unshift(r.row); render(); }
         else { return reload(); } // 想定外形状のフォールバックのみ再取得
         $('newTitle').value=''; $('newAssignee').value=''; $('newDue').value='';
-      }).catch(function(e){ if (btn) btn.disabled = false; errEl.textContent = I18n.t('errPrefix')+(e.message||e); errEl.style.display='block'; });
+      }).catch(function(e){ if (btn) btn.disabled = false; errEl.textContent = I18n.t('errPrefix')+API.userErrorText(e); errEl.style.display='block'; });
     };
     window.toggleDone = function(id, done){
       var row = ROWS.filter(function(r){ return r.id===id; })[0];
@@ -143,7 +144,7 @@
       rpc('toggleTodoDone',[id, done]).then(function(r){
         if (!(r && r.success)) {
           if (row) { row.done = prevDone; row.doneAt = prevDoneAt; render(); }
-          var e = $('addErr'); if (e) { e.textContent = I18n.t('errPrefix')+((r&&r.error)||'save_failed'); e.style.display='block'; }
+          var e = $('addErr'); if (e) { e.textContent = I18n.t('errPrefix')+API.userErrorText((r&&r.error)||'save_failed'); e.style.display='block'; }
         }
       }).catch(function(){
         if (row) { row.done = prevDone; row.doneAt = prevDoneAt; render(); } // 失敗時はロールバック
@@ -156,7 +157,7 @@
         if (!ok) return;
         rpc('deleteTodo',[id]).then(function(r){
           if (r && r.success) { ROWS = ROWS.filter(function(r2){ return r2.id!==id; }); render(); }
-          else { var e = $('addErr'); if (e) { e.textContent = I18n.t('errPrefix')+((r&&r.error)||'delete_failed'); e.style.display='block'; } }
+          else { var e = $('addErr'); if (e) { e.textContent = I18n.t('errPrefix')+API.userErrorText((r&&r.error)||'delete_failed'); e.style.display='block'; } }
         }).catch(function(){});
       });
     };
@@ -175,7 +176,7 @@
       render();
     }).catch(function(e){
       if (String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; }
-      $('list').innerHTML = '<div style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>';
+      $('list').innerHTML = '<div style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</div>';
     });
 
     I18n.init({

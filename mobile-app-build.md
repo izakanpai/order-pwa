@@ -69,20 +69,19 @@ The attendance and inventory features use camera access, and attendance also use
 
 Before the first App Store upload, review every native dependency and decide the export-compliance answer for encryption. Do not add `ITSAppUsesNonExemptEncryption` merely to suppress App Store Connect questions without confirming that the application—including third-party SDKs—uses only exempt encryption.
 
-## Invite-only beta onboarding
+## Public self-service onboarding
 
-Workspace-aware login is enabled in the app. New-store registration is implemented but fails closed until all three release settings are intentionally configured:
+Workspace-aware login is enabled in the app. New-store registration is available when the server and frontend release gates are intentionally enabled:
 
 1. Set the Worker variable `SELF_SIGNUP_ENABLED` to `true` for the intended environment.
-2. Store `SIGNUP_ACCESS_CODE` as a Worker secret for that same environment; never place it in source or `wrangler.toml`.
-3. Store a different `SIGNUP_RATE_LIMIT_SALT` secret in production and test. If omitted, the environment-specific `AUTH_SECRET` is used as the fallback salt.
-4. Optionally set `SIGNUP_RATE_LIMIT_MAX_ATTEMPTS` and `SIGNUP_RATE_LIMIT_WINDOW_SECONDS`; the safe defaults are 10 attempts per 15 minutes.
-5. Apply migration `0013_signup_rate_limits.sql` to that environment.
-6. Set `SELF_SIGNUP_AVAILABLE` to `true` only in that environment's frontend `config.js`, then rebuild the app.
+2. Store a different `SIGNUP_RATE_LIMIT_SALT` secret in production and test. If omitted, the environment-specific `AUTH_SECRET` is used as the fallback salt.
+3. Optionally set `SIGNUP_RATE_LIMIT_MAX_ATTEMPTS` and `SIGNUP_RATE_LIMIT_WINDOW_SECONDS`; the safe defaults are 10 attempts per 15 minutes.
+4. Apply migration `0013_signup_rate_limits.sql` to that environment.
+5. Set `SELF_SIGNUP_AVAILABLE` to `true` only in that environment's frontend `config.js`, then rebuild the app.
 
 Before deploying the short-lived session-token build, apply `migrations/0020_auth_sessions.sql` to the matching production or test D1 database. Deploying the Worker before this migration would make new logins fail because the server cannot create refresh sessions.
 
-New workspaces receive a system-owner account, five tables, safe zero-tax/zero-service defaults, and the Free plan. Public signup without an invitation code is not enabled. Registration attempts are limited by a salted hash of Cloudflare's connection IP header; raw IP addresses are not stored, and stale aggregate rows are removed. Before removing the beta invitation gate, add verified email ownership and stronger bot protection such as Turnstile.
+New workspaces receive a system-owner account, five tables, safe zero-tax/zero-service defaults, and the Free plan. Invitation codes are not required. Email ownership verification is mandatory before login. Registration attempts are limited by a salted hash of Cloudflare's connection IP header; raw IP addresses are not stored, and stale aggregate rows are removed. Consider adding stronger bot protection such as Turnstile as public signup volume grows.
 
 ## Release gates
 

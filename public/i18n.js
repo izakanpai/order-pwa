@@ -9,14 +9,17 @@
 //   こと＝XSS対策としてdata-tがtextContentである原則は崩さない）。
 //   I18n.init({ ja:{key:'日本語'}, en:{key:'English'} }, function(lang){ /* 動的部分を再描画 */ });
 //   動的文字列は I18n.t('key') で取得（t().key スタイルで多用する画面は I18n.d() で辞書全体を取得してもよい）。
-//   言語の優先順位: ①ユーザーが手動で切替済み（localStorage.lang）②店舗設定の「既定言語」
-//   （localStorage.langDefaultCacheに直近値をキャッシュしつつ、毎回バックグラウンドで最新値を取得・反映）③最終フォールバックはEnglish。
+//   初回起動（langも既定言語cacheも無い）では端末の第一優先言語を見て、ja系なら日本語、
+//   それ以外はEnglishをlocalStorage.langへ保存する。以降はユーザーが切替えたlangを維持する。
 //   （以前は②③が無く、未設定時は常に日本語だった。店舗設定の既定言語を無視してしまう不具合のため統一）
 (function () {
   var DICT = {}, cb = null;
   function explicitLang() { try { var v = localStorage.getItem('lang'); return (v === 'en' || v === 'ja') ? v : null; } catch (e) { return null; } }
   function cachedDefault() { try { var v = localStorage.getItem('langDefaultCache'); return (v === 'en' || v === 'ja') ? v : null; } catch (e) { return null; } }
-  function lang() { return explicitLang() || cachedDefault() || 'en'; }
+  function deviceLang() { try { var a=(navigator.languages&&navigator.languages.length)?navigator.languages[0]:navigator.language; return String(a||'').toLowerCase().indexOf('ja')===0?'ja':'en'; } catch (e) { return 'en'; } }
+  function initFirstRunLang() { if(explicitLang()||cachedDefault())return; var d=deviceLang(); try{localStorage.setItem('lang',d);}catch(e){} }
+  initFirstRunLang();
+  function lang() { return explicitLang() || cachedDefault() || deviceLang(); }
   function apply() {
     var l = lang(), d = DICT[l] || {};
     document.querySelectorAll('[data-t]').forEach(function (el) { var k = el.getAttribute('data-t'); if (d[k] != null) el.textContent = d[k]; });
@@ -42,10 +45,12 @@
     if (explicitLang()) return; // ユーザーが既に手動で選択済みなら何もしない
     try {
       if (typeof window === 'undefined' || !window.APP_CONFIG || !window.APP_CONFIG.API_URL) return;
+      var storeId = String(window.APP_CONFIG.STORE_ID || '').trim().toLowerCase();
+      if (!/^[a-z0-9][a-z0-9-]{2,31}$/.test(storeId)) return;
       fetch(window.APP_CONFIG.API_URL + '?api=1', {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'getSettings' }),
+        body: JSON.stringify({ action: 'getSettings', storeId: storeId }),
         redirect: 'follow'
       }).then(function (res) { return res.json(); }).then(function (json) {
         if (explicitLang()) return; // 応答待ちの間にユーザーが手動切替していたら上書きしない

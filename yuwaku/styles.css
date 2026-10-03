@@ -67,7 +67,18 @@ body {
   padding: 8px 14px; font-size: 12.5px; font-weight: 700;
 }
 .net-banner.show { display: flex; }
-body.offline .net-banner.offline-b { display: flex; }
+body.offline .net-banner.offline-b,
+body.order-syncing .net-banner.offline-b,
+body.order-pending .net-banner.offline-b {
+  display:flex; justify-content:center; text-align:center; padding:13px 16px;
+  font-size:15px; font-weight:900; line-height:1.45; white-space:pre-line;
+  box-shadow:0 3px 10px rgba(15,23,42,.14);
+}
+body.offline .net-banner.offline-b { background:#991b1b; color:#fff; border-color:#7f1d1d; }
+body.order-syncing .net-banner.offline-b { background:#92400e; color:#fff; border-color:#78350f; }
+body.order-pending .net-banner.offline-b { background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
+.net-banner.offline-b > span:first-child { font-size:24px; line-height:1; }
+.net-banner.offline-b #offlineText { white-space:pre-line; }
 
 /* VAT / service charge notice */
 .vat-notice {

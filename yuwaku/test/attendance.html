@@ -11,7 +11,7 @@
   <link rel="manifest" href="./attendance.webmanifest">
   <title>Attendance</title>
   <style>
-    :root{ --bg:#f6f7f9; --surface:#fff; --border:#e5e7eb; --navy:#0f172a; --text-3:#64748b; --filter-control-h:46px; }
+    :root{ --bg:#f6f7f9; --surface:#fff; --border:#e5e7eb; --navy:#0f172a; --text-3:#64748b; --filter-control-h:44px; }
     *{ box-sizing:border-box; }
     body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans JP',sans-serif; background:var(--bg); color:var(--navy); }
     .head{ position:sticky; top:0; z-index:20; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:12px 16px; }
@@ -24,7 +24,7 @@
     .month-field{ flex:0 0 188px; min-width:0; max-width:188px; padding-right:8px; overflow:visible; }
     .month-field .fc{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:100%!important; max-width:100%!important; box-sizing:border-box; }
     .filter-control-shell{ position:relative; min-width:0; width:100%; height:var(--filter-control-h); padding-right:8px; overflow:visible; border-radius:10px; box-sizing:border-box; }
-    .filter-control-shell .fc{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:100%!important; max-width:100%!important; height:100%!important; margin:0; overflow:visible; }
+    .filter-control-shell .fc{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:100%!important; max-width:100%!important; margin:0; overflow:visible; }
     .form-label{ font-size:12px; font-weight:700; display:block; margin-bottom:4px; }
     @media (max-width:520px){ .fc{ min-width:0; font-size:16px; } }
     .btn{ height:var(--filter-control-h); border:0; border-radius:10px; padding:0 16px; font-size:14px; font-weight:800; background:var(--navy); color:#fff; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; justify-content:center; }
@@ -76,7 +76,7 @@
             '<td class="num">'+SYM+(Number(e.wage)||0).toLocaleString()+'</td>'+
             '<td class="num est">'+SYM+(Number(e.estimate)||0).toLocaleString()+'</td></tr>';
         }).join('');
-      }).catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="7" style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+      }).catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="7" style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</td></tr>'; });
     };
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; }).catch(function(){});

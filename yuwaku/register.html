@@ -59,7 +59,7 @@
     window.doOpen = function(){
       var f = Number(document.getElementById('flt').value)||0;
       var st = document.getElementById('stf').value;
-      rpc('openShift',[f, st]).then(function(r){ if(r&&r.success){ reload(); } else { UIAlert((r&&r.error)||'error'); } }).catch(function(e){ UIAlert(e.message||e); });
+      rpc('openShift',[f, st]).then(function(r){ if(r&&r.success){ reload(); } else { UIAlert(API.userErrorText((r&&r.error)||'error')); } }).catch(function(e){ UIAlert(API.userErrorText(e)); });
     };
     window.doClose = function(){
       var counted = Number(document.getElementById('cnt').value);
@@ -67,8 +67,8 @@
       var cio = Number(document.getElementById('cio').value)||0;
       var memo = document.getElementById('memo').value;
       var btn=document.getElementById('closeBtn'); btn.disabled=true;
-      rpc('closeShift',[counted, cio, memo]).then(function(r){ btn.disabled=false; if(r&&r.success){ showZ(r.z); } else { msg((r&&r.error)||'error', false); } })
-        .catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
+      rpc('closeShift',[counted, cio, memo]).then(function(r){ btn.disabled=false; if(r&&r.success){ showZ(r.z); } else { msg(API.userErrorText((r&&r.error)||'error'), false); } })
+        .catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+API.userErrorText(e), false); });
     };
     function msg(text, ok){ var m=document.getElementById('msg'); if(!m) return; m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
 
@@ -129,7 +129,7 @@
         b = b || {};
         if (b.settings && b.settings.currencySymbol) SYM = b.settings.currencySymbol;
         CUR = b.current || {open:false}; HIST = b.shifts || []; STAFF = b.staff || []; render();
-      }).catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('wrap').innerHTML='<div style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>'; });
+      }).catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('wrap').innerHTML='<div style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</div>'; });
     };
 
     I18n.init({

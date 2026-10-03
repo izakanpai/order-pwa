@@ -96,7 +96,7 @@ var T={
   en:{ title:'🖨️ Print Station (PT-210)', sub:'Chrome only (Android, Windows, Mac, or Linux Chrome all work; iOS Safari/Chrome is not supported). Keep this device on, screen on, and this page open.<br>① “Connect printer” → ② “Start”. Receipts then print automatically.', kDone:'Printed', kFail:'Failed', kConn:'Printer', bConn:'🔗 Connect printer', bStart:'▶ Start', bStop:'■ Stop', keyLabel:'Key (optional): ', keyPh:'Only if BRIDGE_KEY is set', safe:'Safe slow mode (20-byte writes)', note:'If the screen sleeps, printing stops (Wake Lock tries to keep it on). If Bluetooth drops, tap “Connect printer”. Share this log if stuck.', langBtn:'日本語',
     disconnected:'Not connected', selecting:'Selecting device…', noWrite:'No writable characteristic', connFail:'Connection failed', connected:'Connected (you can start)', needConn:'Connect first', watching:'Monitoring…', stopped:'Stopped', disconnErr:'Disconnected: reconnect', noBt:'This device has no Web Bluetooth' }
 };
-var curLang=(function(){ try{ return localStorage.getItem('lang')||'ja'; }catch(e){ return 'ja'; } })();
+var curLang=(function(){ try{ var s=localStorage.getItem('lang');if(s==='ja'||s==='en')return s;var first=(navigator.languages&&navigator.languages.length)?navigator.languages[0]:navigator.language;var d=String(first||'').toLowerCase().indexOf('ja')===0?'ja':'en';localStorage.setItem('lang',d);return d;}catch(e){ return 'en'; } })();
 function tt(k){ return (T[curLang]&&T[curLang][k])||k; }
 function applyLang(l){
   curLang=(l==='en')?'en':'ja'; try{ localStorage.setItem('lang',curLang); }catch(e){}
@@ -111,6 +111,25 @@ function setStat(t, cls){ document.getElementById('statText').textContent=t; doc
 function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
 function short(u){ u=String(u); var m=/0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb/.exec(u); return m?('0x'+m[1].toUpperCase()):u; }
 function getKey(){ return (document.getElementById('key').value||'').trim(); }
+function bridgeStoreId(){
+  try{
+    var prefix=(window.APP_CONFIG&&window.APP_CONFIG.STORAGE_PREFIX)||'';
+    var storageKey=prefix+'bridgeStoreId';
+    var query=new URLSearchParams(location.search).get('store')||'';
+    var current=(window.API&&typeof API.currentStoreId==='function')?(API.currentStoreId()||''):'';
+    var configured=(window.APP_CONFIG&&window.APP_CONFIG.STORE_ID)||'';
+    var saved=localStorage.getItem(storageKey)||'';
+    var value=String(query||current||configured||saved).trim().toLowerCase();
+    if(!/^[a-z0-9][a-z0-9-]{2,31}$/.test(value)) return '';
+    localStorage.setItem(storageKey,value);
+    return value;
+  }catch(e){ return ''; }
+}
+function bridgePayload(extra){
+  var storeId=bridgeStoreId();
+  if(!storeId) throw new Error('bridge_store_required');
+  return Object.assign({storeId:storeId},extra||{});
+}
 
 // URLの ?key= を初期値に
 (function(){ try{ var sk=(window.APP_CONFIG.STORAGE_PREFIX||'')+'bridgeKey'; var k=new URLSearchParams(location.search).get('key'); if(k){ document.getElementById('key').value=k; localStorage.setItem(sk,k);} else { var s=localStorage.getItem(sk); if(s) document.getElementById('key').value=s; } }catch(e){} })();
@@ -132,7 +151,7 @@ async function connect(){
     log('接続OK: '+(device.name||'(no name)')+' / 特性 '+short(writeChar.uuid));
     setStat(tt('connected'),'ok');
     document.getElementById('btnStart').disabled=false;
-  }catch(err){ setStat(tt('connFail'),'err'); log('接続エラー: '+(err&&err.message||err)); }
+  }catch(err){ setStat(tt('connFail'),'err'); log('接続エラー: '+API.userErrorText(err)); }
 }
 function onDisconnect(){
   writeChar=null; document.getElementById('cntPrinter').textContent='—';
@@ -155,8 +174,7 @@ async function startLoop(){
 // 設定画面「印刷ブリッジ」カードの間隔（ミリ秒）を取得。未設定/取得失敗時は既定値1200msのまま。
 async function loadPollInterval(){
   try{
-    var res = await fetch(API_URL+'?api=1',{ method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'getSettings' }) });
-    var j = await res.json();
+    var j = await API.post('getSettings',bridgePayload({__silent:true,__noInternalRetry:true}));
     var ms = j && j.ok && j.data ? Number(j.data.bridgePollMs) : NaN;
     if(!isNaN(ms) && ms >= 500 && ms <= 60000) POLL_MS = ms;
   }catch(e){}
@@ -184,7 +202,7 @@ async function tick(){
         await apiAck(job.id, true);
         cntOk++; document.getElementById('cntOk').textContent=cntOk;
       }catch(pe){
-        log('印刷失敗: '+(pe&&pe.message||pe)+' → 再キュー');
+        log('印刷失敗: '+API.userErrorText(pe)+' → 再キュー');
         await apiAck(job.id, false);
         cntErr++; document.getElementById('cntErr').textContent=cntErr;
         break; // 失敗したら今サイクルは中断（次周期で再試行）
@@ -193,18 +211,17 @@ async function tick(){
     if(looping && writeChar) setStat(tt('watching')+'（'+cntOk+'）','run');
     if(jobs.length && looping) setTimeout(function(){ tick(); }, 300); // 連続ジョブは待たず即処理
   }catch(err){
-    log('通信エラー: '+(err&&err.message||err));
+    log('通信エラー: '+API.userErrorText(err));
   }finally{ busy=false; }
 }
 
 async function apiPoll(){
-  var res = await fetch(API_URL+'?api=1',{ method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'bridgePoll', key:getKey() }) });
-  var j = await res.json();
+  var j = await API.post('bridgePoll',bridgePayload({ key:getKey(), __silent:true, __noInternalRetry:true }));
   if(!j.ok) throw new Error(j.error||'poll_ng');
   return j.jobs||[];
 }
 async function apiAck(id, ok){
-  await fetch(API_URL+'?api=1',{ method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'bridgeAck', id:id, ok:ok, key:getKey() }) });
+  await API.post('bridgeAck',bridgePayload({ id:id, ok:ok, key:getKey(), __silent:true, __noInternalRetry:true }));
 }
 
 // テキスト → 58mm幅の画像 → ESC/POSラスター送信
@@ -253,7 +270,7 @@ function buildCanvasFromText(text){
 async function printReceipt(text){
   await sendChunks(new Uint8Array([0x1B,0x40])); // 初期化
   // レシート（店名ヘッダー[[B]]を含む）のときは先頭にロゴを中央印字
-  if (logoImg && text.indexOf('[[B]]') >= 0) { log('ロゴ印字'); try { await printLogo(); } catch(e){ log('ロゴ印字失敗: '+(e&&e.message||e)); } }
+  if (logoImg && text.indexOf('[[B]]') >= 0) { log('ロゴ印字'); try { await printLogo(); } catch(e){ log('ロゴ印字失敗: '+API.userErrorText(e)); } }
   var lines = text.replace(/\r/g,'').split('\n');
   var buf = []; // テキストモードのバイトをまとめて送る
   async function flush(){ if(buf.length){ await sendChunks(new Uint8Array(buf)); buf=[]; } }
@@ -294,7 +311,7 @@ async function printReceipt(text){
       // 埋め込み画像（テーブルQRコード等）：dataURLを読み込み、閾値2値化してそのまま印字（誤差拡散はしない＝QRの升目を鮮明に保つ）
       await flush();
       try { var im = await loadImageAsync(ln.slice(7)); await printImageCentered(im, 300, 320, false); }
-      catch(e){ log('画像印字失敗: '+(e&&e.message||e)); }
+      catch(e){ log('画像印字失敗: '+API.userErrorText(e)); }
       continue;
     }
     if (ln.slice(0,5) === '[[B]]'){ align=1; big=true; ln=ln.slice(5); }
@@ -367,8 +384,7 @@ async function rasterLine2Col(label, val){
 // サーバーからレシートロゴを取得（設定画面でアップロードされた画像）
 async function loadLogo(){
   try{
-    var r=await fetch(API_URL+'?api=1',{ method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'getReceiptLogo', key:getKey() }) });
-    var j=await r.json();
+    var j=await API.post('getReceiptLogo',bridgePayload({ key:getKey(), __silent:true, __noInternalRetry:true }));
     logoScale = Math.max(20, Math.min(100, Number(j.scale)||100));
     if(j.ok && j.data){ var im=new Image(); im.onload=function(){ logoImg=im; log('ロゴ読込OK ('+logoScale+'%)'); }; im.onerror=function(){ logoImg=null; }; im.src=j.data; }
     else logoImg=null;
@@ -422,7 +438,7 @@ function loadImageAsync(src){
   });
 }
 
-async function requestWake(){ try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); log('画面常時点灯ON'); } }catch(e){ log('WakeLock不可: '+(e&&e.message||e)); } }
+async function requestWake(){ try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); log('画面常時点灯ON'); } }catch(e){ log('WakeLock不可: '+API.userErrorText(e)); } }
 function releaseWake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
 document.addEventListener('visibilitychange', async function(){ if(document.visibilityState==='visible' && looping && !wakeLock){ await requestWake(); } });
 </script>

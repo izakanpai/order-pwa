@@ -10,6 +10,7 @@
 
   <link rel="manifest" href="./coupons.webmanifest">
   <title>Coupons</title>
+  <link rel="stylesheet" href="./date-controls.css?v=2">
   <style>
     :root{ --bg:#f6f7f9; --surface:#fff; --border:#e5e7eb; --navy:#0f172a; --text-3:#64748b; --green:#16a34a; --red:#c62828; }
     *{ box-sizing:border-box; }
@@ -103,13 +104,13 @@
       var clean = window.rows.filter(function(r){ return (r.code||'').trim(); });
       var btn = document.getElementById('saveBtn'); btn.disabled=true;
       rpc('saveCoupons', [clean]).then(function(){ btn.disabled=false; msg(I18n.t('saved'), true); })
-        .catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
+        .catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+API.userErrorText(e), false); });
     };
     function msg(text, ok){ var m=document.getElementById('msg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
 
     var __loaded=false;
     rpc('getCoupons', []).then(function(list){ window.rows = (list||[]).slice(); __loaded=true; render(); })
-      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="10" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="10" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</td></tr>'; });
 
     I18n.init({
       ja:{ title:'🎟️ クーポン', back:'← 管理へ', hint:'コードごとに種別（％割引／金額割引）、最小注文額、有効期限、利用上限、有効/無効を設定できます。客の注文画面・テイクアウトで適用されます。利用回数は自動記録されます。', thCode:'コード', thType:'種別', thVal:'値', thMin:'最小注文', thExp:'有効期限', thLimit:'上限', thActive:'有効', thDesc:'説明', thUsed:'利用', addRow:'＋ 行を追加', save:'💾 保存', loading:'読み込み中…', empty:'「＋ 行を追加」で登録してください', typeAmount:'金額(₱)', typePercent:'％割引', saved:'✅ 保存しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ' },

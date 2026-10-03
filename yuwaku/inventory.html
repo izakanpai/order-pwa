@@ -54,7 +54,6 @@
     <button class="btn btn-sec" onclick="openAiScan()" data-t="aiScanBtn">🤖 AIスキャン</button>
     <button class="btn btn-sec" onclick="openLinkPicker(-1)" data-t="linkFromMenuBtn">🔗 メニューから追加</button>
     <button class="btn btn-pri" id="saveBtn" onclick="save()" data-t="save">💾 保存</button>
-    <button class="btn btn-sec" id="translateBtn" onclick="translateMissing()" data-t="translateBtn">🌐 未翻訳を一括翻訳</button>
     <div class="alert" id="msg"></div>
   </div></div>
 
@@ -142,7 +141,7 @@
     // 言語切替の一元ヘルパー。商品名・カテゴリ等、日本語/英語を出し分ける箇所は必ずこれを通すこと
     // （新しいUI要素・候補リストを追加するたびに毎回このチェックを忘れないための共通実装）。
     function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
-    function loc(ja, en){ ja = ja||''; en = (en||'').trim(); return isEN() ? (en || ja) : ja; }
+    function loc(ja, en){ ja=(ja||'').trim(); en=(en||'').trim(); return isEN() ? (en || ja) : (ja || en); }
     window.rows = [];
 
     function render(){
@@ -150,20 +149,26 @@
       var EN = (window.I18n && I18n.lang && I18n.lang()==='en');
       window.rows.forEach(function(r,i){
         var low = (Number(r.minimum)>0 && Number(r.stock)<=Number(r.minimum));
-        var nmVal = EN ? (r.nameEn||r.name||'') : (r.name||'');
-        var catVal = EN ? (r.categoryEn||r.category||'') : (r.category||'');
-        var nmT = EN ? 'nameEn' : 'name';
-        var catT = EN ? 'categoryEn' : 'category';
+        var nameJa = (r.nameJa!==undefined ? r.nameJa : (r.name||''));
+        var categoryJa = (r.categoryJa!==undefined ? r.categoryJa : (r.category||''));
+        var nmVal = EN ? (r.nameEn||'') : nameJa;
+        var catVal = EN ? (r.categoryEn||'') : categoryJa;
+        var nmPh = EN ? (nameJa||r.name||'') : (r.nameEn||r.name||'');
+        var catPh = EN ? (categoryJa||r.category||'') : (r.categoryEn||r.category||'');
+        var nmT = EN ? 'nameEn' : 'nameJa';
+        var catT = EN ? 'categoryEn' : 'categoryJa';
+        var supObj = SUPPLIER_OPTIONS.find(function(s){return s.key===String(r.supplier||'');});
+        var supVal = supObj ? loc(supObj.ja,supObj.en) : (r.supplier||'');
         html += '<tr'+(low?' class="low"':'')+'>'+
-          '<td><input value="'+esc(nmVal)+'" oninput="window.rows['+i+'].'+nmT+'=this.value"></td>'+
-          '<td><input value="'+esc(catVal)+'" oninput="window.rows['+i+'].'+catT+'=this.value" list="catList"></td>'+
-          '<td><input value="'+esc(r.supplier||'')+'" oninput="window.rows['+i+'].supplier=this.value" list="supList"></td>'+
+          '<td><input value="'+esc(nmVal)+'" placeholder="'+esc(nmPh)+'" oninput="window.rows['+i+'].'+nmT+'=this.value"></td>'+
+          '<td><input value="'+esc(catVal)+'" placeholder="'+esc(catPh)+'" oninput="window.rows['+i+'].'+catT+'=this.value" list="catList"></td>'+
+          '<td><input value="'+esc(supVal)+'" oninput="setSupplierInput('+i+',this.value)" list="supList"></td>'+
           '<td><input value="'+esc(r.unit||'本')+'" oninput="window.rows['+i+'].unit=this.value"></td>'+
           '<td><input type="number" step="any" value="'+(r.stock||0)+'" oninput="window.rows['+i+'].stock=Number(this.value)||0"></td>'+
           '<td><input type="number" step="any" value="'+(r.minimum||0)+'" oninput="window.rows['+i+'].minimum=Number(this.value)||0"></td>'+
           '<td><input type="number" step="any" value="'+(r.cost||0)+'" oninput="window.rows['+i+'].cost=Number(this.value)||0"></td>'+
           (function(){
-            var linkedMenus = MENU_ALL.filter(function(m){ return m['在庫紐づけ']===r.name; }).map(function(m){ return loc(m['商品名'], m['商品名_EN']); });
+            var linkedMenus = MENU_ALL.filter(function(m){ return m['在庫紐づけ']===r.name; }).map(function(m){ return loc(m['商品名_JA']!==undefined?m['商品名_JA']:m['商品名'], m['商品名_EN']); });
             var linkLabel = linkedMenus.length ? '🔗✓' : '🔗';
             var linkTitle = linkedMenus.length ? (I18n.t('linkedWith')+linkedMenus.join('、')) : I18n.t('linkBtnTitle');
             return '<td style="white-space:nowrap;"><button class="btn-sm" style="background:#dcfce7;color:#15803d;" onclick="openMove('+i+')">'+I18n.t('moveBtn')+'</button> '+
@@ -174,40 +179,34 @@
       if (!window.rows.length) html = '<tr><td colspan="8" style="color:#aaa;padding:16px;text-align:center;">'+I18n.t('empty')+'</td></tr>';
       document.getElementById('rows').innerHTML = html;
       // カテゴリ候補（既存値。英語モードでは英語カテゴリ名を候補に出す＝表示中の言語と必ず一致させる）
-      var cats = []; window.rows.forEach(function(r){ var c=loc(r.category, r.categoryEn).trim(); if(c && cats.indexOf(c)<0) cats.push(c); });
+      var cats = []; window.rows.forEach(function(r){ var c=loc(r.categoryJa!==undefined?r.categoryJa:r.category, r.categoryEn).trim(); if(c && cats.indexOf(c)<0) cats.push(c); });
       var dl = document.getElementById('catList'); if(dl) dl.innerHTML = cats.map(function(c){ return '<option value="'+esc(c)+'">'; }).join('');
       // 仕入先候補（既存値＋マスタ）
-      var sups = SUPPLIERS.slice(); window.rows.forEach(function(r){ var s=(r.supplier||'').trim(); if(s && sups.indexOf(s)<0) sups.push(s); });
-      var sl = document.getElementById('supList'); if(sl) sl.innerHTML = sups.map(function(s){ return '<option value="'+esc(s)+'">'; }).join('');
+      var supLabels = SUPPLIER_OPTIONS.map(function(s){return loc(s.ja,s.en);});
+      window.rows.forEach(function(r){ var s=(r.supplier||'').trim(); if(s&&!SUPPLIER_OPTIONS.some(function(x){return x.key===s;})&&supLabels.indexOf(s)<0)supLabels.push(s); });
+      var sl = document.getElementById('supList'); if(sl) sl.innerHTML = supLabels.map(function(s){ return '<option value="'+esc(s)+'">'; }).join('');
     }
-    var SUPPLIERS = [];
+    var SUPPLIER_OPTIONS = [];
+    window.setSupplierInput=function(i,value){var raw=String(value||'').trim();var found=SUPPLIER_OPTIONS.find(function(s){return raw===s.key||raw===loc(s.ja,s.en);});window.rows[i].supplier=found?found.key:raw;};
     var MENU_ALL = [];
-    window.addRow = function(){ window.rows.push({ name:'', category:'', supplier:'', unit:'本', stock:0, minimum:0, cost:0, nameEn:'', categoryEn:'' }); render(); };
+    window.addRow = function(){ window.rows.push({ name:'', nameJa:'', nameEn:'', category:'', categoryJa:'', categoryEn:'', supplier:'', unit:'本', stock:0, minimum:0, cost:0 }); render(); };
     window.delRow = function(i){ window.rows.splice(i,1); render(); };
     window.save = function(){
-      var clean = window.rows.filter(function(r){ return ((r.name||'')+(r.nameEn||'')).trim(); })
-        .map(function(r){ if(!(r.name||'').trim() && (r.nameEn||'').trim()){ r.name=r.nameEn; } return r; });
+      var clean = window.rows.filter(function(r){ return ((r.nameJa||'')+(r.nameEn||'')+(r.name||'')).trim(); })
+        .map(function(r){ var x=Object.assign({},r); var ja=(x.nameJa!==undefined?x.nameJa:x.name||'').trim(), en=(x.nameEn||'').trim(); var cja=(x.categoryJa!==undefined?x.categoryJa:x.category||'').trim(), cen=(x.categoryEn||'').trim(); x.nameJa=ja; x.nameEn=en; x.name=ja||en; x.categoryJa=cja; x.categoryEn=cen; x.category=cja||cen; return x; });
       var btn = document.getElementById('saveBtn'); btn.disabled=true;
-      rpc('saveDrinkInventory',[clean]).then(function(){ btn.disabled=false; msg(I18n.t('saved'), true); })
-        .catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
+      rpc('saveDrinkInventory',[clean]).then(function(){ return rpc('getDrinkInventory',[]); }).then(function(list){ btn.disabled=false; window.rows=(list||[]).slice(); render(); msg(I18n.t('saved'), true); })
+        .catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+API.userErrorText(e), false); });
     };
     function msg(text, ok){ var m=document.getElementById('msg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
     // [性能改善] 一覧の読込では翻訳しない（読込を遅くしないため）。未翻訳分はここで明示的にまとめて翻訳する。
-    window.translateMissing = function(){
-      var btn = document.getElementById('translateBtn'); btn.disabled=true;
-      rpc('translateMissingDrinkInventory',[]).then(function(r){
-        btn.disabled=false; msg((I18n.t('translated')||'翻訳しました：')+(r&&r.updated!=null?r.updated:0), true);
-        return rpc('getDrinkInventory',[]).then(function(list){ window.rows=(list||[]).slice(); render(); });
-      }).catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
-    };
-
     // ── 在庫変動（入荷・廃棄・棚卸） ──
     var mvIdx = -1, mvKind = 'in';
     window.openMove = function(i){
       var r = window.rows[i]; if(!r) return;
-      if(!(r.name||'').trim()){ msg(I18n.t('mvNeedSave'), false); return; }
+      if(!(r.name||r.nameJa||r.nameEn||'').trim()){ msg(I18n.t('mvNeedSave'), false); return; }
       mvIdx = i;
-      document.getElementById('mvItem').innerText = loc(r.name, r.nameEn);
+      document.getElementById('mvItem').innerText = loc(r.nameJa!==undefined?r.nameJa:r.name, r.nameEn);
       document.getElementById('mvStockNow').innerText = I18n.t('mvStockNow')+': '+(Number(r.stock)||0)+' '+(r.unit||'');
       document.getElementById('mvTabIn').innerText = I18n.t('mvIn');
       document.getElementById('mvTabWaste').innerText = I18n.t('mvWaste');
@@ -242,10 +241,10 @@
       p.then(function(d){
         go.disabled=false; d=d||{};
         if(d.error==='not_found'){ mvErr(I18n.t('mvNeedSave')); return; }
-        if(d.error){ mvErr(I18n.t('errPrefix')+d.error); return; }
+        if(d.error){ mvErr(I18n.t('errPrefix')+API.userErrorText(d.error)); return; }
         closeMove(); msg(I18n.t('mvDone'), true);
         return rpc('getDrinkInventory',[]).then(function(list){ window.rows=(list||[]).slice(); render(); });
-      }).catch(function(e){ go.disabled=false; mvErr(I18n.t('errPrefix')+(e.message||e)); });
+      }).catch(function(e){ go.disabled=false; mvErr(I18n.t('errPrefix')+API.userErrorText(e)); });
     };
 
     // ── カメラでタップ計数（棚卸補助） ──
@@ -313,20 +312,18 @@
     window.onAiPhotoSelected = function(e){
       var file = e.target.files && e.target.files[0]; if(!file) return;
       aiFile = file;
-      var reader = new FileReader();
-      reader.onload = function(ev){
-        document.getElementById('aiPreview').src = ev.target.result;
-        document.getElementById('aiPreview').style.display='block';
-        document.getElementById('aiPlaceholder').style.display='none';
-        document.getElementById('aiAnalyzeBtn').style.display='block';
-        document.getElementById('aiResultWrap').style.display='none';
-        document.getElementById('aiAlert').style.display='none';
-      };
-      reader.readAsDataURL(file);
+      var preview=document.getElementById('aiPreview'), url=URL.createObjectURL(file);
+      preview.onload=function(){ URL.revokeObjectURL(url); };
+      preview.onerror=function(){ URL.revokeObjectURL(url); aiErr(I18n.t('errPrefix')+'file_read_failed'); };
+      preview.src = url;
+      preview.style.display='block';
+      document.getElementById('aiPlaceholder').style.display='none';
+      document.getElementById('aiAnalyzeBtn').style.display='block';
+      document.getElementById('aiResultWrap').style.display='none';
+      document.getElementById('aiAlert').style.display='none';
     };
-    function aiResizeImage(file, maxW, maxH, quality, cb){
-      var reader = new FileReader();
-      reader.onload = function(e){
+    function aiResizeImage(file, maxW, maxH, quality, cb, errCb){
+      API.readFileAsDataURL(file).then(function(dataUrl){
         var img = new Image();
         img.onload = function(){
           var ratio = Math.min(maxW/img.width, maxH/img.height, 1);
@@ -336,9 +333,9 @@
           var url = can.toDataURL('image/jpeg', quality);
           cb(url.split(',')[1], 'image/jpeg');
         };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+        img.onerror = function(){ if(errCb) errCb(new Error('image_decode_failed')); };
+        img.src = dataUrl;
+      }).catch(function(e){ if(errCb) errCb(e); });
     }
     window.analyzeAiPhoto = function(){
       if(!aiFile) return;
@@ -353,10 +350,10 @@
         rpc('countDrinksWithAI',[b64, mime],{__silent:true,__timeoutMs:API.TIMEOUT_MS.ai,__noInternalRetry:true}).then(function(res){
           btn.disabled=false; btn.innerText=I18n.t('aiAnalyzeBtn');
           res = res || {};
-          if(res.error){ aiErr(res.error==='no_api_key' ? I18n.t('aiNoApiKey') : (I18n.t('errPrefix')+res.error)); return; }
+          if(res.error){ aiErr(res.error==='no_api_key' ? I18n.t('aiNoApiKey') : (I18n.t('errPrefix')+API.userErrorText(res.error))); return; }
           renderAiResults(res.counts || res.raw || {});
-        }).catch(function(e){ btn.disabled=false; btn.innerText=I18n.t('aiAnalyzeBtn'); aiErr(I18n.t('errPrefix')+(e.message||e)); });
-      });
+        }).catch(function(e){ btn.disabled=false; btn.innerText=I18n.t('aiAnalyzeBtn'); aiErr(I18n.t('errPrefix')+API.userErrorText(e)); });
+      }, function(e){ btn.disabled=false; btn.innerText=I18n.t('aiAnalyzeBtn'); aiErr(I18n.t('errPrefix')+API.userErrorText(e)); });
     };
     function renderAiResults(countsOrRaw){
       var listEl = document.getElementById('aiResultList');
@@ -404,7 +401,7 @@
         var name = (nameEl.value||'').trim(); if(!name) return; // 空欄＝その1件は適用しない
         var qty = Number(document.getElementById('ai-qty-'+ki).value) || 0;
         var idx=-1; for(var i=0;i<window.rows.length;i++){ if(window.rows[i].name===name){ idx=i; break; } }
-        if(idx>=0){ window.rows[idx].stock=qty; } else { window.rows.push({ name:name, category:'', supplier:'', unit:'本', stock:qty, minimum:0, cost:0, nameEn:'', categoryEn:'' }); }
+        if(idx>=0){ window.rows[idx].stock=qty; } else { var en=isEN(); window.rows.push({ name:name, nameJa:en?'':name, nameEn:en?name:'', category:'', categoryJa:'', categoryEn:'', supplier:'', unit:'本', stock:qty, minimum:0, cost:0 }); }
         count++;
       });
       render(); closeAiScan(); msg(count ? I18n.t('aiApplied') : I18n.t('aiNoDetect'), !!count);
@@ -421,14 +418,14 @@
       // value（送信値）は常に日本語の商品名（サーバ側のメニューシート照合キー）。表示テキストのみ現在の言語に合わせる。
       opts += MENU_ALL.map(function(m){
         var nm = m['商品名']; if(!nm) return '';
-        var nmDisp = loc(nm, m['商品名_EN']);
+        var nmDisp = loc(m['商品名_JA']!==undefined?m['商品名_JA']:nm, m['商品名_EN']);
         var linkedTag = m['在庫紐づけ'] ? ' — 🔗'+m['在庫紐づけ'] : '';
         return '<option value="'+esc(nm)+'">'+esc(nmDisp)+esc(linkedTag)+'</option>';
       }).join('');
       sel.innerHTML = opts; sel.value='';
       if (rowIndex >= 0 && window.rows[rowIndex]) {
         document.getElementById('linkModalTitle').textContent = I18n.t('linkExistingTitle');
-        document.getElementById('linkModalHint').textContent = I18n.t('linkExistingHint')+'「'+loc(window.rows[rowIndex].name, window.rows[rowIndex].nameEn)+'」';
+        document.getElementById('linkModalHint').textContent = I18n.t('linkExistingHint')+'「'+loc(window.rows[rowIndex].nameJa!==undefined?window.rows[rowIndex].nameJa:window.rows[rowIndex].name, window.rows[rowIndex].nameEn)+'」';
       } else {
         document.getElementById('linkModalTitle').textContent = I18n.t('linkNewTitle');
         document.getElementById('linkModalHint').textContent = I18n.t('linkNewHint');
@@ -440,30 +437,30 @@
       var menuName = document.getElementById('linkMenuSel').value;
       if (!menuName){ linkErr(I18n.t('linkNeedSel')); return; }
       if (linkTargetRow >= 0) {
-        var r = window.rows[linkTargetRow]; if(!r || !(r.name||'').trim()){ linkErr(I18n.t('linkRowNeedName')); return; }
-        rpc('linkMenuInventory',[menuName, r.name]).then(function(res){
+        var r = window.rows[linkTargetRow]; var canonicalName=r&&String(r.name||r.nameJa||r.nameEn||'').trim(); if(!canonicalName){ linkErr(I18n.t('linkRowNeedName')); return; }
+        rpc('linkMenuInventory',[menuName, canonicalName]).then(function(res){
           if (res && res.success){ closeLinkPicker(); msg(I18n.t('linkDone'), true); return reloadMenuLinks(); }
-          linkErr(I18n.t('errPrefix')+((res&&res.error)||''));
-        }).catch(function(e){ linkErr(I18n.t('errPrefix')+(e.message||e)); });
+          linkErr(I18n.t('errPrefix')+API.userErrorText((res&&res.error)||''));
+        }).catch(function(e){ linkErr(I18n.t('errPrefix')+API.userErrorText(e)); });
       } else {
         var exists = window.rows.some(function(r){ return r.name===menuName; });
         var menuObj = MENU_ALL.filter(function(m){ return m['商品名']===menuName; })[0] || {};
         rpc('linkMenuInventory',[menuName, menuName]).then(function(res){
-          if (!(res && res.success)){ linkErr(I18n.t('errPrefix')+((res&&res.error)||'')); return; }
+          if (!(res && res.success)){ linkErr(I18n.t('errPrefix')+API.userErrorText((res&&res.error)||'')); return; }
           closeLinkPicker();
-          if (!exists){ window.rows.push({ name:menuName, category:'', supplier:'', unit:'本', stock:0, minimum:0, cost:0, nameEn:menuObj['商品名_EN']||'', categoryEn:'' }); render(); }
+          if (!exists){ window.rows.push({ name:menuName, nameJa:(menuObj['商品名_JA']!==undefined?menuObj['商品名_JA']:menuName), nameEn:menuObj['商品名_EN']||'', category:'', categoryJa:'', categoryEn:'', supplier:'', unit:'本', stock:0, minimum:0, cost:0 }); render(); }
           msg(I18n.t('linkAddedNeedSave'), true);
           return reloadMenuLinks();
-        }).catch(function(e){ linkErr(I18n.t('errPrefix')+(e.message||e)); });
+        }).catch(function(e){ linkErr(I18n.t('errPrefix')+API.userErrorText(e)); });
       }
     };
     function reloadMenuLinks(){ return rpc('getAllMenuForAdmin',[]).then(function(l){ MENU_ALL=l||[]; render(); }).catch(function(){}); }
 
-    rpc('getSuppliers',[]).then(function(l){ SUPPLIERS=(l||[]).map(function(s){ return s.name; }); render(); }).catch(function(){});
+    rpc('getSuppliers',[]).then(function(l){ SUPPLIER_OPTIONS=(l||[]).map(function(s){return {key:s.name,ja:(s.nameJa!==undefined?s.nameJa:s.name),en:s.nameEn};}); render(); }).catch(function(){});
     rpc('getAllMenuForAdmin',[]).then(function(l){ MENU_ALL=l||[]; render(); }).catch(function(){});
     var __loaded=false;
     rpc('getDrinkInventory',[]).then(function(list){ window.rows=(list||[]).slice(); __loaded=true; render(); })
-      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</td></tr>'; });
 
     I18n.init({
       ja:{ title:'📦 在庫管理', back:'← 管理へ', movesLink:'📋 変動履歴', hint:'ドリンク・食材・備品などをまとめて数量管理できます。最小在庫を下回ると赤く表示され、日報・レポートに低在庫として通知。レシピ（材料名一致）で注文時に自動減算されます。「変動」から入荷・廃棄・棚卸を記録すると履歴に残ります。', scrollHint:'👉 表は横にスクロールできます', thName:'商品名', thCat:'カテゴリ', thSupplier:'仕入先', thUnit:'単位', thStock:'在庫数', thMin:'最小在庫', thCost:'原価', addRow:'＋ 行を追加', save:'💾 保存', loading:'読み込み中…', empty:'「＋ 行を追加」で登録してください', saved:'✅ 保存しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ', moveBtn:'変動', mvIn:'＋ 入荷', mvWaste:'− 廃棄', mvCount:'棚卸', mvQty:'数量', mvCounted:'実棚卸数', mvCostL:'原価（任意・単価更新）', mvReasonL:'理由', mvStockNow:'現在庫', mvGo:'実行', mvClose:'閉じる', mvDone:'✅ 記録しました', mvBad:'数量を確認してください', mvNeedSave:'先に「保存」で商品を登録してください', camHintShoot:'📸を押して撮影 → 写真を1つずつタップして数えます', camHintTap:'商品を1つずつタップ。↩で取消、✓で数量を採用', camNoCam:'カメラを利用できません（権限/対応をご確認ください）',
@@ -471,13 +468,13 @@
         linkFromMenuBtn:'🔗 メニューから追加', linkConfirmBtn:'🔗 リンク', linkPickPh:'メニューを選択…', linkNeedSel:'メニューを選択してください', linkRowNeedName:'先に商品名を入力してください',
         linkNewTitle:'🔗 メニューから在庫を追加', linkNewHint:'選んだメニューの商品名でそのまま在庫アイテムを追加し、紐づけます（在庫数・最小在庫は追加後に入力してください）。',
         linkExistingTitle:'🔗 メニューと紐づけ', linkExistingHint:'紐づけるメニューを選択: ', linkDone:'✅ 紐づけました', linkAddedNeedSave:'✅ 在庫に追加・紐づけしました（「💾 保存」で確定してください）',
-        linkedWith:'紐づくメニュー: ', linkBtnTitle:'メニューと紐づけ（未設定）', translateBtn:'🌐 未翻訳を一括翻訳', translated:'翻訳しました：' },
+        linkedWith:'紐づくメニュー: ', linkBtnTitle:'メニューと紐づけ（未設定）' },
       en:{ title:'📦 Inventory', back:'← Manage', movesLink:'📋 History', hint:'Track drinks, ingredients and supplies together by quantity. Rows below the minimum turn red and appear as low-stock in reports. Auto-deducted on orders via recipes (material-name match). Use “Move” to log receiving, waste and stocktake — all kept in history.', scrollHint:'👉 Swipe sideways to see the whole table', thName:'Item', thCat:'Category', thSupplier:'Supplier', thUnit:'Unit', thStock:'Stock', thMin:'Min stock', thCost:'Cost', addRow:'＋ Add row', save:'💾 Save', loading:'Loading…', empty:'Tap “＋ Add row” to register', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ', moveBtn:'Move', mvIn:'＋ Receive', mvWaste:'− Waste', mvCount:'Stocktake', mvQty:'Quantity', mvCounted:'Counted qty', mvCostL:'Cost (optional, updates unit cost)', mvReasonL:'Reason', mvStockNow:'Current', mvGo:'Apply', mvClose:'Close', mvDone:'✅ Recorded', mvBad:'Please check the quantity', mvNeedSave:'Please save the item first', camHintShoot:'Tap 📸 to capture, then tap each item to count', camHintTap:'Tap each item. ↩ to undo, ✓ to use the count', camNoCam:'Camera unavailable (check permission/support)',
         aiScanBtn:'🤖 AI Scan', aiTitle:'🤖 AI Stocktake Scan', aiTapText:'Tap to take a photo', aiAnalyzeBtn:'🤖 Analyze with AI', aiAnalyzing:'Analyzing…', aiResultTitle:'AI results — item name & quantity are fully editable', aiResultHint:'Edit the name directly, or pick an existing item from the dropdown below to auto-fill it. Use ✕ to skip a single row.', aiApplyBtn:'✅ Apply to inventory', aiNoApiKey:'Gemini API key not set. Add it in Settings.', aiNoDetect:'No drinks detected. Try a different angle.', aiSkip:'Skip this item', aiPickPh:'(Pick from existing items)', aiApplied:'✅ Applied (press “💾 Save” to confirm)',
         linkFromMenuBtn:'🔗 Add from menu', linkConfirmBtn:'🔗 Link', linkPickPh:'Select a menu item…', linkNeedSel:'Please select a menu item', linkRowNeedName:'Please enter an item name first',
         linkNewTitle:'🔗 Add inventory item from menu', linkNewHint:'Adds a new inventory item using the selected menu item’s name and links it (fill in stock/min after adding).',
         linkExistingTitle:'🔗 Link to a menu item', linkExistingHint:'Choose a menu item to link: ', linkDone:'✅ Linked', linkAddedNeedSave:'✅ Added and linked (press “💾 Save” to confirm)',
-        linkedWith:'Linked menu items: ', linkBtnTitle:'Link to a menu item (not set)', translateBtn:'🌐 Translate missing', translated:'Translated: ' }
+        linkedWith:'Linked menu items: ', linkBtnTitle:'Link to a menu item (not set)' }
     }, function(){ if(__loaded) render(); });
   </script>
   <datalist id="catList"></datalist>
@@ -493,8 +490,7 @@
         { ja: '② 在庫数が「最小在庫」を下回った行は赤く表示され、日報・レポートにも低在庫として通知されます。', en: '② Any row whose stock falls at or below its minimum turns red and is flagged as low stock in daily reports.' },
         { ja: '③ 各行の「変動」ボタンから、入荷（＋）・廃棄（−）・棚卸（実数入力）を記録できます。📷ボタンでカメラを使い、商品を1つずつタップして数えることもできます。記録内容は「📋 変動履歴」から確認できます。', en: '③ Use the "Move" button on a row to log receiving (＋), waste (−), or a stocktake (enter the counted amount). The 📷 button lets you use the camera and tap each item to count it. All entries appear under "📋 History".' },
         { ja: '④ 「🤖 AIスキャン」で棚の写真を撮影すると、AIが写っている商品名と本数を自動検出し、確認・修正してから一括で在庫数に反映できます。', en: '④ "🤖 AI Scan" lets you photograph a shelf — AI detects item names and quantities automatically, which you can review, edit, and apply to stock in bulk.' },
-        { ja: '⑤ 「🔗 メニューから追加」または各行の🔗ボタンで、在庫アイテムをメニューの商品と紐づけると、注文が入った際にレシピに応じて在庫が自動で減算されます。', en: '⑤ Use "🔗 Add from menu" or the 🔗 button on a row to link an inventory item to a menu item, so stock is automatically deducted based on the recipe whenever it is ordered.' },
-        { ja: '⑥ 「🌐 未翻訳を一括翻訳」で、英語名が未入力の商品をまとめて自動翻訳できます。', en: '⑥ "🌐 Translate missing" bulk-translates item names that have no English name yet.' }
+        { ja: '⑤ 「🔗 メニューから追加」または各行の🔗ボタンで、在庫アイテムをメニューの商品と紐づけると、注文が入った際にレシピに応じて在庫が自動で減算されます。', en: '⑤ Use "🔗 Add from menu" or the 🔗 button on a row to link an inventory item to a menu item, so stock is automatically deducted based on the recipe whenever it is ordered.' }
       ]
     });
   </script>

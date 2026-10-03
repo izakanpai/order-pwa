@@ -105,7 +105,7 @@
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; render(); }).catch(function(){});
     rpc('getAuditLog',[200]).then(function(l){ ROWS=l||[]; __loaded=true; render(); })
-      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="7" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="7" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</td></tr>'; });
     loadOps();
 
     I18n.init({

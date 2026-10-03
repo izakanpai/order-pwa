@@ -78,41 +78,49 @@
     // [負荷試験レビュー対応/優先#7] 商品名(基底名) -> 商品名_EN。KDSはEN切替ボタンがUI文言のみに作用し、
     // チケットの商品名は常に日本語のまま表示されていた。他画面（index.html/receipts.html等）と同様、
     // 商品名_ENが登録されていればEN表示時にそちらを使う。
-    var MENU_EN = {};
+    var MENU_JA = {}, MENU_EN = {}, MENU_CHOICES = {};
 
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-    function seatLabel(v){ var s=String(v==null?'':v),en=(window.I18n&&I18n.lang&&I18n.lang()==='en'); var tableTerm=(en?SETTINGS.tableLabelEn:SETTINGS.tableLabelJa)||(en?'Table':'テーブル'); var counterTerm=(en?SETTINGS.counterLabelEn:SETTINGS.counterLabelJa)||(en?'Counter':'カウンター'); var m=s.match(/^テーブル(\d+)$/)||s.match(/^(\d+)$/); if(m)return tableTerm+' '+m[1]; var c=s.match(/^カウンター(\d+)$/); if(c)return counterTerm+' '+c[1]; return s; }
+    function seatLabel(v){ var s=String(v==null?'':v),en=(window.I18n&&I18n.lang&&I18n.lang()==='en'); var tableTerm=(en?(SETTINGS.tableLabelEn||SETTINGS.tableLabelJa):(SETTINGS.tableLabelJa||SETTINGS.tableLabelEn))||(en?'Table':'テーブル'); var counterTerm=(en?(SETTINGS.counterLabelEn||SETTINGS.counterLabelJa):(SETTINGS.counterLabelJa||SETTINGS.counterLabelEn))||(en?'Counter':'カウンター'); var m=s.match(/^テーブル(\d+)$/)||s.match(/^(\d+)$/); if(m)return tableTerm+' '+m[1]; var c=s.match(/^カウンター(\d+)$/); if(c)return counterTerm+' '+c[1]; return s; }
     function loadTerminology(){ API.post('getSettings',{}).then(function(r){SETTINGS=(r&&r.data)||{};if(__booted)render(lastData);}).catch(function(){}); }
     // オプション付き商品名（例:「コーラ (氷なし)」）から基底の商品名を取り出す
     function baseName(nm){ return String(nm||'').replace(/\s*[（(][^（(]*[)）]\s*$/, '').trim(); }
-    function parseItems(details){
-      var items = String(details||'').split(',').map(function(seg){
+    function parseItems(order){
+      var items = Array.isArray(order&&order.items) ? order.items.map(function(it){return {name:it.item_name||it.name||'',nameJa:it.nameJa||'',nameEn:it.nameEn||'',qty:Number(it.qty)||1};}) : String(order&&order.details||'').split(/,\s*(?![^（）()]*[)）])/).map(function(seg){
         seg = seg.trim(); if(!seg) return null;
         var m = seg.match(/^(.*)x(\d+)$/);
         if (m) return { name:m[1], qty:parseInt(m[2],10)||1 };
         return { name:seg, qty:1 };
       }).filter(Boolean);
       // ドリンク等、キッチン対応不要に設定された商品はキッチン画面の明細から除外
-      return items.filter(function(it){ return KITCHEN_MAP[baseName(it.name)] !== false; });
+      return items.filter(function(it){ var key=Object.prototype.hasOwnProperty.call(KITCHEN_MAP,it.name)?it.name:baseName(it.name);return KITCHEN_MAP[key] !== false; });
     }
     // [優先#7] 明細の商品名（オプション付きの場合あり）をEN表示用に変換。基底名で商品名_ENを引き、
     // 見つかればオプション部分（括弧書き）はそのまま日本語で残して連結する（他画面と同じ簡易方式）。
-    function dispItemName(nm){
-      if (!(window.I18n && I18n.lang && I18n.lang()==='en')) return nm;
-      var base = baseName(nm); var en = MENU_EN[base];
-      if (!en) return nm;
-      return en + String(nm||'').slice(base.length);
+    function dispItemName(it){
+      var enMode=window.I18n&&I18n.lang&&I18n.lang()==='en',nm=String(it&&it.name||''),base=(Object.prototype.hasOwnProperty.call(KITCHEN_MAP,nm)?nm:baseName(nm));
+      // Historical items have only a canonical item_name. Preserve its option suffix
+      // when resolving the base label; otherwise 「Pizza (Extra cheese)」 became 「Pizza」.
+      var suffix=nm.slice(base.length),ja=MENU_JA[base],en=MENU_EN[base];
+      if(suffix){var match=suffix.match(/^\s*[（(]([^（）()]*)[)）]\s*$/),choices=(typeof MENU_CHOICES==='undefined'?{}:MENU_CHOICES[base])||{};
+        if(match)suffix=' ('+match[1].split(',').map(function(raw){var alias=raw.trim(),choice=choices[alias];return choice?(enMode?(choice.en||choice.ja||alias):(choice.ja||choice.en||alias)):alias;}).join(', ')+')';
+      }
+      if(enMode) return (suffix&&(en||ja)?(en||ja)+suffix:'') || it&&it.nameEn || ((en||ja)?(en||ja)+suffix:'') || it&&it.nameJa || nm;
+      return (suffix&&(ja||en)?(ja||en)+suffix:'') || it&&it.nameJa || ((ja||en)?(ja||en)+suffix:'') || it&&it.nameEn || nm;
     }
     function loadMenu(){
-      API.post('getMenu', {}).then(function(r){
+      API.post('getMenu', {token:TOKEN}).then(function(r){
         var list = (r && r.data) || [];
-        var map = {}, enMap = {};
+        var map = {}, jaMap = {}, enMap = {}, choiceMap = {};
         list.forEach(function(it){
           var v = it['厨房表示'];
           map[it['商品名']] = !(v === '0' || v === 0 || v === false);
+          if (it['商品名_JA']) jaMap[it['商品名']] = it['商品名_JA'];
           if (it['商品名_EN']) enMap[it['商品名']] = it['商品名_EN'];
+          var choices=Object.create(null);try{var groups=typeof it['オプション']==='string'?JSON.parse(it['オプション']||'[]'):it['オプション'];(Array.isArray(groups)?groups:[]).forEach(function(g){(g.choices||[]).forEach(function(c){[c.label,c.labelJa,c.labelEn].forEach(function(a){a=String(a||'').trim();if(a&&!choices[a])choices[a]={ja:String(c.labelJa||'').trim(),en:String(c.labelEn||'').trim()};});});});}catch(e){}
+          choiceMap[it['商品名']]=choices;
         });
-        KITCHEN_MAP = map; MENU_EN = enMap;
+        KITCHEN_MAP = map; MENU_JA=jaMap; MENU_EN = enMap; MENU_CHOICES=choiceMap;
       }).catch(function(){});
     }
     // 2026-08-24修正（重要）: バックエンドが返す注文日時はSQLiteのdatetime('now')によるUTC時刻
@@ -142,7 +150,7 @@
       active = active.filter(function(o){ return !o.stale; });
       renderStale(stale);
       // キッチン非対象の商品のみで構成される注文はチケット自体を非表示にする
-      active = active.map(function(o){ return { o:o, items: parseItems(o.details) }; }).filter(function(x){ return x.items.length > 0; });
+      active = active.map(function(o){ return { o:o, items: parseItems(o) }; }).filter(function(x){ return x.items.length > 0; });
       active.sort(function(a,b){ return new Date(a.o.date).getTime() - new Date(b.o.date).getTime(); });
 
       var curNew = {};
@@ -169,7 +177,7 @@
              +  '<span class="t-badge ' + (isNew?'b-new':'b-cook') + '">' + (isNew?I18n.t('new'):I18n.t('cook')) + '</span>'
              +  '<span class="t-elapsed ' + el.cls + '">' + el.mins + I18n.t('min') + '</span></div></div>';
         html += '<div class="t-items">';
-        items.forEach(function(it){ html += '<div class="t-item"><span class="nm">' + esc(dispItemName(it.name)) + '</span><span class="qty">×' + it.qty + '</span></div>'; });
+        items.forEach(function(it){ html += '<div class="t-item"><span class="nm">' + esc(dispItemName(it)) + '</span><span class="qty">×' + it.qty + '</span></div>'; });
         if (o.paid) html += '<div class="t-prepaid">💳 '+I18n.t('prepaid')+'</div>';
         html += '</div>';
         html += '<div class="t-time">🕐 ' + fmtTime(o.date) + '</div>';

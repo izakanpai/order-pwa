@@ -63,6 +63,9 @@
         !parts[2] || !parts[3] || !parts[4] || parts[5] !== (CFG.TEST_ENV ? 'test' : 'production')) return null;
     return { version:parts[0], exp:Number(parts[1]), role:parts[2], store:parts[3], uid:parts[4], audience:parts[5], sessionId:parts[6]||'' };
   }
+  function validRefreshToken(token) {
+    return /^(?:r1\.[0-9a-f-]{36}\.[0-9a-f]{64}|r2\.[a-z0-9][a-z0-9-]{0,31}\.[0-9a-f-]{36}\.[0-9a-f]{64})$/i.test(String(token || ''));
+  }
   API.acceptLogin = function (r) {
     if (!API.authReady()) throw new Error('environment_mismatch');
     var info = tokenInfo(r && r.token);
@@ -71,7 +74,7 @@
     localStorage.setItem(AUTH_PREFIX + 'mgmtName', r.name || '');
     localStorage.setItem(AUTH_PREFIX + 'mgmtRole', r.role);
     if (info.version === 'v3') {
-      if (!/^r1\.[0-9a-f-]{36}\.[0-9a-f]{64}$/i.test(String(r.refreshToken || ''))) throw new Error('invalid_login_response');
+      if (!validRefreshToken(r.refreshToken)) throw new Error('invalid_login_response');
       localStorage.setItem(AUTH_PREFIX + 'mgmtRefreshToken', r.refreshToken);
     } else localStorage.removeItem(AUTH_PREFIX + 'mgmtRefreshToken');
     localStorage.setItem(AUTH_PREFIX + 'mgmtToken', r.token);
@@ -111,7 +114,7 @@
       document.body.appendChild(el);
       txt = el.querySelector('#izLoadTx');
     }
-    function defMsg() { try { return (localStorage.getItem('lang') === 'en') ? 'Please wait…' : '処理中…'; } catch (e) { return '処理中…'; } }
+    function defMsg() { return _isEN() ? 'Please wait…' : '処理中…'; }
     return {
       show: function (msg) {
         count++; ensure(); if (!el) return;
@@ -161,7 +164,28 @@
     if (action === 'rpc') return /^(get|check|list|count|fetch)/i.test(fn || '');
     return !!_READ_ACTIONS[action];
   }
-  function _isEN() { try { return localStorage.getItem('lang') === 'en'; } catch (e) { return false; } }
+  function _isEN() { try { if(window.I18n&&typeof window.I18n.lang==='function')return window.I18n.lang()==='en';var s=localStorage.getItem('lang');if(s==='ja'||s==='en')return s==='en';var first=(navigator.languages&&navigator.languages.length)?navigator.languages[0]:navigator.language;return String(first||'').toLowerCase().indexOf('ja')!==0; } catch (e) { return true; } }
+  API.userErrorText = function (error, fallback) {
+    var raw = String(error && error.message || error || '').trim();
+    var en = _isEN();
+    var generic = fallback || (en ? 'The operation could not be completed. Please try again.' : '処理を完了できませんでした。もう一度お試しください。');
+    var network = en ? 'Could not connect to the server. Please check your connection and try again.' : 'サーバーに接続できませんでした。通信状況を確認して、もう一度お試しください。';
+    var permission = en ? 'You do not have permission to perform this operation.' : 'この操作を行う権限がありません。';
+    var notFound = en ? 'The requested data could not be found.' : '対象のデータが見つかりませんでした。';
+    var retryLater = en ? 'Too many attempts were made. Please wait a while and try again.' : '操作回数が多すぎます。しばらく待ってからもう一度お試しください。';
+    var code = raw.toLowerCase();
+    if (!raw) return generic;
+    if (code === 'unauthorized' || code === 'invalid_refresh_session' || code === 'stale_session_response') return en ? 'Your session has expired. Please log in again.' : 'ログインの有効期限が切れました。再度ログインしてください。';
+    if (code === 'forbidden' || code.indexOf('forbidden_page:') === 0 || code === 'forbidden_fn') return permission;
+    if (code === 'not_found' || code.endsWith('_not_found')) return notFound;
+    if (code === 'rate_limited' || code === 'signup_rate_limited' || code === 'login_rate_limited') return retryLater;
+    if (code.indexOf('plan_feature_pro_required') === 0) return en ? 'This feature is available on the Pro plan.' : 'この機能はProプランでご利用いただけます。';
+    if (/^(?:http_\d+|api_error|internal_error|save_failed|delete_failed|request_failed|load_failed|server_busy_retry|environment_mismatch|auth_environment_not_configured)$/.test(code)) return generic;
+    if (/d1_error|sqlite|constraint|primary\s*key|foreign\s*key|sql\b|typeerror|referenceerror|syntaxerror|stack|\bat\s+[^\s]+\s*\(|failed to fetch|networkerror|aborterror|timeout/i.test(raw)) return /fetch|network|abort|timeout/i.test(raw) ? network : generic;
+    if (/[ぁ-んァ-ヶ一-龠]/.test(raw)) return raw;
+    if (/\s/.test(raw) && !/^[A-Za-z]+(?:Error|Exception)\b/.test(raw)) return raw;
+    return generic;
+  };
   const _errBar = (function () {
     let el = null;
     function ensure() {
@@ -198,7 +222,12 @@
       redirect: 'follow',
       signal: ctrl.signal
     }).then(function (res) {
-      if (!res.ok) { throw new Error('http_' + res.status); }
+      if (!res.ok) {
+        if (res.status >= 400 && res.status < 500) {
+          return res.json().catch(function () { throw new Error('http_' + res.status); });
+        }
+        throw new Error('http_' + res.status);
+      }
       return res.json();
     }).finally(function () { clearTimeout(t); });
   }
@@ -208,10 +237,10 @@
     if (refreshPending) return refreshPending;
     var beforeToken = storedToken(), before = tokenInfo(beforeToken, true), refreshToken = storedRefreshToken();
     if (!before || before.version !== 'v3' || !refreshToken) return Promise.reject(new Error('invalid_refresh_session'));
-    refreshPending = _fetchOnce(JSON.stringify({ action:'refreshSession', refreshToken:refreshToken }), TIMEOUT_MS.fast)
+    refreshPending = _fetchOnce(JSON.stringify({ action:'refreshSession', storeId:before.store, refreshToken:refreshToken }), TIMEOUT_MS.fast)
       .then(function (json) {
         var after = tokenInfo(json && json.token), nextRefresh = String(json && json.refreshToken || '');
-        if (!json || !json.ok || !after || !/^r1\.[0-9a-f-]{36}\.[0-9a-f]{64}$/i.test(nextRefresh) ||
+        if (!json || !json.ok || !after || !validRefreshToken(nextRefresh) ||
             before.role !== after.role || before.store !== after.store || before.uid !== after.uid ||
             before.audience !== after.audience || before.sessionId !== after.sessionId || storedToken() !== beforeToken) {
           throw new Error((json && json.error) || 'invalid_refresh_session');
@@ -227,8 +256,9 @@
   };
   API.logoutSession = async function () {
     var token = storedToken(), refreshToken = storedRefreshToken();
+    var info = tokenInfo(token, true);
     try {
-      if (token || refreshToken) await _fetchOnce(JSON.stringify({ action:'logoutSession', token:token, refreshToken:refreshToken }), TIMEOUT_MS.fast);
+      if (token || refreshToken) await _fetchOnce(JSON.stringify({ action:'logoutSession', storeId:info ? info.store : '', token:token, refreshToken:refreshToken }), TIMEOUT_MS.fast);
     } catch (e) {
       // Local logout must complete even while offline; server expiry remains the fallback.
     } finally { API.clearSession(); }
@@ -413,22 +443,33 @@
   // ---- 注文送信（オフライン耐性つき） ----
   // 返り値: 'sent'（サーバ確定） / 'queued'（オフライン保留）
   // clientId でサーバ側が冪等化するため、再送しても二重登録されない。
-  API.submitOrder = async function (order) {
+  API.submitOrder = async function (order, authToken) {
     if (!order.clientId) order.clientId = 'c-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    var currentQueueStoreId = API.currentStoreId() || '';
+    var authQueueStoreId = (authToken && tokenInfo(authToken, true) || {}).store || '';
+    if (authQueueStoreId && currentQueueStoreId && authQueueStoreId !== currentQueueStoreId) {
+      return 'rejected:store_context_mismatch';
+    }
+    var queueStoreId = authQueueStoreId || currentQueueStoreId;
+    // Never create an unassigned outbox record. It could later be replayed
+    // under a different staff account/store after logout and login.
+    if (!queueStoreId) return 'rejected:store_context_required';
     // オフラインが自明なら即キュー（無駄な待ち時間を回避）
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      await API.queuePut({ id: order.clientId, order: order, ts: Date.now(), attempts: 0 });
+      await API.queuePut({ id: order.clientId, storeId: queueStoreId, order: order, token: authToken || '', ts: Date.now(), attempts: 0 });
       return 'queued';
     }
     try {
-      const res = await API.post('submitOrder', { order: order, __timeoutMs: TIMEOUT_MS.write });
+      const payload = { order: order, __timeoutMs: TIMEOUT_MS.write };
+      if (authToken) payload.token = authToken;
+      const res = await API.post('submitOrder', payload);
       const d = res && res.data;
       // [H4] ロック競合による一時的な失敗はサーバー未登録なので再送キューへ（「拒否」扱いにしない）。
-      if (d === 'Locked, please retry') { await API.queuePut({ id: order.clientId, order: order, ts: Date.now(), attempts: 0 }); return 'queued'; }
+      if (d === 'Locked, please retry') { await API.queuePut({ id: order.clientId, storeId: queueStoreId, order: order, token: authToken || '', ts: Date.now(), attempts: 0 }); return 'queued'; }
       if (d && d !== 'OK') { return 'rejected:' + d; }   // サーバが拒否（例: Invalid table）。キューせず即エラー通知
       return 'sent';
     } catch (err) {
-      await API.queuePut({ id: order.clientId, order: order, ts: Date.now(), attempts: 0 });
+      await API.queuePut({ id: order.clientId, storeId: queueStoreId, order: order, token: authToken || '', ts: Date.now(), attempts: 0 });
       return 'queued';
     }
   };
@@ -436,12 +477,37 @@
   // ---- 送信待ちの再送（online復帰・定期・起動時に呼ぶ） ----
   // ネットワーク不通なら中断して次の機会に。サーバ到達済みの業務エラーは
   // 再送しても無駄なので試行上限で破棄し、キューの目詰まりを防ぐ。
-  API.flush = async function () {
-    const pending = await API.queueAll();
-    let sent = 0, dropped = 0;
-    for (const rec of pending) {
+  var _flushPending = null;
+  API.canFlushQueuedOrder = function (rec, currentStoreId) {
+    // Legacy records without an immutable originating store are quarantined;
+    // never fill their empty storeId using the currently logged-in session.
+    if (!(rec && typeof rec.storeId === 'string' && rec.storeId &&
+      currentStoreId && rec.storeId === currentStoreId)) return false;
+    if (rec.token) {
+      var info = tokenInfo(rec.token, true);
+      if (!info || info.store !== rec.storeId) return false;
+    }
+    return true;
+  };
+  API.flush = function () {
+    if (_flushPending) return _flushPending;
+    _flushPending = (async function () {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        return { sent: 0, dropped: 0, remaining: await API.pendingCount(), offline: true };
+      }
+      const pending = await API.queueAll();
+      let sent = 0, dropped = 0, quarantined = 0;
+      const currentStoreId = API.currentStoreId() || '';
+      for (const rec of pending) {
+        if (!API.canFlushQueuedOrder(rec, currentStoreId)) {
+          if (!rec.storeId) quarantined++;
+          continue;
+        }
       try {
-        await API.post('submitOrder', { order: rec.order, __silent: true, __timeoutMs: TIMEOUT_MS.write });
+        const payload = { order: rec.order, __silent: true, __timeoutMs: TIMEOUT_MS.write };
+        if (rec.storeId) payload.storeId = rec.storeId;
+        if (rec.token) payload.token = rec.token;
+        await API.post('submitOrder', payload);
         await API.queueDel(rec.id);
         sent++;
       } catch (err) {
@@ -453,14 +519,48 @@
         }
         break; // ネットワーク不通。次の機会に。
       }
-    }
-    const remaining = await API.pendingCount();
-    return { sent: sent, dropped: dropped, remaining: remaining };
+      }
+      const remaining = await API.pendingCount();
+      return { sent: sent, dropped: dropped, remaining: remaining, quarantined: quarantined };
+    })().finally(function () { _flushPending = null; });
+    return _flushPending;
   };
 
   API.pendingCount = async function () {
     const all = await API.queueAll();
-    return all.length;
+    const currentStoreId = API.currentStoreId() || '';
+    return all.filter(function (rec) {
+      return !rec.storeId || !currentStoreId || rec.storeId === currentStoreId;
+    }).length;
+  };
+
+  function bufferToBase64(buffer) {
+    var bytes = new Uint8Array(buffer), out = '', chunk = 0x8000;
+    for (var i = 0; i < bytes.length; i += chunk) out += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + chunk, bytes.length)));
+    return btoa(out);
+  }
+  API.fileToBase64 = async function (file) {
+    if (!file) throw new Error('file_required');
+    if (typeof file.arrayBuffer === 'function') { try { return bufferToBase64(await file.arrayBuffer()); } catch (e) {} }
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(String(reader.result || '').split(',')[1] || ''); };
+      reader.onerror = function () { reject(new Error('file_read_failed')); };
+      reader.onabort = function () { reject(new Error('file_read_aborted')); };
+      try { reader.readAsDataURL(file); } catch (e) { reject(new Error('file_read_failed')); }
+    });
+  };
+  API.readFileAsDataURL = async function (file) { return 'data:' + String((file && file.type) || 'application/octet-stream') + ';base64,' + await API.fileToBase64(file); };
+  API.readFileAsText = async function (file) {
+    if (!file) throw new Error('file_required');
+    if (typeof file.text === 'function') { try { return await file.text(); } catch (e) {} }
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(String(reader.result || '')); };
+      reader.onerror = function () { reject(new Error('file_read_failed')); };
+      reader.onabort = function () { reject(new Error('file_read_aborted')); };
+      try { reader.readAsText(file, 'utf-8'); } catch (e) { reject(new Error('file_read_failed')); }
+    });
   };
 
   window.API = API;

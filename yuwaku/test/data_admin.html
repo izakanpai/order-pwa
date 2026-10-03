@@ -147,7 +147,7 @@
         document.getElementById('sheetSel').innerHTML = (names||[]).map(function(name){
           return '<option value="'+esc(name)+'">'+esc(name)+'</option>';
         }).join('');
-      }).catch(function(e){ alertBox('csvExportMsg', I18n.t('errPrefix')+(e.message||e), false); });
+      }).catch(function(e){ alertBox('csvExportMsg', I18n.t('errPrefix')+API.userErrorText(e), false); });
     }
     window.backupAll = function(){
       var btn = document.getElementById('exportAllBtn');
@@ -161,7 +161,7 @@
           chain = chain.then(function(){
             return rpc('exportSheetData', [name]).then(function(data){
               data = data || {};
-              zip.file(name+'.csv', data.error ? '# error: '+data.error : '﻿'+toCsv(data.rows));
+              zip.file(name+'.csv', data.error ? '# error: '+API.userErrorText(data.error) : '﻿'+toCsv(data.rows));
             });
           });
         });
@@ -175,7 +175,7 @@
         link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
         alertBox('exportAllMsg', I18n.t('exportDone')+' '+name, true);
       }).catch(function(e){
-        alertBox('exportAllMsg', I18n.t('errPrefix')+(e.message||e), false);
+        alertBox('exportAllMsg', I18n.t('errPrefix')+API.userErrorText(e), false);
       }).finally(function(){ btn.disabled = false; btn.textContent = original; });
     };
     window.exportCsv = function(){
@@ -183,13 +183,13 @@
       if (!name) return;
       rpc('exportSheetData', [name]).then(function(data){
         data = data || {};
-        if (data.error) { alertBox('csvExportMsg', I18n.t('errPrefix')+data.error, false); return; }
+        if (data.error) { alertBox('csvExportMsg', I18n.t('errPrefix')+API.userErrorText(data.error), false); return; }
         var blob = new Blob(['﻿'+toCsv(data.rows)], {type:'text/csv;charset=utf-8;'});
         var url = URL.createObjectURL(blob);
         var link = document.createElement('a');
         link.href = url; link.download = name+'.csv'; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
         alertBox('csvExportMsg', I18n.t('csvExportDone')+' '+name+'.csv', true);
-      }).catch(function(e){ alertBox('csvExportMsg', I18n.t('errPrefix')+(e.message||e), false); });
+      }).catch(function(e){ alertBox('csvExportMsg', I18n.t('errPrefix')+API.userErrorText(e), false); });
     };
     // RFC4180寄りの簡易CSVパーサ（引用符内のカンマ・改行・""エスケープに対応）。
     // backup.htmlのtoCsv()が生成する形式と対で使う想定。
@@ -222,7 +222,7 @@
 
     function init(){
       rpc('getDestructiveTableNames', []).then(function(d){
-        if (d && d.error) { alertBox('delMsg', I18n.t('errPrefix')+d.error, false); return; }
+        if (d && d.error) { alertBox('delMsg', I18n.t('errPrefix')+API.userErrorText(d.error), false); return; }
         var names = (d && d.names) || [];
         var tableOpts = names.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join('');
         var opts = tableOpts+
@@ -230,7 +230,7 @@
         document.getElementById('delTable').innerHTML = opts;
         document.getElementById('impTable').innerHTML = tableOpts;
         window.onDelTableChange();
-      }).catch(function(e){ alertBox('delMsg', I18n.t('errPrefix')+(e.message||e), false); });
+      }).catch(function(e){ alertBox('delMsg', I18n.t('errPrefix')+API.userErrorText(e), false); });
       window.loadBackups();
 
       document.getElementById('impFile').addEventListener('change', onImpFileChange);
@@ -278,14 +278,14 @@
         var request = isAll ? rpc('wipeAllTableData', [pass]) : rpc('wipeTableData', [t, pass]);
         request.then(function(d){
           btn.disabled = false;
-          if (d && d.error) { alertBox('delMsg', I18n.t('errPrefix')+d.error, false); return; }
+          if (d && d.error) { alertBox('delMsg', I18n.t('errPrefix')+API.userErrorText(d.error), false); return; }
           var done = isAll ? I18n.t('delAllDone').replace('{n}', d.deletedCount).replace('{tables}', d.tableCount) : I18n.t('delDone').replace('{n}', d.deletedCount);
           alertBox('delMsg', done, true);
           document.getElementById('delPass').value = '';
           document.getElementById('delPhrase').value = '';
           window.onDelTableChange();
           window.loadBackups();
-        }).catch(function(e){ btn.disabled = false; alertBox('delMsg', I18n.t('errPrefix')+(e.message||e), false); });
+        }).catch(function(e){ btn.disabled = false; alertBox('delMsg', I18n.t('errPrefix')+API.userErrorText(e), false); });
       });
     };
 
@@ -297,18 +297,15 @@
       updateImpBtn();
       var f = document.getElementById('impFile').files[0];
       if (!f) return;
-      var reader = new FileReader();
-      reader.onload = function(e){
-        var parsed = parseCsv(e.target.result);
+      API.readFileAsText(f).then(function(text){
+        var parsed = parseCsv(text);
         if (!parsed.length) { alertBox('impMsg', I18n.t('csvEmpty'), false); return; }
         var header = parsed[0];
         var rows = parsed.slice(1);
         IMP_PARSED = { header: header, rows: rows };
         document.getElementById('impPreview').innerText = I18n.t('csvRows').replace('{n}', rows.length).replace('{cols}', header.length);
         updateImpBtn();
-      };
-      reader.onerror = function(){ alertBox('impMsg', I18n.t('csvReadErr'), false); };
-      reader.readAsText(f, 'utf-8');
+      }).catch(function(){ alertBox('impMsg', I18n.t('csvReadErr'), false); });
     }
     function updateImpBtn(){
       var pass = document.getElementById('impPass').value;
@@ -323,7 +320,7 @@
         var btn = document.getElementById('impBtn'); btn.disabled = true;
         rpc('importTableData', [t, IMP_PARSED.header, IMP_PARSED.rows, pass]).then(function(d){
           btn.disabled = false;
-          if (d && d.error) { alertBox('impMsg', I18n.t('errPrefix')+d.error, false); return; }
+          if (d && d.error) { alertBox('impMsg', I18n.t('errPrefix')+API.userErrorText(d.error), false); return; }
           alertBox('impMsg', I18n.t('impDone').replace('{n}', d.importedCount), true);
           document.getElementById('impPass').value = '';
           document.getElementById('impFile').value = '';
@@ -332,7 +329,7 @@
           updateImpBtn();
           window.onDelTableChange();
           window.loadBackups();
-        }).catch(function(e){ btn.disabled = false; alertBox('impMsg', I18n.t('errPrefix')+(e.message||e), false); });
+        }).catch(function(e){ btn.disabled = false; alertBox('impMsg', I18n.t('errPrefix')+API.userErrorText(e), false); });
       });
     };
 
@@ -344,14 +341,14 @@
     }
     window.loadBackups = function(){
       rpc('listDataBackups', []).then(function(d){
-        if (d && d.error) { alertBox('bkMsg', I18n.t('errPrefix')+d.error, false); return; }
+        if (d && d.error) { alertBox('bkMsg', I18n.t('errPrefix')+API.userErrorText(d.error), false); return; }
         var rows = (d && d.backups) || [];
         document.getElementById('bkRows').innerHTML = rows.length ? rows.map(function(b){
           return '<tr><td>'+esc(b.table_name)+'</td><td><span class="tag '+esc(b.action)+'">'+esc(actionLabel(b.action))+'</span></td>'+
             '<td>'+esc(b.row_count)+'</td><td>'+esc(b.actor_name)+'</td><td>'+esc(b.created_at)+'</td>'+
             '<td><button class="btn-sm" onclick="openRestore(\''+esc(b.backup_id)+'\',\''+esc(b.table_name)+'\','+Number(b.row_count)+')">'+I18n.t('bkRestore')+'</button></td></tr>';
         }).join('') : '<tr><td colspan="6" style="color:#aaa;text-align:center;padding:10px;">'+I18n.t('bkEmpty')+'</td></tr>';
-      }).catch(function(e){ alertBox('bkMsg', I18n.t('errPrefix')+(e.message||e), false); });
+      }).catch(function(e){ alertBox('bkMsg', I18n.t('errPrefix')+API.userErrorText(e), false); });
     };
     window.openRestore = function(backupId, tableName, rowCount){
       RESTORE_TARGET = { backupId: backupId, tableName: tableName, rowCount: rowCount };
@@ -367,12 +364,12 @@
       var pass = document.getElementById('restorePass').value;
       if (!pass) { var a=document.getElementById('restoreAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=I18n.t('needPass'); return; }
       rpc('restoreDataBackup', [RESTORE_TARGET.backupId, pass]).then(function(d){
-        if (d && d.error) { var a=document.getElementById('restoreAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=I18n.t('errPrefix')+d.error; return; }
+        if (d && d.error) { var a=document.getElementById('restoreAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=I18n.t('errPrefix')+API.userErrorText(d.error); return; }
         window.closeRestoreOv();
         alertBox('bkMsg', I18n.t('restoreDone').replace('{n}', d.restoredCount), true);
         window.onDelTableChange();
         window.loadBackups();
-      }).catch(function(e){ var a=document.getElementById('restoreAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=I18n.t('errPrefix')+(e.message||e); });
+      }).catch(function(e){ var a=document.getElementById('restoreAlert'); a.style.display='block'; a.style.background='#fee2e2'; a.style.color='#b91c1c'; a.innerText=I18n.t('errPrefix')+API.userErrorText(e); });
     };
 
     I18n.init({

@@ -1,4 +1,4 @@
-const CACHE = 'izakanpai-public-order-test-v1';
+const CACHE = 'izakanpai-public-order-test-v7';
 const SHELL = [
   './',
   './index.html',

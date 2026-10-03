@@ -1,0 +1,86 @@
+/* Shared date input contract.
+   Keep all date controls visually consistent across iOS/Android/Web.
+   Reusable temporal layout classes live here as well: screens must not
+   recreate date + action-button geometry with screen-specific CSS. */
+:root{
+  --temporal-control-h:44px;
+  --temporal-action-gap:12px;
+  --temporal-field-w:196px;
+  --temporal-field-w-compact:188px;
+}
+input[type="date"]{
+  display:block!important;
+  inline-size:100%!important;
+  width:100%!important;
+  min-inline-size:0!important;
+  min-width:0!important;
+  max-inline-size:100%!important;
+  max-width:100%!important;
+  block-size:44px!important;
+  height:44px!important;
+  min-block-size:44px!important;
+  min-height:44px!important;
+  max-block-size:44px!important;
+  max-height:44px!important;
+  box-sizing:border-box!important;
+  padding-block:0!important;
+  overflow:visible!important;
+}
+input[type="date"]::-webkit-date-and-time-value{
+  min-width:0!important;
+  height:42px!important;
+  line-height:42px!important;
+  padding-block:0!important;
+  text-align:left!important;
+}
+input[type="date"]::-webkit-datetime-edit{
+  height:42px!important;
+  min-height:0!important;
+  display:flex!important;
+  align-items:center!important;
+  padding-block:0!important;
+}
+.temporal-action-row{
+  display:flex;
+  gap:var(--temporal-action-gap);
+  align-items:flex-end;
+  flex-wrap:nowrap;
+}
+.temporal-field{
+  flex:0 0 var(--temporal-field-w);
+  min-width:0;
+  max-width:var(--temporal-field-w);
+}
+.temporal-label{
+  display:block;
+  margin-bottom:4px;
+  font-size:12px;
+  font-weight:700;
+}
+.temporal-input-shell{
+  position:relative;
+  width:100%;
+  min-width:0;
+  height:var(--temporal-control-h);
+  padding-right:8px;
+  overflow:visible;
+  box-sizing:border-box;
+}
+.temporal-input-shell > input[type="date"]{
+  margin:0;
+}
+.temporal-action-row > .temporal-action{
+  flex:0 0 auto;
+  align-self:flex-end;
+}
+@media (max-width:520px){
+  .temporal-field{
+    flex-basis:var(--temporal-field-w-compact);
+    max-width:var(--temporal-field-w-compact);
+  }
+}
+@media (max-width:340px){
+  .temporal-action-row{ flex-wrap:wrap; }
+  .temporal-field{ flex:1 1 100%; max-width:none; }
+  .temporal-action-row > .temporal-action{ margin-left:auto; }
+}

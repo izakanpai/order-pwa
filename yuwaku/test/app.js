@@ -3,11 +3,11 @@
   'use strict';
 
   var i18n = {
-    en: { order:'Order', total:'Total', all:'All', send:'Order', empty:'Please select items',
+    en: { order:'Order', total:'Total', all:'All', send:'Order', empty:'Please select items', sampleTag:'SAMPLE', sampleMix:'Sample items cannot be ordered together with regular menu items.',
       confirm:'Send this order?', okTitle:'Order sent', okMsg:'Your order was received.',
       queuedTitle:'Saved (offline)', queuedMsg:'No connection now. It will be sent automatically when back online.',
       errTitle:'Error', ok:'OK', table:'Table', counter:'Counter', noTable:'Please scan the signed QR code at your location.',
-      offline:'Offline — orders will be sent automatically when back online', invalidTableSession:'This table session is invalid. Staff should reselect the table; guests should rescan the table QR code.', lang:'JP',
+      offline:'OFFLINE\nYou can keep ordering. Orders are saved on this device and will be sent automatically when back online.', syncing:'Back online — syncing\nSending queued orders now…', pending:'Queued orders pending\nThey will be sent automatically when the connection is available.', invalidTableSession:'This table session is invalid. Staff should reselect the table; guests should rescan the table QR code.', lang:'JP',
       svc:'Service', tax:'Tax', ranking:'🏆 Ranking',
       tblTitle:'Select a location', tblMsg:'Staff may select a location here. Guests must scan the signed QR code at their location.', tblGo:'Start',
       partyTitle:'How many guests?', partyLabel:'Guests', partyChoose:'Select party size', partyMsg:'Used for entry and extension fee billing.', partyMsgEntry:'Used for entry fee billing.', partyMsgExtension:'Used for extension fee billing.', partyGo:'OK',
@@ -19,18 +19,18 @@
       callTitle:'Staff called', callMsg:'A staff member will be with you shortly.', billTitle:'Bill requested', billMsg:'A staff member will bring your bill shortly.',
       callConfirm:'Call a staff member to your table?', billConfirm:'Request your bill?',
       fbTitle:'How was it?', fbSub:'Your rating helps us improve.', fbComment:'Comment', fbSend:'Send', fbPick:'Please tap the stars to rate.', fbCommentRequired:'Please enter a comment.', fbThanks:'Thank you!', fbThanksMsg:'Thanks for your feedback.',
-      bdayLbl:'🎂 Register your birthday for a treat', bdaySave:'Save', bdaySaved:'Saved! 🎉', bdayBad:'Enter as MM-DD (e.g. 08-15)',
+      bdayLbl:'🎂 Register your birthday for a treat', bdaySave:'Save', bdaySaved:'Request received. Ask staff to change an existing account.', bdayBad:'Enter as MM-DD (e.g. 08-15)',
       stTitle:'My orders', stSubLbl:'Subtotal', stSvcInclLbl:'Service charge (included)', stSvcExclLbl:'Service charge', stTaxInclLbl:'{tax} (included)', stTaxExclLbl:'{tax}', stTotalLbl:'Unpaid total', stRefresh:'Refresh', stEmpty:'No orders yet for this table.', stPending:'Preparing', stServed:'Served',
       taxInclText:'Prices include {tax} {v}%.', taxExclText:'{tax} {v}% will be added at checkout.',
       svcInclText:'Prices include a {v}% service charge.', svcExclText:'A {v}% service charge applies separately.',
       btnMember:'Rewards', btnCoupon:'Coupon', btnCall:'Call', btnBill:'Bill', btnStatus:'Orders', btnFeedback:'Rate',
       doneTitle:'Thank you!', doneMsg:'Your bill has been settled. To order again, please scan the location QR code once more.',
       mgmtBack:'← Manage' },
-    ja: { order:'ご注文', total:'合計', all:'すべて', send:'注文する', empty:'商品を選んでください',
+    ja: { order:'ご注文', total:'合計', all:'すべて', send:'注文する', empty:'商品を選んでください', sampleTag:'サンプル', sampleMix:'サンプル商品と通常商品は同じ注文に入れられません。',
       confirm:'この内容で注文しますか？', okTitle:'注文を送信しました', okMsg:'ご注文を承りました。',
       queuedTitle:'保留しました（オフライン）', queuedMsg:'今は接続がありません。オンライン復帰時に自動送信します。',
       errTitle:'エラー', ok:'OK', table:'卓', counter:'カウンター', noTable:'席に設置された署名付きQRコードを読み取ってください。',
-      offline:'オフライン — 復帰時に自動送信します', invalidTableSession:'席のセッションが無効です。スタッフは席を選び直し、お客様は席のQRコードを再読み取りしてください。', lang:'EN',
+      offline:'オフライン中\nこのまま注文できます。注文は端末に保存し、オンライン復帰時に自動送信します。', syncing:'オンライン復帰 — 同期中\n未同期注文を送信しています…', pending:'未同期注文あり\n通信が利用可能になり次第、自動送信します。', invalidTableSession:'席のセッションが無効です。スタッフは席を選び直し、お客様は席のQRコードを再読み取りしてください。', lang:'EN',
       svc:'サービス料', tax:'税', ranking:'🏆 ランキング',
       tblTitle:'席を選択', tblMsg:'スタッフはここで席を選べます。お客様は席の署名付きQRコードを読み取ってください。', tblGo:'開始',
       partyTitle:'ご来店人数は？', partyLabel:'人数', partyChoose:'人数を選択', partyMsg:'入場料・延長料の請求に使用します。', partyMsgEntry:'入場料の請求に使用します。', partyMsgExtension:'延長料の請求に使用します。', partyGo:'OK',
@@ -42,7 +42,7 @@
       callTitle:'スタッフを呼びました', callMsg:'まもなくスタッフが伺います。', billTitle:'お会計を依頼しました', billMsg:'まもなくスタッフがお会計に伺います。',
       callConfirm:'スタッフを呼びますか？', billConfirm:'お会計を依頼しますか？',
       fbTitle:'ご感想は？', fbSub:'評価は今後の改善に役立ちます。', fbComment:'コメント', fbSend:'送信', fbPick:'星をタップして評価してください。', fbCommentRequired:'コメントを入力してください。', fbThanks:'ありがとうございます！', fbThanksMsg:'ご意見ありがとうございました。',
-      bdayLbl:'🎂 お誕生日を登録すると特典があります', bdaySave:'登録', bdaySaved:'登録しました！🎉', bdayBad:'MM-DD 形式で入力（例: 08-15）',
+      bdayLbl:'🎂 お誕生日を登録すると特典があります', bdaySave:'登録', bdaySaved:'受付しました。既存会員の変更はスタッフへお申し付けください。', bdayBad:'MM-DD 形式で入力（例: 08-15）',
       stTitle:'注文状況', stSubLbl:'小計', stSvcInclLbl:'うちサービス料（内税）', stSvcExclLbl:'サービス料', stTaxInclLbl:'うち{tax}（内税）', stTaxExclLbl:'{tax}', stTotalLbl:'未会計 合計', stRefresh:'更新', stEmpty:'この卓の注文はまだありません。', stPending:'準備中', stServed:'提供済み',
       taxInclText:'表示価格は{tax}{v}%込みです。', taxExclText:'お会計時に別途{tax}{v}%を頂戴いたします。',
       svcInclText:'表示価格はサービス料{v}%込みです。', svcExclText:'別途サービス料{v}%を頂戴いたします。',
@@ -61,6 +61,15 @@
   };
 
   function $(id) { return document.getElementById(id); }
+  function staffAuthToken() {
+    try {
+      if (window.NativeAuth && window.NativeAuth.getToken) {
+        var nativeToken = window.NativeAuth.getToken();
+        if (nativeToken) return nativeToken;
+      }
+      return localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken') || '';
+    } catch (e) { return ''; }
+  }
   // 言語の切替・優先順位・永続化は共通部品 i18n.js（I18n）に統一（他画面と同じ仕組み）。
   // state.lang は現在言語のミラーで、I18n.init()のonChangeコールバック経由で更新される。
   function t() { return I18n.d(); }
@@ -80,7 +89,7 @@
     var p = Object.assign({}, payload || {});
     if (state.staffMode) {
       try {
-        var tok = window.NativeAuth && window.NativeAuth.getToken ? window.NativeAuth.getToken() : '';
+        var tok = staffAuthToken();
         if (tok) p.token = tok;
       } catch (e) {}
     }
@@ -88,7 +97,7 @@
   }
   function apiErrorText(err) {
     var msg = String(err && err.message || err || '');
-    return msg === 'invalid_table_session' ? t().invalidTableSession : msg;
+    return msg === 'invalid_table_session' ? t().invalidTableSession : API.userErrorText(err);
   }
   function taxName(){ return String(state.settings.taxDisplayName || 'VAT'); }
   function roundCharge(v){ var d=Object.prototype.hasOwnProperty.call(state.settings,'currencyDecimalDigits')?Math.max(0,Math.min(3,Number(state.settings.currencyDecimalDigits)||0)):0,f=Math.pow(10,d),n=(Number(v)||0)*f,m=state.settings.taxRoundingMode||'nearest'; return (m==='floor'?Math.floor(n+Number.EPSILON):m==='ceil'?Math.ceil(n-Number.EPSILON):Math.round(n+Number.EPSILON))/f; }
@@ -103,6 +112,10 @@
     for (var i = 0; i < state.menu.length; i++) { if (state.menu[i]['商品名'] === name) return state.menu[i]; }
     return null;
   }
+  function optionLoc(ja,en,legacy){ja=String(ja||'').trim();en=String(en||'').trim();legacy=String(legacy||'').trim();return state.lang==='en'?(en||ja||legacy):(ja||en||legacy);}
+  function optionLineLabel(line){var it=menuItem(line.base),groups=itemOpts(it),out=[];if(Array.isArray(line.optionSelections))line.optionSelections.forEach(function(sel){var g=groups[Number(sel.groupIndex)]||{};(sel.choiceIndexes||[]).forEach(function(ci){var c=(g.choices||[])[Number(ci)]||{},s=optionLoc(c.labelJa,c.labelEn,c.label);if(s)out.push(s);});});return out.length?out.join(', '):(line.label||'');}
+  function localizedOrderName(raw){var s=String(raw||''),exact=menuItem(s);if(exact)return optionLoc(exact['商品名_JA'],exact['商品名_EN'],s);var m=s.match(/^(.+?)\s*[（(]([^（）()]*)[)）]\s*$/),base=(m?m[1]:s).trim(),it=menuItem(base);if(!it)return s;var baseDisp=optionLoc(it['商品名_JA'],it['商品名_EN'],base);if(!m||!m[2].trim())return baseDisp;var groups=itemOpts(it),map=Object.create(null);groups.forEach(function(g){(g.choices||[]).forEach(function(c){[c.label,c.labelJa,c.labelEn].forEach(function(alias){var k=String(alias||'').trim();if(k&&!map[k])map[k]=c;});});});var labels=m[2].split(',').map(function(x){var k=x.trim(),c=map[k];return c?optionLoc(c.labelJa,c.labelEn,c.label):k;});return baseDisp+' ('+labels.join(', ')+')';}
+  function isSampleMenuItem(it) { return !!(it && (it.sample || it.isSample || Number(it['サンプル'] || it.is_sample || 0))); }
   // ある基本商品のオプション明細合計数量（カード上のバッジ用）
   function optQty(base) {
     var n = 0; state.optLines.forEach(function (l) { if (l.base === base) n += l.qty; }); return n;
@@ -247,7 +260,7 @@
 
   function renderCats() {
     var x = t();
-    var lab = function (c) { return (state.lang === 'en' && state.catLabels && state.catLabels[c]) ? state.catLabels[c] : c; };
+    var lab = function (c) { var pair=state.catLabels&&state.catLabels[c]||{};return state.lang==='en'?(pair.en||pair.ja||c):(pair.ja||pair.en||c); };
     var html = '<div class="cat' + (state.currentCat === 'all' ? ' active' : '') + '" data-cat="all">' + x.all + '</div>';
     if (state.ranking && state.ranking.length) {
       html += '<div class="cat' + (state.currentCat === 'ranking' ? ' active' : '') + '" data-cat="ranking">' + x.ranking + '</div>';
@@ -282,12 +295,13 @@
     var html = '<div class="grid">';
     items.forEach(function (it) {
       var key = it['商品名'];
-      var name = (state.lang === 'en' && it['商品名_EN']) ? it['商品名_EN'] : key;
+      var name = optionLoc(it['商品名_JA'],it['商品名_EN'],key);
       var thumb = it.displayUrl
         ? '<img class="thumb" src="' + escAttr(it.displayUrl) + '" loading="lazy" alt="">'
         : '<div class="no-thumb"></div>';
       // タグ（辛さ・アレルゲン）
       var tags = '';
+      if (isSampleMenuItem(it)) tags += '<span style="display:inline-block;padding:2px 6px;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-size:11px;font-weight:800;">🧪 ' + escHtml(t().sampleTag) + '</span>';
       var sp = Number(it['辛さ']) || 0;
       if (sp > 0) { var pep = ''; for (var s = 0; s < sp; s++) pep += '🌶'; tags += '<span class="tag-spicy">' + pep + '</span>'; }
       if (it['アレルゲン']) tags += '<span class="tag-allg">⚠ ' + escHtml(String(it['アレルゲン'])) + '</span>';
@@ -341,8 +355,7 @@
     var it = menuItem(base); if (!it) return;
     optCtx = { base: base };
     var x = t();
-    var en = state.lang === 'en';
-    var dispName = (en && it['商品名_EN']) ? it['商品名_EN'] : base;
+    var dispName = localizedOrderName(base);
     $('optName').textContent = dispName;
     var groups = itemOpts(it);
     var html = '';
@@ -352,7 +365,7 @@
       html += '<div class="opt-incart"><div class="opt-incart-h">' + escHtml(x.optInCart) + '</div>';
       state.optLines.forEach(function (l, idx) {
         if (l.base !== base) return;
-        html += '<div class="opt-line"><span>' + escHtml(l.label || '—') + ' × ' + l.qty + '　' + money(l.unit) + '</span>' +
+        html += '<div class="opt-line"><span>' + escHtml(optionLineLabel(l) || '—') + ' × ' + l.qty + '　' + money(l.unit) + '</span>' +
           '<button class="opt-rm" data-rm="' + idx + '">×</button></div>';
       });
       html += '</div>';
@@ -362,13 +375,13 @@
       var multi = g.type === 'multi';
       var req = g.required ? ' <span class="opt-req">(' + escHtml(x.optRequired) + ')</span>' : '';
       html += '<div class="opt-group" data-gi="' + gi + '" data-type="' + (multi ? 'multi' : 'single') + '" data-req="' + (g.required ? 1 : 0) + '">' +
-        '<div class="opt-gname">' + escHtml(g.name || '') + req + '</div>';
+        '<div class="opt-gname">' + escHtml(optionLoc(g.nameJa,g.nameEn,g.name)) + req + '</div>';
       (g.choices || []).forEach(function (c, ci) {
         var add = (Number(c.price) || 0);
         var addTxt = add ? '　+' + money(add) : '';
         html += '<label class="opt-choice">' +
           '<input type="' + (multi ? 'checkbox' : 'radio') + '" name="og' + gi + '" value="' + ci + '" data-price="' + add + '">' +
-          '<span>' + escHtml(c.label || '') + addTxt + '</span></label>';
+          '<span>' + escHtml(optionLoc(c.labelJa,c.labelEn,c.label)) + addTxt + '</span></label>';
       });
       html += '</div>';
     });
@@ -397,17 +410,19 @@
     var it = menuItem(optCtx.base); if (!it) return;
     var x = t();
     var groups = itemOpts(it);
-    var chosen = [], extra = 0, ok = true;
+    var chosen = [], selections = [], extra = 0, ok = true;
     Array.prototype.forEach.call($('optBody').querySelectorAll('.opt-group'), function (gd) {
       var req = gd.getAttribute('data-req') === '1';
       var sels = gd.querySelectorAll('input:checked');
       if (req && !sels.length) ok = false;
+      var gi = Number(gd.getAttribute('data-gi')), selectedIdxs=[];
       Array.prototype.forEach.call(sels, function (inp) {
-        var gi = Number(gd.getAttribute('data-gi')), ci = Number(inp.value);
+        var ci = Number(inp.value);
         var c = (groups[gi].choices || [])[ci] || {};
-        chosen.push(c.label || '');
+        chosen.push(c.label || c.labelJa || c.labelEn || ''); selectedIdxs.push(ci);
         extra += Number(inp.getAttribute('data-price')) || 0;
       });
+      if(selectedIdxs.length) selections.push({groupIndex:gi,choiceIndexes:selectedIdxs});
     });
     if (!ok) { UIAlert(x.optPick); return; }
     var label = chosen.filter(function (s) { return s; }).join(', ');
@@ -418,7 +433,7 @@
     // 同一構成があれば数量加算
     var merged = false;
     state.optLines.forEach(function (l) { if (l.sig === sig) { l.qty += qty; merged = true; } });
-    if (!merged) state.optLines.push({ base: optCtx.base, sig: sig, label: label, unit: unit, qty: qty });
+    if (!merged) state.optLines.push({ base: optCtx.base, sig: sig, label: label, optionSelections:selections, unit: unit, qty: qty });
     closeOpt(); renderMenu(); updateTotal();
   }
 
@@ -443,21 +458,14 @@
   }
 
   // ---- 注文状況（自分の卓の注文・提供状況・未会計合計） ----
-  // 明細の商品名をメニューのENで表示（オプション括弧は原文のまま）
-  function menuEnName(jaName) {
-    var base = String(jaName || '').replace(/\s*[（(][^（(]*[)）]\s*$/, '').trim();
-    for (var i = 0; i < state.menu.length; i++) {
-      if (state.menu[i]['商品名'] === base && state.menu[i]['商品名_EN']) return state.menu[i]['商品名_EN'] + String(jaName).slice(base.length);
-    }
-    return jaName;
-  }
+  // 旧形式の明細も登録済みの日本語・英語名と選択肢へ変換する。
   function transOrderDetails(details) {
-    if (state.lang !== 'en') return details;
-    return String(details || '').split(',').map(function (tok) {
+    return String(details || '').split(/,\s*(?![^（）()]*[)）])/).map(function (tok) {
       var m = tok.trim().match(/^(.+?)x(\d+)$/); if (!m) return tok;
-      return menuEnName(m[1].trim()) + 'x' + m[2];
+      return localizedOrderName(m[1].trim()) + 'x' + m[2];
     }).join(', ');
   }
+  function orderDetailsText(order){if(Array.isArray(order&&order.items)&&order.items.length){return order.items.map(function(i){var n=state.lang==='en'?(i.nameEn||i.nameJa):(i.nameJa||i.nameEn),raw=String(i.item_name||i.name||'');return (/[（(][^（）()]*[)）]\s*$/.test(raw)?localizedOrderName(raw):(n||localizedOrderName(raw)))+'x'+i.qty;}).join(', ');}return transOrderDetails(order&&order.details||'');}
   function openStatus() {
     var x = t();
     $('stTitle').textContent = x.stTitle;
@@ -494,7 +502,7 @@
         var badge = served ? ('<span style="background:#dcfce7;color:#15803d;border-radius:8px;padding:2px 8px;font-size:12px;font-weight:800;">✓ ' + escHtml(x.stServed) + '</span>')
                            : ('<span style="background:#fef3c7;color:#92400e;border-radius:8px;padding:2px 8px;font-size:12px;font-weight:800;">🍳 ' + escHtml(x.stPending) + '</span>');
         html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">' +
-          '<div style="flex:1;"><div style="font-size:11px;color:var(--text-2);">🕐 ' + escHtml(o.time || '') + '</div><div>' + escHtml(transOrderDetails(o.details || '')) + '</div></div>' +
+          '<div style="flex:1;"><div style="font-size:11px;color:var(--text-2);">🕐 ' + escHtml(o.time || '') + '</div><div>' + escHtml(orderDetailsText(o)) + '</div></div>' +
           '<div style="text-align:right;white-space:nowrap;"><div>' + money(o.price || 0) + '</div>' + badge + '</div></div>';
       });
       $('stBody').innerHTML = html;
@@ -567,15 +575,17 @@
     var x = t();
     if (state.sessionEnded) { $('doneOverlay').classList.add('show'); return; }
     if (!state.table) { showErr(x.noTable); return; }
-    var items = [];
-    Object.keys(state.cart).forEach(function (n) { if (state.cart[n] > 0) items.push({ name: n, count: state.cart[n] }); });
+    var items = [], hasSample = false, hasRegular = false;
+    Object.keys(state.cart).forEach(function (n) { if (state.cart[n] > 0) { items.push({ name: n, count: state.cart[n] }); if(isSampleMenuItem(menuItem(n)))hasSample=true;else hasRegular=true; } });
     state.optLines.forEach(function (l) {
-      if (l.qty > 0) items.push({ name: l.base + (l.label ? ' (' + l.label + ')' : ''), count: l.qty });
+      if (l.qty > 0) { items.push({ name: l.base + (l.label ? ' (' + l.label + ')' : ''), count: l.qty, optionSelections:l.optionSelections||[] }); if(isSampleMenuItem(menuItem(l.base)))hasSample=true;else hasRegular=true; }
     });
     if (!items.length) { showErr(x.empty); return; }
+    if (hasSample && hasRegular) { showErr(x.sampleMix); return; }
+    if (hasSample) { state.coupon=null; state.usePoints=false; updateCouponBtn(); }
     var b = breakdown();
-    var order = { tableNumber: state.table, items: items, totalPrice: b.total, phone: (state.member ? state.member.phone : ''), pointsUsed: (state.usePoints ? b.pointsUsed : 0),
-      coupon: (state.coupon ? state.coupon.code : ''), couponDiscount: (b.couponDiscount || 0) };
+    var order = { tableNumber: state.table, items: items, totalPrice: b.total, phone: (!hasSample && state.member ? state.member.phone : ''), pointsUsed: (!hasSample && state.usePoints ? b.pointsUsed : 0),
+      coupon: (!hasSample && state.coupon ? state.coupon.code : ''), couponDiscount: (!hasSample ? (b.couponDiscount || 0) : 0) };
     UIConfirm(x.confirm).then(function (ok) {
       if (!ok) return;
       doSubmit(order, false);
@@ -587,11 +597,11 @@
     var x = t();
     order.paid = !!paid;
     var btn = $('sendBtn'); btn.disabled = true;
-    API.submitOrder(order).then(function (result) {
+    API.submitOrder(order, state.staffMode ? staffAuthToken() : '').then(function (result) {
       // サーバ拒否（例: テーブル未選択/不正）はカートを消さずにエラー表示
       if (typeof result === 'string' && result.indexOf('rejected:') === 0) {
         var reason = result.slice(9);
-        showErr(x.errTitle + ': ' + (reason === 'Invalid table' ? x.noTable : reason));
+        showErr(x.errTitle + ': ' + (reason === 'Invalid table' ? x.noTable : API.userErrorText(reason)));
         return;
       }
       var earnedTxt = '';
@@ -607,7 +617,7 @@
       var msg   = (result === 'queued' ? x.queuedMsg   : (paid ? x.paidMsg   : x.okMsg)) + earnedTxt;
       showOk(title, msg, result === 'queued' ? '📥' : (paid ? '💳' : '✅'));
       refreshPending();
-    }).catch(function (err) { showErr(String(err && err.message || err)); })
+    }).catch(function (err) { showErr(API.userErrorText(err)); })
       .then(function () { btn.disabled = false; });
   }
 
@@ -645,15 +655,41 @@
     API.pendingCount().then(function (n) {
       var pill = $('pendingPill');
       if (n > 0) { pill.textContent = n; pill.classList.add('show'); } else { pill.classList.remove('show'); }
+      if (!navigator.onLine) renderOrderNetwork('offline', n);
+      else if (!_orderSyncing && n > 0) renderOrderNetwork('pending', n);
+      else if (!_orderSyncing) renderOrderNetwork('online', 0);
     }).catch(function () {});
+  }
+  var _orderSyncing = false;
+  function renderOrderNetwork(mode, count) {
+    var b = $('offlineBanner'), tx = $('offlineText');
+    if (!b || !tx) return;
+    document.body.classList.toggle('offline', mode === 'offline');
+    document.body.classList.toggle('order-syncing', mode === 'syncing');
+    document.body.classList.toggle('order-pending', mode === 'pending');
+    if (mode === 'offline') tx.textContent = t().offline + (count > 0 ? '\n' + (state.lang === 'ja' ? '未同期注文 ' + count + '件' : count + ' queued order(s)') : '');
+    else if (mode === 'syncing') tx.textContent = t().syncing + (count > 0 ? '\n' + (state.lang === 'ja' ? '未同期注文 ' + count + '件' : count + ' queued order(s)') : '');
+    else if (mode === 'pending') tx.textContent = t().pending + (count > 0 ? '\n' + (state.lang === 'ja' ? '未同期注文 ' + count + '件' : count + ' queued order(s)') : '');
+    else tx.textContent = t().offline;
+  }
+  function syncQueuedOrders() {
+    if (!navigator.onLine) { refreshPending(); return Promise.resolve(); }
+    return API.pendingCount().then(function (n) {
+      if (!n) { renderOrderNetwork('online', 0); return { remaining:0 }; }
+      _orderSyncing = true; renderOrderNetwork('syncing', n);
+      return API.flush().then(function (r) { return r; }).finally(function () {
+        _orderSyncing = false;
+        refreshPending();
+      });
+    }).catch(function () { _orderSyncing = false; refreshPending(); });
   }
 
   // テーブル未指定（QR無しアクセス）時に手動選択を促す
   // 席ラベルを言語に合わせて表示（値自体は「テーブルN/カウンターM」のまま保存）
   function seatLabel(v) {
     var x = t(), s = String(v), cfg = state.settings || {}, en = state.lang === 'en';
-    var tableTerm = (en ? cfg.tableLabelEn : cfg.tableLabelJa) || x.table || (en ? 'Table' : 'テーブル');
-    var counterTerm = (en ? cfg.counterLabelEn : cfg.counterLabelJa) || x.counter || (en ? 'Counter' : 'カウンター');
+    var tableTerm = (en ? (cfg.tableLabelEn||cfg.tableLabelJa) : (cfg.tableLabelJa||cfg.tableLabelEn)) || x.table || (en ? 'Table' : 'テーブル');
+    var counterTerm = (en ? (cfg.counterLabelEn||cfg.counterLabelJa) : (cfg.counterLabelJa||cfg.counterLabelEn)) || x.counter || (en ? 'Counter' : 'カウンター');
     var m = s.match(/^テーブル(\d+)$/) || s.match(/^(\d+)$/); if (m) return tableTerm + ' ' + m[1];
     var c = s.match(/^カウンター(\d+)$/); if (c) return counterTerm + ' ' + c[1];
     return s;
@@ -678,7 +714,7 @@
     var n = parseInt((state.settings || {}).partySizeMax, 10);
     return Number.isFinite(n) && n >= 1 ? Math.min(100, n) : 20;
   }
-  function seatGroupLabel(){ var cfg=state.settings||{},en=state.lang==='en'; return (en?cfg.seatGroupLabelEn:cfg.seatGroupLabelJa)||(en?'Seating':'席'); }
+  function seatGroupLabel(){ var cfg=state.settings||{},en=state.lang==='en'; return (en?(cfg.seatGroupLabelEn||cfg.seatGroupLabelJa):(cfg.seatGroupLabelJa||cfg.seatGroupLabelEn))||(en?'Seating':'席'); }
   function _feeSettingEnabled(enabledKey, amountKey) {
     var s = state.settings || {};
     if (Object.prototype.hasOwnProperty.call(s, enabledKey)) return s[enabledKey] === true || s[enabledKey] === 1 || s[enabledKey] === '1' || s[enabledKey] === 'on' || s[enabledKey] === 'true';
@@ -792,7 +828,8 @@
       var d = r.data || {};
       var msg = $('memBdayMsg');
       if (d.error) { msg.style.color = '#b91c1c'; msg.textContent = x.bdayBad; return; }
-      state.member.birthday = bd; msg.style.color = '#15803d'; msg.textContent = x.bdaySaved;
+      // A public phone submission cannot prove ownership or confirm an existing update.
+      msg.style.color = '#15803d'; msg.textContent = x.bdaySaved;
     }).catch(function () {}).then(function () { $('memBdaySave').disabled = false; });
   }
   function lookupMember() {
@@ -889,7 +926,7 @@
     state.menu = (r.menu || []);
     if (state.settings.loyaltyEnabled === 'on' || state.settings.loyaltyEnabled === true || state.settings.loyaltyEnabled === 'true') $('memberBtn').style.display = '';
     var cats = [], catLabels = {};
-    state.menu.forEach(function (it) { var c = it['カテゴリ']; if (c && cats.indexOf(c) === -1) cats.push(c); if (c && it['カテゴリ_EN'] && !catLabels[c]) catLabels[c] = it['カテゴリ_EN']; });
+    state.menu.forEach(function (it) { var c = it['カテゴリ']; if (c && cats.indexOf(c) === -1) cats.push(c); if(c){ var pair=catLabels[c]||(catLabels[c]={ja:'',en:''});if(!pair.ja)pair.ja=String(it['カテゴリ_JA']||'').trim();if(!pair.en)pair.en=String(it['カテゴリ_EN']||'').trim();} });
     state.cats = cats; state.catLabels = catLabels;
     applyAccent();
     var _bid = state.settings.menuTopImageId;
@@ -915,7 +952,7 @@
     state.table = qs('table');
     var tableToken = qs('t');
     var hasStaffSession = false;
-    try { hasStaffSession = !!localStorage.getItem(window.APP_CONFIG.AUTH_STORAGE_PREFIX + 'mgmtToken'); } catch (e) {}
+    try { hasStaffSession = !!staffAuthToken(); } catch (e) {}
     // QR経由（URLに?table=あり）で来た客のセッションは卓番号を固定。
     // QR無し（管理メニュー「オーダー入力」から店員がその場で口頭注文を入力する運用）は
     // staffModeとして扱い、卓の選び直しを許可し、会計後ロック（ありがとうございました画面）も対象外にする。
@@ -956,13 +993,13 @@
       s.addEventListener('click', function () { fbRating = Number(s.getAttribute('data-v')); paintStars(fbRating); });
     });
 
-    window.addEventListener('online', function () { document.body.classList.remove('offline'); API.flush().then(refreshPending); });
-    window.addEventListener('offline', function () { document.body.classList.add('offline'); });
-    if (!navigator.onLine) document.body.classList.add('offline');
+    window.addEventListener('online', function () { syncQueuedOrders(); });
+    window.addEventListener('offline', function () { refreshPending(); });
+    if (!navigator.onLine) refreshPending();
     // 定期再送＋タブ復帰時の再送（online イベントが発火しない環境の保険）
-    setInterval(function () { if (navigator.onLine) API.flush().then(refreshPending); }, 20000);
+    setInterval(function () { if (navigator.onLine) syncQueuedOrders(); }, 20000);
     document.addEventListener('visibilitychange', function () {
-      if (!document.hidden && navigator.onLine) { API.flush().then(refreshPending); checkSessionLock(); }
+      if (!document.hidden && navigator.onLine) { syncQueuedOrders(); checkSessionLock(); }
     });
     var _resizeT = null;
     window.addEventListener('resize', function () { clearTimeout(_resizeT); _resizeT = setTimeout(updateStickyOffsets, 150); });
@@ -974,19 +1011,20 @@
     // ヘッダの現在日時表示
     startClock();
 
-    API.post('bootstrap', {}).then(function (r) {
+    API.post('bootstrap', state.staffMode ? { token: staffAuthToken() } : {}).then(function (r) {
       try { localStorage.setItem((window.APP_CONFIG.STORAGE_PREFIX || '') + 'bootCache', JSON.stringify({ settings: r.settings, menu: r.menu, tables: r.tables })); } catch (e) {}
       applyBootstrap(r, false);
-      API.flush().then(refreshPending); // オンライン起動時に保留分を流す
+      syncQueuedOrders(); // オンライン起動時に保留分を流す
     }).catch(function (err) {
       var cached = null;
       try { cached = JSON.parse(localStorage.getItem((window.APP_CONFIG.STORAGE_PREFIX || '') + 'bootCache') || 'null'); } catch (e) {}
       if (cached && cached.menu) {
+        if (!state.staffMode) cached.menu = cached.menu.filter(function(it){ return !isSampleMenuItem(it); });
         document.body.classList.add('offline'); // キャッシュ表示中＝実質オフライン
         applyBootstrap(cached, true);            // 保存済みメニューで注文可能（送信はキューへ）
       } else {
         renderTexts();
-        $('menuArea').innerHTML = '<div class="loading" style="color:var(--red)">' + escHtml(t().errTitle + ': ' + (err && err.message || err)) + '</div>';
+        $('menuArea').innerHTML = '<div class="loading" style="color:var(--red)">' + escHtml(t().errTitle + ': ' + API.userErrorText(err)) + '</div>';
       }
       refreshPending();
     });

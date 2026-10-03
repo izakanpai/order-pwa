@@ -10,6 +10,7 @@
 
   <link rel="manifest" href="./expenses.webmanifest">
   <title>Expenses</title>
+  <link rel="stylesheet" href="./date-controls.css?v=2">
   <style>
     :root{ --bg:#f6f7f9; --surface:#fff; --border:#e5e7eb; --navy:#0f172a; --text-3:#64748b; --red:#c62828; }
     *{ box-sizing:border-box; }
@@ -36,7 +37,7 @@
     .alert{ margin-top:10px; display:none; padding:11px; border-radius:9px; font-size:14px; font-weight:700; }
     .muted{ color:var(--text-3); font-size:12px; }
     .expense-date-shell{ position:relative; width:100%; min-width:0; height:44px; padding-right:8px; overflow:visible; border-radius:9px; box-sizing:border-box; }
-    .expense-date-shell .fc{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:100%!important; max-width:100%!important; height:100%!important; margin:0; overflow:visible; }
+    .expense-date-shell .fc{ display:block; inline-size:100%!important; width:100%!important; min-inline-size:0!important; min-width:0!important; max-inline-size:100%!important; max-width:100%!important; margin:0; overflow:visible; }
     .expense-table-wrap{ overflow:auto; }
     #expenseCards{ display:none; }
     .expense-card-row{ border:1px solid var(--border); border-radius:12px; padding:11px; background:#fff; }
@@ -48,7 +49,14 @@
     .expense-card-meta{ margin-top:8px; display:grid; gap:5px; font-size:12px; color:#475569; }
     .expense-card-meta strong{ color:var(--navy); }
     .expense-card-receipt{ display:flex; align-items:center; gap:8px; }
+    button.expense-card-receipt{ border:0; padding:0; background:transparent; color:#2563eb; font:inherit; cursor:pointer; text-decoration:underline; text-align:left; }
     .expense-card-receipt img{ width:48px; height:48px; object-fit:cover; border-radius:7px; border:1px solid var(--border); }
+    .receipt-thumb-btn{ border:0; padding:0; background:transparent; cursor:pointer; }
+    .receipt-modal{ position:fixed; inset:0; z-index:10000; display:none; align-items:center; justify-content:center; padding:18px; background:rgba(2,6,23,.88); }
+    .receipt-modal.show{ display:flex; }
+    .receipt-modal-panel{ position:relative; width:min(96vw,900px); height:min(88vh,1000px); display:flex; align-items:center; justify-content:center; }
+    .receipt-modal-img{ max-width:100%; max-height:100%; object-fit:contain; border-radius:10px; background:#fff; box-shadow:0 14px 40px rgba(0,0,0,.45); }
+    .receipt-modal-close{ position:absolute; top:-8px; right:-4px; width:44px; height:44px; border:0; border-radius:999px; background:#fff; color:#0f172a; font-size:28px; line-height:1; font-weight:900; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.3); }
     .expense-card-actions{ display:flex; gap:8px; margin-top:10px; }
     .expense-card-actions .btn-sm{ flex:1 1 0; }
     .expense-empty{ padding:20px 8px; text-align:center; color:#94a3b8; font-size:13px; }
@@ -73,6 +81,9 @@
       .expense-table-wrap{ display:none; }
       #expenseCards{ display:grid; gap:9px; }
       .bar{ align-items:center; flex-wrap:nowrap; }
+    }
+    @media (max-width:390px){
+      .expense-grid{ grid-template-columns:1fr 1fr; gap:8px 12px; }
     }
   </style>
 </head>
@@ -122,6 +133,12 @@
       <div id="expenseCards"><div class="expense-empty" data-t="loading">読み込み中…</div></div>
     </div>
   </div>
+  <div id="receiptModal" class="receipt-modal" role="dialog" aria-modal="true" aria-hidden="true" onclick="if(event.target===this) closeReceipt()">
+    <div class="receipt-modal-panel">
+      <button type="button" class="receipt-modal-close" onclick="closeReceipt()" aria-label="Close">×</button>
+      <img id="receiptModalImg" class="receipt-modal-img" alt="">
+    </div>
+  </div>
 
   <script src="./config.js?v=auth2"></script>
   <script src="./api.js?v=auth2"></script>
@@ -139,8 +156,24 @@
     function receiptThumb(e){
       if(!e.receiptImageUrl) return '';
       var u=esc(e.receiptImageUrl);
-      return '<a href="'+u+'" target="_blank" rel="noopener" class="expense-card-receipt"><img src="'+u+'" alt=""><span>'+I18n.t('viewReceipt')+'</span></a>';
+      return '<button type="button" class="expense-card-receipt" data-receipt-url="'+u+'" onclick="openReceipt(this.dataset.receiptUrl)"><img src="'+u+'" alt=""><span>'+I18n.t('viewReceipt')+'</span></button>';
     }
+    window.openReceipt = function(url){
+      if(!url) return;
+      var modal=document.getElementById('receiptModal'), img=document.getElementById('receiptModalImg');
+      img.src=url;
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden','false');
+      document.body.style.overflow='hidden';
+    };
+    window.closeReceipt = function(){
+      var modal=document.getElementById('receiptModal'), img=document.getElementById('receiptModalImg');
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden','true');
+      img.removeAttribute('src');
+      document.body.style.overflow='';
+    };
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeReceipt(); });
     function renderCards(list){
       var box=document.getElementById('expenseCards');
       if(!list.length){ box.innerHTML='<div class="expense-empty">'+I18n.t('empty')+'</div>'; return; }
@@ -164,7 +197,7 @@
       renderCards(list);
       if(!list.length){ document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#aaa;padding:16px;text-align:center;">'+I18n.t('empty')+'</td></tr>'; return; }
       document.getElementById('rows').innerHTML = list.map(function(e){
-        var receiptCell = e.receiptImageUrl ? ('<a href="'+esc(e.receiptImageUrl)+'" target="_blank" rel="noopener"><img src="'+esc(e.receiptImageUrl)+'" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"></a>') : '';
+        var receiptCell = e.receiptImageUrl ? ('<button type="button" class="receipt-thumb-btn" data-receipt-url="'+esc(e.receiptImageUrl)+'" onclick="openReceipt(this.dataset.receiptUrl)"><img src="'+esc(e.receiptImageUrl)+'" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"></button>') : '';
         return '<tr><td>'+esc(e.date)+'</td><td>'+esc(catLabel(e.category))+'</td><td>'+esc(e.item)+'</td>'+
           '<td class="num">'+SYM+(Number(e.amount)||0).toLocaleString()+'</td><td>'+esc(e.purchaser||'')+'</td>'+
           '<td>'+receiptCell+'</td><td class="muted" style="white-space:normal;max-width:180px;">'+esc(e.memo||'')+'</td>'+
@@ -200,19 +233,12 @@
         if(!ok) return;
         rpc('deleteExpense',[id]).then(function(r){
           if (r && r.success) { ALL = ALL.filter(function(e){ return e.id!==id; }); render(); }
-          else { msg(I18n.t('errPrefix')+((r&&r.error)||'delete_failed'), false); }
-        }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
+          else { msg(I18n.t('errPrefix')+API.userErrorText((r&&r.error)||'delete_failed'), false); }
+        }).catch(function(e){ msg(I18n.t('errPrefix')+API.userErrorText(e), false); });
       });
     };
     // Receipt images from iPhone can be HEIC or several MB. Convert to a compact JPEG when possible.
-    function fileToBase64(file){
-      return new Promise(function(resolve,reject){
-        var reader = new FileReader();
-        reader.onload = function(){ resolve(String(reader.result).split(',')[1]||''); };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
+    function fileToBase64(file){ return API.fileToBase64(file); }
     function receiptMime(file){
       var type=String((file&&file.type)||'').toLowerCase();
       if(type) return type;
@@ -288,7 +314,7 @@
         if(r.row){ var idx=ALL.findIndex(function(e){return e.id===r.row.id;}); if(idx>=0) ALL[idx]=r.row; else ALL.push(r.row); refresh=Promise.resolve(); }
         else{ refresh=rpc('getExpenses',[]).then(function(l){ALL=l||[];}); }
         return refresh.then(function(){ render(); msg(I18n.t('saved'), true); clearForm(); btn.disabled=false; });
-      }).catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
+      }).catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+API.userErrorText(e), false); });
     };
 
     API.initStoreDateInputs([{id:'eDate',kind:'date'},{id:'month',kind:'month'}], function(){ if(__loaded) render(); });
@@ -297,7 +323,7 @@
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; render(); }).catch(function(){});
     var __loaded=false;
     rpc('getExpenses',[]).then(function(l){ ALL=l||[]; __loaded=true; render(); })
-      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</td></tr>'; });
 
     I18n.init({
       ja:{ title:'💰 経費一覧', back:'← 管理へ', addTitle:'➕ 経費を登録', lblDate:'日付', lblCat:'カテゴリ', lblItem:'品目 / 内容', phItem:'過去の品目から選択 or 入力', lblAmount:'金額', lblPurchaser:'購入者', lblReceipt:'レシート画像', chooseFile:'ファイルを選択', noFileChosen:'選択されていません', lblMemo:'メモ（任意）', lblMemoShort:'メモ', add:'💾 登録', month:'対象月', monthTotal:'月合計', thDate:'日付', thCat:'カテゴリ', thItem:'品目', thAmount:'金額', thPurchaser:'購入者', thReceipt:'レシート', thMemo:'メモ', loading:'読み込み中…', empty:'この月の経費はありません', edit:'編集', del:'削除', delConfirm:'この経費を削除しますか？', saved:'✅ 登録しました', needDate:'日付を入力してください', needAmount:'金額を入力してください', viewReceipt:'レシートを見る', noReceipt:'なし', noItem:'（品目なし）', receiptTooLarge:'レシート画像が大きすぎます。別の写真を選んでください', receiptUnsupported:'この画像形式は保存できません', receiptInvalid:'レシート画像を読み取れませんでした', receiptStorageError:'画像保存先に接続できません', receiptUploadFailed:'レシート画像の保存に失敗しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ', c_rent:'賃料', c_elec:'電気代', c_water:'水道代', c_goods:'商品仕入', c_supply:'備品購入', c_other:'その他' },
@@ -315,7 +341,7 @@
         { ja: '② 購入者名やレシート画像（写真）も一緒に登録できます。品目欄は過去に入力した品目の候補から選ぶこともできます。', en: '② You can also record the purchaser and a receipt photo. The item field suggests past entries you can pick from.' },
         { ja: '③ 「対象月」を切り替えると、その月に登録された経費の一覧と月合計金額が表示されます。', en: '③ Switch the "Target month" to see the list of expenses recorded that month and the month total.' },
         { ja: '④ 一覧の各行の「編集」ボタンで内容を修正でき、「削除」ボタンでその経費を削除できます（削除は確認ダイアログあり）。', en: '④ Use the "Edit" button on any row to update it, or "Delete" to remove that expense (a confirmation dialog appears first).' },
-        { ja: '⑤ レシート画像が登録されている行では小さな画像が表示され、クリックすると別タブで拡大表示されます。', en: '⑤ Rows with a receipt image show a thumbnail — click it to open the full image in a new tab.' }
+        { ja: '⑤ レシート画像が登録されている行では小さな画像が表示され、タップするとこの画面内で拡大表示されます。', en: '⑤ Rows with a receipt image show a thumbnail — tap it to view the full image inside this screen.' }
       ]
     });
   </script>

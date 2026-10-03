@@ -9,6 +9,7 @@
     if(!token){show('msg',en()?'This link is missing a verification token.':'このリンクには確認トークンが含まれていません。',false);document.getElementById('resend').classList.remove('hidden');return;}
     try{
       var result=await post({action:'verifyEmailAddress',token:token});
+      if(window.PublicLegal&&!window.PublicLegal.requested()&&result.data&&result.data.locale)window.PublicLegal.apply(result.data.locale);
       if(!result.data||!result.data.success)throw new Error((result.data&&result.data.error)||'verify_failed');
       show('msg',en()?'Your email address is confirmed. You can now log in.':'メールアドレスの確認が完了しました。ログインできます。',true);
     }catch(e){

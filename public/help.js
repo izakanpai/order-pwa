@@ -32,7 +32,8 @@
       var saved = localStorage.getItem('lang') || localStorage.getItem('izlang');
       if (saved) return saved;
     } catch (e) {}
-    return (navigator.language || '').toLowerCase().indexOf('ja') === 0 ? 'ja' : 'ja';
+    var first=(navigator.languages&&navigator.languages.length)?navigator.languages[0]:navigator.language;
+    return String(first||'').toLowerCase().indexOf('ja') === 0 ? 'ja' : 'en';
   }
 
   function injectStyles() {

@@ -59,7 +59,10 @@
   function currentLang() {
     try {
       if (window.I18n && typeof window.I18n.lang === 'function') return window.I18n.lang();
-      return localStorage.getItem('lang') === 'ja' ? 'ja' : 'en';
+      var saved=localStorage.getItem('lang');
+      if(saved==='ja'||saved==='en') return saved;
+      var first=(navigator.languages&&navigator.languages.length)?navigator.languages[0]:navigator.language;
+      return String(first||'').toLowerCase().indexOf('ja')===0?'ja':'en';
     } catch (e) { return 'en'; }
   }
 
@@ -242,7 +245,7 @@
       '.iz-header-user{max-width:180px;overflow:hidden;text-overflow:ellipsis}' +
       '.iz-header-btn{border:0;border-radius:8px;background:rgba(255,255,255,.15);color:#fff;padding:8px 10px;min-height:34px;font:800 12px/1.2 inherit;cursor:pointer;white-space:nowrap}' +
       '.iz-header-btn:hover{background:rgba(255,255,255,.25)}' +
-      'input[type="month"],input[type="date"],input[type="time"]{display:block!important;inline-size:100%!important;width:100%!important;min-inline-size:0!important;min-width:0!important;max-inline-size:100%!important;max-width:100%!important;box-sizing:border-box!important;overflow:visible!important}input[type="month"]::-webkit-date-and-time-value,input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date-and-time-value{min-width:0!important;text-align:left!important}[data-guide-anchor]{scroll-margin-top:64px}' +
+      'input[type="month"],input[type="time"]{display:block!important;inline-size:100%!important;width:100%!important;min-inline-size:0!important;min-width:0!important;max-inline-size:100%!important;max-width:100%!important;box-sizing:border-box!important;overflow:visible!important}input[type="month"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date-and-time-value{min-width:0!important;text-align:left!important}[data-guide-anchor]{scroll-margin-top:64px}' +
       '#izHeaderExtra{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex:0 1 auto;min-width:0;flex-wrap:nowrap;padding:0;background:transparent;border:0}' +
       '#izHeaderExtra[hidden]{display:none}' +
       '#izHeaderExtra a,#izHeaderExtra button{margin:0!important}' +
@@ -266,6 +269,7 @@
       var timeout = setTimeout(function () { ctrl.abort(); }, 4500);
       var body = { action: action };
       if (session.loggedIn) body.token = session.token;
+      if (CFG.STORE_ID) body.storeId = CFG.STORE_ID;
       request = fetch(CFG.API_URL + '?api=1', {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(body), redirect: 'follow', signal: ctrl.signal,

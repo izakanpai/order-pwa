@@ -81,7 +81,7 @@
           chain = chain.then(function(){
             return rpc('exportSheetData', [name]).then(function(d){
               d = d || {};
-              if (d.error) { zip.file(name + '.csv', '# error: ' + d.error); return; }
+              if (d.error) { zip.file(name + '.csv', '# error: ' + API.userErrorText(d.error)); return; }
               zip.file(name + '.csv', '﻿' + toCsv(d.rows));
             });
           });
@@ -95,7 +95,7 @@
         a.href = url; a.download = fname; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
         alertBox('bkMsg', I18n.t('bkDone') + ' ' + esc(fname), true);
       }).catch(function(e){
-        alertBox('bkMsg', I18n.t('errPrefix') + (e.message || e), false);
+        alertBox('bkMsg', I18n.t('errPrefix') + API.userErrorText(e), false);
       }).finally(function(){
         btn.disabled = false; btn.textContent = origTxt;
       });
@@ -103,12 +103,12 @@
     window.exportCsv = function(){
       var name=document.getElementById('sheetSel').value; if(!name) return;
       rpc('exportSheetData',[name]).then(function(d){ d=d||{};
-        if(d.error){ alertBox('csvMsg', I18n.t('errPrefix')+d.error, false); return; }
+        if(d.error){ alertBox('csvMsg', I18n.t('errPrefix')+API.userErrorText(d.error), false); return; }
         var blob=new Blob(['﻿'+toCsv(d.rows)], {type:'text/csv;charset=utf-8;'});
         var url=URL.createObjectURL(blob); var a=document.createElement('a');
         a.href=url; a.download=name+'.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
         alertBox('csvMsg', I18n.t('csvDone')+' '+esc(name)+'.csv', true);
-      }).catch(function(e){ alertBox('csvMsg', I18n.t('errPrefix')+(e.message||e), false); });
+      }).catch(function(e){ alertBox('csvMsg', I18n.t('errPrefix')+API.userErrorText(e), false); });
     };
 
     rpc('getSheetNames',[]).then(function(names){ document.getElementById('sheetSel').innerHTML=(names||[]).map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join(''); })

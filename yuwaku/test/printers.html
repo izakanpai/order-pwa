@@ -159,7 +159,7 @@
     function rpc(fn,args){ return API.post('rpc',{fn:fn,args:args||[],token:TOKEN}).then(function(r){ return r.data; }); }
     function onErr(e){ if(String(e&&(e.message||e)).indexOf('unauthorized')>=0){ location.href='./manage.html'; } }
 
-    var currentLang = (localStorage.getItem('lang')==='en') ? 'en' : 'ja';
+    var currentLang = (function(){try{var s=localStorage.getItem('lang');if(s==='ja'||s==='en')return s;var first=(navigator.languages&&navigator.languages.length)?navigator.languages[0]:navigator.language;var d=String(first||'').toLowerCase().indexOf('ja')===0?'ja':'en';localStorage.setItem('lang',d);return d;}catch(e){return 'en';}})();
     var allPrinters = [], allCategories = [], selectedCats = [], refreshTimer = null, lastQueue = [];
 
     var i18n = {
@@ -186,6 +186,7 @@
     };
 
     function $(id){ return document.getElementById(id); }
+    function escText(v){ return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];}); }
     function toggleLang(){ currentLang=currentLang==='ja'?'en':'ja'; localStorage.setItem('lang',currentLang); updateUI(); renderCatChips(); renderPrinters(); renderQueue(lastQueue); }
 
     function updateUI(){
@@ -210,6 +211,7 @@
 
     function copyUrl(){
       var txt=$('cpUrl').innerText;
+      if(txt.indexOf('&key=')===-1) return; // Never copy a non-authenticated printer URL.
       if(navigator.clipboard){ navigator.clipboard.writeText(txt); } else { var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); }
       $('btn-copy').innerHTML='📋 '+i18n[currentLang].copied;
       setTimeout(function(){ $('btn-copy').innerHTML='📋 <span id="t-copy">'+i18n[currentLang].copy+'</span>'; },1500);
@@ -218,7 +220,7 @@
     function renderCatChips(){
       var box=$('catChips');
       if(!allCategories.length){ box.innerHTML='<span class="form-hint">—</span>'; return; }
-      box.innerHTML=allCategories.map(function(c){ var on=selectedCats.indexOf(c)!==-1; return '<span class="cat-chip'+(on?' on':'')+'" onclick="toggleCat(\''+c.replace(/'/g,"\\'")+'\')">'+(on?'✓ ':'')+c+'</span>'; }).join('');
+      box.innerHTML=allCategories.map(function(c){ var on=selectedCats.indexOf(c.key)!==-1,label=currentLang==='en'?(c.en||c.ja||c.key):(c.ja||c.en||c.key); return '<span class="cat-chip'+(on?' on':'')+'" onclick="toggleCat(\''+c.key.replace(/'/g,"\\'")+'\')">'+(on?'✓ ':'')+escText(label)+'</span>'; }).join('');
     }
     window.toggleCat=function(c){ var i=selectedCats.indexOf(c); if(i===-1) selectedCats.push(c); else selectedCats.splice(i,1); renderCatChips(); };
 
@@ -227,7 +229,7 @@
       var t=i18n[currentLang], el=$('prList');
       if(!allPrinters.length){ el.innerHTML='<div class="loading">'+t.noPrinters+'</div>'; return; }
       el.innerHTML=allPrinters.map(function(p){
-        var cats=p.categories&&p.categories.length?p.categories.join(', '):'ALL';
+        var cats=p.categories&&p.categories.length?p.categories.map(function(key){var c=allCategories.find(function(x){return x.key===key;});return c?(currentLang==='en'?(c.en||c.ja||c.key):(c.ja||c.en||c.key)):key;}).join(', '):'ALL';
         return '<div class="pr-row"'+(p.enabled?'':' style="opacity:.5;"')+'>'+
           '<div style="flex:1;min-width:120px;"><span class="nm">'+p.name+'</span> <span class="mac">'+(p.mac||'-')+'</span><br><span class="form-hint">'+cats+'</span></div>'+
           '<button class="btn btn-outline btn-xs" onclick=\'editPr('+JSON.stringify(p).replace(/'/g,"&#39;")+')\'>'+t.edit+'</button>'+
@@ -244,7 +246,7 @@
       var p={ id:$('prId').value, name:name, mac:$('prMac').value.trim(), categories:selectedCats.slice(), enabled:$('prEnabled').checked };
       $('btn-pr-save').disabled=true;
       rpc('savePrinter',[p]).then(function(){ $('btn-pr-save').disabled=false; msg.innerText=t.saved; msg.className='alert alert-success'; msg.style.display='block'; clearPrForm(); loadPrinters(); })
-        .catch(function(e){ $('btn-pr-save').disabled=false; onErr(e); msg.innerText=t.err+': '+(e.message||e); msg.className='alert alert-error'; msg.style.display='block'; });
+        .catch(function(e){ $('btn-pr-save').disabled=false; onErr(e); msg.innerText=t.err+': '+API.userErrorText(e); msg.className='alert alert-error'; msg.style.display='block'; });
     };
     window.delPr=function(id){ UIConfirm(i18n[currentLang].delConfirm).then(function(ok){ if(!ok) return; rpc('deletePrinter',[id]).then(loadPrinters).catch(onErr); }); };
     window.testPr=function(id){ rpc('testPrint',[id]).then(function(){ toast(i18n[currentLang].testDone); refreshQueue(); }).catch(onErr); };
@@ -261,7 +263,7 @@
       rows.forEach(function(r){
         var canRe=(r.status==='失敗'||r.status==='未印刷'||r.status==='印刷中');
         html+='<tr><td>'+r.created+'</td><td>'+r.printerName+'</td><td>'+r.table+'</td>'+
-          '<td><span class="st-badge '+(STCLASS[r.status]||'')+'">'+r.status+'</span>'+(r.error?' <span class="form-hint">'+r.error+'</span>':'')+'</td>'+
+          '<td><span class="st-badge '+(STCLASS[r.status]||'')+'">'+r.status+'</span>'+(r.error?' <span class="form-hint">'+escText(API.userErrorText(r.error))+'</span>':'')+'</td>'+
           '<td>'+r.attempts+'</td>'+
           '<td>'+(canRe?'<button class="btn btn-outline btn-xs" onclick="reJob(\''+r.id+'\')">'+t.reprint+'</button>':'')+'</td></tr>';
       });
@@ -277,10 +279,19 @@
     updateUI();
     (function(){
       var base=(window.APP_CONFIG&&window.APP_CONFIG.API_URL)||'', storeId=(API.currentStoreId&&API.currentStoreId())||'';
-      $('cpUrl').innerText = base && storeId ? base + '?cp=1&store=' + encodeURIComponent(storeId) : '—';
+      $('cpUrl').innerText = '\u2014';
+      if (base && storeId) {
+        // Do not expose the public URL before a permission-checked printer RPC
+        // supplies its own secret (independent of the Bluetooth bridgeKey).
+        rpc('getOrCreateCloudPrntKey', []).then(function(result){
+          var key = String(result && result.key || '');
+          if (!/^[a-f0-9]{48}$/.test(key)) throw new Error('cloudprnt_key_unavailable');
+          $('cpUrl').innerText = base + '?cp=1&store=' + encodeURIComponent(storeId) + '&key=' + encodeURIComponent(key);
+        }).catch(function(){ $('cpUrl').innerText = '\u2014'; });
+      }
     })();
     rpc('getSettings',[]).then(function(s){ $('enableToggle').checked=(s && String(s.printEnabled)==='true'); $('receiptToggle').checked=(s && String(s.receiptPrintEnabled)==='true'); if($('printLangSel')) $('printLangSel').value=(s && s.printLang) || 'ja'; updateEnableState(); }).catch(onErr);
-    rpc('getAllMenuForAdmin',[]).then(function(items){ var set={}; (items||[]).forEach(function(i){ if(i['カテゴリ']) set[i['カテゴリ']]=1; }); allCategories=Object.keys(set); renderCatChips(); }).catch(onErr);
+    rpc('getAllMenuForAdmin',[]).then(function(items){ var set={}; (items||[]).forEach(function(i){ var key=i['カテゴリ']; if(key&&!set[key])set[key]={key:key,ja:(i['カテゴリ_JA']!==undefined?i['カテゴリ_JA']:key),en:i['カテゴリ_EN']||''}; }); allCategories=Object.keys(set).map(function(k){return set[k];}); renderCatChips(); }).catch(onErr);
     loadPrinters();
     refreshQueue();
     refreshTimer=setInterval(refreshQueue, 8000);

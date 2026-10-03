@@ -54,18 +54,18 @@
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     // 言語切替の一元ヘルパー（新しい選択肢・候補リストを追加する際は必ずこれを通すこと）
     function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
-    function loc(ja, en){ ja = ja||''; en = (en||'').trim(); return isEN() ? (en || ja) : ja; }
+    function loc(ja, en){ ja=(ja||'').trim(); en=(en||'').trim(); return isEN() ? (en || ja) : (ja || en); }
     window.rows = []; var MATERIALS = [], MENUS = [];
 
-    // list: [{ja:'...', en:'...'}, ...]。value（送信値・バックエンド照合キー）は常に日本語、表示テキストのみ現在の言語に合わせる。
-    function opts(list, sel){ return '<option value=""></option>' + (list||[]).map(function(n){ return '<option value="'+esc(n.ja)+'"'+(n.ja===sel?' selected':'')+'>'+esc(loc(n.ja, n.en))+'</option>'; }).join(''); }
+    // value（送信値・バックエンド照合キー）はcanonical名、表示テキストのみ現在の言語に合わせる。
+    function opts(list, sel){ return '<option value=""></option>' + (list||[]).map(function(n){ return '<option value="'+esc(n.key)+'"'+(n.key===sel?' selected':'')+'>'+esc(loc(n.ja, n.en))+'</option>'; }).join(''); }
     function render(){
       var html = '';
       window.rows.forEach(function(r,i){
         html += '<tr>'+
-          '<td><select onchange="window.rows['+i+'].menu=this.value">'+opts(MENUS, r.menu)+'</select></td>'+
-          '<td><select onchange="window.rows['+i+'].material=this.value">'+opts(MATERIALS, r.material)+'</select></td>'+
-          '<td><input type="number" min="0" step="any" value="'+(r.qty||'')+'" oninput="window.rows['+i+'].qty=Number(this.value)||0"></td>'+
+          '<td><select required aria-required="true" data-recipe-row="'+i+'" data-recipe-field="menu" onchange="window.rows['+i+'].menu=this.value">'+opts(MENUS, r.menu)+'</select></td>'+
+          '<td><select required aria-required="true" data-recipe-row="'+i+'" data-recipe-field="material" onchange="window.rows['+i+'].material=this.value">'+opts(MATERIALS, r.material)+'</select></td>'+
+          '<td><input required aria-required="true" data-recipe-row="'+i+'" data-recipe-field="qty" type="number" min="0.000001" step="any" value="'+(r.qty||'')+'" oninput="window.rows['+i+'].qty=Number(this.value)||0"></td>'+
           '<td><button class="btn-sm" onclick="delRow('+i+')">🗑</button></td></tr>';
       });
       if (!window.rows.length) html = '<tr><td colspan="4" style="color:#aaa;padding:16px;text-align:center;">'+I18n.t('empty')+'</td></tr>';
@@ -74,23 +74,29 @@
     window.addRow = function(){ window.rows.push({ menu:'', material:'', qty:1 }); render(); };
     window.delRow = function(i){ window.rows.splice(i,1); render(); };
     window.save = function(){
-      var clean = window.rows.filter(function(r){ return r.menu && r.material; });
+      for(var i=0;i<window.rows.length;i++){
+        var r=window.rows[i], prefix=I18n.t('rowPrefix')+(i+1)+': ';
+        if(!String(r.menu||'').trim()){msg(prefix+I18n.t('needMenu'),false);var me=document.querySelector('[data-recipe-row="'+i+'"][data-recipe-field="menu"]');if(me)me.focus();return;}
+        if(!String(r.material||'').trim()){msg(prefix+I18n.t('needMaterial'),false);var ma=document.querySelector('[data-recipe-row="'+i+'"][data-recipe-field="material"]');if(ma)ma.focus();return;}
+        if(!Number.isFinite(Number(r.qty))||Number(r.qty)<=0){msg(prefix+I18n.t('needQty'),false);var qe=document.querySelector('[data-recipe-row="'+i+'"][data-recipe-field="qty"]');if(qe)qe.focus();return;}
+      }
+      var clean = window.rows.map(function(r){ return {menu:String(r.menu).trim(),material:String(r.material).trim(),qty:Number(r.qty)}; });
       var btn = document.getElementById('saveBtn'); btn.disabled=true;
       rpc('saveRecipes',[clean]).then(function(){ btn.disabled=false; msg(I18n.t('saved'), true); })
-        .catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
+        .catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+API.userErrorText(e), false); });
     };
     function msg(text, ok){ var m=document.getElementById('msg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
 
     Promise.all([ rpc('getRecipes',[]), rpc('getDrinkInventory',[]), rpc('getAllMenuForAdmin',[]) ]).then(function(res){
       window.rows = (res[0]||[]).slice();
-      MATERIALS = (res[1]||[]).map(function(m){ return { ja:m.name, en:m.nameEn }; }).filter(function(m){ return m.ja; });
-      MENUS = (res[2]||[]).map(function(m){ return { ja:m['商品名'], en:m['商品名_EN'] }; }).filter(function(m){ return m.ja; });
+      MATERIALS = (res[1]||[]).map(function(m){ return { key:m.name, ja:(m.nameJa!==undefined?m.nameJa:m.name), en:m.nameEn }; }).filter(function(m){ return m.key; });
+      MENUS = (res[2]||[]).map(function(m){ return { key:m['商品名'], ja:(m['商品名_JA']!==undefined?m['商品名_JA']:m['商品名']), en:m['商品名_EN'] }; }).filter(function(m){ return m.key; });
       __loaded = true; render();
-    }).catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="4" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+    }).catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="4" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</td></tr>'; });
 
     I18n.init({
-      ja:{ title:'📖 レシピ・原価', back:'← 管理へ', hint:'メニューが使う在庫材料と消費量を登録すると、提供時に自動減算され、売上分析で原価率が算出されます。材料は「ドリンク在庫」の登録名から選べます（例: 生ビール → ビール樽 0.33）。', thMenu:'メニュー', thMat:'材料（在庫）', thQty:'消費量', addRow:'＋ 行を追加', save:'💾 保存', loading:'読み込み中…', empty:'「＋ 行を追加」で登録してください', saved:'✅ 保存しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ' },
-      en:{ title:'📖 Recipes · Cost', back:'← Manage', hint:'Register the stock ingredients and amounts each menu item uses. Stock is auto-deducted on serving, and the cost ratio appears in sales analytics. Ingredients come from your Drink Stock names (e.g. Draft beer → Beer keg 0.33).', thMenu:'Menu', thMat:'Ingredient (stock)', thQty:'Amount', addRow:'＋ Add row', save:'💾 Save', loading:'Loading…', empty:'Tap “＋ Add row” to register', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ' }
+      ja:{ title:'📖 レシピ・原価', back:'← 管理へ', hint:'メニューが使う在庫材料と消費量を登録すると、提供時に自動減算され、売上分析で原価率が算出されます。材料は「ドリンク在庫」の登録名から選べます（例: 生ビール → ビール樽 0.33）。', thMenu:'メニュー', thMat:'材料（在庫）', thQty:'消費量', addRow:'＋ 行を追加', save:'💾 保存', loading:'読み込み中…', empty:'「＋ 行を追加」で登録してください', rowPrefix:'行 ', needMenu:'メニューを選択してください。', needMaterial:'材料を選択してください。', needQty:'消費量は0より大きい数値を入力してください。', saved:'✅ 保存しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ' },
+      en:{ title:'📖 Recipes · Cost', back:'← Manage', hint:'Register the stock ingredients and amounts each menu item uses. Stock is auto-deducted on serving, and the cost ratio appears in sales analytics. Ingredients come from your Drink Stock names (e.g. Draft beer → Beer keg 0.33).', thMenu:'Menu', thMat:'Ingredient (stock)', thQty:'Amount', addRow:'＋ Add row', save:'💾 Save', loading:'Loading…', empty:'Tap “＋ Add row” to register', rowPrefix:'Row ', needMenu:'Select a menu item.', needMaterial:'Select an ingredient.', needQty:'Enter an amount greater than 0.', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ' }
     }, function(){ if(__loaded) render(); });
   </script>
 

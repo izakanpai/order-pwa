@@ -20,13 +20,17 @@
     .wrap{ padding:16px; max-width:960px; margin:0 auto; }
     .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; }
     /* [iPhone表示対応] min-widthで表全体の最小幅を確保し、外側のoverflow:autoラッパーで横スクロールさせる。 */
-    table{ width:100%; min-width:820px; border-collapse:collapse; font-size:13px; }
+    table{ width:100%; min-width:980px; table-layout:fixed; border-collapse:collapse; font-size:13px; }
     th,td{ padding:8px 6px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; white-space:nowrap; }
     th{ font-size:11px; color:var(--text-3); white-space:nowrap; }
     .muted{ color:var(--text-3); }
+    .email-link{ color:#2563eb; text-decoration:underline; text-underline-offset:2px; overflow-wrap:anywhere; word-break:break-word; }
+    .email-cell{ width:210px; white-space:normal; }
+    .status-cell{ width:150px; min-width:150px; }
+    .status-stack{ display:flex; flex-direction:column; align-items:flex-start; gap:6px; min-width:0; }
     .st{ display:inline-block; border-radius:6px; padding:1px 7px; font-size:11px; font-weight:800; }
     .s-recv{ background:#e0e7ff; color:#3730a3; } .s-ok{ background:#dcfce7; color:#15803d; } .s-came{ background:#f1f5f9; color:#475569; } .s-cxl{ background:#fee2e2; color:#b91c1c; }
-    select.mini{ padding:5px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
+    select.mini{ width:100%; min-width:0; max-width:100%; box-sizing:border-box; padding:5px; border:1px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; }
   </style>
 </head>
 <body>
@@ -43,7 +47,7 @@
     </div>
     <div class="card">
     <div style="overflow:auto;">
-      <table><thead><tr>
+      <table><colgroup><col style="width:145px"><col style="width:54px"><col style="width:130px"><col style="width:120px"><col style="width:210px"><col style="width:74px"><col style="width:190px"><col style="width:150px"></colgroup><thead><tr>
         <th data-t="thWhen">予約日時</th><th class="num" data-t="thPeople">人数</th><th data-t="thName">氏名</th>
         <th data-t="thPhone">電話</th><th data-t="thEmail">メール</th><th data-t="thSeat">席</th><th data-t="thNotes">備考</th><th data-t="thStatus">状態</th>
       </tr></thead>
@@ -70,8 +74,8 @@
       document.getElementById('rows').innerHTML = ROWS.map(function(r){
         var opts = (NEXT[r.status]||[r.status]).map(function(s){ return '<option value="'+s+'"'+(s===r.status?' selected':'')+'>'+esc(stLabel(s))+'</option>'; }).join('');
         return '<tr><td style="white-space:nowrap;font-weight:800;">'+esc(r.datetime)+'</td><td class="num">'+r.people+'</td><td>'+esc(r.name)+'</td>'+
-          '<td class="muted">'+esc(r.phone)+'</td><td class="muted">'+esc(r.email)+'</td><td>'+esc(r.seat)+'</td><td class="muted" style="white-space:normal;max-width:200px;">'+esc(r.notes)+'</td>'+
-          '<td><span class="st '+(STCLS[r.status]||'')+'" style="margin-right:6px;">'+esc(stLabel(r.status))+'</span><select class="mini" onchange="setStatus(\''+r.id+'\',this.value)">'+opts+'</select></td></tr>';
+          '<td class="muted">'+esc(r.phone)+'</td><td class="email-cell">'+(r.email?'<a class="email-link" href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a>':'')+'</td><td>'+esc(r.seat)+'</td><td class="muted" style="white-space:normal;max-width:190px;">'+esc(r.notes)+'</td>'+
+          '<td class="status-cell"><div class="status-stack"><span class="st '+(STCLS[r.status]||'')+'">'+esc(stLabel(r.status))+'</span><select class="mini" onchange="setStatus(\''+r.id+'\',this.value)">'+opts+'</select></div></td></tr>';
       }).join('');
     }
     window.setStatus = function(id, status){ rpc('updateReservationStatus',[id,status]).then(function(){ return reload(); }).catch(function(){}); };
@@ -94,7 +98,7 @@
       } else { input.select(); document.execCommand('copy'); done(); }
     };
     rpc('getReservations',[]).then(function(l){ ROWS=l||[]; __loaded=true; render(); })
-      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('rows').innerHTML='<tr><td colspan="8" style="color:#b91c1c;padding:16px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</td></tr>'; });
 
     I18n.init({
       ja:{ title:'🗓️ 予約管理', back:'← 管理へ', reload:'↻', urlTitle:'🔗 予約フォームの共有URL', urlHint:'お客様がこのURLを開くと予約をリクエストできます。SNSやGoogleビジネスプロフィールなどに貼ってご利用ください。', urlCopy:'📋 コピー', urlCopied:'✅ コピーしました', thWhen:'予約日時', thPeople:'人数', thName:'氏名', thPhone:'電話', thEmail:'メール', thSeat:'席', thNotes:'備考', thStatus:'状態', loading:'読み込み中…', empty:'予約はありません', loadErr:'読み込みエラー: ', stRecv:'受付', stOk:'確定', stCame:'来店済', stCxl:'キャンセル' },

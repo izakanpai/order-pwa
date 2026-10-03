@@ -29,6 +29,23 @@
     var v = String(value || '');
     return /^https:\/\//i.test(v) ? v : '';
   };
+  API.userErrorText = function (error, fallback) {
+    var raw = String(error && error.message || error || '').trim();
+    var en = true;
+    try { en = !(window.I18n && typeof window.I18n.lang === 'function') || window.I18n.lang() === 'en'; } catch (_) {}
+    var generic = fallback || (en ? 'The operation could not be completed. Please try again.' : '処理を完了できませんでした。もう一度お試しください。');
+    var network = en ? 'Could not connect to the server. Please check your connection and try again.' : 'サーバーに接続できませんでした。通信状況を確認して、もう一度お試しください。';
+    var code = raw.toLowerCase();
+    if (!raw) return generic;
+    if (code === 'invalid_table_session') return en ? 'This table link is no longer valid. Please scan the QR code again.' : 'この席のリンクは無効になっています。QRコードをもう一度読み取ってください。';
+    if (code === 'invalid_store_link' || code === 'store_not_found') return en ? 'This store link is not valid.' : 'この店舗リンクは無効です。';
+    if (code === 'rate_limited') return en ? 'Too many attempts were made. Please wait a while and try again.' : '操作回数が多すぎます。しばらく待ってからもう一度お試しください。';
+    if (/^(?:http_\d+|api_error|internal_error|save_failed|request_failed)$/.test(code)) return generic;
+    if (/d1_error|sqlite|constraint|primary\s*key|foreign\s*key|sql\b|typeerror|referenceerror|syntaxerror|stack|\bat\s+[^\s]+\s*\(|failed to fetch|networkerror|aborterror|timeout/i.test(raw)) return /fetch|network|abort|timeout/i.test(raw) ? network : generic;
+    if (/[ぁ-んァ-ヶ一-龠]/.test(raw)) return raw;
+    if (/\s/.test(raw) && !/^[A-Za-z]+(?:Error|Exception)\b/.test(raw)) return raw;
+    return generic;
+  };
 
   async function fetchOnce(body, timeoutMs) {
     var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;

@@ -83,8 +83,8 @@
     <div class="card">
       <div class="card-title" data-t="supTitle">🏢 仕入先マスタ</div>
       <div class="grid">
-        <div class="fg"><label class="form-label" data-t="sName">仕入先名</label><input id="sName" class="fc"></div>
-        <div class="fg"><label class="form-label" data-t="sNameEn">英語名（任意）</label><input id="sNameEn" class="fc" data-tph="phNameEn" placeholder="e.g. ABC Trading Co."></div>
+        <div class="fg" id="fieldSupplierNameJa"><label class="form-label" data-t="sNameJa">仕入先名（日本語）</label><input id="sName" class="fc"></div>
+        <div class="fg" id="fieldSupplierNameEn"><label class="form-label" data-t="sNameEn">仕入先名（English）</label><input id="sNameEn" class="fc" data-tph="phNameEn" placeholder="e.g. ABC Trading Co."></div>
       </div>
       <div class="fg"><label class="form-label" data-t="sContact">連絡先</label><input id="sContact" class="fc" data-tph="phContact" placeholder="電話・担当など"></div>
       <div class="fg"><label class="form-label" data-t="sEmail">メールアドレス（任意・発注メール送信用）</label><input id="sEmail" type="email" class="fc" data-tph="phEmail" placeholder="order@supplier.example"></div>
@@ -124,16 +124,18 @@
     function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
     // 言語切替の一元ヘルパー（新しい表示・候補リストを追加する際は必ずこれを通すこと）
     function isEN(){ return !!(window.I18n && I18n.lang && I18n.lang()==='en'); }
-    function loc(ja, en){ ja = ja||''; en = (en||'').trim(); return isEN() ? (en || ja) : ja; }
+    function loc(ja, en){ ja=(ja||'').trim(); en=(en||'').trim(); return isEN() ? (en || ja) : (ja || en); }
+    function syncSupplierNameOrder(){var a=document.getElementById('fieldSupplierNameJa'),b=document.getElementById('fieldSupplierNameEn');if(a&&b){a.style.order=isEN()?'2':'1';b.style.order=isEN()?'1':'2';}}
     var SUPS = [], REORDER = [], SYM='₱', __loaded=false;
     var MENU_ALL_PO = [], ORDER_ITEMS_PO = [];
-    var PO_ROWS = [{ name:'', nameEn:'', qty:1, unit:'' }];
+    var PO_ROWS = [{ name:'', nameJa:'', nameEn:'', qty:1, unit:'' }];
 
     // ── 新規発注（自由入力） ──
     function poRenderRows(){
       var html = PO_ROWS.map(function(r,i){
+        var ja=(r.nameJa!==undefined?r.nameJa:r.name||''), val=loc(ja,r.nameEn), prop=isEN()?'nameEn':'nameJa';
         return '<tr>'+
-          '<td><input value="'+esc(r.name)+'" oninput="PO_ROWS['+i+'].name=this.value;PO_ROWS['+i+'].nameEn=\'\'"></td>'+
+          '<td><input value="'+esc(val)+'" oninput="PO_ROWS['+i+'].'+prop+'=this.value;PO_ROWS['+i+'].name=(PO_ROWS['+i+'].nameJa||PO_ROWS['+i+'].nameEn||\'\')"></td>'+
           '<td class="po-qty"><input type="number" min="0" step="any" value="'+(r.qty||'')+'" oninput="PO_ROWS['+i+'].qty=Number(this.value)||0"></td>'+
           '<td class="po-unit"><input value="'+esc(r.unit||'')+'" oninput="PO_ROWS['+i+'].unit=this.value"></td>'+
           '<td class="po-del"><button class="btn-sm" onclick="poDelRow('+i+')">🗑</button></td></tr>';
@@ -141,13 +143,13 @@
       if(!PO_ROWS.length) html = '<tr><td colspan="4" style="color:#aaa;padding:14px;text-align:center;">'+I18n.t('poEmpty')+'</td></tr>';
       document.getElementById('poRows').innerHTML = html;
     }
-    window.poAddRow = function(){ PO_ROWS.push({ name:'', nameEn:'', qty:1, unit:'' }); poRenderRows(); };
+    window.poAddRow = function(){ PO_ROWS.push({ name:'', nameJa:'', nameEn:'', qty:1, unit:'' }); poRenderRows(); };
     window.poDelRow = function(i){ PO_ROWS.splice(i,1); poRenderRows(); };
 
     function fillPoSupplierSel(){
       var sel = document.getElementById('poSupplier'); var cur = sel.value;
       sel.innerHTML = '<option value="">'+I18n.t('poSupplierPh')+'</option>' +
-        SUPS.map(function(s){ return '<option value="'+esc(s.name)+'">'+esc(loc(s.name, s.nameEn))+(s.email?'':(' — '+I18n.t('poNoEmailTag')))+'</option>'; }).join('');
+        SUPS.map(function(s){ return '<option value="'+esc(s.name)+'">'+esc(loc(s.nameJa!==undefined?s.nameJa:s.name, s.nameEn))+(s.email?'':(' — '+I18n.t('poNoEmailTag')))+'</option>'; }).join('');
       sel.value = cur;
       onPoSupplierChange();
     }
@@ -168,14 +170,14 @@
         document.getElementById('poPickTitle').textContent = I18n.t('poFromMenu');
         opts += MENU_ALL_PO.map(function(m){
           var nm = m['商品名']; if(!nm) return '';
-          var disp = loc(nm, m['商品名_EN']);
-          return '<option value="'+esc(nm)+'" data-unit="" data-nameen="'+esc(m['商品名_EN']||'')+'">'+esc(disp)+'</option>';
+          var ja=m['商品名_JA']!==undefined?m['商品名_JA']:nm, en=m['商品名_EN']||'', disp=loc(ja,en);
+          return '<option value="'+esc(nm)+'" data-unit="" data-nameja="'+esc(ja)+'" data-nameen="'+esc(en)+'">'+esc(disp)+'</option>';
         }).join('');
       } else {
         document.getElementById('poPickTitle').textContent = I18n.t('poFromItem');
         opts += ORDER_ITEMS_PO.map(function(it){
-          var disp = loc(it.name, it.nameEn);
-          return '<option value="'+esc(it.name)+'" data-unit="'+esc(it.unit||'')+'" data-nameen="'+esc(it.nameEn||'')+'">'+esc(disp)+(it.unit?(' ('+esc(it.unit)+')'):'')+'</option>';
+          var ja=it.nameJa!==undefined?it.nameJa:it.name, disp = loc(ja, it.nameEn);
+          return '<option value="'+esc(it.name)+'" data-unit="'+esc(it.unit||'')+'" data-nameja="'+esc(ja||'')+'" data-nameen="'+esc(it.nameEn||'')+'">'+esc(disp)+(it.unit?(' ('+esc(it.unit)+')'):'')+'</option>';
         }).join('');
       }
       sel.innerHTML = opts; sel.value='';
@@ -187,11 +189,12 @@
       var name = sel.value; if(!name) return;
       var opt = sel.options[sel.selectedIndex];
       var unit = opt.getAttribute('data-unit') || '';
+      var nameJa = opt.getAttribute('data-nameja') || '';
       var nameEn = opt.getAttribute('data-nameen') || '';
       // 空の最終行があればそこに入れる。無ければ新規行を追加。
       var last = PO_ROWS[PO_ROWS.length-1];
-      if(last && !last.name && !last.qty){ last.name=name; last.nameEn=nameEn; last.qty=1; last.unit=unit; }
-      else { PO_ROWS.push({ name:name, nameEn:nameEn, qty:1, unit:unit }); }
+      if(last && !(last.nameJa||last.nameEn||last.name) && !last.qty){ last.name=name; last.nameJa=nameJa; last.nameEn=nameEn; last.qty=1; last.unit=unit; }
+      else { PO_ROWS.push({ name:name, nameJa:nameJa, nameEn:nameEn, qty:1, unit:unit }); }
       poRenderRows(); closePoPicker();
     };
     function poMsg(text, ok){ var m=document.getElementById('poMsg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
@@ -201,7 +204,7 @@
     // テキスト化してクリップボードへコピーする代替動作へ自動的にフォールバックする。
     function poClipboardFallback(supplierName, items, reasonMsg){
       var lines = [I18n.t('poCopyHeader')+'「'+supplierName+'」'];
-      items.forEach(function(it){ lines.push('・'+it.name+' × '+it.qty+(it.unit?(' '+it.unit):'')); });
+      items.forEach(function(it){ lines.push('・'+loc(it.nameJa!==undefined?it.nameJa:it.name,it.nameEn)+' × '+it.qty+(it.unit?(' '+it.unit):'')); });
       var text = lines.join('\n');
       var done = function(){ poMsg((reasonMsg?reasonMsg+'\n':'')+I18n.t('poCopyDone'), false); };
       var fail = function(){ poMsg((reasonMsg?reasonMsg+'\n':'')+text, false); };
@@ -216,22 +219,22 @@
       var supplierName = document.getElementById('poSupplier').value;
       if(!supplierName){ poMsg(I18n.t('poNeedSupplier'), false); return; }
       var sup = SUPS.filter(function(s){ return s.name===supplierName; })[0];
-      var items = PO_ROWS.filter(function(r){ return (r.name||'').trim() && Number(r.qty)>0; })
-        .map(function(r){ return { name:r.name.trim(), nameEn:(r.nameEn||'').trim(), qty:Number(r.qty)||0, unit:(r.unit||'').trim() }; });
+      var items = PO_ROWS.filter(function(r){ return String(r.nameJa||r.nameEn||r.name||'').trim() && Number(r.qty)>0; })
+        .map(function(r){ var ja=String(r.nameJa!==undefined?r.nameJa:r.name||'').trim(),en=String(r.nameEn||'').trim();return { name:ja||en, nameJa:ja, nameEn:en, qty:Number(r.qty)||0, unit:(r.unit||'').trim() }; });
       if(!items.length){ poMsg(I18n.t('poNeedItems'), false); return; }
       if(!sup || !sup.email){ poClipboardFallback(supplierName, items, I18n.t('poNeedEmailFirst')); return; }
-      var lines = items.map(function(it){ return '・'+loc(it.name, it.nameEn)+' × '+it.qty+(it.unit?(' '+it.unit):''); });
-      var confirmMsg = I18n.t('poSendConfirm') + supplierName + '（' + sup.email + '）\n' + lines.join('\n');
+      var lines = items.map(function(it){ return '・'+loc(it.nameJa!==undefined?it.nameJa:it.name, it.nameEn)+' × '+it.qty+(it.unit?(' '+it.unit):''); });
+      var confirmMsg = I18n.t('poSendConfirm') + loc(sup.nameJa!==undefined?sup.nameJa:sup.name,sup.nameEn) + '（' + sup.email + '）\n' + lines.join('\n');
       UIConfirm(confirmMsg).then(function(ok){
         if(!ok) return;
         var btn = document.getElementById('poSendBtn'); if(btn) btn.disabled = true;
         rpc('sendPurchaseOrderEmail', [supplierName, items]).then(function(r){
           if(btn) btn.disabled = false;
           if(r && r.success){ poMsg(I18n.t('poSendDone'), true); }
-          else { poClipboardFallback(supplierName, items, I18n.t('sendMailFail')+((r&&r.error)||'')); }
+          else { poClipboardFallback(supplierName, items, I18n.t('sendMailFail')+API.userErrorText((r&&r.error)||'')); }
         }).catch(function(e){
           if(btn) btn.disabled = false;
-          poClipboardFallback(supplierName, items, I18n.t('sendMailFail')+((e&&e.message)||e));
+          poClipboardFallback(supplierName, items, I18n.t('sendMailFail')+API.userErrorText(e));
         });
       });
     };
@@ -239,9 +242,9 @@
     function renderReorder(){
       if(!REORDER.length){ document.getElementById('reorder').innerHTML='<div class="muted">'+I18n.t('reorderEmpty')+'</div>'; return; }
       document.getElementById('reorder').innerHTML = REORDER.map(function(g, gi){
-        var head = (g.supplier||I18n.t('noSupplier')) + (g.contact?(' <span class="muted">('+esc(g.contact)+')</span>'):'');
+        var head = esc(g.supplier?loc(g.supplierJa!==undefined?g.supplierJa:g.supplier,g.supplierEn):I18n.t('noSupplier')) + (g.contact?(' <span class="muted">('+esc(g.contact)+')</span>'):'');
         var rows = g.items.map(function(it){
-          return '<tr><td>'+esc(loc(it.name, it.nameEn))+'</td><td class="num low">'+it.stock+' '+esc(it.unit)+'</td><td class="num muted">'+it.minimum+'</td><td class="num" style="font-weight:800;">+'+it.suggest+' '+esc(it.unit)+'</td></tr>';
+          return '<tr><td>'+esc(loc(it.nameJa!==undefined?it.nameJa:it.name, it.nameEn))+'</td><td class="num low">'+it.stock+' '+esc(it.unit)+'</td><td class="num muted">'+it.minimum+'</td><td class="num" style="font-weight:800;">+'+it.suggest+' '+esc(it.unit)+'</td></tr>';
         }).join('');
         var mailBtn = g.supplier ?
           '<button class="btn-sm" style="background:#dcfce7;color:#15803d;" id="mailBtn'+gi+'" onclick="sendOrderEmail('+gi+')" title="'+(g.email?'':esc(I18n.t('noEmailHint')))+'">'+I18n.t('sendMailBtn')+(g.email?'':(' <span class="muted" style="font-weight:400;">('+I18n.t('noEmailBadge')+')</span>'))+'</button>'
@@ -257,7 +260,7 @@
     // 従来どおりクリップボードコピーへフォールバックする。
     function reorderClipboardFallback(g, st, reasonMsg){
       var lines = [I18n.t('poCopyHeader')+'「'+g.supplier+'」'];
-      (g.items||[]).forEach(function(it){ lines.push('・'+loc(it.name, it.nameEn)+' × '+it.suggest+(it.unit?(' '+it.unit):'')); });
+      (g.items||[]).forEach(function(it){ lines.push('・'+loc(it.nameJa!==undefined?it.nameJa:it.name, it.nameEn)+' × '+it.suggest+(it.unit?(' '+it.unit):'')); });
       var text = lines.join('\n');
       var prefix = reasonMsg ? (reasonMsg+' ') : '';
       if(navigator.clipboard && navigator.clipboard.writeText){
@@ -271,18 +274,18 @@
       var g = REORDER[gi]; if(!g) return;
       var st = document.getElementById('mailStatus'+gi);
       if(!g.email){ reorderClipboardFallback(g, st, I18n.t('poNeedEmailFirst')); return; }
-      var lines = (g.items||[]).map(function(it){ return '・'+loc(it.name, it.nameEn)+' × '+it.suggest+(it.unit?(' '+it.unit):''); });
-      var confirmMsg = I18n.t('sendMailConfirm') + g.supplier + '（' + g.email + '）\n' + lines.join('\n');
+      var lines = (g.items||[]).map(function(it){ return '・'+loc(it.nameJa!==undefined?it.nameJa:it.name, it.nameEn)+' × '+it.suggest+(it.unit?(' '+it.unit):''); });
+      var confirmMsg = I18n.t('sendMailConfirm') + loc(g.supplierJa!==undefined?g.supplierJa:g.supplier,g.supplierEn) + '（' + g.email + '）\n' + lines.join('\n');
       UIConfirm(confirmMsg).then(function(ok){
         if(!ok) return;
         var btn = document.getElementById('mailBtn'+gi); if(btn) btn.disabled = true;
         rpc('sendReorderEmail', [g.supplier]).then(function(r){
           if(btn) btn.disabled = false;
           if(r && r.success){ if(st) st.innerText = I18n.t('poSendDone'); }
-          else { reorderClipboardFallback(g, st, I18n.t('sendMailFail')+((r&&r.error)||'')); }
+          else { reorderClipboardFallback(g, st, I18n.t('sendMailFail')+API.userErrorText((r&&r.error)||'')); }
         }).catch(function(e){
           if(btn) btn.disabled = false;
-          reorderClipboardFallback(g, st, I18n.t('sendMailFail')+((e&&e.message)||e));
+          reorderClipboardFallback(g, st, I18n.t('sendMailFail')+API.userErrorText(e));
         });
       });
     };
@@ -290,7 +293,7 @@
     function renderSups(){
       if(!SUPS.length){ document.getElementById('supRows').innerHTML='<tr><td colspan="6" class="muted" style="padding:14px;text-align:center;">'+I18n.t('supEmpty')+'</td></tr>'; return; }
       document.getElementById('supRows').innerHTML = SUPS.map(function(s){
-        var nmCell = '<td style="font-weight:800;">'+esc(s.name)+(s.nameEn?' <span class="muted" style="font-weight:400;">('+esc(s.nameEn)+')</span>':'')+'</td>';
+        var nmCell = '<td style="font-weight:800;">'+esc(loc(s.nameJa!==undefined?s.nameJa:s.name,s.nameEn))+'</td>';
         return '<tr>'+nmCell+'<td>'+esc(s.contact)+'</td><td class="muted">'+esc(s.email||'')+'</td><td class="muted">'+esc(langLabel(s.language))+'</td><td class="muted" style="white-space:normal;max-width:200px;">'+esc(s.items)+'</td>'+
           '<td><button class="btn-sm" onclick="edit(\''+s.id+'\')">'+I18n.t('edit')+'</button> <button class="btn-sm" style="background:#fee2e2;color:#b91c1c;" onclick="del(\''+s.id+'\')">'+I18n.t('del')+'</button></td></tr>';
       }).join('');
@@ -298,7 +301,7 @@
     function msg(text, ok){ var m=document.getElementById('msg'); m.style.display='block'; m.style.background=ok?'#dcfce7':'#fee2e2'; m.style.color=ok?'#15803d':'#b91c1c'; m.innerText=text; }
     function clearForm(){ ['sId','sName','sNameEn','sContact','sEmail','sItems','sMemo'].forEach(function(id){ document.getElementById(id).value=''; }); document.getElementById('sLanguage').value='ja'; }
 
-    window.edit = function(id){ var s=SUPS.filter(function(x){return x.id===id;})[0]; if(!s) return; document.getElementById('sId').value=s.id; document.getElementById('sName').value=s.name; document.getElementById('sNameEn').value=s.nameEn||''; document.getElementById('sContact').value=s.contact; document.getElementById('sEmail').value=s.email||''; document.getElementById('sLanguage').value=s.language||'ja'; document.getElementById('sItems').value=s.items; document.getElementById('sMemo').value=s.memo||''; window.scrollTo({top:9999,behavior:'smooth'}); };
+    window.edit = function(id){ var s=SUPS.filter(function(x){return x.id===id;})[0]; if(!s) return; document.getElementById('sId').value=s.id; document.getElementById('sName').value=(s.nameJa!==undefined?s.nameJa:s.name)||''; document.getElementById('sNameEn').value=s.nameEn||''; document.getElementById('sContact').value=s.contact; document.getElementById('sEmail').value=s.email||''; document.getElementById('sLanguage').value=s.language||'ja'; document.getElementById('sItems').value=s.items; document.getElementById('sMemo').value=s.memo||''; window.scrollTo({top:9999,behavior:'smooth'}); };
     // [応答速度対応] 以前は保存時にsaveSupplier→reloadReorder→reloadSupsの3回連続RPCで、
     // 削除時もdeleteSupplier→reloadSupsの2回連続RPCで、いずれも一覧全体を再取得・再描画していた。
     // saveSupplierが保存済み行を返すようになったので、その行をSUPS配列にローカル反映するだけにする。
@@ -312,19 +315,20 @@
       UIConfirm(I18n.t('delConfirm')).then(function(ok){
         if(!ok) return;
         rpc('deleteSupplier',[id]).then(function(d){
-          if(d&&d.error){ msg(I18n.t('errPrefix')+d.error, false); return; }
+          if(d&&d.error){ msg(I18n.t('errPrefix')+API.userErrorText(d.error), false); return; }
           SUPS = SUPS.filter(function(s){ return s.id!==id; });
           renderSups(); fillPoSupplierSel();
-        }).catch(function(e){ msg(I18n.t('errPrefix')+(e.message||e), false); });
+        }).catch(function(e){ msg(I18n.t('errPrefix')+API.userErrorText(e), false); });
       });
     };
     window.save = function(){
-      var sup = { id:document.getElementById('sId').value, name:document.getElementById('sName').value.trim(), nameEn:document.getElementById('sNameEn').value.trim(), contact:document.getElementById('sContact').value.trim(), email:document.getElementById('sEmail').value.trim(), language:document.getElementById('sLanguage').value, items:document.getElementById('sItems').value.trim(), memo:document.getElementById('sMemo').value.trim() };
-      if(!sup.name){ msg(I18n.t('needName'), false); return; }
+      var nameJa=document.getElementById('sName').value.trim(),nameEn=document.getElementById('sNameEn').value.trim();
+      var sup = { id:document.getElementById('sId').value, name:nameJa||nameEn, nameJa:nameJa, nameEn:nameEn, contact:document.getElementById('sContact').value.trim(), email:document.getElementById('sEmail').value.trim(), language:document.getElementById('sLanguage').value, items:document.getElementById('sItems').value.trim(), memo:document.getElementById('sMemo').value.trim() };
+      if(!nameJa&&!nameEn){ msg(I18n.t('needName'), false); return; }
       var btn=document.getElementById('saveBtn'); btn.disabled=true;
       rpc('saveSupplier',[sup]).then(function(d){
         btn.disabled=false;
-        if(d&&d.error){ msg(I18n.t('errPrefix')+d.error, false); return; }
+        if(d&&d.error){ msg(I18n.t('errPrefix')+API.userErrorText(d.error), false); return; }
         msg(I18n.t('saved'), true); clearForm();
         if(d && d.row){
           var idx = SUPS.findIndex(function(s){ return s.id===d.row.id; });
@@ -334,27 +338,27 @@
         } else {
           reloadReorder(); reloadSups(); // 想定外形状のフォールバックのみ再取得
         }
-      }).catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+(e.message||e), false); });
+      }).catch(function(e){ btn.disabled=false; msg(I18n.t('errPrefix')+API.userErrorText(e), false); });
     };
     function reloadSups(){ return rpc('getSuppliers',[]).then(function(l){ SUPS=l||[]; renderSups(); fillPoSupplierSel(); }); }
     function reloadReorder(){ return rpc('getReorderSuggestions',[]).then(function(l){ REORDER=l||[]; renderReorder(); }).catch(function(){}); }
 
     API.post('getSettings', {}).then(function(r){ if(r.data && r.data.currencySymbol) SYM=r.data.currencySymbol; }).catch(function(){});
-    rpc('getReorderSuggestions',[]).then(function(l){ REORDER=l||[]; renderReorder(); }).catch(function(e){ document.getElementById('reorder').innerHTML='<div class="muted" style="color:#b91c1c;">'+I18n.t('loadErr')+esc(e.message||e)+'</div>'; });
+    rpc('getReorderSuggestions',[]).then(function(l){ REORDER=l||[]; renderReorder(); }).catch(function(e){ document.getElementById('reorder').innerHTML='<div class="muted" style="color:#b91c1c;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</div>'; });
     rpc('getSuppliers',[]).then(function(l){ SUPS=l||[]; __loaded=true; renderSups(); fillPoSupplierSel(); })
-      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('supRows').innerHTML='<tr><td colspan="6" style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)+'</td></tr>'; });
+      .catch(function(e){ if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; } document.getElementById('supRows').innerHTML='<tr><td colspan="6" style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))+'</td></tr>'; });
     rpc('getAllMenuForAdmin',[]).then(function(l){ MENU_ALL_PO=l||[]; }).catch(function(){});
     rpc('getOrderItems',[]).then(function(l){ ORDER_ITEMS_PO=l||[]; }).catch(function(){});
     poRenderRows();
 
     I18n.init({
-      ja:{ title:'🚚 仕入・発注', back:'← 管理へ', inv:'📦 在庫', orderItemsLink:'📋 発注アイテム', reorderTitle:'🔔 発注提案（最小在庫以下）', reorderHint:'在庫が最小在庫を下回った品目を仕入先ごとにまとめます。推奨数＝最小在庫の2倍を目標に補充。', reorderEmpty:'発注が必要な品目はありません 🎉', noSupplier:'仕入先未設定', thItem:'品目', thStock:'在庫', thMin:'最小', thSuggest:'推奨発注', supTitle:'🏢 仕入先マスタ', sName:'仕入先名', sNameEn:'英語名（任意）', phNameEn:'e.g. ABC Trading Co.', sContact:'連絡先', phContact:'電話・担当など', sEmail:'メールアドレス（任意・発注メール送信用）', phEmail:'order@supplier.example', sLanguage:'発注メール言語', langJa:'日本語', langEn:'英語', langBoth:'日本語＋英語（両方）', thLanguage:'言語', sItems:'取扱品目（任意）', phItems:'例: ビール, 焼酎, 生鮮', sMemo:'備考（任意）', add:'💾 登録', thName:'仕入先', thContact:'連絡先', thEmail:'メール', thItems:'取扱品目', loading:'読み込み中…', supEmpty:'仕入先が未登録です', edit:'編集', del:'削除', delConfirm:'この仕入先を削除しますか？', needName:'仕入先名を入力してください', saved:'✅ 登録しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ',
+      ja:{ title:'🚚 仕入・発注', back:'← 管理へ', inv:'📦 在庫', orderItemsLink:'📋 発注アイテム', reorderTitle:'🔔 発注提案（最小在庫以下）', reorderHint:'在庫が最小在庫を下回った品目を仕入先ごとにまとめます。推奨数＝最小在庫の2倍を目標に補充。', reorderEmpty:'発注が必要な品目はありません 🎉', noSupplier:'仕入先未設定', thItem:'品目', thStock:'在庫', thMin:'最小', thSuggest:'推奨発注', supTitle:'🏢 仕入先マスタ', sNameJa:'仕入先名（日本語）', sNameEn:'仕入先名（English）', phNameEn:'e.g. ABC Trading Co.', sContact:'連絡先', phContact:'電話・担当など', sEmail:'メールアドレス（任意・発注メール送信用）', phEmail:'order@supplier.example', sLanguage:'発注メール言語', langJa:'日本語', langEn:'英語', langBoth:'日本語＋英語（両方）', thLanguage:'言語', sItems:'取扱品目（任意）', phItems:'例: ビール, 焼酎, 生鮮', sMemo:'備考（任意）', add:'💾 登録', thName:'仕入先', thContact:'連絡先', thEmail:'メール', thItems:'取扱品目', loading:'読み込み中…', supEmpty:'仕入先が未登録です', edit:'編集', del:'削除', delConfirm:'この仕入先を削除しますか？', needName:'仕入先名は日本語または英語のどちらかを入力してください', saved:'✅ 登録しました', errPrefix:'エラー: ', loadErr:'読み込みエラー: ',
         sendMailBtn:'📧 メール送信', noEmailBadge:'✉️ メール未設定', noEmailHint:'仕入先マスタにメールアドレスを登録すると送信できます', sendMailConfirm:'発注メールを送信しますか？\n', sendMailDone:'✅ 送信しました', sendMailFail:'❌ 送信失敗: ', poMonthlyLimitMsg:'今月の発注メール送信件数（上限30件）に達しました。来月まで自動送信できません。下のコピー機能でLINEや電話・SMS等をご利用ください。',
         newOrderTitle:'🆕 新規発注', newOrderHint:'仕入先を選び、品目を追加してください。メニュー・発注アイテムマスタから選ぶか、直接入力できます。', poSupplier:'仕入先', poSupplierPh:'仕入先を選択…', poNoEmailTag:'メール未設定', poNoEmailWarn:'この仕入先にはメールアドレスが未登録です。先に仕入先マスタで登録してください。', poThQty:'数量', poThUnit:'単位', poEmpty:'「＋ 行を追加」で品目を追加してください', poAddRow:'＋ 行を追加', poFromMenu:'🍽️ メニューから追加', poFromItem:'📋 発注アイテムから追加', poPickPh:'選択してください…', poPickAdd:'＋ 追加', poSendBtn:'📧 発注依頼', poNeedSupplier:'仕入先を選択してください', poNeedEmailFirst:'この仕入先にはメールアドレスが未登録です。先に仕入先マスタで登録してください。', poNeedItems:'品目と数量を入力してください', poSendConfirm:'発注メールを送信しますか？\n', poItemsCountU:'件の品目', poSendDone:'✅ 発注メールを送信しました', poCopyHeader:'【発注内容】仕入先:', poCopyDone:'✅ クリップボードにコピーしました。LINEや電話・SMS等で仕入先へお送りください。', mvClose:'閉じる' },
-      en:{ title:'🚚 Purchasing', back:'← Manage', inv:'📦 Inventory', orderItemsLink:'📋 Order items', reorderTitle:'🔔 Reorder suggestions (at/below min)', reorderHint:'Items at or below minimum stock, grouped by supplier. Suggested qty targets twice the minimum stock.', reorderEmpty:'Nothing to reorder 🎉', noSupplier:'No supplier set', thItem:'Item', thStock:'Stock', thMin:'Min', thSuggest:'Suggested', supTitle:'🏢 Suppliers', sName:'Supplier name', sNameEn:'English name (optional)', phNameEn:'e.g. ABC Trading Co.', sContact:'Contact', phContact:'Phone / person', sEmail:'Email (optional, for sending orders)', phEmail:'order@supplier.example', sLanguage:'Order email language', langJa:'Japanese', langEn:'English', langBoth:'Japanese + English (both)', thLanguage:'Language', sItems:'Items handled (optional)', phItems:'e.g. beer, shochu, fresh', sMemo:'Memo (optional)', add:'💾 Save', thName:'Supplier', thContact:'Contact', thEmail:'Email', thItems:'Items', loading:'Loading…', supEmpty:'No suppliers yet', edit:'Edit', del:'Delete', delConfirm:'Delete this supplier?', needName:'Please enter a supplier name', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ',
+      en:{ title:'🚚 Purchasing', back:'← Manage', inv:'📦 Inventory', orderItemsLink:'📋 Order items', reorderTitle:'🔔 Reorder suggestions (at/below min)', reorderHint:'Items at or below minimum stock, grouped by supplier. Suggested qty targets twice the minimum stock.', reorderEmpty:'Nothing to reorder 🎉', noSupplier:'No supplier set', thItem:'Item', thStock:'Stock', thMin:'Min', thSuggest:'Suggested', supTitle:'🏢 Suppliers', sNameJa:'Supplier name (Japanese)', sNameEn:'Supplier name (English)', phNameEn:'e.g. ABC Trading Co.', sContact:'Contact', phContact:'Phone / person', sEmail:'Email (optional, for sending orders)', phEmail:'order@supplier.example', sLanguage:'Order email language', langJa:'Japanese', langEn:'English', langBoth:'Japanese + English (both)', thLanguage:'Language', sItems:'Items handled (optional)', phItems:'e.g. beer, shochu, fresh', sMemo:'Memo (optional)', add:'💾 Save', thName:'Supplier', thContact:'Contact', thEmail:'Email', thItems:'Items', loading:'Loading…', supEmpty:'No suppliers yet', edit:'Edit', del:'Delete', delConfirm:'Delete this supplier?', needName:'Enter the supplier name in either English or Japanese', saved:'✅ Saved', errPrefix:'Error: ', loadErr:'Load error: ',
         sendMailBtn:'📧 Send email', noEmailBadge:'✉️ No email set', noEmailHint:'Add an email address in the supplier master to enable sending', sendMailConfirm:'Send the order email?\n', sendMailDone:'✅ Sent', sendMailFail:'❌ Failed: ', poMonthlyLimitMsg:'This month\'s order-email limit (30) has been reached. Automatic sending will resume next month. Use the copy feature and send via LINE, phone, or SMS instead.',
         newOrderTitle:'🆕 New purchase order', newOrderHint:'Pick a supplier and add items — from the menu, the order item master, or typed directly.', poSupplier:'Supplier', poSupplierPh:'Select a supplier…', poNoEmailTag:'no email set', poNoEmailWarn:'This supplier has no email address registered. Add one in the supplier master first.', poThQty:'Qty', poThUnit:'Unit', poEmpty:'Tap “＋ Add row” to add items', poAddRow:'＋ Add row', poFromMenu:'🍽️ Add from menu', poFromItem:'📋 Add from order items', poPickPh:'Select…', poPickAdd:'＋ Add', poSendBtn:'📧 Request order', poNeedSupplier:'Please select a supplier', poNeedEmailFirst:'This supplier has no email address registered. Add one in the supplier master first.', poNeedItems:'Please enter items and quantities', poSendConfirm:'Send the order email?\n', poItemsCountU:' item(s)', poSendDone:'✅ Order email sent', poCopyHeader:'[Purchase order] Supplier:', poCopyDone:'✅ Copied to clipboard. Please send it via LINE, phone, or SMS.', mvClose:'Close' }
-    }, function(){ fillPoSupplierSel(); if(__loaded){ renderReorder(); renderSups(); } });
+    }, function(){ syncSupplierNameOrder(); poRenderRows(); fillPoSupplierSel(); if(__loaded){ renderReorder(); renderSups(); } });
   </script>
 
   <script src="./help.js?v=auth2"></script>

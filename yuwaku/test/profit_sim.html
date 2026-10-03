@@ -354,7 +354,7 @@
     // サーバーから'unauthorized'（トークン無し／期限切れ）が返った場合に、わかりやすいメッセージへ変換する。
     function _authErrMsg(e){
       var raw = String((e && e.message) || e || '');
-      return raw === 'unauthorized' ? I18n.t('needLoginForAction') : (I18n.t('errPrefix') + raw);
+      return raw === 'unauthorized' ? I18n.t('needLoginForAction') : (I18n.t('errPrefix') + API.userErrorText(e));
     }
     var SYM = '';
     function money(v){ return SYM+(Math.round(Number(v)||0)).toLocaleString(); }

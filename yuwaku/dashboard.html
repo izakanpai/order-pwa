@@ -159,7 +159,7 @@
         .catch(function(e){
           if(String(e.message||e).indexOf('unauthorized')>=0){ location.href='./manage.html'; return; }
           var ts = new Date().toLocaleTimeString(isEN()?'en-US':'ja-JP');
-          document.getElementById('wrap').innerHTML = '<div style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(e.message||e)
+          document.getElementById('wrap').innerHTML = '<div style="color:#b91c1c;padding:14px;">'+I18n.t('loadErr')+esc(API.userErrorText(e))
             +'<div style="margin-top:6px;font-size:12px;color:var(--text-3);">'+(isEN()?'Last attempt: ':'最終試行: ')+ts+'</div>'
             +'<button type="button" class="hbtn" style="background:var(--navy);margin-top:8px;" onclick="loadDashboard()">'+(isEN()?'🔄 Retry':'🔄 再試行')+'</button>'
             +'</div>';

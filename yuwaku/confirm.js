@@ -30,7 +30,7 @@
   'use strict';
 
   function isEN() {
-    try { return localStorage.getItem('lang') === 'en'; } catch (e) { return false; }
+    try { if(window.I18n&&typeof window.I18n.lang==='function')return window.I18n.lang()==='en';var s=localStorage.getItem('lang');if(s==='ja'||s==='en')return s==='en';var first=(navigator.languages&&navigator.languages.length)?navigator.languages[0]:navigator.language;return String(first||'').toLowerCase().indexOf('ja')!==0; } catch (e) { return true; }
   }
   var LABELS = {
     ja: { ok: 'OK', cancel: 'キャンセル' },
