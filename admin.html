@@ -46,11 +46,10 @@
 <script>
 (function(){
   'use strict';
-  var TEST=new URLSearchParams(location.search).get('env')==='test';
-  var API=TEST?'https://izakanpai-api-test.izakanpai.workers.dev':'https://izakanpai-api.izakanpai.workers.dev';
-  var key='izakanpai:platform-admin-token:'+(TEST?'test':'production');
+  var API='https://izakanpai-api.izakanpai.workers.dev';
+  var key='izakanpai:platform-admin-token:production';
   var $=function(id){return document.getElementById(id)};
-  $('envBadge').textContent=TEST?'TEST':'PRODUCTION';
+  $('envBadge').textContent='PRODUCTION';
   try{$('adminToken').value=sessionStorage.getItem(key)||''}catch(e){}
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function num(v){return Number(v||0).toLocaleString('ja-JP')}

@@ -16,6 +16,7 @@
   function environmentMismatch() {
     var pathIsTest = /\/test(?:\/|$)/i.test(location.pathname);
     var configIsTest = CFG.TEST_ENV === true || /^test$/i.test(String(CFG.VERSION || '')) || /api-test\./i.test(String(CFG.API_URL || ''));
+    var localTestApi = pathIsTest && CFG.TEST_ENV === true && /^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/i.test(String(CFG.API_URL || ''));
     var env = pathIsTest ? 'test' : 'production';
     var expectedPrefix = 'izakanpai:' + env + ':';
     var expectedDb = 'izakanpai-pos-' + env;
@@ -28,8 +29,8 @@
     return pathIsTest !== configIsTest || CFG.AUTH_SCHEMA_VERSION !== 2 ||
       AUTH_PREFIX !== expectedPrefix ||
       CFG.STORAGE_PREFIX !== expectedPrefix || CFG.OFFLINE_DB_NAME !== expectedDb ||
-      !/^https:\/\//i.test(String(CFG.API_URL || '')) ||
-      /api-test\./i.test(String(CFG.API_URL || '')) !== pathIsTest;
+      (!/^https:\/\//i.test(String(CFG.API_URL || '')) && !localTestApi) ||
+      (!localTestApi && /api-test\./i.test(String(CFG.API_URL || '')) !== pathIsTest);
   }
   function blockEnvironmentMismatch() {
     if (!environmentMismatch() || document.getElementById('izEnvMismatch')) return;

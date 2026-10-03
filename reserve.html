@@ -48,9 +48,7 @@
 
   <script>
     (function(){
-      var apiUrl = location.pathname.indexOf('/test/') === 0
-        ? 'https://izakanpai-api-test.izakanpai.workers.dev'
-        : 'https://izakanpai-api.izakanpai.workers.dev';
+      var apiUrl = 'https://izakanpai-api.izakanpai.workers.dev';
       window.API = {
         post:function(action,payload){
           return fetch(apiUrl+'?api=1',{
